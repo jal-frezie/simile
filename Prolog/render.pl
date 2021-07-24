@@ -153,14 +153,14 @@ render(tcl, format, [Dest, Pattern | Args], Indent, Result) :-
 Incrementation, including unity incrementation and decrementation. */
 
 /* start of a for loop */
-render( L, for_start, [Name,End,Step], Indent, [For_Start]) :- 
-	make_assignment(L, Name, 1, Init),
+render( L, for_start, [Name,Start,End,Step], Indent, [For_Start]) :- 
+	make_assignment(L, Name, Start, Init),
 	refer_value(L, Name, NameRef),
 	make_increment_expr(L, Name, Step, Incr),
 	(L = c, Template = "for ( ~s; ~w; ~s ) {";
 	L = tcl, Template = "for {~s} {~w} {~s} {"),
-	(Step > 0, !, Test = (End >= NameRef);
-	    Test = (NameRef >= End)),
+	(Step > 0, !, Test = (End > NameRef);
+	    Test = (NameRef > End)),
 	format_indented(Indent, Template,
 		   [Init, Test, Incr], StartChars ),
 	name( For_Start, StartChars ).
@@ -343,7 +343,7 @@ strings_direct(tcl, clear_memory, instance(submodel,_,_, Name, _-Dims), Indent,
 	       Stream) :-
 	(number(Dims), !,
 	    NewIndent is Indent + 4,
-	    excrete(tcl, for_start, [makenames, 1, Dims, 1], Indent, Stream),
+	    excrete(tcl, for_start, [makenames, 0, Dims, 1], Indent, Stream),
 	    refer_value(tcl, makenames, VWithDollar),
 	    make_struct_reference(tcl, Name, VWithDollar, SpaceName);
 	NewIndent = Indent,
@@ -389,7 +389,7 @@ strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Used, Dims],
 	Dims = [Dim | More], !, % won't work for multiple dims but no need
 	    language><declare(tcl, XIndex, loop, int, Used, Indent, Stream),
 	    DeepIndent is Indent+4,
-	    strings_direct(tcl, for_start, [XIndex, 1, Dim, 1],
+	    excrete(tcl, for_start, [XIndex, 0, Dim, 1],
 			   Indent, Stream),
 	    refer_value(tcl, XIndex, XIndexRef),
 	    make_indexed_namespace(tcl, Dest, [XIndexRef], NewDest),
@@ -486,7 +486,7 @@ strings_direct(L, data_declaration,
 	strings_direct(L, variable_declaration, [Type, Name, Nums],
 			Indent, Stream).
 
-/* start of a for loop */
+/* start of a for loop...use still-needed obsolete thing
 strings_direct( L, for_start, [Name,Start,End,Step], Indent, Stream) :- 
 	make_assignment(L, Name, Start, Init),
 	refer_value(L, Name, NameRef),
@@ -884,7 +884,7 @@ make_array_assignment(L, Indent, [Sub | Rest],
 	generate_name(L, loop, Temp, Used),
 	add_temps(Temps0, [Temp], int, [], Temps),
 	refer_value(L, Temp, Index),
-	render(L, for_start, [Temp, Sub, 1], 
+	render(L, for_start, [Temp, 0, Sub, 1], 
 			Indent, Opens1),
 	render(L, end(for), Index, Indent, Closes2),
 	make_array_assignment(L, NewIndent, Rest, Used,

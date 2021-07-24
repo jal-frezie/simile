@@ -2513,19 +2513,19 @@ count_and_list_lookups(Eqn, N, Eqns) :-
 	Eqn = choose(1, First, More), !,
 	    count_and_list_lookups(More, M, Rest),
 	    N is M+1,
-	    Eqns = [First | Rest];
+	    Eqns = [First-1 | Rest];
 	  N = 1,
-	    Eqns = [Eqn].
+	    Eqns = [Eqn-1].
 
 assign_and_test_limit(_, [], [], [], 1).
 assign_and_test_limit(IdVar, [make(_,_,_,_, [open_index(IdRef, Bound)]) | R1],
 		      [IxExpr | R2], [assign(IdRef, IxExpr) | R3],
-		      IxExpr>0 && IxExpr<=UpBound && R4) :-
+		      IxExpr>=0 && IxExpr<UpBound && R4) :-
 	(Bound = pra_bound(PraPtr, PraName),
 	    append_atoms(PraName, made, MadeBound),
 	    UpBound = arr(PraPtr, MadeBound, []);
 	  UpBound = Bound),
-	length([x | R1], CIdx), 
+	length(R1, CIdx), 
 	IdRef = arr('', IdVar, [CIdx]),
 	assign_and_test_limit(IdVar, R1, R2, R3, R4).
 

@@ -87,7 +87,7 @@ do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
 	    make_pointer(L, Count, CountPtr),
 	    excrete(L, assignment, IndexSlot = CountPtr, Indent, Stream),
 	    excrete(L, assignment, CountSlot = -1, Indent, Stream),
-	    excrete(L, for_start, [Count, 1, UseBoundRef, 1], Indent, Stream),
+	    excrete(L, for_start, [Count, 0, UseBoundRef, 1], Indent, Stream),
 	    do_assign_list(L, MyLoop, NewIndent, Used, Stream),
 	    excrete(L, end(for), Count, Indent, Stream),
 	    excrete(L, assignment, IndexSlot=0, Indent, Stream),
@@ -1361,6 +1361,6 @@ make_scalar(L, Param, Used, FullLocalExpr) :-
 	all(render, make_expr, [unify(L), build(ATerms), build(IExprs)]),
 	make_indexed_reference(L, LocalExpr, IExprs, FullLocalExpr).
 
-aim_at_array(c, Index+1, Index) :- !.
-aim_at_array(c, Index, Index-1) :- !.
+% aim_at_array(c, Index+1, Index) :- !.
+% aim_at_array(c, Index, Index-1) :- !.
 aim_at_array(_, Index, Index).
