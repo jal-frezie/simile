@@ -437,6 +437,7 @@ namespace eval slide139 {
     
     proc WidgetSelnToC {node fixed args} {
         global widgetSeln
+	# puts "WS2C $node $widgetSeln($node)"
         set sub [join [concat [list $node] $args] ,]
 	return [SetArrayIfUsed $node $fixed $args $widgetSeln($sub)]
     }
@@ -455,9 +456,10 @@ namespace eval slide139 {
 #	SetArrayIfUsed $node 0 $indices [$scale get]
 #	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
 #	    [RunningInC $myNode]
-	set hold [eval [list WidgetSelnToC $node 0] $indices]
-	MarkEvtParamActive $myNode $node [RunningInC $myNode] [expr {1+$hold}]
+	set hold [expr {2+([eval [list WidgetSelnToC $node 0] $indices]>0)}]
+	MarkEvtParamActive $myNode $node [RunningInC $myNode] $hold
 	# if no immediate rate update, wait a step before clearing event
+	# formula for hold determined experimentally
     }
 
     proc SetArrayIfUsed {node fixed indices value} {

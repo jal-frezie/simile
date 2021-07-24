@@ -588,32 +588,14 @@ make_intermediates(
 	where the result does not depend on the actual values being checked,
 	we put in a dummy reference to them to make sure the increment takes
 	place in the source loop. */
-	(Source = count(Epsilon);
-	Source = sum(Epsilon),
-		InitVal = 0,
-		IncrOp = (+);
-	Source = product(Epsilon),
-		InitVal = 1,
-		IncrOp = (*);
-	Source = least(Epsilon),
-		InitVal = Muckle,
-		IncrOp = min;
-	Source = greatest(Epsilon),
-		InitVal = Wee,
-		IncrOp = max;
+	(cumulative(Source, Epsilon, InitVal, IncrOp, Wee, Muckle);
+	 Source = count(Epsilon);
 	Source = with_least(Epsilon, Payload),
 		InitVal = Muckle,
 		IncrOp = min;
 	Source = with_greatest(Epsilon, Payload),
 		InitVal = Wee,
 		IncrOp = max;
-
-	Source = any(Epsilon),
-	    InitVal = 0,
-	    IncrOp = ('||');
-	Source = all(Epsilon),
-	    InitVal = 1,
-	    IncrOp = ('&&');
 	member(Source, [make_inter(Epsilon, Ref), at_phase(Ph, Epsilon),
 			at_phase(Epsilon), last(Epsilon), 
 			in_preceding(Epsilon), in_progenitor(Epsilon),
@@ -960,8 +942,8 @@ make_intermediates(
 		/* generate_name(c, loop, LoopName, Used), */
 		IndRef = glob(_LoopName, _)),
 	    (Units = boolean, !,
-		SourceRef = IndRef-1;
-	     SourceRef = IndRef), % first index is 1 in model, 0 in code
+		SourceRef = IndRef;
+	     SourceRef = IndRef+1), % first index is 1 in model, 0 in code
 	    Args = []),
 	SourceContext = DestPath,
 	Setups = [],
@@ -1005,7 +987,7 @@ make_intermediates(
 % added to stop bad rankings behaviour -- may clash with comp names
 % sorted that by not instantiating comp loops either...
 	        LocalInd = glob(BuildName, _);
-	    make_choose_form(Source, keep(LocalInd), 1, Element),
+	    make_choose_form(Source, keep(LocalInd), 0, Element),
 	        length(Source, DimVal),
 		(DimVal > 1, !; throw(singlet_array(Source, DimVal))),
 %		DimSetups = [],
@@ -1417,6 +1399,16 @@ Now one that uses a special conditional level */
 	    Args = SubArgs);
 	throw(undecipherable_operand(Source, SubId)).
 
+cumulative(Source, Epsilon, InitVal, IncrOp, W, M) :-
+    Source =.. [Op, Arg],
+    member([Op, InitVal, IncrOp], [[sum, 0, +], [product, 1,*], [least, M, min],
+				   [greatest, W, max], [any, 0, '||'],
+				   [all, 1, '&&']]),
+    (fail, cumulative(Arg, Epsilon, InitVal, IncrOp, W, M), !;
+% combining levels not yet working due to result dims
+     Epsilon = Arg).
+    
+	   
 select_loops_from(ALoops, [], [], ALoops).
 select_loops_from(ALoops, [IntIndxRef | MoreIIRs], [Limit | MoreLs],
 		  LeftLoops) :-
@@ -1490,8 +1482,8 @@ match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, Array) :-
 		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
 	((NeedType = boolean,
 		% first index is 1 in model, 0 in code
-	        UseIndxRef = TryIndxRef+1;
-	      UseIndxRef = TryIndxRef),
+	        UseIndxRef = TryIndxRef;
+	      UseIndxRef = TryIndxRef-1),
 	  member(IntIndxRef, [UseIndxRef, glob(_, UseIndxRef)]));
 	    % only reason this might fail is if taking element of a made array;
 	    % too awkward to fix so just say do not be silly
