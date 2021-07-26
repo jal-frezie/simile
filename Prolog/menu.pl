@@ -580,7 +580,7 @@ menu_handle(Win, edit, Component) :-
 	get_original_click(Xpt, Ypt),
 	(Node = [_,_], !,
 	    event><click(Xpt, Ypt, 0);
-	 event><click_on([Xpt, Ypt], Node, 0)),
+	 event><click_obj(Xpt, Ypt, Node, 0)),
 	event><unclick,
 	(Component is_primitive,
 	    Component is_class_of_sort box, !;
