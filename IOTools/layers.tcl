@@ -75,7 +75,11 @@ itcl::class similescript::$newHelperClass {
 	    }
 	    $vp.c configure -scrollregion $transform(bounds)
 	    foreach {layerType layerState} [lrange $state 5 end] {
-		NewLayer $layerType 0 $layerState
+		if {$layerType eq "annotation"} {
+		    ::canvasnotes20070919::RestoreNotesFromList $vp.c $layerState
+		} else {
+		    NewLayer $layerType 0 $layerState
+		}
 	    }
 	    foreach {l t r b} $transform(bounds) {
 		$vp.c xview moveto [expr {($transform(offx)-$l)*1.0/($r-$l)}]
@@ -289,6 +293,10 @@ itcl::class similescript::$newHelperClass {
 	foreach layer $planes {
 	    $layer PrepareSaveString
 	    lappend State [$layer info class] [$layer cget -State]
+	}
+	set noteList [::canvasnotes20070919::ListNotes $id]
+	if {[llength $noteList]} {
+	    lappend State annotation $noteList
 	}
     }
 

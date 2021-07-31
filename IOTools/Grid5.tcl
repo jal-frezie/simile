@@ -911,7 +911,7 @@ namespace eval grid005 {
 	$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB \
 	    -to 0 0 -zoom $mult $sqz -shrink
-	if {$useNodes($winId,hex)} {
+	if {$useNodes($winId,hex) && $mult>1} {
 	    for {set line [expr {($dataB-1)/2*2}]} {$line>$dataT} {incr line -2} {
 		$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 		    -from [expr {int($dataL)}] $line $dataR [expr {$line+1}] \

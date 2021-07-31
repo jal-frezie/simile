@@ -184,15 +184,18 @@ itcl::class similescript::$newLayerClass {
 # hah, just fixed it so we can anyway
 	set node [GetIdFromCaptionPath $useNodes($winId,color)]
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
+	set bpp $useNodes($winId,bpp)
+	set hex $useNodes($winId,hex)
+	set repts [expr {$hex*$bpp/8}]
+	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
-			$useNodes($winId,max)} rawBinary]} {
+			$useNodes($winId,max) $repts} rawBinary]} {
 	    DrawGrid7
 	    return
 	}
 #puts "Binary is of size [string bytelength $rawBinary]"
 	set rows $useNodes($winId,nrow)
-	set cols $useNodes($winId,ncol)
-	set bpp $useNodes($winId,bpp)
+	set cols [expr {$useNodes($winId,ncol)*(1+$hex)}]
 	set bitCols [expr 4*int(($bpp*$cols+31)/32)]
 	set fullSize [expr 1078+$bitCols*$rows]
 	set bmpData [binary format a2is2iiiissiiiiii \
@@ -207,25 +210,34 @@ itcl::class similescript::$newLayerClass {
 	}
 	set colBytes [expr {$cols*$bpp/8}]
 	set filling [string repeat 0 [expr $bitCols-$colBytes]]
-	if {[string length $filling]} {
+	if {[string length $filling] || $hex} {
 	    for {set row 0} {$row<$rows} {incr row} {
-		append bmpData [string range $rawBinary \
-		        [expr $row*$colBytes] [expr $row*$colBytes+$colBytes-1]] $filling
+		if {$hex && !($row%2)} {
+		    append bmpData \
+			[string range $rawBinary [expr $row*$colBytes] \
+			     [expr $row*$colBytes+$bpp/8-1]] \
+			[string range $rawBinary [expr $row*$colBytes] \
+			     [expr ($row+1)*$colBytes-$bpp/8-1]] $filling
+		} else {
+		    append bmpData \
+			[string range $rawBinary [expr $row*$colBytes] \
+			     [expr ($row+1)*$colBytes-1]] $filling
+		}
 	    }
 	} else {
 	    append bmpData $rawBinary
 	}
-        $this.original configure -data $bmpData -width $useNodes($winId,ncol) \
+        $this.original configure -data $bmpData -width $cols \
             -height $useNodes($winId,nrow)
-        if {$useNodes($winId,hex)} {
-	    set w [$this.original cget -width]
-	    set h [$this.original cget -height]
-	    $this.original configure -width [expr 2*$w]
-	    $this.original copy $this.original -zoom 2 1
-	    for {set shift 0} {$shift < $h} {incr shift 2} {
-		$this.original copy $this.original -from 0 $shift [expr {2*$w}] [expr {$shift+1}] -to 1 $shift
-	    }
-	}
+#        if {$useNodes($winId,hex)} {
+#	    set w [$this.original cget -width]
+#	    set h [$this.original cget -height]
+#	    $this.original configure -width [expr 2*$w]
+#	    $this.original copy $this.original -zoom 2 1
+#	    for {set shift 0} {$shift < $h} {incr shift 2} {
+#		$this.original copy $this.original -from 0 $shift $w [expr {$shift+1}] -to 1 $shift
+#	    }
+#	}
     }
 
     public method DrawGrid7 {} {
@@ -306,8 +318,20 @@ itcl::class similescript::$newLayerClass {
     }
 
     method SeekValue {inds} {
-	return [$this.original get [expr {[lindex $inds 1]-1}] \
-		    [expr {$useNodes($winId,nrow)-[lindex $inds 0]}]]
+	set col [expr {[lindex $inds 1]-1}]
+	if {$useNodes($winId,hex)} {
+	    set col [expr {2*$col}]
+	}
+	set rgb [$this.original get $col \
+		     [expr {$useNodes($winId,nrow)-[lindex $inds 0]}]]
+	if {$useNodes($winId,bpp)==24} {
+	    foreach level [lreverse $rgb] {
+		lappend result [expr {$useNodes($winId,min) + $level*($useNodes($winId,max)-$useNodes($winId,min))/255}]
+	    }
+	} else {
+	    set result [lreverse $rgb] ;# now convert rgb back to value!!
+	}
+	return $result
 # old version needed value array
 	if {$inds eq ""} {
 	    return $vals
@@ -345,7 +369,7 @@ itcl::class similescript::$newLayerClass {
 	set stickIt [list [expr {$useNodes($winId,xoff)*$xzoom}] \
 			 [expr {-$useNodes($winId,yoff)*$yzoom}]]
 	if {$useNodes($winId,hex)} {
-	    set xzoom [expr {$xzoom/2}]
+	    set xzoom [expr {$xzoom/2.0}]
 	}
 	set tmpImg [GrowImage $this.original \
 	    [expr {round([$this.original cget -width]*$useNodes($winId,xscale)*$xzoom)}] \
@@ -355,10 +379,11 @@ itcl::class similescript::$newLayerClass {
 	    image create photo $this.derived
 	    $winId create image $stickIt -anchor sw -image $this.derived \
 						 -tag $myTag
+	    set popCmd "\[[namespace code [list $this CurrentPopup %x %y]]\]"
 	    $winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %W %X %Y \
-					\[$this CurrentPopup %x %y\]"
+					$popCmd"
 	    $winId bind $myTag <Motion> "QueuePopup AddWidgetPopup %W %X %Y \
-					\[$this CurrentPopup %x %y\]"
+					$popCmd"
 	    $winId bind $myTag <Leave> RemovePopup
 	    
 	} else {
