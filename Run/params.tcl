@@ -311,6 +311,7 @@ proc GrowCaptionsTo {sm} {
     # horrible hack to grow all labels to the same size, should use grid instead
     # (currently unused as not working for compound labels!)
     set newWidth 48 ;# min width
+    set mob {}
     foreach widg [winfo children $sm] {
 	set lab $widg.caption
 	if {[winfo exists $lab]} {
