@@ -467,6 +467,7 @@ proc PostPopup {w X Y} {
         ::tk::unsupported::MacWindowStyle style $popup help none
     } else {
         toplevel $popup -width 1 -height 1 -bd 1 -bg black
+	wm transient $popup [focus]
 # leaves one pixel of black showing round edge of messages
         wm overrideredirect $popup 1
     }
@@ -1104,7 +1105,7 @@ proc UpdateByOS {} {
     if {$::tcl_platform(platform) eq "windows"} {
 	update
     } else {
-	update idletasks
+	update
     }
 }
 

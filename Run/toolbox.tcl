@@ -1138,9 +1138,7 @@ proc ControlDraw {prologVersion} {
 proc InitExecThread {node} {
     global execThread execInterp SIMILE_PATH simplify
 
-    set useThreads [expr {[info exists ::tcl_platform(threaded)] && \
-			      ![info exists simplify] && \
-			      ![catch {package require Thread}]}]
+    set useThreads 0 ;# v7 parallelizes model execution at c++ level
     if {$useThreads} {
 	set execThread($node,id) [thread::create]
 # puts "Created thread $execThread($node,id) for $node from [thread::id]"
@@ -1210,6 +1208,7 @@ proc InitExecThread {node} {
 	thread::send $execThread($node,id) \
 	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
     } else {
+	$execInterp($node,id) eval [list set nodeId $node]
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Run support.tcl]]
 	$execInterp($node,id) eval \

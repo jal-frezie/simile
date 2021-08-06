@@ -43,6 +43,7 @@
 #define FLAG            -3
 #define OWNSIZED        -4
 #define SPARSEARRAY     -5
+#define UNSTABLE        -6
 #define HEX_NBR         -8
 #define RECT_NBR        -9
 #define ENUM_BASE       -10
@@ -242,6 +243,8 @@ typedef struct excpData_t {
   int excpNo;
   int targetId;
   void* excpSource;
+  double timeOfCrime;
+  BOOLEAN completed;  // for use outside model only
 } excpData;
 
 /* this is defined in the stub, which is loaded as a library...well it
@@ -255,7 +258,7 @@ typedef struct excpData_t {
 // typedef double use_rand_type(void*);
 
 // following also called from shim
- typedef BOOLEAN interact_gui_type(void*, int, double);
+ typedef int interact_gui_type(void*, int, double);
 // typedef double graphpoint_type(double, graph_data_type*, int);
 // typedef void release_graph_data_type(graph_data_type*);
 // typedef int compare_instance_status_type (const int*, const int*, int);
@@ -328,8 +331,9 @@ EXTDEC void delete_instance(void*);
 
 EXTDEC excpData* reset(void*, void*, double, int, int);
 EXTDEC void repeat_reset(void*, void*, double);
-EXTDEC excpData* execute(void*, void*, int, double, double*, double, 
+EXTDEC void execute(void*, void*, int, double, double, double, 
 			 BOOLEAN, BOOLEAN);
+EXTDEC excpData* check_action(void*, void*, int);
 EXTDEC int setstep(void*, double, int);
 EXTDEC char* myexit(void*, void*);
 
@@ -361,7 +365,7 @@ typedef void valCallback(void*, int, void*);
 
 // use of nodeValues class
 EXTDEC nodeValues* get_raw_values(char*, void*);
-EXTDEC void translate_dims(int[], int[], int[], int, BOOLEAN);
+EXTDEC void translate_dims(int[], int[], int[], int, int);
 EXTDEC BOOLEAN is_base_type(int);
 EXTDEC void free_bloc_data(char*, int*);
 

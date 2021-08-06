@@ -449,6 +449,9 @@ namespace eval runcontrol33857 {
     proc UpdateBar {node now col} {
 	global runState
         set runState($node,currentTime) [format %.8g $now]
+	if {$runState($node,currentTime) ne $runState($node,timeReached)} {
+	    set ::updateLastDone [clock clicks -milliseconds]
+	}
         set runState($node,timeReached) [format %.8g $now]
 	# so I can check if entry edited
 	set runState($node,execTime) [format %.8g [expr {$runState($node,expected_end)-$now}]]
@@ -459,7 +462,7 @@ namespace eval runcontrol33857 {
 #	    ShiftBar $runState($node,progressBar) $node
 	}
 	$runState($node,cnvs) itemconfigure 1 -fill $col
-	return [string compare start $runState($node,currentMode)]
+	return [lsearch {start stop exit} $runState($node,currentMode)]
     }
 
 # This is called back from the model execution process whenever
@@ -470,15 +473,31 @@ namespace eval runcontrol33857 {
 # or reset execution
 
     proc RCInteractGUI {myNode current col} {
-	global runState
+	global updateLastDone runState
 
 	set endRun [UpdateBar $myNode \
 			[expr $current/$runState($myNode,unitLength)] $col]
-	if {[winfo exists .shortDlg]} {
-	    SetDlgRes no ;# closes short dlg
-	    set ::dialogues(ack) 1 ;# closes long dlg
+	if {$col eq "black"} { # execution stopped, cancel stuck dialog
+	    if {[winfo exists .shortDlg]} {
+		SetDlgRes no ;# closes short dlg
+		set ::dialogues(ack) 1 ;# closes long dlg
+	    } elseif {[info exists runState(abortJob)]} {
+		after cancel $runState(abortJob)
+		unset runState(abortJob)
+	    }
+	} else { # still executing, display dialogue if time out
+	    if {$endRun == 1 && \
+		    [clock clicks -milliseconds]-$updateLastDone>3000 && \
+		    ![info exists runState(abortJob)]} {
+	    # pretend button never pushed
+	    # ShareAction $node 0
+	    # set runState($node,currentMode) start
+
+		set runState(abortJob) \
+		    [after idle [namespace code [list HandleAbortDlg $myNode]]]
+	    }
 	}
-	UpdateIfFreezy
+	# UpdateIfFreezy
 	return $endRun
     }
 
@@ -486,24 +505,31 @@ namespace eval runcontrol33857 {
 # if the run has been aborted.
 
     proc RCAbortCheck {node} {
+	error obsolete
 	global updateLastDone runState
-
+puts "cond: [string equal stop $runState($node,currentMode)] && \
+		[clock clicks -milliseconds]-$updateLastDone>3000 && \
+	    	![info exists runState(abortJob)]"
 	if {[string equal stop $runState($node,currentMode)] && \
 		[clock clicks -milliseconds]-$updateLastDone>3000 && \
-	    	![winfo exists .shortDlg]} {
+	    	![info exists runState(abortJob)]} {
 	    # pretend button never pushed
 	    # ShareAction $node 0
 	    # set runState($node,currentMode) start
-	    
-	    if {[Query model_stuck info execution {} ok] eq "ok"} {
-		ShareAction $node 10
-		set runState($node,currentMode) exit
-		return 1
-	    } ;# if not, it was auto closed by above proc at end of time step
+
+	    set runState(abortJob) \
+		[after idle [namespace code [list HandleAbortDlg $node]]]
 	}
-	return 0
+	return [string equal $runState($node,currentMode) exit]
     }
 
+    proc HandleAbortDlg {node} {
+	if {[Query model_stuck info execution {} ok] eq "ok"} {
+	    set ::runState($node,currentMode) exit
+	} ;# if not, it was auto closed by above proc at end of time step
+	unset ::runState(abortJob)
+    }
+    
     proc RollSimulation { node } {
         global errorInfo redoPhase runState updateLastDone
 	global pauseImg playImg debugImg hideQuery

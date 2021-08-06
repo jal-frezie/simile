@@ -2778,6 +2778,14 @@ sort_and_close_lists(make_level(L, Insts, Subs),
 	  Depth is Dn + 1,
 	  all(user, arg, [unify(2), build(TagShuffled), build(Shuffled)])).
 
+all_phase_checked(Pass) :-
+    Pass =[];
+    extract_action(Open, [check_phase(Phase, _)]),
+    append([Open | _In], [Close | Out], Pass),
+    Close = make(none,[]-_,_, Doing, [finish_level]),
+    Doing == Phase, !, % get first matching close!
+    all_phase_checked(Out).
+    
 fwd_submodel_assignments(Phase, Path, RawAssign, All, OrderedPasses,
 			FoundTest) :-
     (Phase == -2 ->
@@ -2789,12 +2797,7 @@ fwd_submodel_assignments(Phase, Path, RawAssign, All, OrderedPasses,
 	 order_assignments(Phase, Path, RawAssign, All, FirstPass);
       FirstPass = []),
     
-     ((SlowPasses = [];
-      append([InnerOpen | _], [InnerClose], SlowPasses),
-      extract_action(InnerOpen, [check_phase(InnerPhase, _)]),
-      InnerClose = make(none,[]-_,_, Doing, [finish_level]),
-      Doing == InnerPhase,
-      extract_action(InnerClose, [finish_level])) ->
+     (all_phase_checked(SlowPasses) ->
 	  % recursion result in deeper condition, no need to add one
 	  Preamble = SlowPasses;
       	ptr_to_last_vm(Path, -2, NewCons),

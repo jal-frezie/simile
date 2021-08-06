@@ -183,13 +183,13 @@ itcl::class similescript::$newLayerClass {
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
 	set node [GetIdFromCaptionPath $useNodes($winId,color)]
-	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 	set bpp $useNodes($winId,bpp)
 	set hex $useNodes($winId,hex)
 	set repts [expr {$hex*$bpp/8}]
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
-			$useNodes($winId,max) $repts} rawBinary]} {
+			    $useNodes($winId,max) $repts} rawBinary]} {
+	    puts "Rawbin fail: $rawBinary"
 	    DrawGrid7
 	    return
 	}
@@ -350,9 +350,6 @@ itcl::class similescript::$newLayerClass {
 	set row [expr int(1+(-[$winId canvasy $y]/$transform(yzoom)-$useNodes($winId,yoff))/$useNodes($winId,yscale))]
 	set col [expr {min(max($col, 1), $useNodes($winId,ncol))}]
 	set row [expr {min(max($row, 1), $useNodes($winId,nrow))}]
-	if {$useNodes($winId,hex)} {
-	    set col [expr {2*$col}]
-	}
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set inds [list $row $col]
 	    set value [SeekValue $inds]

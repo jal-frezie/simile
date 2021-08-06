@@ -38,6 +38,7 @@ return (char*)lpMsgBuf;
     #include <signal.h>
     #include <setjmp.h>
     #include <dlfcn.h>
+    #include <errno.h>
 
     #define LOAD_DLL safe_open
 /* 'dummyunload' clause was used with macos because dlcompat didn't include
@@ -100,10 +101,7 @@ char globMess[256];
 // time point borders are happening frequently.
 
 int stat_check(void* id) {
-  if (clock()-((ExecutingModel*)id)->last_check>2*FLASH)
-    return ((ExecutingModel*)id)->do_gui_check(0, 0);
-  else
-    return FALSE;
+  return FALSE;
 }
 
 
@@ -397,7 +395,7 @@ class DllLossage {
 */
   
 BOOLEAN is_base_type(int dim) {
-  return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||
+  return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||dim==UNSTABLE||
     dim==RECT_NBR||dim==HEX_NBR||dim<=ENUM_BASE;
 }
 
@@ -407,6 +405,7 @@ int size_for_data_type(int dtype) { // only works if is_base_type
     return sizeof(double);
   case FLAG:
     return sizeof(BOOLEAN);
+  case UNSTABLE: // should not be used as does not appear in FP dims
   case VALUELESS:
     return 0;
   default: // INTEGER or enumerated type
@@ -699,7 +698,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, HCOMP newNodeId,
   myModelExec = instToUse;
   nodeId = newNodeId;
   translate_dims(fullDims, sparePath, dataPtr.dimSpecs, 
-		 myModelExec->modelSpec->nodedata[nodeId].datatype, TRUE);
+		 myModelExec->modelSpec->nodedata[nodeId].datatype, 2);
   dataPtr.contents = init_space(dataPtr.dimSpecs);
   //    dataPtr.contents = new char[sparePath[0]];
   // now insert it into the list (at beginning)
@@ -1240,25 +1239,38 @@ ExecutingModel* ExecutingModel::AddGroupMember(void* usersRef) {
 void* reset_grp_instance(void* clientData) {
   void* retVal;
   ExecutingModel *payload = ((xmList*)clientData)->now;
+  ExecutingModel *parmSrc = payload->parent;
+  if (!parmSrc)
+    parmSrc = payload; // doing top level instance, parms from self
   memcpy(rand_states, ((xmList*)clientData)->randKeeper, 3*sizeof(unsigned short));
-  retVal = payload->ResetInstance(payload->parent->initTime,
-				  payload->parent->howInt,
-				  payload->parent->topPhase);
+  retVal = payload->ResetInstance(parmSrc->initTime,
+				  parmSrc->howInt,
+				  parmSrc->topPhase);
   memcpy(((xmList*)clientData)->randKeeper, rand_states, 3*sizeof(unsigned short));
   return retVal;
 }
 
 void* execute_grp_instance(void* clientData) {
   void* retVal;
-  ExecutingModel *payload = ((xmList*)clientData)->now;
-  memcpy(rand_states, ((xmList*)clientData)->randKeeper, 3*sizeof(unsigned short));
-  retVal = payload->ExecuteInstance(payload->parent->howInt,
-				    payload->parent->initTime,
-				    payload->parent->finalTime,
-				    payload->parent->errLim,
-				    payload->parent->pauseRange,
-				    payload->parent->pauseEvt);
-  memcpy(((xmList*)clientData)->randKeeper, rand_states, 3*sizeof(unsigned short));
+  xmList* args = (xmList*)clientData;
+  ExecutingModel *payload = args->now;
+  ExecutingModel *parmSrc = payload->parent;
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+  if (!parmSrc)
+    parmSrc = payload; // doing top level instance, parms from self
+  memcpy(rand_states, args->randKeeper, 3*sizeof(unsigned short));
+  retVal = payload->ExecuteInstance(parmSrc->howInt,
+				    parmSrc->initTime,
+				    parmSrc->finalTime,
+				    parmSrc->errLim,
+				    parmSrc->pauseRange,
+				    parmSrc->pauseEvt);
+  memcpy(args->randKeeper, rand_states, 3*sizeof(unsigned short));
+  // If this is the top level we will be doing a timed wait so we need to send
+  // a signal
+  if (!payload->parent) {
+    payload->signal_complete(args); // does the following
+  }
   return retVal;
 }
 
@@ -1363,6 +1375,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   freq = steps[modelSpec->phases];
 
   (loadedInst->userStop).targetId = 0;
+  (loadedInst->userStop).completed = TRUE;
   (loadedInst->userStop).excpSource = this;
   if (loadedInst->do_evalmodel(top_phase)) {  
     retVal = &(loadedInst->userStop);
@@ -1388,7 +1401,7 @@ void ExecutingModel::RepeatReset(double init_time) {
 }
 
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 
-					  double* end, double errlim,
+					  double end, double errlim,
 					  BOOLEAN pause_out_of_range,
 					  BOOLEAN pause_on_events) {
   double xtime, aim_for, recover, evtError, newFreq, minFreq;
@@ -1420,17 +1433,12 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   if (minFreq>1e-6*steps[modelSpec->phases]) 
     minFreq = 1e-6*steps[modelSpec->phases];
 
-  while ((*end-xtime)/steps[1]>0) { // step only affects sign
+  while ((end-xtime)/steps[1]>0) { // step only affects sign
     made_step = 0;
     first_pass = 1;
     big_phase = phase_for(xtime, freq, modelSpec->phases);
     wee_phase = modelSpec->phases+1;
     // that is the biggest phase we will try to run, we may not succeed
-    if (check_gui(xtime, big_phase)) {
-      userDefStop->excpNo = -100; // should not conflict with os signals
-      *end = xtime;
-      goto windup;
-    }
     
     // If an event has happened and changed a state variable, we need
     // an extra update to make it actually change, followed by a
@@ -1469,7 +1477,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       // aim for next predicted event if closer than end
       // printf("Freq %f; end %f; series %f; e_p %f xt %f\n", 
       // freq, *end, nextSeriesEvt, loadedInst->event_predict, xtime);
-      aim_for = *end;
+      aim_for = end;
       if (first_pass && (aim_for-nextSeriesEvt)/freq>0) 
 	aim_for = nextSeriesEvt;
       if ((aim_for-loadedInst->event_predict)/freq>0) 
@@ -1614,20 +1622,80 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       }
       userDefStop->targetId = keeper;
     }
-  } // finished executing
-  if (check_gui(*end, 0) && !userDefStop->excpNo)
+    if (paused) {
     // always go to make sure time is right
-    userDefStop->excpNo = -100;
-  *end=xtime;
+      userDefStop->excpNo = -100;
+      break;
+    }
+  } // finished executing
 
  windup:
   WrapUpThreads(userDefStop);
 
-  if (userDefStop->excpNo)
+  if (userDefStop->excpNo) {
     return userDefStop;
+  }
   return NULL;
 }
-  
+
+void incr_time(timespec *ts) {
+  ts->tv_nsec += 40000000; // 40ms
+  if (ts->tv_nsec >= 1000000000) {
+    ts->tv_nsec -= 1000000000;
+    ts->tv_sec += 1;
+  }
+}
+
+void ExecutingModel::start_in_thread(void *action(void *)) {
+  xmList *topList = &modelSpec->topArgs; // need to persist
+  excpData* clientResult = &loadedInst->userStop;
+
+  topList->now = this;
+  topList->next = NULL;
+  paused = 0;
+  clientResult->completed = FALSE;
+  pthread_mutex_init(&topList->mtx, 0);
+  pthread_cond_init(&topList->cond, 0);
+  pthread_mutex_lock(&topList->mtx);
+  pthread_create(&topList->thredd, NULL, action, topList);
+}
+
+void ExecutingModel::signal_complete(xmList* args) {
+    pthread_mutex_lock(&args->mtx);
+    loadedInst->userStop.completed = TRUE;
+    pthread_mutex_unlock(&args->mtx);
+    pthread_cond_signal(&args->cond);
+}
+
+excpData* ExecutingModel::check_thread(int cancel) {
+  xmList *topList = &modelSpec->topArgs; // need to have persisted
+  excpData* clientResult = &loadedInst->userStop;
+  timespec ts;
+  int ping;
+
+  paused = (cancel!=0);
+  if (!clientResult->completed) { // cannot be as lock is on?
+    clock_gettime(CLOCK_REALTIME, &ts);
+    incr_time(&ts);
+    ping = pthread_cond_timedwait(&topList->cond, &topList->mtx, &ts);
+    clientResult->timeOfCrime = lts[modelSpec->phases];
+  }
+  if (!clientResult->completed) { // still
+    if (cancel>=2) { // user has lost patience
+      pthread_cancel(topList->thredd);
+      pthread_join(topList->thredd, NULL);
+      clientResult->completed = TRUE; // ish
+      clientResult->excpNo = -101; // terminated
+    } else {
+      return clientResult;
+    }
+  } else
+    pthread_join(topList->thredd, (void **)&clientResult);
+  pthread_cond_destroy(&topList->cond);
+  pthread_mutex_destroy(&topList->mtx);
+  return clientResult;
+}
+
 int ExecutingModel::phase_for(double current, double step, int so_far) {
     int try_now, try_current;
     double last, next, next_step;
@@ -1780,7 +1848,7 @@ nodeValues* ExecutingModel::GetRawValues(HCOMP nodeId) {
   // find first dimension not a positive integer
   translate_dims(fullDims, indices, newBlk->dimSpecs, 
 		 modelSpec->nodedata[nodeId].datatype, 
-		 FALSE);
+		 loadedInst->userStop.completed?1:0);
 
   if (indices[0]) {
     insertionPt = newBlk->contents = new char[indices[0]];
@@ -1794,30 +1862,8 @@ nodeValues* ExecutingModel::GetRawValues(HCOMP nodeId) {
 }
 
 BOOLEAN ExecutingModel::do_gui_check(double model_time, int actionType) {
-  BOOLEAN result;
-  if (!pthread_equal(pthread_self(), supervisorId)) return FALSE;
-  // calling Tcl from worker will crash -- thread cleanup to check for hang
-  result = modelSpec->interact_gui(clientRef, actionType, model_time);
-  last_check = clock(); // GUI may have taken time
-  return result;
-}
-
-BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
-  unsigned long int this_update;
-  BOOLEAN result = FALSE;
-
-  // first record how much time the last op took
-  this_update=clock();
-  took[last_op]=this_update-last_exit;
-  
-  if ((this_update-last_update)+took[this_op]>FLASH) {
-    result=do_gui_check(model_time, 1+!this_op);
-    last_update=last_check;
-  }
-
-  last_op = this_op;
-  last_exit=this_update;
-  return result;
+  printf("d_g_c t %lf a %d\n", model_time, actionType);
+  return modelSpec->interact_gui(clientRef, actionType, model_time);
 }
 
 VarParamData* ExecutingModel::UseArrayForVarParam(HCOMP nodeNum, int* fullDims)
@@ -2585,32 +2631,38 @@ with changes in membership otherwise), so leave out level info for
 these if skip_vms is set.
 */
 void translate_dims(int fromModel[], int blockSizes[], int structDims[],
-		    int dataType, BOOLEAN skip_vms) {
+		    int dataType, int vm_action) {
   int defDimty = 1; // will be used unchanged if case MEMBERS
   structDims[0] = OWNSIZED; // will not be set if case RECORDS
   switch (fromModel[0]) {
   case START_VM: // count dims to FINISH_VM and insert SPARSEARRAY of them
     defDimty = skip_vm_bounds(&fromModel);
   case MEMBERS: // or START_VM
-    if (skip_vms) {
-      translate_dims(fromModel+1, blockSizes, structDims, dataType, skip_vms);
+    switch (vm_action) {
+    case 0: // getting data while model running: unavailable
+      structDims[0] = UNSTABLE;
+      blockSizes[0] = 0;
       return;
+    case 2: // making dims for parameter value: leave out level
+      translate_dims(fromModel+1, blockSizes, structDims, dataType, vm_action);
+      return;
+    default: // insert level
+      structDims[0] = SPARSEARRAY;
+      structDims[1] = defDimty;
+      structDims += 1;
     }
-    structDims[0] = SPARSEARRAY;
-    structDims[1] = defDimty;
-    structDims += 1;
     // and drop through
   case RECORDS: // or  MEMBERS or START_VM
     blockSizes[0] = sizeof(sizeAndPtr);
     break;
   case 0: // dimensions finished, insert type and its size (could alloc dims!)
-    structDims[0]  = dataType;
+    structDims[0] = dataType;
     blockSizes[0] = size_for_data_type(dataType);
     return;
   default: // an array dimension, or RECORDS
     structDims[0] = fromModel[0];
   }
-  translate_dims(fromModel+1, blockSizes+1, structDims+1, dataType, skip_vms);
+  translate_dims(fromModel+1, blockSizes+1, structDims+1, dataType, vm_action);
   // now set size if a multiple of the next one...
   if (fromModel[0]>0) 
     blockSizes[0] = blockSizes[1]*fromModel[0];
@@ -2649,7 +2701,7 @@ public:
     return fivedee_get_value_pointer(ref, slot, time, paramId, ic, indxs);
   }
 
-  BOOLEAN interact_gui(void* ref, int action, double modelTime) {
+  int interact_gui(void* ref, int action, double modelTime) {
     return fivedee_interact_gui(ref, action, modelTime);
   }
   
@@ -2817,19 +2869,43 @@ nodeValues* get_raw_values(char* nodeId, void* instance_id) {
 
 excpData* reset(void* modelType, void* modelHandle, double t0, int how_int,
 		int top_phase) {
-  return ((ExecutingModel*)modelHandle)->ResetInstance(t0, how_int, top_phase);
+  xmList topList;
+  topList.next = NULL;
+  ExecutingModel* convenience = (ExecutingModel*)modelHandle;
+  topList.now = convenience;
+  convenience->initTime = t0;
+  convenience->howInt = how_int;
+  convenience->topPhase = top_phase;
+  //return ((ExecutingModel*)modelHandle)->ResetInstance(t0, how_int, top_phase);
+  pthread_create(&topList.thredd, NULL, reset_grp_instance, &topList);
+  void* clientResult;
+  pthread_join(topList.thredd, &clientResult);
+  return (excpData*)clientResult;
 }
 
 void repeat_reset(void* modelType, void* modelHandle, double t0) {
   ((ExecutingModel*)modelHandle)->RepeatReset(t0);
 }
 
-excpData* execute(void* modelType, void* modelHandle, int how_int,
-		  double starttime, double* endtime, double errlim,
+void execute(void* modelType, void* modelHandle, int how_int,
+		  double starttime, double endtime, double errlim,
 		  BOOLEAN lmt_pause, BOOLEAN evt_pause) {
-  return ((ExecutingModel*)modelHandle)->ExecuteInstance(how_int, starttime, 
-							 endtime, errlim,
-							 lmt_pause, evt_pause);
+  ExecutingModel* convenience = (ExecutingModel*)modelHandle;
+
+  convenience->initTime = starttime;
+  convenience->howInt = how_int;
+  convenience->finalTime = endtime;
+  convenience->errLim = errlim;
+  convenience->pauseRange = lmt_pause;
+  convenience->pauseEvt = evt_pause;
+  //return ((ExecutingModel*)modelHandle)->ExecuteInstance(how_int, starttime, 
+//							 endtime, errlim,
+//							 lmt_pause, evt_pause);
+  convenience->start_in_thread(execute_grp_instance);
+}
+
+excpData* check_action(void* modelType, void* modelHandle, int cancel) {
+  return ((ExecutingModel*)modelHandle)->check_thread(cancel);
 }
 
 // This deletes a model instance and/or a class -- both when used in Simile

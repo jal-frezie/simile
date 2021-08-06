@@ -148,6 +148,8 @@ typedef struct xmList_t {
   unsigned short randKeeper[3];
   ExecutingModel* now;
   struct xmList_t* next;
+  pthread_mutex_t mtx;
+  pthread_cond_t cond;
 } xmList;
 
 //! Class for model instances
@@ -176,6 +178,7 @@ class ExecutingModel
   int last_op;
   unsigned long int last_exit, last_update;
   unsigned long int took[8];
+  BOOLEAN paused;
 
  public: // public attributes
 
@@ -187,7 +190,7 @@ class ExecutingModel
   ExecutingModel* parent = NULL;
   
   // for passing instance resets/executes to group members in threads
-  double initTime, *finalTime, errLim;
+  double initTime, finalTime, errLim;
   int howInt, topPhase;
   BOOLEAN pauseRange, pauseEvt;
 
@@ -196,6 +199,7 @@ class ExecutingModel
 
   //! Time at which GUI was last updated with model execution status
   unsigned long int last_check;
+  // stuff for doing default case in separate thread from GUI
   #define FLASH CLOCKS_PER_SEC/25 // 40ms
  
  protected: // protected methods
@@ -250,9 +254,13 @@ class ExecutingModel
 
   //! End time passed as pointer; value overwritten if model stopped early
   //! Error limit controls adaptive timestep variation, 0 turns it off
-  excpData* ExecuteInstance(int, double, double*, double, BOOLEAN, BOOLEAN);
+  excpData* ExecuteInstance(int, double, double, double, BOOLEAN, BOOLEAN);
 
   void ExitInstance();
+
+  void start_in_thread(void*(void*));
+  void signal_complete(xmList*);
+  excpData* check_thread(int);
   
   //! get results from model by node serial number in general c format
   nodeValues* GetRawValues(HCOMP);
@@ -284,6 +292,7 @@ class ModelServer
   getversion_type *getversion;
   getcount_type *getcount;
   createmodel_type *createmodel;
+  xmList topArgs; // for top execution instance
   
  public: // public attributes
   //! Number of different time steps in model
@@ -294,7 +303,7 @@ class ModelServer
   int nodecount;
   //! Array of info structures for components
   node_data_line* nodedata;
-  
+
  protected: // protected methods
   int parent_line (int);
   int member_param_item(FileParamData**, int*);
@@ -357,7 +366,7 @@ class ModelServer
   //! Arg 1 is client supplied reference
   //! Arg 2 is time step being calculated
   //! Arg 3 is model time
-  virtual BOOLEAN interact_gui(void*, int, double) = 0;
+  virtual int interact_gui(void*, int, double) = 0;
 
   //! What client is to do if model produces an error or debugging message
   virtual void showMess(const char*) = 0;

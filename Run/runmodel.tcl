@@ -597,14 +597,13 @@ proc LoseDTRef {statusLine} {
 proc UpdateIfFreezy {} {
     global updateLastDone
     if {$updateLastDone < [clock clicks -milliseconds]-40} {
-	UpdateByOS
+	# UpdateByOS
 	set updateLastDone [clock clicks -milliseconds]
     }
 }
 
 proc ShiftDisplays {node payload current display doAll} {
     global helperTable runState
-
     if {[catch {
 	$helperTable(RunControl)::UpdateBar $node $current blue
 	UpdateIfFreezy

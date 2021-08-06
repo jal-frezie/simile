@@ -168,7 +168,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    set howAndWhen 0
 	} else {
 	    set howAndWhen [ExecuteModel $node $intMethod $scaled_current \
-			    $scaled_next $maxErr $lmtPause $evtPause]
+				$scaled_next $maxErr $lmtPause $evtPause]
 	    set scaled_current [lindex $howAndWhen 1]
 	}
 	set displayNow 0
@@ -199,6 +199,9 @@ proc ExecuteTo {node current pause unitLength display foci \
 	} ;# default: keep going
 	set current [expr {$scaled_current/$unitLength}]
 	set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
+	if {($current-$pause)*$forward > -1e-12} {
+	    set currentMode stop
+	}
 	if {![string equal exit $currentMode]} { ;# do a display update
 	    set oldPayload $payload
 	    set payload {}
@@ -209,9 +212,16 @@ proc ExecuteTo {node current pause unitLength display foci \
 		    lappend payload $point $dataHand
 		}
 	    }
-	    if {[ShiftDisplays $::nodeId $payload [format %.8g $current] \
-		     $display [expr {$timedDisp || $displayNow}]]} {
-		set currentMode stop
+#	    if {[ShiftDisplays $::nodeId $payload [format %.8g $current] \
+#		     $display [expr {$timedDisp || $displayNow}]]} {
+#		set currentMode stop
+	    #	    }
+	    set shiftCmd [list ShiftDisplays $::nodeId $payload [format %.8g $current] \
+			      $display [expr {$timedDisp || $displayNow}]]
+	    if {$currentMode eq "start"} {
+		after idle $shiftCmd
+	    } else {
+		eval $shiftCmd
 	    }
 
 #	    if {![TellAllHelpers $node $payload Display $current $display 1]} {
@@ -220,11 +230,8 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    # now it is done, previous one must have finished, if any
 	    FreeAll $oldPayload
 	}
-	if {($current-$pause)*$forward > -1e-12} {
-	    set currentMode stop
-	}
     }
-    OuteractGUI $scaled_current 1
+#    OuteractGUI $scaled_current 1
 # above is required to leave right time in progress display if not finishing
 # on display interval boundary
     waitForDisps
@@ -314,13 +321,44 @@ proc RepeatReset {myNode time} {
     }
 }
 
-proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
+proc WatchModel {gui end} {
     global model_id instance_id
+    # should work for any model operation
+    if {![catch {c_checkmodel $model_id $instance_id $gui} status]} {
+	if {$status eq ""} { # has run to end
+	    set status [list [expr {1-$gui}] $end]
+	}
+	set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
+	set going [expr {[lindex $status 0]==2}]
+	if {$going} {
+	    after 1 WatchModel $gui $end
+	    return
+	}
+    } else { puts $::errorInfo }
+    if {[lindex $status 0]==1 && $gui==1} { # model step done but paused
+	lset status 0 0
+    }
+    set ::modelStopped $status
+}
+
+	
+proc CExecuteModel {isRK start finish args} {
+    global model_id instance_id modelStopped
+    eval [list c_executemodel $model_id $instance_id $isRK $start $finish] $args
+    after idle WatchModel 0 $finish
+
+    vwait modelStopped
+    if {[llength $modelStopped]>2} { # error -- re-throw
+	error $modelStopped
+    }
+    return $::modelStopped
+}
+
+proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
     if {[catch {
-	if {[string bytelength $model_id]} {
+	if {[RunningInC $myNode]} {
 #	    set model_id $myNode
-	    c_executemodel $model_id $instance_id \
-		[expr ![string equal Euler $howInt]] \
+	    CExecuteModel [expr ![string equal Euler $howInt]] \
 		$start $finish $errLim $lmtPause $evtPause
 	} else {
 	    TclExecuteModel $myNode $howInt $start $finish $errLim \
@@ -349,13 +387,6 @@ proc waitForDisps {} {
     if {![info exists dispDone]} {
 	vwait dispDone
     }
-}
-
-proc OuterCheck {} {
-    global nodeId
-
-    set abortLevel [AbortCheck $nodeId]
-    return [expr {$abortLevel>=10}]
 }
 
 proc OuteractGUI {time mode} {

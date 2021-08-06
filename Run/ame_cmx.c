@@ -1106,14 +1106,11 @@ FINDABLE int repeatresetCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-  char spare[256];
+  void* modelType;
+  void* modelHandle;
   double starttime, endtime, errlim;
   BOOLEAN lmt_pause, evt_pause;
   int how_int, error, notBool;
-  excpData* errorBlk;
-  Tcl_Obj* working;
-  void* modelType;
-  void* modelHandle;
 
   if (argc != 9) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method start_time end_time error_limit pause_out_of_range pause_on_events");
@@ -1156,27 +1153,54 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   }
   evt_pause = (BOOLEAN)notBool;
   
-  errorBlk = execute(modelType, modelHandle, how_int, starttime, &endtime, 
+  execute(modelType, modelHandle, how_int, starttime, endtime, 
 		     errlim, lmt_pause, evt_pause);
+  return TCL_OK;
+}
+
+FINDABLE int checkmodelCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  excpData* errorBlk;
+  Tcl_Obj* working;
+  void* modelType, * modelHandle;
+  int error, cancel;
+
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id cancel");
+    return TCL_ERROR;
+  }
+  
+  memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));  
+  memcpy(&modelHandle, Tcl_GetByteArrayFromObj(argv[2], NULL), sizeof(void*));
+  
+  error = Tcl_GetIntFromObj(interp, argv[3], &cancel);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  errorBlk = check_action(modelType, modelHandle, cancel);
   error = 1; //i.e., no error
   if (errorBlk) {
     if (errorBlk->excpNo == -100) { // model paused by GUI
       error = 0;
+    } else if (!errorBlk->completed) { // model still running
+      error = 2;
     } else {
       Tcl_SetObjResult(interp, make_exec_error(interp, errorBlk->excpNo,
 					     "evalmodel", 
 					     name_in_line(modelType, 
 							  errorBlk->targetId),
-					     endtime, 1));
+					     errorBlk->timeOfCrime, 1));
       if (errorBlk->excpNo <= -96 && errorBlk->excpNo > -99) 
 // event exits inner loop
 	return TCL_OK;
       return TCL_ERROR;
     }
+    working = Tcl_NewIntObj(error);
+    Tcl_ListObjAppendElement(interp, working,
+			     Tcl_NewDoubleObj(errorBlk->timeOfCrime)); 
+    Tcl_SetObjResult(interp, working);
   }
-  working = Tcl_NewIntObj(error);
-  Tcl_ListObjAppendElement(interp, working, Tcl_NewDoubleObj(endtime)); 
-  Tcl_SetObjResult(interp, working);
   return TCL_OK;
 }
 
@@ -1653,14 +1677,16 @@ int respond_to_param_req(void* clientRef, void* modelSlot, double reqTime,
   return 0; // failed to supply parameter value
 }
 
-BOOLEAN outeract_gui(void* ref, int stop_chk, double now) {
+int outeract_gui(void* ref, int stop_chk, double now) {
   int response;
   Tcl_Interp* globInterp = (Tcl_Interp*)ref;
   Tcl_Obj* feedbackCmd;
-
+  printf("o_g r %p s_c %d n %lf\n", ref,  stop_chk, now);
   Tcl_VarEval(globInterp, "update", NULL); // allow display to tell us if idle
-  if (!Tcl_GetVar(globInterp, "::dispDone", 0))
+  if (!Tcl_GetVar(globInterp, "::dispDone", 0)) {
+    printf("Display is busy\n");
     return 0; // do not wait for GUI if busy
+  }
   if (stop_chk) {
     feedbackCmd = Tcl_NewStringObj("OuteractGUI", -1);
     Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewDoubleObj(now));
@@ -1668,11 +1694,12 @@ BOOLEAN outeract_gui(void* ref, int stop_chk, double now) {
   } else {
     feedbackCmd = Tcl_NewStringObj("OuterCheck", -1);
   }
+  printf("Here we go...\n");
   Tcl_EvalObjEx(globInterp, feedbackCmd, 0);
 
   /* if anything like this at all is done, it will communicate with tsv's */
   Tcl_GetIntFromObj(globInterp, Tcl_GetObjResult(globInterp), &response);
-  return (BOOLEAN)response;
+  return response;
 }
 /*
 FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp, 
@@ -1758,15 +1785,15 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   const char* allNames[] =
     {"loadshlib", "c_createmodel", "c_addmodeltogroup", "c_deletemodel",
-     "c_createparamarray", "c_forgetparamarray",
-     "newc_settimepointarray", "newc_setrecordlist", "newc_settimepointrecords",
-     "newc_cleartimeseries", "newc_setparamelement", "newc_setwraparoundtime",
-     "newc_setfillmethod", "newc_setinterval", "newc_settimepointelement",
-     "newc_markevtparamactive", "newc_setparamall", "newc_getparamall",
-     "newc_settimepointall", "newc_gettimepointall", "c_resetmodel",
-     "c_repeatreset", "c_executemodel", "c_setstepmodel", "c_exitmodel",
-     "getvalue", "graph_table", "handle_data", "free_data_handle",
-     "listobjects", "randseed", "random01", "add_event_command"};
+     "c_createparamarray", "c_forgetparamarray", "newc_settimepointarray",
+     "newc_setrecordlist", "newc_settimepointrecords", "newc_cleartimeseries",
+     "newc_setparamelement", "newc_setwraparoundtime", "newc_setfillmethod",
+     "newc_setinterval", "newc_settimepointelement", "newc_markevtparamactive",
+     "newc_setparamall", "newc_getparamall", "newc_settimepointall",
+     "newc_gettimepointall", "c_resetmodel", "c_repeatreset", "c_executemodel",
+     "c_checkmodel", "c_setstepmodel", "c_exitmodel", "getvalue", "graph_table",
+     "handle_data", "free_data_handle", "listobjects", "randseed", "random01",
+     "add_event_command"};
   Tcl_ObjCmdProc* allProcs[] =
     {loadmodelCmd, createmodelCmd, addtogroupCmd, deletemodelCmd,
      setparamarrayCmd, clearparamarrayCmd, settimepointarrayCmd,
@@ -1774,7 +1801,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
      setparamelementCmd, setwrapCmd, setfillCmd, setintervalCmd,
      settimepointelementCmd, markevtparamactiveCmd, setparamallCmd,
      getparamallCmd, settimepointallCmd, gettimepointallCmd, resetmodelCmd,
-     repeatresetCmd, executemodelCmd, setstepCmd, exitmodelCmd,
+     repeatresetCmd, executemodelCmd, checkmodelCmd, setstepCmd, exitmodelCmd,
      interfaceCmd, graphCmd, handleDataCmd, freeDataHandleCmd,
      listobjCmd, randseedCmd, random01Cmd, addEventCommandCmd};
   int cmdNo;
