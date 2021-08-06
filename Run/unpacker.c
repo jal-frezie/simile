@@ -430,6 +430,13 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
 	localObj = Tcl_NewStringObj("sm", -1);
       *count -= *count>0?1:-1;
       break;
+    case UNSTABLE:
+      if (jsonic)
+	localObj = Tcl_NewStringObj("\"unstable\"", -1);
+      else
+	localObj = Tcl_NewStringObj("unstable", -1);
+      *count -= *count>0?1:-1;
+      break;
     case REAL:
       if (loseZeros && *(double *)block == 0.0) {
 	localObj = Tcl_NewListObj(0, NULL);
@@ -480,6 +487,7 @@ void make_sub_block_sizes(int *dims, int *sizes) {
   case FLAG:
     sizes[0] = sizeof(BOOLEAN);
     break;
+  case UNSTABLE:
   case VALUELESS:
     sizes[0] = 0;
     break;
@@ -802,7 +810,7 @@ void call_for_each_val(int* ptDims, char* ptData, int offset,
 
 FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
-  int error;
+  int rpt_seq, error;
   double valfor0, valfor255, valspan, dval;
   nodeValues* accessTool;
   unsigned char* tgt;
@@ -818,8 +826,8 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   lzwParms *encState;
     
   if (clientData) {
-    if (argc != 4) {
-      Tcl_WrongNumArgs(interp, 1, argv, "data_handle lower_limit upper_limit");
+    if (argc < 4 || argc > 5) {
+      Tcl_WrongNumArgs(interp, 1, argv, "data_handle lower_limit upper_limit ?repeat_period?");
       return TCL_ERROR;
     }
 
@@ -832,8 +840,18 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     if (error != TCL_OK) {
       return error;
     }
+
+    if (argc==5) {
+      error = Tcl_GetIntFromObj(interp, argv[4], &rpt_seq);
+      if (error != TCL_OK) {
+	return error;
+      }
+    } else
+      rpt_seq = 0;
+    
   } else {
     // listing distinct vals
+    rpt_seq = 0;
     if (argc != 2) {
       Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
       return TCL_ERROR;
@@ -852,7 +870,9 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
 		    add_to_size, (void*)&size);
   // this increments size once for each value
-
+  if (rpt_seq)
+    size = 2*size;
+  
   resultPtr = Tcl_NewObj();
   switch ((uintptr_t)clientData) {
   case 1:
@@ -874,6 +894,14 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     } else { // no span: get values as doubles
 	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
 			  (valCallback*)move_to_double, &tgt);
+    }
+
+    if (rpt_seq) {
+      tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
+      for (count=size/2-rpt_seq;count>=0;count-=rpt_seq) {
+	memcpy(tgt + (2*count+rpt_seq), tgt + count, rpt_seq); 
+	memcpy(tgt + 2*count, tgt + count, rpt_seq);
+      }
     }
     break;
 
