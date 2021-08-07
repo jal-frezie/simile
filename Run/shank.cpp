@@ -1238,6 +1238,7 @@ ExecutingModel* ExecutingModel::AddGroupMember(void* usersRef) {
 
 void* reset_grp_instance(void* clientData) {
   void* retVal;
+  xmList* args = (xmList*)clientData;
   ExecutingModel *payload = ((xmList*)clientData)->now;
   ExecutingModel *parmSrc = payload->parent;
   if (!parmSrc)
@@ -1247,6 +1248,11 @@ void* reset_grp_instance(void* clientData) {
 				  parmSrc->howInt,
 				  parmSrc->topPhase);
   memcpy(((xmList*)clientData)->randKeeper, rand_states, 3*sizeof(unsigned short));
+  // If this is the top level we will be doing a timed wait so we need to send
+  // a signal
+  if (!payload->parent) {
+    payload->signal_complete(args); // does the following
+  }
   return retVal;
 }
 
@@ -1375,7 +1381,6 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   freq = steps[modelSpec->phases];
 
   (loadedInst->userStop).targetId = 0;
-  (loadedInst->userStop).completed = TRUE;
   (loadedInst->userStop).excpSource = this;
   if (loadedInst->do_evalmodel(top_phase)) {  
     retVal = &(loadedInst->userStop);
@@ -1673,7 +1678,7 @@ excpData* ExecutingModel::check_thread(int cancel) {
   timespec ts;
   int ping;
 
-  paused = (cancel!=0);
+  paused = (cancel>1);
   if (!clientResult->completed) { // cannot be as lock is on?
     clock_gettime(CLOCK_REALTIME, &ts);
     incr_time(&ts);
@@ -1681,7 +1686,7 @@ excpData* ExecutingModel::check_thread(int cancel) {
     clientResult->timeOfCrime = lts[modelSpec->phases];
   }
   if (!clientResult->completed) { // still
-    if (cancel>=2) { // user has lost patience
+    if (cancel>2) { // user has lost patience
       ping = pthread_cancel(topList->thredd);
       pthread_join(topList->thredd, NULL);
       clientResult->completed = TRUE; // ish

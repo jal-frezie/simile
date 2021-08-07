@@ -334,7 +334,7 @@ proc WatchModel {gui end} {
     # should work for any model operation
     if {![catch {c_checkmodel $model_id $instance_id $gui} status]} {
 	if {$status eq ""} { # has run to end
-	    set status [list [expr {1-$gui}] $end]
+	    set status [list [expr {2-$gui}] $end]
 	}
 	set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
 	set going [expr {[lindex $status 0]==2}]
@@ -343,7 +343,7 @@ proc WatchModel {gui end} {
 	    return
 	}
     } else { puts $::errorInfo }
-    if {[lindex $status 0]==1 && $gui==1} { # model step done but paused
+    if {[lindex $status 0]==1 && $gui==2} { # model step done but paused
 	lset status 0 0
     }
     set ::modelStopped $status

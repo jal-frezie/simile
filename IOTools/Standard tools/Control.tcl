@@ -462,7 +462,7 @@ namespace eval runcontrol33857 {
 #	    ShiftBar $runState($node,progressBar) $node
 	}
 	$runState($node,cnvs) itemconfigure 1 -fill $col
-	return [lsearch {start stop exit} $runState($node,currentMode)]
+	return [lsearch {reset start stop exit} $runState($node,currentMode)]
     }
 
 # This is called back from the model execution process whenever
@@ -486,7 +486,7 @@ namespace eval runcontrol33857 {
 		unset runState(abortJob)
 	    }
 	} else { # still executing, display dialogue if time out
-	    if {$endRun == 1 && \
+	    if {$endRun == 2 && \
 		    [clock clicks -milliseconds]-$updateLastDone>3000 && \
 		    ![info exists runState(abortJob)]} {
 	    # pretend button never pushed
