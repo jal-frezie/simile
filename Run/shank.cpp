@@ -1682,7 +1682,7 @@ excpData* ExecutingModel::check_thread(int cancel) {
   }
   if (!clientResult->completed) { // still
     if (cancel>=2) { // user has lost patience
-      pthread_cancel(topList->thredd);
+      ping = pthread_cancel(topList->thredd);
       pthread_join(topList->thredd, NULL);
       clientResult->completed = TRUE; // ish
       clientResult->excpNo = -101; // terminated
@@ -2867,7 +2867,7 @@ nodeValues* get_raw_values(char* nodeId, void* instance_id) {
   return ((ExecutingModel*)instance_id)->GetRawValues(nodeNum);
 }
 
-excpData* reset(void* modelType, void* modelHandle, double t0, int how_int,
+void reset(void* modelType, void* modelHandle, double t0, int how_int,
 		int top_phase) {
   xmList topList;
   topList.next = NULL;
@@ -2877,10 +2877,7 @@ excpData* reset(void* modelType, void* modelHandle, double t0, int how_int,
   convenience->howInt = how_int;
   convenience->topPhase = top_phase;
   //return ((ExecutingModel*)modelHandle)->ResetInstance(t0, how_int, top_phase);
-  pthread_create(&topList.thredd, NULL, reset_grp_instance, &topList);
-  void* clientResult;
-  pthread_join(topList.thredd, &clientResult);
-  return (excpData*)clientResult;
+  convenience->start_in_thread(reset_grp_instance);
 }
 
 void repeat_reset(void* modelType, void* modelHandle, double t0) {

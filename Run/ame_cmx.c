@@ -1066,18 +1066,8 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  errorBlk = reset(modelType, modelHandle, t0, how_int, phase);
-
-  if (errorBlk) {
-    Tcl_SetObjResult(interp, make_exec_error(interp, errorBlk->excpNo,
-					     "resetmodel", 
-					     name_in_line(modelType, 
-							  errorBlk->targetId), 
-					     t0, phase));
-    return TCL_ERROR;
-  } else {
-    return TCL_OK;
-  }
+  reset(modelType, modelHandle, t0, how_int, phase);
+  return TCL_OK;
 }
 
 FINDABLE int repeatresetCmd(ClientData clientData, Tcl_Interp *interp,

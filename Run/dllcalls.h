@@ -329,7 +329,7 @@ EXTDEC void* fetch_top_instance(void*, void*);
 EXTDEC void* fetch_group_member(void*, void*);
 EXTDEC void delete_instance(void*);
 
-EXTDEC excpData* reset(void*, void*, double, int, int);
+EXTDEC void reset(void*, void*, double, int, int);
 EXTDEC void repeat_reset(void*, void*, double);
 EXTDEC void execute(void*, void*, int, double, double, double, 
 			 BOOLEAN, BOOLEAN);

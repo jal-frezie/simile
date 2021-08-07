@@ -935,7 +935,7 @@ proc LetItShow {t {doneVar {}}} {
 	set ::$doneVar 1
 	return
     }
-    UpdateByOS
+    # UpdateByOS
 #puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
 	tkwait visibility $t
@@ -999,7 +999,8 @@ proc PackItUp {t} {
 	    unset ::concealedMenu($t)
 	}
 # Make menu updates happen before something else does same thing
-	UpdateByOS
+# (Causes problems with aborting execution in MacOS)
+	# UpdateByOS
     }
 }
 

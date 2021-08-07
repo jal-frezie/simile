@@ -282,16 +282,24 @@ proc FreeAll {load} {
     }
 }
 
-proc ResetModel {myNode howInt initTime redo} {
-    global model_id instance_id dispDone
+proc CResetModel {initTime args} {
+    global model_id instance_id modelStopped
+    eval [list c_resetmodel $model_id $instance_id] $initTime $args
+    after idle WatchModel 0 $initTime
 
-    set dispDone 0 ;# allow execution to call back
+    vwait modelStopped
+    if {[llength $modelStopped]>2} { # error -- re-throw
+	error $modelStopped
+    }
+    return $::modelStopped
+}
+
+proc ResetModel {myNode howInt initTime redo} {
     set preserveSliders [expr {$howInt-1}] ;# -1 selects new slider rollover
     if {[catch {
-	if {[string bytelength $model_id]} {
+	if {[RunningInC $myNode]} {
 #	    set model_id $myNode
-	    c_resetmodel $model_id $instance_id $initTime \
-		$preserveSliders $redo
+	    CResetModel $initTime $preserveSliders $redo
 	} else {
 	    TclResetModel $myNode $initTime $preserveSliders $redo
 	}
@@ -341,7 +349,6 @@ proc WatchModel {gui end} {
     set ::modelStopped $status
 }
 
-	
 proc CExecuteModel {isRK start finish args} {
     global model_id instance_id modelStopped
     eval [list c_executemodel $model_id $instance_id $isRK $start $finish] $args
