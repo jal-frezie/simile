@@ -333,8 +333,9 @@ proc WatchModel {gui end} {
     global model_id instance_id
     # should work for any model operation
     if {![catch {c_checkmodel $model_id $instance_id $gui} status]} {
+	# puts "Send $gui recv \"$status\""
 	if {$status eq ""} { # has run to end
-	    set status [list [expr {2-$gui}] $end]
+	    set status [list [expr {1-($gui==2)}] $end]
 	}
 	set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
 	set going [expr {[lindex $status 0]==2}]

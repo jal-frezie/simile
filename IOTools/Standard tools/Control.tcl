@@ -107,9 +107,9 @@ namespace eval runcontrol33857 {
         pack $rcf.upper.topbuttons -side left
         
         ttk::frame $rcf.upper.bf
-        set runState($node,cnvs) [canvas $rcf.upper.bf.flag -width 18p -height 18p]
-        $runState($node,cnvs) create oval 6p 6p 12p 12p -fill [RestingColour $node]
-        $runState($node,cnvs) create oval 6p 6p 12p 12p -outline grey
+        set runState($node,cnvs) [canvas $rcf.upper.bf.flag -width 18 -height 18]
+        $runState($node,cnvs) create oval 6 6 12 12 -fill [RestingColour $node]
+        $runState($node,cnvs) create oval 6 6 12 12 -outline grey
         pack $runState($node,cnvs) -side right -anchor e
 	BindPopup $runState($node,cnvs) led_status
 	bind $runState($node,cnvs) <Enter> \
