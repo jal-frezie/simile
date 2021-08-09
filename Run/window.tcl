@@ -6,7 +6,15 @@
 # This file contains procedures for drawing the main window.
 #
 
-proc tkerror {args} {error $::errorInfo}
+proc tkerror {args} {
+    global errorInfo
+    set callMe {"::tkerror $err"}
+    if {[lindex [split $errorInfo \n] end] eq $callMe} {
+	puts $errorInfo ;# error happend in error handling, don't go there
+    } else {
+	error $errorInfo
+    }
+}
 
 # Scale translates coordinates in desktop space to canvas space. Used to include
 # 'round' because some floating point values caused trouble, but later Tcls do

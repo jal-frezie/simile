@@ -145,6 +145,7 @@ proc ExecuteTo {node current pause unitLength display foci \
     set currentMode start
     set evtPause [expr {$evtMsg || $evtDisp}] ;# event sounds selected
     set ptClasses {}
+    set oldPayload {}
     set payload {}
     foreach point $foci {
 	lappend ptClasses [GetCompProperty dummy Class $point]
@@ -203,6 +204,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    set currentMode stop
 	}
 	if {![string equal exit $currentMode]} { ;# do a display update
+	    FreeAll $oldPayload
 	    set oldPayload $payload
 	    set payload {}
 	    foreach point $foci class $ptClasses {
@@ -228,13 +230,13 @@ proc ExecuteTo {node current pause unitLength display foci \
 #		set currentMode stop
 #	    }
 	    # now it is done, previous one must have finished, if any
-	    FreeAll $oldPayload
 	}
     }
 #    OuteractGUI $scaled_current 1
 # above is required to leave right time in progress display if not finishing
 # on display interval boundary
     waitForDisps
+    MarkUncached $payload
     FreeAll $payload
     return $currentMode
 }

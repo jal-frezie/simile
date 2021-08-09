@@ -1214,7 +1214,7 @@ proc InitExecThread {node} {
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Run exec.tcl]]
 	# callback cmds will need adjusting to include global nodeid
-	foreach callbackCmd {AbortCheck InteractGUI ShiftDisplays \
+	foreach callbackCmd {InteractGUI ShiftDisplays MarkUncached \
 				 AddLogEntry ExecQuery TransEnums InDays} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}

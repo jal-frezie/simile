@@ -630,15 +630,23 @@ proc ShiftDisplays {node payload current display doAll} {
     }
 }
 
+proc MarkUncached {payload} {
+    global subbedPlots
+
+    foreach {var scrap} $payload {
+	array unset subbedPlots $var
+    }
+}
+
 proc TellAllHelpers {node payload doAll fun args} {
     global helperTable myNode subbedPlots runState
 
     if {[info exists myNode]} {
 	set nodeForFocus $myNode
     }
-    set handlesForFocus [array get subbedPlots]
-    array unset subbedPlots
-    array set subbedPlots $payload
+#    set handlesForFocus [array get subbedPlots]
+#    array unset subbedPlots
+    array set subbedPlots $payload ;# just update the current model's values
     set myNode $node
     set failure 0
     set doScrog [expr [string equal Display $fun] && \
@@ -693,8 +701,8 @@ proc TellAllHelpers {node payload doAll fun args} {
     if {[info exists nodeForFocus]} {
 	set myNode $nodeForFocus
     }
-    array unset subbedPlots
-    array set subbedPlots $handlesForFocus
+#    array unset subbedPlots
+#    array set subbedPlots $handlesForFocus
     return $failure
 }
 

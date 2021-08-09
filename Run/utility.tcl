@@ -963,19 +963,24 @@ proc LetItShow {t {doneVar {}}} {
     if {[string length $doneVar]} {
 # have variable that gets set on exit, if scripting just set it
 # otherwise do interaction here
+	focus $t
         set oldGrab [grab current]
 	if {[string length $oldGrab]} {
 	    grab release $oldGrab
 	}
-	after 100 grab $t
+	if {[llength $wotParent] && [llength [bind $wotParent <FocusOut>]]} {
+	    set oldGrab $wotParent
+	    bind $wotParent <FocusOut> {}
+	}
+	bind $t <FocusOut> "grab $t"
 	# MacOS may disable dialog if grabbed now so only do if needed
 	tkwait variable $doneVar
-	bind $t <Enter> {}
-#        if {[string length $oldGrab]} {
-#	    grab $oldGrab
-#	} else {
-#	    grab release $t
-#	}
+	bind $t <FocusOut> {}
+        if {[string length $oldGrab]} {
+	    grab $oldGrab
+	} else {
+	    grab release $t
+	}
     }
     return [winfo viewable $t]
 }
