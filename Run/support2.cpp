@@ -27,6 +27,7 @@ int AME_model::do_evalmodel(int phase) {
    // causes it to be unset, and a reset can restart a crashed model.
   if (phase <= 0) {
     signal(SIGSEGV,exit_sighandler);
+    signal(SIGINFO,exit_sighandler); // sent by gui thread on user abort
   }
 
   dts[0] = phase; // so external code can access it
@@ -35,7 +36,7 @@ int AME_model::do_evalmodel(int phase) {
   if ((userStop.excpNo = -setjmp(env))) {
     return 1;
   } else {
-    // abort request from user will raise exception
+    // abort request from user will not raise exception
     try {
       evalmodel(phase);
     }

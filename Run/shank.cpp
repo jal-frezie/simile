@@ -39,6 +39,7 @@ return (char*)lpMsgBuf;
     #include <setjmp.h>
     #include <dlfcn.h>
     #include <errno.h>
+    #include <unistd.h>
 
     #define LOAD_DLL safe_open
 /* 'dummyunload' clause was used with macos because dlcompat didn't include
@@ -1382,7 +1383,8 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 
   (loadedInst->userStop).targetId = 0;
   (loadedInst->userStop).excpSource = this;
-  if (loadedInst->do_evalmodel(top_phase)) {  
+  if (loadedInst->do_evalmodel(top_phase)) {
+    printf("Back in the shank\n");
     retVal = &(loadedInst->userStop);
     retVal->excpSource = this;
   }
@@ -1687,9 +1689,11 @@ excpData* ExecutingModel::check_thread(int cancel) {
   }
   if (!clientResult->completed) { // still
     if (cancel>2) { // user has lost patience
-      ping = pthread_cancel(topList->thredd);
+      //ping = pthread_cancel(topList->thredd); does not work on Mac
+      // kill(getpid(), SIGINFO);
+      pthread_mutex_unlock(&topList->mtx); // allow it to complete
+      pthread_kill(topList->thredd, SIGINFO);
       pthread_join(topList->thredd, NULL);
-      clientResult->completed = TRUE; // ish
       clientResult->excpNo = -101; // terminated
     } else {
       return clientResult;
@@ -2690,6 +2694,14 @@ void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
   fivedee_get_value_pointer = get_value_pointer_ptr;
   fivedee_interact_gui = interact_gui_ptr;
   fivedee_showMess = showMess_ptr;
+
+  // this is only called once so is sensible place to make sure int signal
+  // sent from gui thread goes to model execution thread. No need for now as
+  // pthread_kill can direct it there.
+  //sigset_t set;
+  //sigemptyset(&set);
+  //sigaddset(&set, SIGINFO);
+  //pthread_sigmask(SIG_BLOCK, &set, NULL);
 }
 
 // Derived class which instantiates the callback procedures to those supplied
