@@ -39,7 +39,6 @@ return (char*)lpMsgBuf;
     #include <setjmp.h>
     #include <dlfcn.h>
     #include <errno.h>
-    #include <unistd.h>
 
     #define LOAD_DLL safe_open
 /* 'dummyunload' clause was used with macos because dlcompat didn't include
