@@ -27,7 +27,9 @@ int AME_model::do_evalmodel(int phase) {
    // causes it to be unset, and a reset can restart a crashed model.
   if (phase <= 0) {
     signal(SIGSEGV,exit_sighandler);
+#ifdef SIM_OPSYS_Darwin
     signal(SIGINFO,exit_sighandler); // sent by gui thread on user abort
+#endif
   }
 
   dts[0] = phase; // so external code can access it

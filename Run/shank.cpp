@@ -1241,6 +1241,7 @@ void* reset_grp_instance(void* clientData) {
   xmList* args = (xmList*)clientData;
   ExecutingModel *payload = ((xmList*)clientData)->now;
   ExecutingModel *parmSrc = payload->parent;
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
   if (!parmSrc)
     parmSrc = payload; // doing top level instance, parms from self
   memcpy(rand_states, ((xmList*)clientData)->randKeeper, 3*sizeof(unsigned short));
@@ -1690,8 +1691,13 @@ excpData* ExecutingModel::check_thread(int cancel) {
     if (cancel>2) { // user has lost patience
       //ping = pthread_cancel(topList->thredd); does not work on Mac
       // kill(getpid(), SIGINFO);
+#ifdef SIM_OPSYS_Darwin
       pthread_mutex_unlock(&topList->mtx); // allow it to complete
-      pthread_kill(topList->thredd, SIGINFO);
+      pthread_kill(topList->thredd, SIGINFO); // will be caught and cause exit
+#else
+      pthread_cancel(topList->thredd); // does not work on Mac
+      clientResult->completed = TRUE;
+#endif
       pthread_join(topList->thredd, NULL);
       clientResult->excpNo = -101; // terminated
     } else {
