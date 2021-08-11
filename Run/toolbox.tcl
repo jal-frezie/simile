@@ -1167,6 +1167,7 @@ proc InitExecThread {node} {
 	    proc $stubCmd {node args} {
 		global execInterp
 		set execSideCmd [info level 0]
+		set execSideCmd [lreplace $execSideCmd 1 1 {}]
 		return [$execInterp($node,id) eval $execSideCmd]
 	    }
 	}

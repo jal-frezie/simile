@@ -60,7 +60,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
             % takes place outside the current loop...
 	    \+ (member(Prereq, Prereqs),
 		member(make(Prereq, _, PContext, _,_), Setups),
-                \+ suffix(PContext, Context)),
+                \+ suffix(Context, PContext)),
 	    % do not de-idle if 1st assign done less often;
 	    % could do if step were passed back from here
 	    RealStep >= Step, !;

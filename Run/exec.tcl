@@ -317,7 +317,8 @@ proc ResetModel {myNode howInt initTime redo} {
 	set done 1
     }
 #    set ::userAction 1
-    InteractGUI $myNode $initTime 0 ;# put somewhere else?
+#    InteractGUI $myNode $initTime 0 ;# put somewhere else?
+# make sure time is scaled right if putting this back
     return $done
 }
 

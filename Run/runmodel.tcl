@@ -70,7 +70,7 @@ proc RedoRatesAndDisplay {node} {
 	return [lsearch {none Euler Runge-Kutta} $howInt]
     }
     set runState($node,currentMode) update
-    ResetModel $node 0 $runState($node,currentTime) 1
+    ResetModel $node 0 [expr {$runState($node,currentTime)*$runState($node,unitLength)}] 1
     set runState($node,currentMode) stop
     # ...and display new rates
     TellAllHelpers $node {} 1 Display $runState($node,currentTime) \
