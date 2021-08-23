@@ -97,10 +97,10 @@ itcl::class similescript::$newLayerClass {
 
     public method SetPosn {x y action} {
 	set temp(act) [list $x $y $action]
-	if {$action} {
+#	if {$action} {
 	    SendPosn $x $y $action
 	    RedoRatesAndDisplay [GetNode]
-	}
+#	}
     }
 
 
@@ -126,7 +126,7 @@ itcl::class similescript::$newLayerClass {
 # nothing to do at display time -- it's an input field
 	if {$useNodes(state) eq "displaying"} {
 	    if {$temp(count)} {
-		eval SendPosn $temp(act)
+#		eval SendPosn $temp(act)
 	    }
 	}
     }

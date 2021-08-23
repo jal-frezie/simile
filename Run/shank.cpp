@@ -1384,7 +1384,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   (loadedInst->userStop).targetId = 0;
   (loadedInst->userStop).excpSource = this;
   if (loadedInst->do_evalmodel(top_phase)) {
-    printf("Back in the shank\n");
+    //printf("Back in the shank\n");
     retVal = &(loadedInst->userStop);
     retVal->excpSource = this;
   }

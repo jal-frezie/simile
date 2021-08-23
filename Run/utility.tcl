@@ -90,7 +90,7 @@ proc ChooseFile { preferred title canbenew context} {
     if {[info exists preSelect]} {
 	set chosenFile $preSelect
 	unset preSelect
-	return $chosenFile ;# do not record path choice as it is not one
+	# return $chosenFile ;# do record path choice as it is one
     } else {
 	set switches [list -title $title -defaultextension $fileType \
 			  -filetypes $typeList \
@@ -1111,7 +1111,7 @@ proc UpdateByOS {} {
     if {$::tcl_platform(platform) eq "windows"} {
 	update
     } else {
-	update
+	update idletasks
     }
 }
 
