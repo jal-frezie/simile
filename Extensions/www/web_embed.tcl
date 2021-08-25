@@ -73,7 +73,7 @@ proc AnyValue {iH itm max} {
     } else {
 	set hdl [handle_data dummyMHandle $iH $itm]
 	#	set resp [thread::send $::masterId [list extract_json $hdl $max]]
-	set resp [JsonifyAny [thread::send $::masterId [list extract_list $hdl $max]]]
+	set resp [JsonifyAny [extract_list $hdl $max]]
 	
     }
     free_data_handle $hdl

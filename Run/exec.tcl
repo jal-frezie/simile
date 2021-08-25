@@ -1145,20 +1145,25 @@ foreach oldCProc {setparamelement settimepointelement settimepointarray \
 #    return [eval [list newc_settimepointelement $param_id($tgtNode)] $args]
 #}
 #
+
 proc ParamsFromGUI {inst} {
     # not used as it causes a deadly embrace
-    global instance_id
+    global masterId instance_id web_service
 
     set instance_id $inst
-    thread::send -async $::masterId [list FileParamDialogue \
-					 $::web_service(node) {} 0] params_done
-    vwait params_done
-    unset instance_id
-    return $::params_done
+    if {[info exists masterId]} {
+	thread::send -async $masterId [list FileParamDialogue \
+					     $web_service(node) {} 0] params_done
+	vwait params_done
+	unset instance_id
+	return $::params_done
+    } else {
+	return [FileParamDialogue $web_service(node) {} 0]
+    }
 }
 
 proc StartWebService {node scratch {runParams {}}} {
-    array set ::web_service [list local $scratch node $node]
+    array set ::web_service [list local $scratch node $::nodeId]
     start_server localhost 7464 similive.simulistics.com $runParams
     switch $::tcl_platform(os) {
 	Linux {

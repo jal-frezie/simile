@@ -1214,9 +1214,12 @@ proc InitExecThread {node} {
 	    [list source [file join $SIMILE_PATH Run support.tcl]]
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Run exec.tcl]]
+	$execInterp($node,id) eval \
+	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
 	# callback cmds will need adjusting to include global nodeid
 	foreach callbackCmd {InteractGUI ShiftDisplays MarkUncached \
-				 AddLogEntry ExecQuery TransEnums InDays} {
+    AddLogEntry ExecQuery TransEnums InDays \
+    FileParamDialogue extract_list} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }
