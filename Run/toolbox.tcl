@@ -1219,7 +1219,7 @@ proc InitExecThread {node} {
 	# callback cmds will need adjusting to include global nodeid
 	foreach callbackCmd {InteractGUI ShiftDisplays MarkUncached \
     AddLogEntry ExecQuery TransEnums InDays \
-    FileParamDialogue extract_list} {
+    FileParamDialogue extract_list extract_gif_tail} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }

@@ -44,7 +44,8 @@ Layers2D.prototype.addLayer = function (type, state) {
 	    possCapt = tclListOfDimty(state[i+1],1);
 	    if (possCapt[0][0] == "/") { // its a capt path
 		state[i+1] = idFromCapt(possCapt.join(" "));
-		this.tgts.push(state[i+1]);
+		if (type != "InputPointer20210609") // not getting, setting!
+		    this.tgts.push(state[i+1]);
 	    }
 	    layerSpec[state[i]] = state[i+1];
 	}
@@ -117,6 +118,12 @@ Layers2D.prototype.addLayer = function (type, state) {
 	for (var i=0; i<useful.length-2; i+=3) {
 	    layerSpec[useful[i+1]] = useful[i+2];
 	}
+	break;
+    case "InputPointer20210609":
+	layerSpec.gLayer.addEventListener("mousedown",startStroke);
+	layerSpec.gLayer.addEventListener("mousemove",continueStroke);
+	layerSpec.gLayer.addEventListener("mouseup",finishStroke);
+	break;
     }
     // are the two local copies for posts tripping each other up??
     $.post('model_action.php', {"base":fileBase, "act":"Query",
@@ -145,6 +152,23 @@ Layers2D.prototype.addLayer = function (type, state) {
 		   that.displayLayer(0.0, sorted, 0, layerIndex);
 	   });
 }
+
+function startStroke(evt) {
+    // OK, how do I get the context back?
+    for (var hlpr in currentHelpers) {
+	for (var layerSpec in currentHelpers[hlpr].State) {
+	    // hope is OK if none!
+	    if (layerSpec.gLayer == evt.target) break;
+	}
+    }
+    layerSpec.actCount = 1;
+    parmBlock = {};
+    parmBlock[model_json[layerSpec.xcoord].captpath] = 'NOW ' + evt.offsetX;
+    parmBlock[model_json[layerSpec.ycoord].captpath] = 'NOW ' + evt.offsetY;
+    parmBlock[model_json[layerSpec.tgt].captpath] = 'NOW ' + layerSpec.actCount;
+    sendValues(parmBlock);
+    model_reset(1);
+} // ok debug that!
 
 Layers2D.prototype.display = function (time, latest, connect) {
     for (var layer in this.State)

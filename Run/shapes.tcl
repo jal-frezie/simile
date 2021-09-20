@@ -1279,6 +1279,7 @@ proc InjectGraphics {c canvasFile} {
 #    set w [expr $window_info($c,width)+4]
 #    set h [expr $window_info($c,height)+4]
     source $canvasFile
+    $c dtag current
 # following does same thing but allows encoding to happen
 # not needed now cos we set system encoding, which source uses
 #    set stream [NetOpen $canvasFile r]

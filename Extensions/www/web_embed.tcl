@@ -66,8 +66,7 @@ proc AnyValue {iH itm max} {
     if {[llength $itm]!=1} {
 	array set bits $itm
 	set hdl [handle_data dummyMHandle $iH $bits(node)]
-	set stac [thread::send $::masterId \
-		      [list extract_gif_tail $hdl $bits(bottom) $bits(top)]]
+	set stac [extract_gif_tail $hdl $bits(bottom) $bits(top)]
 	append stac [binary format cc 0 0x3b]
 	set resp [base64 -mode encode -- $stac]
     } else {
@@ -103,7 +102,7 @@ proc ResponseTo {paramList} {
 	    set service($params(base)) $iH
 	    # Now create data structs for scalar parameters
 	    foreach obj [listobjects $mH] {
-		if {[lsearch {INPUT TABLE} [GetCCompProperty DUMMY Eval $obj]]>-1 && [llength [GetCCompProperty DUMMY Dims $obj]]==1} { ;# [0]
+		if {[lsearch {INPUT TABLE} [GetCCompProperty Eval $obj]]>-1 && [llength [GetCCompProperty Dims $obj]]==1} { ;# [0]
 		    set ::aH($obj) [c_createparamarray $iH $obj]
 		}
 	    }
@@ -152,16 +151,16 @@ proc ResponseTo {paramList} {
 			lappend dict \#
 		    }
 		    lappend dict text [file tail $path] captpath $path \
-			icon images/[GetCCompProperty DUMMY Class $id].gif
+			icon images/[GetCCompProperty Class $id].gif
 		    # include path too
 		    foreach {prop key} \
 			{equation Spec comment Comment eval Eval min MinVal \
 			     max MaxVal type Type units Units} {
-			set jBit [GetCCompProperty DUMMY $key $id]
+			set jBit [GetCCompProperty $key $id]
 			lappend dict $prop \"[string map {\" \\\"} $jBit]\"
 		    }
 		    lappend dict dims \
-			[JsonifyArray [GetCCompProperty DUMMY Dims $id]]
+			[JsonifyArray [GetCCompProperty Dims $id]]
 		    lappend ency $id [JsonifyDict $dict]
 		} else { ;# Report
 		    set goodJSON [AnyValue $service($params(base)) $id 1024]
@@ -171,24 +170,28 @@ proc ResponseTo {paramList} {
 	    }
 	    set result [string map {/ \\/} [JsonifyDict $ency]]
 	} Parameterize {
+	    set result {""}
 	    foreach {path stack} [::json::json2dict [urlDecode $params(data)]] {
 		set id [getnodeid $::model_id $path]
-		set trans [GetCCompProperty DUMMY Trans $id]
-		set times [string equal INPUT [GetCCompProperty DUMMY Eval $id]]
+		set trans [GetCCompProperty Trans $id]
+		set times [string equal INPUT [GetCCompProperty Eval $id]]
 		set dims {} ;# only ones we have created space for so far!
 		if {$times} {
 		    set dims [linsert $dims 0 TIME]
 		}
 		set ::param_id(cur) $::aH($id)
-		set result [ListToArray DUMMY cur {} {} $trans $dims $stack \
+		set resp [ListToArray DUMMY {} cur {} {} $trans $dims $stack \
 				$times 1]
+		if {[lsearch {-1 0 1} $resp]==-1} {
+		    puts $path-->$resp
+		}
 	    }
 	} LoadSPF {
 	    set result [ParamsFromGUI $service($params(base))]
 	} Reset {
 	    set iH $service($params(base))
 	    set isRK [expr {$params(method) ne "Euler"}]
-	    c_resetmodel $::model_id $iH $params(current) $isRK $params(depth)
+	    CResetModel $params(current) $isRK $params(depth)
 	    set reqs [::json::json2dict [urlDecode $params(note)]]
 	    set result [JsonifyArray [ValuesOfInterest $iH $reqs]]
 	} Query {
@@ -208,8 +211,7 @@ proc ResponseTo {paramList} {
 	    for {set t $params(current)} {$t<$endPt} {set t $endInt} {
 		set endInt [expr {$t+$params(log)}]
 		if {$endInt>$endPt} {set endInt $endPt}
-		c_executemodel $::model_id $iH $isRK $t $endInt \
-		    $params(errLimit) 0 0
+		CExecuteModel $isRK $t $endInt $params(errLimit) 0 0
 		set resp [ValuesOfInterest $iH $reqs]
 
 		lappend resp $endInt

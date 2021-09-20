@@ -223,6 +223,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    if {$currentMode eq "start"} {
 		after idle $shiftCmd
 	    } else {
+		update ;# make sure penultimate state appears in animation
 		eval $shiftCmd
 	    }
 
