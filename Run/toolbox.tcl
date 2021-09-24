@@ -514,12 +514,13 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
     set oldDir [pwd]
     cd $workingDir
 # get a so far unused file name
-    set serial [newInt]
+    set serial 1 ;# or [newInt] to keep earlier sharelibs
+    # (check reusing the name WFUW)
     set TARGET model${serial}$shLibExt
-    while {[file exists $TARGET]} {
-	set serial [newInt]
-	set TARGET model${serial}$shLibExt
-    }
+#    while {[file exists $TARGET]} {
+#	set serial [newInt]
+#	set TARGET model${serial}$shLibExt
+#    }
     set TOOLDIR [file join $SIMILE_PATH Run]
     set gppFlags $::sendvars(arflags)
     if {!$::headless} {

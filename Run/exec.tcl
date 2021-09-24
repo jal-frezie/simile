@@ -75,7 +75,7 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 	if {![file exists $progFile]} {
 	    puts "Shared library $progFile appears not to exist!"
 	    return 0
-}
+        }
 # Some APIs are determined to do what they think we really want rather than
 # what we actually ask for. So rename the shared library before reloading it,
 # otherwise we may get an earlier version back.

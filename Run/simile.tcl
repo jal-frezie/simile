@@ -528,7 +528,7 @@ switch $tcl_platform(platform) {
 # not finished
 
 if {[string equal swi_interp $userinfo(prologId)]} {
-    set PROLOG_CMD {swipl -L1g -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
+    set PROLOG_CMD {swipl -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
 } else {
     switch $userinfo(prologId) {
 	gnu {
