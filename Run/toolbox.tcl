@@ -1874,6 +1874,7 @@ proc OpenProjectFile {path} {
 			 ::RunEnv::LoadSHF CreateView]
 	if {[file exists $defaultSHF]} {
 	    $command $topNode $defaultSHF
+	    ::RunEnv::PreserveSetup 0 ;# is already saved
 	    return ;# model saved by v7 ignore legacy stuff
 	}
 	if {[info exists SimileProject(nameOfHelperStateFile)]} {
@@ -1883,13 +1884,18 @@ proc OpenProjectFile {path} {
 				     $SimileProject(nameOfHelperStateFile)]]
 	    RecordPathChoice .shf $helperTable($topNode,stateName) $topNode
             $command $topNode $helperTable($topNode,stateName)
-	    set helperTable($topNode,keepSetup) 1 ;# ensure bundle saved
         }
     }
 }
 
+proc ViewUnsaved {node} {
+    global helperTable
+    return [expr {[info exists helperTable($node,keepSetup)] && \
+		      $helperTable($node,keepSetup)}]
+}
+
 proc SaveProjectFile {topNode path tgt} {
-    global runState helperTable projectInfo
+    global runState projectInfo
     #ShowMess debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
     # save any shf files names
@@ -1903,9 +1909,8 @@ proc SaveProjectFile {topNode path tgt} {
 	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
     }
     # stateName referred to separate .shf -- bundle it instead
-    if {[info exists helperTable($topNode,keepSetup)] && \
-	    $helperTable($topNode,keepSetup)} {
-	set helperTable($topNode,stateName) [file join $path model.shf]
+    if {[ViewUnsaved $topNode]} {
+	set ::helperTable($topNode,stateName) [file join $path model.shf]
 	::RunEnv::SaveView 0
 	set SimileProject(nameOfHelperStateFile) model.shf
 	# this should make v6x find it OK

@@ -945,12 +945,10 @@ namespace eval RunEnv {
     }
 
     proc EmptyDisplays {} {
-        global helperTable
 	variable currentNode
 	variable dp0
         
-	if {[info exists helperTable($currentNode,keepSetup)] && \
-		$helperTable($currentNode,keepSetup)} {
+	if {[ViewUnsaved $currentNode]} {
 	    set helperAction [Query save_helper_setup question top {} \
 				  {abandon update_shf cancel}]
 	    switch $helperAction {
@@ -1126,6 +1124,7 @@ namespace eval RunEnv {
         if {[llength $HelperStateFileName]} {
             LoadSHF $currentNode $HelperStateFileName
         }
+	PreserveSetup 1
     }
     
     if {![info exists simplify]} {
@@ -1168,8 +1167,6 @@ namespace eval RunEnv {
 		return
 	    }
 	}
-	PreserveSetup 1
-	# Loading manually means auto version needs updating
 	set ::helperTable($currentNode,stateName) $oldPath
     }
 
