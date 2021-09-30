@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.22.4.1 2021/02/19 15:50:46 jaspert Exp $
+# $Id: can2svg.tcl,v 1.22.4.2 2021/09/30 18:06:02 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -489,7 +489,7 @@ proc can2svg::CoordsToAttr {type coo opts svgElementVar} {
     
     # Figure out if we've got a spline.
     set haveSpline 0
-    if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
+    if {[info exists optA(-smooth)] && $optA(-smooth) &&  \
       !([info exists optA(-splinesteps)] && ($optA(-splinesteps) <= 2))} {
         set haveSpline 1
     }
@@ -761,6 +761,7 @@ proc can2svg::MakeStyleList {type opts args} {
                 set styleArr(stroke-linejoin) $value                
             }
             -outline {
+		set value [FormatColorName $value]
                 set styleArr(stroke) [MapEmptyToNone $value]
             }
             -outlinestipple {

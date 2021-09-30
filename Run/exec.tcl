@@ -402,8 +402,11 @@ proc waitForDisps {} {
 }
 
 proc OuteractGUI {time mode} {
-    global nodeId
+    global nodeId web_service
 
+    if {[info exists web_service(node)]} { # running in browser, ignore timeouts
+	return 0
+    }
     return [InteractGUI $nodeId $time $mode]
 }
 

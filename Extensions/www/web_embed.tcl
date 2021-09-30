@@ -102,7 +102,7 @@ proc ResponseTo {paramList} {
 	    set service($params(base)) $iH
 	    # Now create data structs for scalar parameters
 	    foreach obj [listobjects $mH] {
-		if {[lsearch {INPUT TABLE} [GetCCompProperty Eval $obj]]>-1 && [llength [GetCCompProperty Dims $obj]]==1} { ;# [0]
+		if {[lsearch {INPUT} [GetCCompProperty Eval $obj]]>-1 && [llength [GetCCompProperty Dims $obj]]==1} { ;# [0]
 		    set ::aH($obj) [c_createparamarray $iH $obj]
 		}
 	    }
@@ -170,13 +170,23 @@ proc ResponseTo {paramList} {
 	    }
 	    set result [string map {/ \\/} [JsonifyDict $ency]]
 	} Parameterize {
+	    global parmTimeStamps ;# clear if reloading run.js
+	    
 	    set result {""}
-	    foreach {path stack} [::json::json2dict [urlDecode $params(data)]] {
+	    array set incoming [::json::json2dict [urlDecode $params(data)]]
+	    set parmReqOrdinality $incoming(seqNo)
+	    array unset incoming seqNo
+	    foreach {path stack} [array get incoming] {
 		set id [getnodeid $::model_id $path]
 		set trans [GetCCompProperty Trans $id]
 		set times [string equal INPUT [GetCCompProperty Eval $id]]
 		set dims {} ;# only ones we have created space for so far!
 		if {$times} {
+		    if {[info exists parmTimeStamps($id)] && \
+			    $parmTimeStamps($id)>=$parmReqOrdinality} {
+			continue
+		    }
+		    set parmTimeStamps($id) $parmReqOrdinality
 		    set dims [linsert $dims 0 TIME]
 		}
 		set ::param_id(cur) $::aH($id)
@@ -206,20 +216,24 @@ proc ResponseTo {paramList} {
 	    set reqs [::json::json2dict [urlDecode $params(note)]]
 	    set endPt [expr {$params(current)+$params(runlength)}]
 
+	    set ::instance_id $iH
 	    set hlpArr {}
-	    set isRK [expr {$params(method) ne "Euler"}]
 	    for {set t $params(current)} {$t<$endPt} {set t $endInt} {
 		set endInt [expr {$t+$params(log)}]
 		if {$endInt>$endPt} {set endInt $endPt}
-		CExecuteModel $isRK $t $endInt $params(errLimit) 0 0
+		set stat [ExecuteModel DUMMY $params(method) $t $endInt \
+			      $params(errLimit) 0 0]
 		set resp [ValuesOfInterest $iH $reqs]
 
-		lappend resp $endInt
+		lappend resp [lindex $stat 1] ;# actual finish time
 		lappend hlpArr [JsonifyArray $resp]
+		if {[lindex $stat 0]==0} break;
 	    }
+	    lappend hlpArr [lindex $stat 0]
 	    set result [JsonifyArray $hlpArr]
 	} Exit {
 	    c_exitmodel $::model_id $service($params(base))
+	    unset ::model_id
 	    return {}
 	} default {
 	    error "Unhandled request $paramList"
