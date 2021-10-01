@@ -177,10 +177,10 @@ void InstanceOfModel::collect (void* dest, int record_id, int id_count, ...) {
   // *(int*)dest = 3; return; // debug parameter setup
   va_start(argptr, id_count);
   for (length=0; length<id_count; length++) {
-    curIndices[length] = va_arg(argptr, int);
+    curIndices[length] = va_arg(argptr, int)+1;
   }
+  // parameter system still uses 1 as 1st index and 0 as terminator
   va_end(argptr);
-
   handle_model_param_request(partner, dest, record_id, id_count, curIndices);
 }
    

@@ -1602,7 +1602,7 @@ if {[string match "Darwin" $tcl_platform(os)]} {
 # although it helpfully calls ::tk::mac::Quit first
 #
 #  rename exit wishExit
-  bind all <Command-q> exit
+#  bind all <Command-q> exit
   proc ::tk::mac::Quit {} {
       global window_info
       set currentDesk _
