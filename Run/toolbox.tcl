@@ -562,7 +562,9 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		# what it should be...
 		set fixr "install_name_tool -change ../System64/lib/lib5d_mac.dylib \"$::libDir/lib5d_mac.dylib\" $TARGET"
 		# puts $fixr
-		puts $spout $fixr
+		# puts $spout $fixr
+		# Got rid because it started throwing error, but now works fine
+		# without
 		flush $spout
 		close $spout
 	    } else {

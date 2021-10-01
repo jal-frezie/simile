@@ -210,6 +210,7 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   // }
   
 };
+#endif
 
 /*****************************************************************/
 // STUFF FOR INCLUDING A REMOTE SUBMODEL BY PIPE INTERFACE       //
@@ -291,7 +292,6 @@ int getClientPipe (TSPOUT service, TSPOUT* data_socket) {
 #endif
   return 0;
 }
-#endif
 
 extern int nodecount;
 extern node_data_line nodedata[];
