@@ -304,7 +304,6 @@ int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
 
   lastIndx = ptCount + max(0,(int)crNode);
   while (ptCount<lastIndx) {
-    ++ptCount;
     if (prune(*meta, 1, ptCount)) { 
       // from cond construct -- note new indx
       submodelptr = **meta;
@@ -322,6 +321,7 @@ int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
     submodelptr->next = **meta;
     **meta = submodelptr;
     *meta = &(submodelptr->next);
+    ++ptCount;
   }; /* end(while,loop) */
   return lastIndx;
 }

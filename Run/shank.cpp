@@ -1084,8 +1084,9 @@ void fill_indices(InstanceOfModel* smHandle, int indxCount,
   for (idIdx[0] = 0; idIdx[0]<indxCount; ++idIdx[0]) {
     idler1 = idHandle;
     idler2 = idIdx;
-    memcpy(*insertionPt, get_ptr(smHandle, &idler1, &idler2),
-	   sizeof(int));
+    //    memcpy(*insertionPt, get_ptr(smHandle, &idler1, &idler2),
+    //	   sizeof(int));
+    *((int*)(*insertionPt)) = *((int*)(get_ptr(smHandle, &idler1, &idler2)))+1;
     *insertionPt += sizeof(int);
   }
 }

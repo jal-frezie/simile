@@ -416,7 +416,8 @@ set msgs(unspecified_detail) [tr. {This component is shown in red, which means i
 set msgs(unspecified_full) [tr. {Edit the equation of this component, or make it a file parameter.}]
 
 set msgs(no_defining_param_title) [tr. {Required component missing}]
-set msgs(no_defining_param_message) [tr. {The membership of submodel "%1$s" is set by the number of values supplied for its fixed parameters, but it has no fixed parameters.}]
+set msgs(no_defining_param_message) [tr. {The membership of submodel "%1$s" is set by the number of values supplied for its fixed parameters, but it has no fixed parameters with values supplied at run time.}]
+set msgs(no_defining_param_detail) [tr. {There should be at least one fixed parameter without a default value to ensure that the number of instances is always defined by lists of values supplied at run time.}]
 
 set msgs(no_seed_param_title) [tr. {Required component missing}]
 set msgs(no_seed_param_message) [tr. {The membership of submodel "%1$s" is set by the population channel symbols it contains. In order that the population have some members, it must contain at least one creation or immigration symbol, and it does not contain any.}]

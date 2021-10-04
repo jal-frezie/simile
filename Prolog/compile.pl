@@ -387,7 +387,9 @@ remove_redundant_equivs(Submodel, Equivs) :-
 */	
 defines_membership(SmByRec, Fp) :-
 	find_all_comps(SmByRec, Comp),
-	(is_parameter(Comp, 2), \+ Comp is_of_sort discrete, Fp = Comp;
+	(is_parameter(Comp, 2), \+ Comp is_of_sort discrete,
+	 \+ (Comp has_class_refinement value of Val, \+ Val == ''),
+	 Fp = Comp;
 	defines_membership(Comp, Fp)).
 
 % The code works by first giving names to the mathematical entities in the

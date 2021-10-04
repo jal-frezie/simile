@@ -1205,12 +1205,12 @@ add_for_channel(InitVar, [L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, N
 	excrete(L, while_start, CompValRef>=1, Indent, Stream),
 	make_expr(L, CompValRef-1, NewCompVal),
 	excrete(L, assignment, CompVal=NewCompVal, Indent1, Stream),
-	excrete(L, increment_by, [Index, 1], Indent1, Stream),
 	excrete(L, assign_space, MPTarget=[ParentPtr, Name, [RefIndex],
 					  _, []], Indent1, Stream),
 	nth(ChannelN, Used, InitVar), !,
 	excrete(L, procedure_call, init_pop_member(MPTarget, RefIndex,
 						   ChannelN), Indent1, Stream),
+	excrete(L, increment_by, [Index, 1], Indent1, Stream),
 	((Pointer = ParentPtr) -> true; % immigrate: progen set to 0 in i_p_m
 	  move_base_ptrs(L, MPTarget, save, Indent1, [Pointer], _, Stream)),
 
