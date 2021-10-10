@@ -855,7 +855,7 @@ proc StartComms {firstTime} {
 
 proc WriteCreds {} {
     global userinfo
-    if {[catch {open [file join $::custom(prefDir) userinfo.txt] w} \
+    if {[catch {open [file join $::custom(prefDir) mdlrinfo.txt] w} \
 	     UserStream]} {
 	error "Simile failed to create a file to keep the user authorization data. If you are using the Mac version, be sure to copy the application to a folder on your hard disk before attempting to run it. See the README for details. The error was: $UserStream"
     }

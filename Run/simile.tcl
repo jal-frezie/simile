@@ -540,7 +540,7 @@ if {[string equal swi_interp $userinfo(prologId)]} {
 	} default {
 	    wm withdraw .splash
 	    tk_messageBox -title "Credentials file corrupt" -icon error \
-		-message "Information from credentials file does not make sense. Please delete userinfo.txt and restart." \
+		-message "Information from credentials file does not make sense. Please delete mdlrinfo.txt and restart." \
 		-detail "The following fields were read: [array get userinfo]"
 	    exit
 	}
