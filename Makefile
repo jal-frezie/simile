@@ -272,7 +272,7 @@ endif
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
-		-o ../$(UNPK) unpacker.c $(USETCL); cd ..; \
+		-o ../$(UNPK) unpacker.c $(USETCL) -lcrypto; cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 # literal SLDIR allows different SHANK clauses for Windows vs Unix

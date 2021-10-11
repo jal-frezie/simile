@@ -1,13 +1,161 @@
 // Definitions used in this code and the model code
+#include <string.h>
 #include <signal.h> /* for killing stuck model execution */
 #include <stdint.h> // for uintptr_t etc
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
 #include <tcl.h>
+
+int right_license(const char* name, const char* code) {
+  char buffer[256];
+  unsigned char md[256];
+  int count, len;
+
+  /* String to use as secret */
+  char secret[] = "Excel must die, lest the planet fry";
+  char editions[][12] = {"teaching", "standard", "enterprise"};
+  
+  for (count=0; count<3; ++count) {
+    len = sprintf(buffer, "%s%%%s", name, editions[count]);
+    HMAC(EVP_sha256(), secret, strlen(secret), buffer, len,
+	 md, &len); // should read len before writing it!
+    EVP_EncodeBlock(buffer, md, len); // convert to base64, reuse buffer
+    // printf("edn %s hex %x b64 %s\n", editions[count], *(int*)md, buffer);
+    if (!strncmp(buffer, code, 5) && !strncmp(buffer+16, code+6, 5))
+      return count;
+  }
+
+  return -1;
+}
 
 #ifdef WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
+#include <msi.h>
+#include <msiquery.h>
+#include <tchar.h>
     #undef WIN32_LEAN_AND_MEAN
 
+#define PIDKEY_LENGTH 256
+
+#ifndef _DEBUG
+BOOL WINAPI __DllMainCRTStartup(HINSTANCE hModule, DWORD ul_reason_for_call,
+                                LPVOID lpReserved)
+{
+  return DllMain(hModule, ul_reason_for_call, lpReserved);
+}
+#endif
+
+UINT __stdcall ValidateSerial_Sample(MSIHANDLE hInstall)
+{
+  TCHAR szUserName[PIDKEY_LENGTH];
+  TCHAR szPidKey[PIDKEY_LENGTH];
+  WCHAR convdName[PIDKEY_LENGTH];
+  char trimmed[PIDKEY_LENGTH];
+  DWORD dwLen = sizeof(szPidKey) / sizeof(szPidKey[0]);
+  int snIsValid;
+
+  ///retrieve the text entered by the user
+  UINT res = MsiGetProperty(hInstall, _T("USERNAME"), szUserName, &dwLen);
+  if(res != ERROR_SUCCESS)
+  {
+    //fail the installation
+    return 1;
+  }
+  dwLen = sizeof(szPidKey) / sizeof(szPidKey[0]); // was overwritten, so reset
+  res = MsiGetProperty(hInstall, _T("PIDKEY"), szPidKey, &dwLen);
+  if(res != ERROR_SUCCESS)
+  {
+    //fail the installation
+    return 1;
+  }
+
+  if (!strcmp(szPidKey, "     -      (not required for evaluation edition)"))
+    snIsValid = 0; // nothing entered -- evaluation edition
+  else {
+  // First we must convert this to utf-16 (Unicode wide chars) before carrying
+  // out the check
+    MultiByteToWideChar(CP_ACP, 0, szUserName, -1, convdName, PIDKEY_LENGTH);
+    int count;
+
+    // next, emulate buggy Tcl behaviour
+    for (count=0; count<=wcslen(convdName); ++count) {
+      trimmed[count] = convdName[count] & 0xff;
+    }
+    snIsValid =  right_license(trimmed, szPidKey);
+  }
+  TCHAR * serialValid = NULL;
+  if (snIsValid >= 0)
+    serialValid = _T("TRUE"); 
+  else
+  {
+  //eventually say something to the user
+    char explain[1023];
+    sprintf(explain,
+	    "%.11s is not a valid serial number for %s (%d %d %d %d %d %d)\n",
+	    szPidKey, szUserName, (int)trimmed[0], (int)trimmed[1],
+	    (int)trimmed[2], (int)trimmed[3], (int)trimmed[4], (int)trimmed[5]);
+    MessageBox(GetForegroundWindow(), _T(explain), 
+	       _T("Message"), MB_ICONSTOP);
+    serialValid = _T("FALSE");
+  }
+
+  res = MsiSetProperty(hInstall, _T("SERIAL_VALIDATION"), serialValid);
+  if(res != ERROR_SUCCESS)
+  {
+    //fail the installation
+    return 1;
+  }
+
+  //the validation succeeded - even the serial is wrong
+  //if the SERIAL_VALIDATION was set to FALSE the installation will not continue
+
+  // set key to trimmed version to write to file
+  // -- causes problems in installer so fix file contents later
+  // res = ::MsiSetProperty(hInstall, _T("PIDKEY"), _T(szPidKey));
+  return 0;
+}
+
+UINT __stdcall SaveUserInfo_Sample(MSIHANDLE hInstall) {
+  TCHAR szPidKey[PIDKEY_LENGTH];
+  TCHAR *startPt, *brkPt;
+  DWORD dwLen = sizeof(szPidKey) / sizeof(szPidKey[0]);
+  FILE* pip;
+  int part;
+
+  ///retrieve the file location
+  UINT res = MsiGetProperty(hInstall, _T("CustomActionData"), szPidKey,
+			    &dwLen);
+  brkPt = strchr(szPidKey, '|');
+  *brkPt++ = 0;
+  pip = fopen(szPidKey, "w");
+  if (pip == NULL) {
+    printf("Error opening file %s for writing", szPidKey);
+    return 1;
+  }
+  fprintf(pip, "gnu\n");
+  fprintf(pip, "pipe\n");
+  fprintf(pip, "1275478189 :: Wed Jun 02 12:29:49 BST 2010\n");
+  
+  for (part=0; part<3; ++part) {
+    startPt = brkPt;
+    brkPt = strchr(startPt, '|');
+    *brkPt++ = 0;
+    fprintf(pip, "%s\n", startPt);
+  }
+  fprintf(pip, "%s\n", brkPt);
+  // No final | so do not search again
+  fclose(pip);
+  return 0;
+}
+
+/* This currently causes multiple definition error in libcrypto.a
+BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call,
+                      LPVOID lpReserved)
+{
+  return TRUE;
+}
+*/
 int kill (int pid, int sig) {
   HANDLE procHandle;
   BOOL outcome;
@@ -215,32 +363,21 @@ char* licenseRight (Tcl_Interp *interp) {
       it needs to be generated by PHP 
       ...so for a while it looked like this: */
 
-  const char *expected, *offered = Tcl_GetVar2(interp, "userinfo", "license_code", 0);
+  const char *usrName, *offered = Tcl_GetVar2(interp, "userinfo", "license_code", 0);
   if (!strncmp(offered, "     -     ", 11))
     return "evaluation";
 
-  for (edn_id=1; edn_id<4; ++edn_id) {
-    Tcl_Obj* dataCombo;
+  Tcl_Obj* dataCombo = Tcl_GetVar2Ex(interp, "userinfo", "name",
+				     TCL_LEAVE_ERR_MSG);
+  if (!dataCombo)
+    return NULL;
+    
+  usrName = Tcl_GetStringFromObj(dataCombo, NULL);
+  edn_id = right_license(usrName, offered)+1;
 
-    dataCombo = Tcl_GetVar2Ex(interp, "userinfo", "name", TCL_LEAVE_ERR_MSG);
-    if (dataCombo) {
-      dataCombo = Tcl_DuplicateObj(dataCombo);
-    } else {
-      return NULL;
-    }
-    Tcl_AppendStringsToObj(dataCombo, "%", editions[edn_id], "^", secret, NULL);
-    if (my_hash(interp, dataCombo) == TCL_ERROR) {
-      return NULL;
-    }
-
-    /* check it matches what we got before */
-    expected = Tcl_GetStringResult(interp);
-    if (!strncmp(offered, expected, 5) && !strncmp(offered+6, expected+5, 5)) {
-      //  Tcl_AppendResult(interp, " not ", offered, " is license code", NULL);
-      //  return "evaluation";
-      return editions[edn_id];
-    }
-  }
+  if (edn_id)
+    return editions[edn_id];
+  
   Tcl_SetObjResult(interp, Tcl_NewStringObj("License code not recognized", -1));
   return NULL;
 }
