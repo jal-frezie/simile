@@ -20,7 +20,8 @@ int right_license(const char* name, const char* code) {
     HMAC(EVP_sha256(), secret, strlen(secret), buffer, len,
 	 md, &len); // should read len before writing it!
     EVP_EncodeBlock(buffer, md, len); // convert to base64, reuse buffer
-    // printf("edn %s hex %x b64 %s\n", editions[count], *(int*)md, buffer);
+    //printf("edn %s nam %d hex %x b64 %s\n", editions[count], (int)name[count],
+    //	   *(int*)md, buffer);
     if (!strncmp(buffer, code, 5) && !strncmp(buffer+16, code+6, 5))
       return count;
   }

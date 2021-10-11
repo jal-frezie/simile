@@ -359,8 +359,8 @@ LIBDIR = /usr/lib
 # overridden by rpm build on Fedora 64-bit
 EXEC_TGT = $(LIBDIR)/simile-$(MAJREL).$(MINREL)
 install:
-	mkdir -p $(DESTDIR)$(INSTALL_TGT); \
-	tar cf $(DESTDIR)$(INSTALL_TGT)/payload.tar \
+	mkdir -p "$(DESTDIR)"$(INSTALL_TGT); \
+	tar cf "$(DESTDIR)"$(INSTALL_TGT)/payload.tar \
 		eula.txt \
 		Examples/BallBerry4a.shf \
 		Examples/BallBerry4a.sml \
@@ -610,7 +610,7 @@ install:
 		Run/simdoc32.ico \
 		simile.desktop
 	cd Scripts; \
-	tar cf $(DESTDIR)$(INSTALL_TGT)/helpload.tar \
+	tar cf "$(DESTDIR)"$(INSTALL_TGT)/helpload.tar \
 		help/concepts \
 		help/data \
 		help/diagrams \
@@ -623,20 +623,20 @@ install:
 		help/scripting \
 		help/start \
 		help/submodels
-	cd $(DESTDIR)$(INSTALL_TGT); \
+	cd "$(DESTDIR)"$(INSTALL_TGT); \
 	tar xf payload.tar; \
 	tar xf helpload.tar; \
 	rm helpload.tar; \
 	mv Run/$(UINFO_TPL) Run/userinfo.tpl; \
 #	touch Run/userinfo.txt; \
 # target only used in Linux which ignores this file \
-	mkdir -p $(DESTDIR)$(SHAREDIR)/applications; \
-	mv simile.desktop $(DESTDIR)$(SHAREDIR)/applications; \
+	mkdir -p "$(DESTDIR)"$(SHAREDIR)/applications; \
+	mv simile.desktop "$(DESTDIR)"$(SHAREDIR)/applications; \
 	rm payload.tar
-	mkdir -p $(DESTDIR)$(SHAREDIR)/man/man1
-	cp simile.1 $(DESTDIR)$(SHAREDIR)/man/man1
-	mkdir -p $(DESTDIR)$(EXEC_TGT)
-	tar cf $(DESTDIR)$(EXEC_TGT)/payload.tar \
+	mkdir -p "$(DESTDIR)"$(SHAREDIR)/man/man1
+	cp simile.1 "$(DESTDIR)"$(SHAREDIR)/man/man1
+	mkdir -p "$(DESTDIR)"$(EXEC_TGT)
+	tar cf "$(DESTDIR)"$(EXEC_TGT)/payload.tar \
 		$(SYSDIR)/bin/relay \
 		$(SYSDIR)/bin/simile \
 		$(PROLOGSTATE) \
@@ -651,7 +651,7 @@ install:
 		$(SHIM) \
 		$(UNPK) \
 		$(SLDIR)/$(SHANK)
-	cd $(DESTDIR)$(EXEC_TGT); \
+	cd "$(DESTDIR)"$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \
 	ln -s ../../..$(INSTALL_TGT)/Functions; \
@@ -663,10 +663,10 @@ install:
 	rm payload.tar
 ifeq ($(PROLOG),SWI)
 # this assumes patchelf already done to prolog state and lib copied in
-	cp -L $(SYSDIR)/lib/$(SWIPLSHARELIB) $(DESTDIR)$(EXEC_TGT)/$(SYSDIR)/lib
+	cp -L $(SYSDIR)/lib/$(SWIPLSHARELIB) "$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/lib
 endif
-	mkdir -p $(DESTDIR)/usr/bin
-	cd $(DESTDIR)/usr/bin; \
+	mkdir -p "$(DESTDIR)"/usr/bin
+	cd "$(DESTDIR)"/usr/bin; \
 	ln -s ../..$(EXEC_TGT)/$(SYSDIR)/bin/simile
 endif
 
