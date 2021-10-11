@@ -102,7 +102,7 @@
 #define WRITEGRAPH     22
 #define USEGRAPH       23
 
-#define SIMILE_VERSION	"6.11"
+#define SIMILE_VERSION	"7.0"
 #define NEST 32
 
 #ifdef _WIN32 // note underscore, without is only defined in uSoft c

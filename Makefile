@@ -1,4 +1,5 @@
-MINREL = 11
+MAJREL = 7
+MINREL = 0
 MY_CPU = $(firstword $(subst -, ,$(shell gcc -dumpmachine)))
 
 # days after install: 0 for no installation expiry
@@ -149,8 +150,8 @@ ifeq ($(PROLOG),GNU)
 endif
 
 STUBS_DIR = $(RESDIR)/Stubs
-SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll6$(PT)$(MINREL)$(SHAREDLIBEXTN)
-UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker6$(PT)$(MINREL)$(SHAREDLIBEXTN)
+SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBEXTN)
+UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
 SUPP = $(RESDIR)/support$(ARCHEXTN).o
@@ -352,10 +353,11 @@ $(RELAY): Run/relay.c
 ifeq ($(PLATFORM),GNU/Linux)
 # install used for packaging for distributions
 SHAREDIR = /usr/share
-INSTALL_TGT = $(SHAREDIR)/simile-6.$(MINREL)
+
+INSTALL_TGT = $(SHAREDIR)/simile-$(MAJREL).$(MINREL)
 LIBDIR = /usr/lib
 # overridden by rpm build on Fedora 64-bit
-EXEC_TGT = $(LIBDIR)/simile-6.$(MINREL)
+EXEC_TGT = $(LIBDIR)/simile-$(MAJREL).$(MINREL)
 install:
 	mkdir -p $(DESTDIR)$(INSTALL_TGT); \
 	tar cf $(DESTDIR)$(INSTALL_TGT)/payload.tar \
