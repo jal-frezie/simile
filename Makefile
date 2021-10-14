@@ -111,7 +111,7 @@ else
 #	TCLDIR = "$(shell pwd)/$(SYSDIR)"
 	TCLDIR = /usr/local32
 	RESCMD = windres
-	INSTLIB = Run/install.dll
+	MSI = /c/MinGW-w64/v49j32/mingw32/opt
 # must be 32-bit because installer is
 endif
 	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
@@ -153,6 +153,7 @@ STUBS_DIR = $(RESDIR)/Stubs
 SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBEXTN)
 UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
+INSTLIB = $(SHAREDLIBPREFX)install$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
 SUPP = $(RESDIR)/support$(ARCHEXTN).o
 
@@ -160,7 +161,7 @@ SUPP = $(RESDIR)/support$(ARCHEXTN).o
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
 simile: $(PROLOGSTATE) $(RELAY) \
-	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT) $(SUPP)
+	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN) $(SCRIPT) $(SUPP)
 
 vpath %.pl Prolog
 
@@ -271,9 +272,9 @@ $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 endif
 
-$(UNPK): Run/unpacker.c Run/dllcalls.h
+$(UNPK): Run/unpacker.c Run/dllcalls.h $(SLDIR)/$(INSTLIB)
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
-		-o ../$(UNPK) unpacker.c $(USETCL) -lcrypto; cd ..; \
+		-o ../$(UNPK) unpacker.c $(USETCL) -L../$(RESDIR) -linstall$(ARCHEXTN) $(CHECK_LOCAL_LIBS); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
@@ -283,15 +284,35 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h
 # but breaks GPL so try with just CPPFLAGS
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -std=c++11 -DSHARELIB $(CFLAGS) $(CPPFLAGS) \
-		$(MAKEPIC) $(MAKESL) \
-		-I. -Wl,--out-implib,lib5d$(ARCHEXTN).a -o $(SHANK) shank.cpp; \
+		$(MAKEPIC) $(MAKESL) -I. -Wl,--out-implib,lib5d$(ARCHEXTN).a \
+		-o $(SHANK) shank.cpp -lpthread; \
 		mv $(SHANK) ../$(SLDIR); \
 		mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
+
+CRYPTOBJ = sha-256_$(BITEXTN)$(ARCHEXTN).o
+Run/$(CRYPTOBJ): Run/sha-256.h Run/sha-256.c
+	cd Run; $(GCCCMD) -c -o $(CRYPTOBJ) sha-256.c; cd ..
+
+# Version for Advanced Installer
+# -static-libgcc is neeeded because this also used for 64bit install (and 32bit
+# install on 64bit systems) where 32bit libraries maybe missing
+$(EXECDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
+	cd Run; $(GCCCMD) -static $(CFLAGS) $(DEFNS) \
+		-I$(MSI)/include $(MAKEPIC) $(MAKESL) \
+		-Wl,--out-implib,libinstall$(ARCHEXTN).a \
+		-o ../$(SLDIR)/$(INSTLIB) install_adv.c $(CRYPTOBJ) \
+		-L$(MSI)/lib -lmsi; \
+		mv libinstall$(ARCHEXTN).a ../$(RESDIR); cd ..
+
 
 # Unix: not needed for Linux as it can build at run time
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(CFLAGS) $(CPPFLAGS) -std=c++11 -I. $(MAKEPIC) \
 		$(MAKESL) -o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
+$(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
+	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) \
+		$(MAKEPIC) $(MAKESL) \
+		-o ../$(SLDIR)/$(INSTLIB) install_adv.c $(CRYPTOBJ); cd ..
 
 $(SUPP): Run/support.cpp Run/backend.h
 	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
@@ -301,7 +322,7 @@ $(SUPP): Run/support.cpp Run/backend.h
 # Version for GPInstall by QSC
 #Run/install.dll: Run/install.c Makefile
 #	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
-#		-o install.dll install.c -L../System/lib -lcrypto -lssl; \
+#		-o install.dll install.c -L../System/lib -lssl -lcrypto; \
 #		cd ..
 # Version for MakeMSI
 #Run/install.dll: Run/install_msi.cpp Run/install_msi.rc Makefile
@@ -310,16 +331,6 @@ $(SUPP): Run/support.cpp Run/backend.h
 #		-I/c/MsiIntel.SDK/include $(MAKESL) -o install.dll \
 #		install_msi.c resource_msi.o /c/MsiIntel.SDK/lib/msi.lib \
 #		-L../System/lib -lcrypto -lssl; cd ..
-# Version for Advanced Installer
-# -static-libgcc is neeeded because this also used for 64bit install (and 32bit
-# install on 64bit systems) where 32bit libraries maybe missing
-MSI = /c/MinGW-w64/v49j32/mingw32/opt
-$(INSTLIB): Run/install_adv.c
-	cd Run; $(GCCCMD) -static -m32 $(CFLAGS) $(DEFNS) \
-		-I$(MSI)/include $(MAKEPIC) $(MAKESL) \
-		-o ../$(INSTLIB) install_adv.c -L$(MSI)/lib -lmsi \
-		-lcrypto -lssl; cd ..
-
 # the rc objects from windres are ommitted from linking below becaise they
 # do strange things to dll dependencies causing c000007b errors
 $(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile$(BITEXTN).rc
@@ -650,7 +661,8 @@ install:
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
 		$(SHIM) \
 		$(UNPK) \
-		$(SLDIR)/$(SHANK)
+		$(SLDIR)/$(SHANK) \
+		$(SLDIR)/$(INSTLIB)
 	cd "$(DESTDIR)"$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \
@@ -673,4 +685,4 @@ endif
 # call clean after changing license info in this file
 clean: clean_prolog
 	rm -f $(RELAY) $(SUPP) \
-		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)
+		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN) $(SCRIPT)

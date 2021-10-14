@@ -14,6 +14,8 @@
 #define CPPEXTDEC
 #endif
 
+#include <pthread.h>
+
 //! Identifies of a component in either model class or model instance
 typedef unsigned short int HCOMP;
 
