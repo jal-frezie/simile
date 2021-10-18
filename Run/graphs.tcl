@@ -1028,7 +1028,6 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 	}
     }
     set t .table
-    LetItShow .table
     if {[llength $table_entry(data)]} {
         set table_entry(fileName) [lindex $table_entry(data) 0]
         switch [lindex $table_entry(data) 1] {
@@ -1124,12 +1123,8 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     #    }
 
     set table_entry(source) -1
-    focus $t
-    grab $t
-    tkwait variable table_entry(done)
-    grab release $t
+    LetItShow .table table_entry(done)
     PackItUp $t
-    grab $parent
     CombineTimeExtras
     return $table_entry(done)
 }

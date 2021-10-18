@@ -1292,7 +1292,7 @@ void ExecutingModel::LaunchThreads(void* thread_action(void*)) {
 
 pthread_t supervisorId;
 void ExecutingModel::WrapUpThreads(excpData* userDefStop) {
-  void *clientResult;
+  void *clientResult = NULL;
   struct timespec ts;
 
   xmList* aChild = children;
@@ -1326,7 +1326,8 @@ void ExecutingModel::WrapUpThreads(excpData* userDefStop) {
       }
     } else
     */
-      pthread_join(aChild->thredd, &clientResult);
+    aChild->now->paused = paused;
+    pthread_join(aChild->thredd, &clientResult);
     if (clientResult)
       *userDefStop = *(excpData*)clientResult; // copy it up?
     aChild = aChild->next;
@@ -1425,7 +1426,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   errLim = errlim;
   pauseRange = pause_out_of_range;
   pauseEvt = pause_on_events;
-
+  paused = 0;
+  
   LaunchThreads(execute_grp_instance);
   
   excpData* userDefStop = &(loadedInst->userStop);
@@ -1660,7 +1662,7 @@ void ExecutingModel::start_in_thread(void *action(void *)) {
 
   topList->now = this;
   topList->next = NULL;
-  paused = 0;
+
   clientResult->completed = FALSE;
   pthread_mutex_init(&topList->mtx, 0);
   pthread_cond_init(&topList->cond, 0);
