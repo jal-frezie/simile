@@ -621,11 +621,13 @@ proc interact_equation {} {
     if {[llength $equation(ckWidg)]} {
 	.equation.notebook select 1 ;# raise parameters tab
 	focus $equation(ckWidg) ;# keep here until correct input or cancel
+    } else {
+	focus $t
     }
-    bind $t <Enter> [list grab $t]
+    bind $t <FocusOut> [list grab $t]
     # MacOS may disable dialog if grabbed now so only do if needed
     tkwait variable equation(done)
-    bind $t <Enter> {}
+    bind $t <FocusOut> {}
     grab release $t
 
     set units [UnityForReal $equation(units)]

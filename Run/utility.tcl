@@ -55,7 +55,7 @@ proc ChooseFile { preferred title canbenew context} {
 	.sml {
 	    set typeList [list .sml .sim .ame]
 	    set desc [tr. Models]
-	} .gif {
+	} .gif - .png {
 	    set typeList [list .gif .jpg .JPG .jpeg .png .tif .tiff]
 	    set desc [tr. Images]
 	} {} {
@@ -963,11 +963,11 @@ proc LetItShow {t {doneVar {}}} {
     if {[string length $doneVar]} {
 # have variable that gets set on exit, if scripting just set it
 # otherwise do interaction here
-	focus $t
         set oldGrab [grab current]
 	if {[string length $oldGrab]} {
 	    grab release $oldGrab
 	}
+	focus $t
 	if {[llength $wotParent] && [llength [bind $wotParent <FocusOut>]]} {
 	    set oldGrab $wotParent
 	    bind $wotParent <FocusOut> {}
