@@ -1929,6 +1929,8 @@ int ExecutingModel::FillValuePointer(void* modelSlot, int paramId,
     else if (parent)
       // No data for it in this instance, pass request up default hierarchy
       return parent->FillValuePointer(modelSlot, paramId, ic, indxs);
+    else if (nodeLine->strings[1]) // exists, there is an equation for this
+      return 0;
     else
       return modelSpec->get_value_pointer(clientRef, modelSlot, thisTsPosn,
 			       paramId, ic, indxs);

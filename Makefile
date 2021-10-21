@@ -176,7 +176,7 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 ifeq ($(PROLOG),SWI)
 SWIPLSHARELIB = $(shell ldd /usr/bin/swipl | grep libswipl | { read str a; echo $$str; })
 # above should painlessly extract the name of the relevant shared library
-UINFO_TPL = userinfo.swi
+UINFO_TPL = mdlrinfo.swi
 $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
 	cd Prolog; swipl --goal=main --stand_alone=true -o ../$(PROLOGSTATE) -c smain.pl; cd ..
 # Copy the swi-prolog shared library to the directory containing the
@@ -204,7 +204,7 @@ $(PROLOG_DB): Prolog/struct_db.c
 # note that libxml2 includes and libs are not needed
 endif
 ifeq ($(PROLOG),GNU)
-UINFO_TPL=userinfo.gnu
+UINFO_TPL = mdlrinfo.gnu
 ifeq ($(PLATFORM),Darwin)
 # all hell breaks loose as we try to build x64 and arm versions
 PROLOGSTATE_X = $(PROLOGSTATE)_x
@@ -291,7 +291,7 @@ $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 
 CRYPTOBJ = sha-256_$(BITEXTN)$(ARCHEXTN).o
 Run/$(CRYPTOBJ): Run/sha-256.h Run/sha-256.c
-	cd Run; $(GCCCMD) -c -o $(CRYPTOBJ) sha-256.c; cd ..
+	cd Run; $(GCCCMD) -c $(CFLAGS) -o $(CRYPTOBJ) sha-256.c; cd ..
 
 # Version for Advanced Installer
 # -static-libgcc is neeeded because this also used for 64bit install (and 32bit
@@ -638,8 +638,7 @@ install:
 	tar xf payload.tar; \
 	tar xf helpload.tar; \
 	rm helpload.tar; \
-	mv Run/$(UINFO_TPL) Run/userinfo.tpl; \
-#	touch Run/userinfo.txt; \
+	mv Run/$(UINFO_TPL) Run/mdlrinfo.tpl; \
 # target only used in Linux which ignores this file \
 	mkdir -p "$(DESTDIR)"$(SHAREDIR)/applications; \
 	mv simile.desktop "$(DESTDIR)"$(SHAREDIR)/applications; \
@@ -684,5 +683,5 @@ endif
 
 # call clean after changing license info in this file
 clean: clean_prolog
-	rm -f $(RELAY) $(SUPP) \
+	rm -f $(RELAY) $(SUPP) Run/$(CRYPTOBJ) \
 		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN) $(SCRIPT)
