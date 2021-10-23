@@ -12,7 +12,7 @@ License:	Proprietary
 URL:		http://simulistics.com
 source:		simile_7.0.0.tar.gz
 
-BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, tcl-devel >= 8.5, tk-devel >= 8.5, gdal-devel >= 1.5
+BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, tcl-devel >= 8.5, tk-devel >= 8.5, gdal-devel >= 1.5, glibc-static >= 2.0, libstdc++-static >= 8.0
 # tk needed for building tkdnd and tktable
 Requires:       tk >= 8.5, gcc-c++ >= 4.0, tcl-tclxml >= 3.2, tcllib >= 1.11, tklib >= 0.5, itcl >= 3.3, tcl-trf >= 2.1, tkimg >= 1.3
 

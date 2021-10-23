@@ -291,7 +291,7 @@ $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 
 CRYPTOBJ = sha-256_$(BITEXTN)$(ARCHEXTN).o
 Run/$(CRYPTOBJ): Run/sha-256.h Run/sha-256.c
-	cd Run; $(GCCCMD) -c $(CFLAGS) -o $(CRYPTOBJ) sha-256.c; cd ..
+	cd Run; $(GCCCMD) -c $(CFLAGS) $(MAKEPIC) -o $(CRYPTOBJ) sha-256.c; cd ..
 
 # Version for Advanced Installer
 # -static-libgcc is neeeded because this also used for 64bit install (and 32bit
