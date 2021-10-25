@@ -1068,7 +1068,11 @@ proc ControlDraw {prologVersion} {
     }
     LoadModelWindowExtensions
     if {!$::headless} {
-    Pref_Init $custom(prefDir)/.prefs
+	Pref_Init $custom(prefDir)/.prefs
+	set themes [ttk::style theme names]
+	set current [ttk::style theme use]
+	set idx [lsearch -exact $themes $current]
+	set themes [linsert [lreplace $themes $idx $idx] 0 $current]
     Pref_Add [list [list custom(winPosn) winPosn [list CHOICE [tr. "Where it was last time"]  [tr. "OS default position"]]  [tr. "Place initial window:"]] \
 		  [list custom(initNavbar) initNavbar ON [tr. "Tool bar"]] \
 		  [list custom(initToolbar) initToolbar ON [tr. "Component bar"]] \
@@ -1080,7 +1084,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(maxPopupSize) maxPopupSize {500 10 10000} [tr. "Size limit"]] \
 		  [list custom(dispMatrix) dispMatrix OFF [tr. "Show 2-D values as matrices"]] \
 		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
-		  [list custom(widgetTheme) widgetTheme [concat CHOICE [ttk::style theme names]] [tr. "Widget theme:"]] \
+		  [list custom(widgetTheme) widgetTheme [concat CHOICE $themes] [tr. "Widget theme:"]] \
 		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
 		  [list custom(recentCount) recentCount {10 0 200} [tr. "Entries on recently used file list"]] \
 		  [list custom(quickExit) quickExit [list CHOICE [tr. "Full dialogue"] [tr. "Short dialogue"]] [tr. "Closing model..."]] \
