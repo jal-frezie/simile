@@ -30,6 +30,7 @@ if {[info tclversion]>=8.5} {
 } else {index1
     package require tile 0.8.2
 }
+#ttk::style theme use default ;# should be preferences item!!
 package require style::as
 style::as::enable mousewheel global
 # as style binds mousewheel for all, so to stop this making events for
@@ -521,6 +522,12 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 #	set serial [newInt]
 #	set TARGET model${serial}$shLibExt
 #    }
+    set TOOLDIR [file join $SIMILE_PATH Run]
+    set gppFlags $::sendvars(arflags)
+    if {!$::headless} {
+	set gppFlags [concat $gppFlags \
+			  [PrefValue custom(compFlags) compFlags]]
+    }
     set TOOLDIR [file join $SIMILE_PATH Run]
     set gppFlags $::sendvars(arflags)
     if {!$::headless} {
@@ -1073,6 +1080,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(maxPopupSize) maxPopupSize {500 10 10000} [tr. "Size limit"]] \
 		  [list custom(dispMatrix) dispMatrix OFF [tr. "Show 2-D values as matrices"]] \
 		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
+		  [list custom(widgetTheme) widgetTheme [concat CHOICE [ttk::style theme names]] [tr. "Widget theme:"]] \
 		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
 		  [list custom(recentCount) recentCount {10 0 200} [tr. "Entries on recently used file list"]] \
 		  [list custom(quickExit) quickExit [list CHOICE [tr. "Full dialogue"] [tr. "Short dialogue"]] [tr. "Closing model..."]] \

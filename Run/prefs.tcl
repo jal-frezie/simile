@@ -153,8 +153,9 @@ proc Pref_Dialog {} {
             set initWinF $initWinTF
             set displayTF [TitleFrame $vf.displayTF -text [tr. "In new windows, display:"]]
             set displayF $displayTF
-            set barTF [TitleFrame $vf.barTF -text [tr. "Tool bars:"]]
-            set barF $barTF
+            set barTF [TitleFrame $vf.barTF -text [tr. "Tool bars and dialogues:"]]
+	    set barF $barTF
+	    pack [frame $barF.line2] -side bottom -fill x -expand 1
             set gridTF [TitleFrame $vf.gridTF -text [tr. "Placement grid:"]]
             set gridF $gridTF
         set cf [frame $notebook.content]
@@ -244,6 +245,7 @@ proc Pref_Dialog {} {
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
                 tlPopups {set frame $barF}
+                widgetTheme {set frame $barF.line2}
                 quickDrag {set frame $genericF}
                 myButton {set frame $genericF}
                 deleteEndToEnd {set frame $linkF}
@@ -320,6 +322,9 @@ proc PrefDialogItem { frame item width } {
 }
 proc PrefEntrySet { varName resName } {
     upvar #0 $varName var
+    if {$resName eq "widgetTheme"} {
+	ttk::style theme use $var
+    }
     PrefValueSet $resName $var
 }
 

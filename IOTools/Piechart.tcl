@@ -468,7 +468,7 @@ proc plot_YY {w} {
     variable pievalues
     
 #    ShowMess debug info "plot_YY" ok            
-    set piesum($w) 0
+    set piesum($w) 0.0
     set pievalues($w) {}
     foreach Ynew $YYnew($w) {
 #        ShowMess debug info "$Ynew" ok
