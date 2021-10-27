@@ -59,6 +59,7 @@ proc initialize {w} {
     set plot($w,Ymajorstep) 2
     set plot($w,Yminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
     set plot($w,Ylabels) {}
+    set plot($w,Ycapts) {}
     set plot($w,Yvars)   {}
     set plot($w,redraw) 0
     set plot($w,topright) 1

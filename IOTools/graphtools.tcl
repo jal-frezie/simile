@@ -272,7 +272,7 @@ proc ::graphtools::draw_Yaxis { w} {
                 -text [::DisplayFormat::General $value $precision] \
                 -font $plot($w,fontValues) \
                 -tags {scalable  axis_value yaxis_item yaxis_movable ytick \
-                    toplevel markable} -anchor e
+                    toplevel markable} -anchor e -angle 60
         set value [expr $value+$Ymajorstep]
     }
     set step [expr $step/2]

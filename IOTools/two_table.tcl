@@ -170,6 +170,7 @@ namespace eval $keyValue {
 	
         pack $winId.t -fill both -expand true
         $winId.t tag configure red -fg red
+        $winId.t tag configure active -fg blue
         
         #	$winId.t set 0,0 Time
         #	$winId.t tag cell base 0,0
