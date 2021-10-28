@@ -258,15 +258,12 @@ proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
     
     if {![llength $target]} {
         while {1} {
-            LetItShow $t
 	    if {$modal} {
-		focus $t
-		grab $t
-	    }
-            tkwait variable graph($t,done)
-            if {$modal} {
-		grab release $t
-	    }
+		LetItShow $t graph($t,done)
+	    } else {
+		LetItShow $t
+		tkwait variable graph($t,done)
+            }
 	    if {$graph($t,done)==1} {
                 if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
                             $graph($t,lowx) $graph($t,highx)]} {

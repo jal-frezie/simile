@@ -624,8 +624,13 @@ proc interact_equation {} {
     } else {
 	focus $t
     }
-    bind $t <FocusOut> [list grab $t]
-    # MacOS may disable dialog if grabbed now so only do if needed
+    if {[tk windowingsystem] eq "aqua"} {
+	bind $t <FocusOut> [list grab $t]
+	# MacOS may disable dialog if grabbed now so only do if needed
+    } else {
+	grab $t
+	# Xfce generates spurious FocusOuts while dragging which cause errors
+    }
     tkwait variable equation(done)
     bind $t <FocusOut> {}
     grab release $t

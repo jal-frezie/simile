@@ -1053,10 +1053,9 @@ namespace eval $keyValue {
         variable editMode
         variable dataStore
         
-        set t [toplevel $winId.propertiesDlg]
-        wm transient $t $winId
+        set t [PutItThere $winId.propertiesDlg $winId]
         wm title $t "Table properties"
-        wm resizable $t 0 0
+
         set ::${t}l1 [lindex $orientList($winId) 0]
         set ::${t}l2 [lindex $orientList($winId) 1]
         set ::${t}l3 [lindex $orientList($winId) 2]
@@ -1180,8 +1179,8 @@ namespace eval $keyValue {
         $nb select 1
 	UpdateByOS
         $nb select 0
-	grab $t
-        tkwait variable ${t}done
+	
+        LetItShow $t ${t}done
         
         if {[set ::${t}done]} {
 	    set newOrients [list [set ::${t}l1] [set ::${t}l2] \
@@ -1213,7 +1212,7 @@ namespace eval $keyValue {
 	    }
             PrepareSaveString $winId
         }
-        destroy $t
+        PackItUp $t
     }
     
     

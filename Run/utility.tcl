@@ -967,12 +967,16 @@ proc LetItShow {t {doneVar {}}} {
 	if {[string length $oldGrab]} {
 	    grab release $oldGrab
 	}
-	focus $t
-	if {[llength $wotParent] && [llength [bind $wotParent <FocusOut>]]} {
-	    set oldGrab $wotParent
-	    bind $wotParent <FocusOut> {}
+	if {[tk windowingsystem] eq "aqua"} {
+	    focus $t
+	    if {[llength [bind $wotParent <FocusOut>]]} {
+		set oldGrab $wotParent
+		bind $wotParent <FocusOut> {}
+	    }
+	    bind $t <FocusOut> "grab $t"
+	} else {
+	    grab $t
 	}
-	bind $t <FocusOut> "RealGrab $t"
 	# MacOS may disable dialog if grabbed now so only do if needed
 	tkwait variable $doneVar
 	bind $t <FocusOut> {}
