@@ -972,7 +972,7 @@ proc LetItShow {t {doneVar {}}} {
 	    set oldGrab $wotParent
 	    bind $wotParent <FocusOut> {}
 	}
-	bind $t <FocusOut> "grab $t"
+	bind $t <FocusOut> "RealGrab $t"
 	# MacOS may disable dialog if grabbed now so only do if needed
 	tkwait variable $doneVar
 	bind $t <FocusOut> {}
@@ -983,6 +983,11 @@ proc LetItShow {t {doneVar {}}} {
 	}
     }
     return [winfo viewable $t]
+}
+
+proc RealGrab {t} {
+    grab $t
+    bind $t <FocusOut> {}
 }
 
 proc PackItUp {t} {
