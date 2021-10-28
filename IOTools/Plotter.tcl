@@ -778,7 +778,7 @@ namespace eval ::$keyValue {
                 if {$plot($w,grid)=="on"} {
                     $w.canvas create line $x $plot($w,Yborder) $x [expr $plot($w,Height)-$plot($w,Yborder)] -width 1 -fill gray -tags graph
                 }
-                $w.canvas create text $x [expr $Yintercept+10] -text [format $dec [expr $i*$Xdivision]] -tags graph
+                $w.canvas create text $x [expr $Yintercept+10] -text [format $dec [expr $i*$Xdivision]] -angle 45 -tags graph
             }
             # draw X axis values and horizontal grid lines
             if {($y <= [expr $plot($w,Height)-$plot($w,Yborder)]) && ($y >= $plot($w,Yborder)) } {

@@ -80,7 +80,11 @@ if {[string match Darwin $tcl_platform(os)]} {
     proc ::tk::mac::OpenDocument {args} {
 # only opens the first of a group of files dropped or double-clicked,
 # but at least it handles files with spaces in the name.      
-        if {[catch {OpenTopLevel [lindex $args 0]} splat]} {
+	#        if {[catch {OpenTopLevel [lindex $args 0]} splat]}
+	set currents [array names ::window_info *,is_top_level]
+	if {[llength $currents]} {
+	    Reopen [string range [lindex $currents 0] 0 end-13] [brainwash [lindex $args 0]] dummy
+	} else {
 # fails (because proc not yet loaded?) if Simile started by drag/drop
 	    set ::OPEN_MODEL [lindex $args 0]
 	}
@@ -89,7 +93,13 @@ if {[string match Darwin $tcl_platform(os)]} {
 #	tk_messageBox -message "open foo $foo bar $bar"
 #    }
 #    tclAE::installEventHandler aevt oapp handleOpenApp
-    proc ::tk::mac::ReopenApplication {} {
+    proc ::tk::mac::OpenApplication {args} {
+	global window_info
+	if {![llength [array names window_info *,parent]]} {
+	    NewTopLevel
+	}
+    }
+    proc ::tk::mac::ReopenApplication {args} {
 	global window_info
 	if {![llength [array names window_info *,parent]]} {
 	    NewTopLevel
@@ -267,7 +277,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 7.0
-set sendvars(simP) {b9}
+set sendvars(simP) {b8}
 
 if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols

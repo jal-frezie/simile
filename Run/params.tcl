@@ -470,7 +470,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
             set path [join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
 	    set node [IdFromTail $topNode /$path 0]
-            pack [::ttk::label $nextLevel.head.label -text $level:] -side left \
+            pack [label $nextLevel.head.label -text $level:] -side left \
 		-expand 1
 	    if {[llength $ns]} {
 		foreach {cmd act img} {Save Save save Open Load open \
@@ -512,7 +512,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		    $nextLevel.tree configure -bg $fColour
 		}
 		$nextLevel.head configure -bg $fColour
-		$nextLevel.head.label configure -style $bStyle ;# -bg $fColour
+		$nextLevel.head.label configure -bg $fColour ;# -style bStyle if ttk
 		ttk::style map $bStyle -background \
 		    [list pressed [Gradient $fColour $nextLevel 15] \
 			 active [Gradient $fColour $nextLevel -75] {} $fColour]

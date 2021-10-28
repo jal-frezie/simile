@@ -109,6 +109,7 @@ itcl::class similescript::$newHelperClass {
 			   [namespace current] 0]
 		bind $f <Button-1> [list ProdFromHelper $winId $component \
 					[string range $fullCapt $chop end]]
+		bind $f <Button-2> {puts "Behold the %W"}
 		if {$type eq "SUBMODEL"} {
 		    set label $f.head.label
 		    $label configure -image $iconImages(submodel) \
@@ -123,8 +124,9 @@ itcl::class similescript::$newHelperClass {
 		    $f configure -bg $beeGee
 		    if {$incExpts && $notInput>-1} {
 		    } else {
-			pack [ttk::label $f.caption -text $capt \
-				  -style $bStyle] -side left
+#			pack [ttk::label $f.caption -text $capt \
+#				  -style $bStyle] -side left
+			pack [label $f.caption -text $capt -bg $beeGee] -side left
 		    }
 		    $f.caption configure -image $iconImages([string tolower $type]) -compound left
 		    bindtags $f.caption [linsert [bindtags $f.caption] 0 $f]
