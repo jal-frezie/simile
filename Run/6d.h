@@ -29,11 +29,11 @@ class listTimePoint;
 class CPPEXTDEC FileParamData
 {
  protected: // protected member items -- note Doxygen will not talk about these
+ public:
 
   //! This is the model instance in which the parameter values apply
   ExecutingModel* myModelExec;
 
- public:
   //! Pointer to next structure in list, allows searching
   FileParamData* next;
 

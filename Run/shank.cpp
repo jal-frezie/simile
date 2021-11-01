@@ -2399,7 +2399,8 @@ char* get_param_ptr_and_dims(void* fpHandle, int** dimSlot) {
 
   *dimSlot = arrSlot->dimSpecs;
   if (!arrSlot->contents) // currently set to default
-     arrSlot->contents = init_space(*dimSlot);
+    //     arrSlot->contents = init_space(*dimSlot);
+    arrSlot->contents = ((FileParamData*)fpHandle)->myModelExec->GetRawValues(((FileParamData*)fpHandle)->nodeId)->contents;
   return arrSlot->contents;
 }
 

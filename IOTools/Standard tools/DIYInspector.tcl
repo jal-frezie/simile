@@ -120,7 +120,7 @@ itcl::class similescript::$newHelperClass {
 		    }
 		} else {
 		    set beeGee [[winfo parent $f].head cget -bg]
-		    set bStyle [[winfo parent $f].head.vis cget -style]
+#		    set bStyle [[winfo parent $f].head.vis cget -style]
 		    $f configure -bg $beeGee
 		    if {$incExpts && $notInput>-1} {
 		    } else {
@@ -419,8 +419,9 @@ itcl::class similescript::$newHelperClass {
 	}
 	if {!$add} {return} ;# is already gone
 	set neWidg [UniqueId hlpr]
-	set bStyle [[winfo parent $f].head.vis cget -style]
-	pack [ttk::button $f.$neWidg -style $bStyle -image $::iconImages($img) \
+	#	set bStyle [[winfo parent $f].head.vis cget -style]
+	set beeGee [[winfo parent $f].head.vis cget -bg]
+	pack [button $f.$neWidg -bg $beeGee -image $::iconImages($img) \
 		  -command [list ::RunEnv::FocusTool $hlpr]] \
 	    -side right -padx 1p
 	BindPopup $f.$neWidg $id

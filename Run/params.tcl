@@ -464,7 +464,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 
             pack [frame $nextLevel.head] -fill x -expand true
             pack [frame $nextLevel.body] -fill x -expand true
-	    pack [::ttk::button $nextLevel.head.vis -style $bStyle \
+	    pack [button $nextLevel.head.vis \
 		      -image $iconImages(drop) \
 		      -command [list Compand $nextLevel]] -side left
             set path [join [lrange $hierarchy 0 $pt] /]
@@ -513,9 +513,10 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		}
 		$nextLevel.head configure -bg $fColour
 		$nextLevel.head.label configure -bg $fColour ;# -style bStyle if ttk
-		ttk::style map $bStyle -background \
-		    [list pressed [Gradient $fColour $nextLevel 15] \
-			 active [Gradient $fColour $nextLevel -75] {} $fColour]
+#		ttk::style map $bStyle -background \
+#		    [list pressed [Gradient $fColour $nextLevel 15] \
+#			 active [Gradient $fColour $nextLevel -75] {} $fColour]
+		$nextLevel.head.vis configure -highlightbackground $fColour
 	    }
         }
     }

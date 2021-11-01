@@ -1109,7 +1109,9 @@ proc c_setparamarray {topNode tgtNode caseId create} {
 	set keepPrm param_id($tgtNode)
     }
     if {$create} {
-	set $keepPrm [c_createparamarray $useInst $tgtNode]
+	if {![info exists $keepPrm]} {
+	    set $keepPrm [c_createparamarray $useInst $tgtNode]
+	}
     } elseif {[info exists $keepPrm]} {
 	c_forgetparamarray [set $keepPrm]
 	unset $keepPrm
