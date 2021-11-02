@@ -409,7 +409,7 @@ itcl::class similescript::$newHelperClass {
 		   [namespace current] 0]
 	set cmd [list ::RunEnv::FocusTool $hlpr]
 	foreach prev [winfo children $f] {
-	    if {[winfo class $prev] eq "TButton" && \
+	    if {[string match *Button [winfo class $prev]] && \
 		    [$prev cget -command] eq $cmd} {
 		if {!$add} {
 		    destroy $prev

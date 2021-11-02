@@ -1,5 +1,5 @@
 // Identifier
-#define MDL_OBJ_VERS 10.981
+#define MDL_OBJ_VERS 11.0
 
 // special integers sent between mgr and worker threads
 #define WORKER_QUERY_GUI -1
