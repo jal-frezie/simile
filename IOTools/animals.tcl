@@ -277,10 +277,11 @@ itcl::class similescript::$newLayerClass {
 	return [namespace tail $this]BLK[join $result ,]
     }
 
-    public method TagToId {tags} {
-	set myTag [namespace tail $this]BLK
-	set end [expr [string first $myTag $tags]+[string length $myTag]]
-	set idTag [lindex [string range $tags $end end] 0]
+public method TagToId {tags} {
+    set myTag [namespace tail $this]BLK
+    set mixTag [lsearch -inline $tags ${myTag}*]
+    set idTag [string range $mixTag [string length $myTag] end]
+    set result {}
 	foreach val [split $idTag ,] {
 	    if {![scan $val %06d index]} {
 		set index $val
