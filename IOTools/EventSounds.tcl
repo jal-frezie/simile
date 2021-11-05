@@ -85,7 +85,8 @@ itcl::class similescript::$newHelperClass {
 	foreach {att val} $attList {
 	    switch $att {
 		component {
-		    set useNodes(comp) $val
+		    set useNodes(comp) [::gen3d1::VerifyVariables [GetNode] \
+					    Sound [list $val]]
 		} mode {
 		    set useNodes(mode) $val
 		}
@@ -93,7 +94,8 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    method Stuff {contents} {
+method Stuff {contents} {
+    if {![llength $useNodes(comp)]} return ;# node exist check failed
 	set topNode [$modelInst cget -modelNode]
 	if {$useNodes(mode) eq "relative"} {
 	    set shfPath [GetPathChoice .shf $topNode]
@@ -102,7 +104,7 @@ itcl::class similescript::$newHelperClass {
 	} else {
 	    set soundFile $contents
 	}
-	AddSoundFor $topNode $useNodes(comp) $soundFile
+    AddSoundFor $topNode [lindex $useNodes(comp) 0] $soundFile
     }
 
     method Clear {} {

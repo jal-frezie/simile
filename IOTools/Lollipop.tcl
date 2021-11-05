@@ -98,6 +98,27 @@ proc AddVariable {winId} {
     SetState $winId xcoord
 }
 
+proc VerifyVariables {topNode ident savedList} {
+    foreach valueSrc $savedList {
+	if {[string first / $valueSrc]} {
+	    lappend updatedSet $valueSrc
+	} else {
+	    set sortedPath [ExistCheck $topNode $valueSrc {} -2 \
+				"saved setup for $ident"]
+	    switch $sortedPath {
+		break {
+		    error "I/O tool restoration aborted"
+		} continue {
+		    return {}
+		} default {
+		    lappend updatedSet [lindex $sortedPath 0]
+		}
+	    }
+	}
+    }
+    return $updatedSet
+}
+
 proc click {winId node caption} {
     variable useNodes
     set ms $winId.intro

@@ -303,10 +303,10 @@ class similescript::$newHelperClass {
     }
 
     method Stuff {contents} {
+	set node [$modelInst cget -modelNode]
 	switch $useNodes(inElt) {
 	    target_file {
 		if {$useNodes(fileMode) eq "relative"} {
-		    set node [$modelInst cget -modelNode]
 		    set shfPath [GetPathChoice .shf $node]
 		    SetSaveFileTo [file normalize \
 				       [file join $shfPath $contents]]
@@ -315,7 +315,11 @@ class similescript::$newHelperClass {
 		    SetSaveFileTo $contents
 		}
 	    } component {
-		InsertLogEntry $contents 1
+		set updated [::gen3d1::VerifyVariables $node \
+				 [Identify] [list $contents]]
+		if {[llength $updated]} {
+		    InsertLogEntry [lindex $updated 0] 1
+		}
 	    }
 	}
     }

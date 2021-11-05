@@ -62,23 +62,33 @@ itcl::class similescript::$newHelperClass {
         pack $vp.ysc -side right -fill y
         canvas $vp.c -xscrollcommand [list $this SetWithLegends x] \
 	    -yscrollcommand [list $this SetWithLegends y] -bg beige
+	puts "Creating $vp.c"
 	::canvasnotes20070919::MakeCanvasAnnotatable $vp.c
 	bind $vp.c <Configure> [list $this PosnLegends]
         pack $vp.c -fill both -expand true
 
 	set planes {}
 	if {[string length $state]} { ;# we are restoring 
-	    set State $state ;# keep it local
+	    # set State $state ;# keep it local, rebuild later
 	    # local version probably NOT want to be XML...unlike saved...
 	    foreach geomer {offx offy zoomx zoomy bounds} val $state {
 		set transform($geomer) $val
+		lappend State $geomer
 	    }
 	    $vp.c configure -scrollregion $transform(bounds)
 	    foreach {layerType layerState} [lrange $state 5 end] {
 		if {$layerType eq "annotation"} {
 		    ::canvasnotes20070919::RestoreNotesFromList $vp.c $layerState
 		} else {
-		    NewLayer $layerType 0 $layerState
+		    set layerName [${layerType}::Identify]
+		    set updatedLS [::gen3d1::VerifyVariables [GetNode] \
+				       $layerName $layerState]
+		    if {[llength $updatedLS]} {
+			NewLayer $layerType 0 $updatedLS
+			lappend State $layerType $updatedLS
+		    } else {
+			tk_messageBox -message "$layerName not restored"
+		    }
 		}
 	    }
 	    foreach {l t r b} $transform(bounds) {
@@ -308,7 +318,7 @@ itcl::class similescript::$newHelperClass {
 	    package require img::window
 
 	    # should have dialog to set for options
-	    set filename [ChooseFile image.gif [tr. "Save image as:"] 1 [GetNode]]
+	    set filename [ChooseFile image.png [tr. "Save image as:"] 1 [GetNode]]
 	    if {[string length $filename]} {
 		set img [image create photo -format window -data $winId.viewport.c]
 		$img write $filename \

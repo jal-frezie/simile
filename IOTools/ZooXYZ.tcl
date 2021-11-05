@@ -45,12 +45,17 @@ itcl::class similescript::$newHelperClass {
 #	    -resolution 0.01 \
 #	    -command "$this TweakScale elevation"
 	#	$winId.elv set 0.5
-	if {[string length $state]} { ;# we are restoring 
-	    set State $state ;# keep it local
-	} else {
-	    set State {}
-#	    $modelInst GrabClicks $this
+	set State {}
+	foreach itemSet $state { ;# we are restoring
+	    set ident [lindex $itemSet 0]
+	    set updatedSet [::gen3d1::VerifyVariables [GetNode] $ident [lrange $itemSet 1 end]]
+	    if {[llength $updatedSet]} {
+		lappend State [linsert $updatedSet 0 $ident]
+	    } else {
+		tk_messageBox -message "Set of [lindex $itemSet 0] not restored"
+	    }
 	}
+
 	if {[AmLayer]} {
 	    if {![string length $state]} {
 		AddItem [lindex $winTitle 1]
