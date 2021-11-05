@@ -83,14 +83,15 @@ proc FindObj { winId x y } {
 # canvasTLDistance returns the offset of a canvas coordinate from its top
 # left corner. If you are going to use @x,y to refer to a point in a canvas
 # text item, these are the values you need (this is a bug in TclTk)
-# (Seems fixed in Tk 8.6.11 so first case disabled)
+# (Seems fixed in Tk 8.6.11)
 
 proc canvasTLDistance {winId x y} {
-#    if {[scan [$winId cget -scrollregion] "%g %g" cl ct]==2} {
-#        return [list [expr $x-$cl] [expr $y-$ct]]
-#    } else {
+    if {[package vcompare [info patchlevel] 8.6.11]<0 && \
+	    [scan [$winId cget -scrollregion] "%g %g" cl ct]==2} {
+        return [list [expr $x-$cl] [expr $y-$ct]]
+    } else {
         return [list $x $y]
-#    }
+    }
 }
 
 # This is used when Tcl wants to get a result from Prolog, e.g., for the
