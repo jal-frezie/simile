@@ -100,7 +100,9 @@ proc AddVariable {winId} {
 
 proc VerifyVariables {topNode ident savedList} {
     foreach valueSrc $savedList {
-	if {[string first / $valueSrc]} {
+	if {[string first / $valueSrc] || \
+		![string first /WIN/, $valueSrc]} {
+	    # work around some helper oddities
 	    lappend updatedSet $valueSrc
 	} else {
 	    set sortedPath [ExistCheck $topNode $valueSrc {} -2 \
