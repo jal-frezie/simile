@@ -619,7 +619,7 @@ proc TclExecuteModel {node howInt start end errLim lmtPause evtPause} {
 	set bigPhase [PhaseFor $xtime $freq $phasecount]
 	set weePhase [expr {$phasecount+1}]
 # that is the biggest phase we will try to run, we may not succeed
-	if {[CheckGUI $node $xtime ph$bigPhase]} {
+	if {[CheckGUI $node $xtime ph$bigPhase]>1} {
 	    return [list 0 $xtime]
 	}
 
@@ -781,7 +781,7 @@ proc TclExecuteModel {node howInt start end errLim lmtPause evtPause} {
 	    }
 	}
     } ;# finished executing
-    if {[CheckGUI $node $end ext]} {
+    if {[CheckGUI $node $end ext]>1} {
 	return [list 0 $xtime]
     }
     return [list 1 $xtime]
@@ -1539,8 +1539,8 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 	}
 	array set arrayVals $newVals
 	set result {}
-	for {set nextDim 1} {$nextUseDim>=$nextDim} \
-		{incr nextDim} {
+	for {set nextDim 0} {$nextUseDim>$nextDim} \
+	        {} {
 	    if {[info exists arrayVals($nextDim)]} {
 		set eltVals $arrayVals($nextDim)
 	    } else {
@@ -1550,7 +1550,7 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 		    [lrange $useDims 1 end] \
 		    [concat $dims $nextDim] [expr $dimPlace+1] $eltVals]
 	    if {[llength $subVals]} {
-		lappend result $nextDim $subVals
+		lappend result [incr nextDim] $subVals
 	    }
 		    
 	}
