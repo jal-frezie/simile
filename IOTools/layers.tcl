@@ -84,8 +84,17 @@ itcl::class similescript::$newHelperClass {
 		    set updatedLS [::gen3d1::VerifyVariables [GetNode] \
 				       $layerName $layerState]
 		    if {[llength $updatedLS]} {
-			NewLayer $layerType 0 $updatedLS
-			lappend State $layerType $updatedLS
+			if {[catch {NewLayer $layerType 0 $updatedLS}]} {
+			    if {[string equal abort \
+				     [Query [list iotool_restore_fail \
+						 "layer $layerName" \
+						 $::errorInfo] \
+					  warning helpers {} abort]]} {
+				break
+			    }
+			} else {
+			    lappend State $layerType $updatedLS
+			}
 		    } else {
 			tk_messageBox -message "$layerName not restored"
 		    }

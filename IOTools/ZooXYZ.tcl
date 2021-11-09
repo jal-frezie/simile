@@ -46,20 +46,14 @@ itcl::class similescript::$newHelperClass {
 #	    -command "$this TweakScale elevation"
 	#	$winId.elv set 0.5
 	set State {}
-	foreach itemSet $state { ;# we are restoring
-	    set ident [lindex $itemSet 0]
-	    set updatedSet [::gen3d1::VerifyVariables [GetNode] $ident [lrange $itemSet 1 end]]
-	    if {[llength $updatedSet]} {
-		lappend State [linsert $updatedSet 0 $ident]
-	    } else {
-		tk_messageBox -message "Set of [lindex $itemSet 0] not restored"
-	    }
-	}
 
 	if {[AmLayer]} {
+	    # layer tool will have already verified paths
 	    if {![string length $state]} {
 		AddItem [lindex $winTitle 1]
 		tkwait window $winId.bottom.ms
+	    } else {
+		set State $state
 	    }
 	    array set titlePosns {spheres 4 lines 7 ellipses 4 polygons 5}
 	    set inTitle [lindex $State  0 $titlePosns([lindex $State 0 0])]
@@ -69,6 +63,17 @@ itcl::class similescript::$newHelperClass {
 	    Display 0 0 0
 	    return
 	}	
+
+	foreach itemSet $state { ;# we are restoring
+	    set ident [lindex $itemSet 0]
+	    set updatedSet [::gen3d1::VerifyVariables [GetNode] $ident [lrange $itemSet 1 end]]
+	    if {[llength $updatedSet]} {
+		lappend State [linsert $updatedSet 0 $ident]
+	    } else {
+		tk_messageBox -message "Set of [lindex $itemSet 0] not restored"
+	    }
+	}
+	
 	frame $winId.bottom -relief raised -bd 1
 	button $winId.bottom.but_print -text "Print..." \
 	    -command "PrintNow $winId.c"
