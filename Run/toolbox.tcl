@@ -1166,7 +1166,7 @@ proc InitExecThread {node} {
 	{load_c_stub_1 c_setparamarray tcl_setparamarray c_getparamall \
 	     c_gettimepointall PlaceInArray ListToArray RepeatReset \
 	     MarkEvtParamActive AddEventCommand SetWrapTime \
-	     SetFillMethod SetInterval ex_load_dll update_executable \
+	     SetFillMethod SetInterval update_executable \
 	     InsertExptlCase DeleteExptlCase SeedRandoms ReleaseHandle \
 	     ListCases GetHandle RunningInC GetTclCompExecData GetCompProperty \
 	     ExScrubRun StartWebService} {
@@ -1188,7 +1188,7 @@ proc InitExecThread {node} {
 	}
     }
 
-    foreach stubSgst {ResetModel ExecuteTo} {
+    foreach stubSgst {ex_load_dll ResetModel ExecuteTo} {
 	if {$useThreads} {
 	    proc $stubSgst {node args} {
 		global execThread
