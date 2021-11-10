@@ -594,10 +594,12 @@ proc LoseDTRef {statusLine} {
     return $result
 }
 
-proc UpdateIfFreezy {} {
+proc UpdateIfFreezy {node} {
     global updateLastDone
     if {$updateLastDone < [clock clicks -milliseconds]-40} {
-	# UpdateByOS
+	if {![RunningInC $node]} {
+	    update ;# includes getting input clicks
+	}
 	set updateLastDone [clock clicks -milliseconds]
     }
 }
@@ -606,7 +608,7 @@ proc ShiftDisplays {node payload current display doAll} {
     global helperTable runState
     if {[catch {
 	$helperTable(RunControl)::UpdateBar $node $current blue
-	UpdateIfFreezy
+	UpdateIfFreezy $node
 	set result [TellAllHelpers $node $payload $doAll \
 			Display $current $display 1]
 	

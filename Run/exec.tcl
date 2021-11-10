@@ -221,7 +221,11 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    set shiftCmd [list ShiftDisplays $::nodeId $payload [format %.8g $current] \
 			      $display [expr {$timedDisp || $displayNow}]]
 	    if {$currentMode eq "start"} {
-		after idle $shiftCmd
+		if {[RunningInC $node]} {
+		    after idle $shiftCmd
+		} else {
+		    eval $shiftCmd ;# tcl execution does not include gui update
+		}
 	    } else {
 		update ;# make sure penultimate state appears in animation
 		eval $shiftCmd

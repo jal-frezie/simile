@@ -450,7 +450,7 @@ namespace eval runcontrol33857 {
 	global runState
         set runState($node,currentTime) [format %.8g $now]
 	if {$runState($node,currentTime) ne $runState($node,timeReached)} {
-	    set ::updateLastDone [clock clicks -milliseconds]
+	    # set ::updateLastDone [clock clicks -milliseconds]
 	}
         set runState($node,timeReached) [format %.8g $now]
 	# so I can check if entry edited
