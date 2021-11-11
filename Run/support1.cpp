@@ -122,7 +122,6 @@ void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[],
   // in reverse order -- hence search can break if too-low index found...
   for (off=0; off<4; ++off) {
     if (off==4-2*shape) continue;
-    ++idx;
     GridSMClass* cur_nbr = trail[(trailPt+(off==3?-1:off))%trailLen];
     if (cur_nbr) {
       nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
@@ -132,11 +131,12 @@ void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[],
       parent->nbrs = tempIntSat;
       
       tempIntSat = new nbrlist <GridSMClass>;
-      tempIntSat->instanceid[0] = (shape?7:9)-idx;
+      tempIntSat->instanceid[0] = (shape?5:7)-idx;
       tempIntSat->payload = parent;
       tempIntSat->next = cur_nbr->nbrs;
       cur_nbr->nbrs = tempIntSat;
     }  // if (cur_nbr)
+    ++idx;
   } // for off,
   trail[trailPt%trailLen] = parent;
 }
@@ -152,15 +152,15 @@ void make_fixed_nbr_list (GridSMClass* parent, int shape, int rows, int columns,
   for (oRow=-1; oRow<=1; ++oRow) {
     for (oCol=-1; oCol<=1; ++oCol) {
       if (oCol*(2*shape-3)==abs(oRow)) continue;
-      ++idx;
-      if (rowId+oRow>0 && rowId+oRow<=rows && 
-	  columnId+oCol>0 && columnId+oCol<=columns) {
+      if (rowId+oRow>=0 && rowId+oRow<rows && 
+	  columnId+oCol>=0 && columnId+oCol<columns) {
 	nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
 	tempIntSat->instanceid[0] = idx;
 	tempIntSat->payload = parent+columns*oRow+oCol;
 	tempIntSat->next = parent->nbrs;
 	parent->nbrs = tempIntSat;
       }
+      ++idx;
     }
   }
 }
