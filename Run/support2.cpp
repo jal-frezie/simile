@@ -1,14 +1,15 @@
 /* version needs its own special procedure because any other might change
-   and cause a crash before version mismatch is detected
+   and cause a crash before version mismatch is detected */
 EXPORT double get_version() {
   double simile_version;
   sscanf(strstr(simile_identifier,"version="), "version=%lf", &simile_version);
-  return(simile_version);
+  return(simile_version+4);
 }
-...but now, executables have their own versioning system */
+/* Cannot use value from header as old c++ code might be compiled with current
+header, giving wrong behaviour
 EXPORT double get_version() {
   return(MDL_OBJ_VERS);
-}
+} */
 
 jmp_buf env;
 

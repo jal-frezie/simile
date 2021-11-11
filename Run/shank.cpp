@@ -1998,10 +1998,10 @@ ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
       return;
     }
     // Version number is AME version = simile version + 4
-    if (fabs(getversion()-MDL_OBJ_VERS)>0.00001) {
+    if (fabs(getversion()-4-MDL_OBJ_VERS)>0.00001) {
       *complaint = new char[256];
       sprintf(*complaint, "client is for version %.3f but model is %.3f", 
-	      MDL_OBJ_VERS-4, getversion()-4);
+	      MDL_OBJ_VERS, getversion()-4);
       return;
     }
 /* sprintf(globMess, "Loaded %ld", handle);

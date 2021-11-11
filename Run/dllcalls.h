@@ -102,15 +102,18 @@
 #define WRITEGRAPH     22
 #define USEGRAPH       23
 
+// Identifier
+#define MDL_OBJ_VERS 7.0
+
 #define SIMILE_VERSION	"7.0"
 #define NEST 32
 
 #ifdef _WIN32 // note underscore, without is only defined in uSoft c
     #ifdef _WIN64
-        #define SIM_PAR_EXEC 1
+//        #define SIM_PAR_EXEC 1
     #endif
 #else
-    #define SIM_PAR_EXEC 1
+//    #define SIM_PAR_EXEC 1
 #endif
 #ifdef SIM_PAR_EXEC
     #include <pthread.h>
@@ -338,7 +341,7 @@ EXTDEC int setstep(void*, double, int);
 EXTDEC char* myexit(void*, void*);
 
 EXTDEC void* get_ptr(void*, void*, int**, int**);
-// EXTDEC char* getNodeId(void*, char*);
+EXTDEC char* getNodeId(void*, char*); // Just for 5-D, not used in Simile
 EXTDEC int retrieve_context(int**);
 
 EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, interact_gui_type*,

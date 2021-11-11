@@ -13,7 +13,7 @@ foreign_resource(struct_db,
 		     add_capt_off, remove_capt_off, find_capt_off,
 		     add_centre, remove_centre, find_centre,
 		     add_along, remove_along, find_along,
-		     set_hidden, is_hidden]).
+		     set_hidden, is_hidden, get_mdl_exec_vers]).
 
 foreign(empty_tree, empty_tree(-integer)).
 
@@ -69,4 +69,6 @@ foreign(find_along, find_along(+string, -integer)).
 foreign(set_hidden, set_hidden(+string, +integer)).
 foreign(is_hidden, is_hidden(+string)).
 
+foreign(get_mdl_exec_vers, get_mdl_exec_vers(+float)).
+    
 foreign(xml_file_to_term(term, term)).

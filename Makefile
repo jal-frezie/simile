@@ -191,7 +191,7 @@ $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
 # patch the new standalone now
 	patchelf --set-rpath '$$ORIGIN/../lib' $(PROLOGSTATE)
 
-$(PROLOG_DB): Prolog/struct_db.c
+$(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
 # for old SWI, or if building with mingw when swipl built with msvc
 #	cd Prolog; gcc -c -I$(SWIPLDIR)/include -D__SWI_PROLOG__ \
 #		$(MAKEPIC) struct_db.c; \
@@ -227,10 +227,10 @@ $(PROLOG_OBJ_X): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 	$(XGNU_PATH);cd Prolog; gplc -o ../$(PROLOG_OBJ_X) -c gmain.pl; cd ..
 $(PROLOG_OBJ_A): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 	$(AGNU_PATH);cd Prolog; gplc -o ../$(PROLOG_OBJ_A) -c gmain.pl; cd ..
-$(PROLOG_DB_X): Prolog/struct_db.c
+$(PROLOG_DB_X): Prolog/struct_db.c Run/dllcalls.h
 	$(XGNU_PATH);cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB_X) struct_db.c; cd ..
-$(PROLOG_DB_A): Prolog/struct_db.c
+$(PROLOG_DB_A): Prolog/struct_db.c Run/dllcalls.h
 	$(AGNU_PATH);cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB_A) struct_db.c; cd ..
 clean_prolog:
@@ -247,7 +247,7 @@ $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
 	gplc --no-top-level -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
 $(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c gmain.pl; cd ..
-$(PROLOG_DB): Prolog/struct_db.c
+$(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
 	cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB) struct_db.c; cd ..
 clean_prolog:
@@ -314,7 +314,7 @@ $(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 		$(MAKEPIC) $(MAKESL) \
 		-o ../$(SLDIR)/$(INSTLIB) install_adv.c $(CRYPTOBJ); cd ..
 
-$(SUPP): Run/support.cpp Run/backend.h
+$(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
 	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
 		-o ../${SUPP} support.cpp; cd ..
 

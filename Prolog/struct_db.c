@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <limits.h>
 
+#include "../Run/dllcalls.h" // for getting executable version number
+
 #ifdef _GNU_PROLOG
 //    #include <libxml/xmlreader.h>
 
@@ -946,6 +948,10 @@ FORPROL get_type(PlTerm cArc, PlTerm cClass) {
   return Pl_Un_Atom(thisArc->aclass, cClass);
 }
 
+FORPROL get_mdl_exec_vers(PlTerm num) {
+  return Pl_Un_Float(MDL_OBJ_VERS, num);
+}
+
 /* Stuff for reading an xml file using libxml2 -- abandoned because it was too
 tricky getting it to build against the libraries in Windows and they would have
 bloated it anyway. Only works with GNU.
@@ -1089,6 +1095,9 @@ install_t install() {
   PL_register_foreign("is_hidden", 1, is_hidden, 0);
   PL_register_foreign("get_node_and_next_ptr", 3, get_node_and_next_ptr, 0);
   PL_register_foreign("get_arc_and_next_ptr", 3, get_arc_and_next_ptr, 0);
+
+  PL_register_foreign("get_mdl_exec_vers", 1, get_mdl_exec_vers, 0);
+  
   //  Next only used in GNU to replicate SWI's SGML library
   //  PL_register_foreign("xml_file_to_term", 2, xml_file_to_term, 0);
 }
