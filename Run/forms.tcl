@@ -8,12 +8,12 @@
 #
 proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 		       fatness icount step desc comment enumLists \
-		       xproc xinc xunit xlibs eqnunit hide separate} {
+		       xproc xinc xunit xlibs eqnunit hide separate 0index} {
     global disaggregate tcl_platform window_info
 
     set mdl $window_info($parent,top_node)
     foreach varName {colour image imgpos type interp fatness \
-                icount xproc xinc xunit xlibs eqnunit hide separate} {
+                icount xproc xinc xunit xlibs eqnunit hide separate 0index} {
         set disaggregate($varName) [set $varName]
     }
     set new 1
@@ -273,8 +273,8 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 #      $m add command -label $item -command "set disaggregate(eqnunit) $item"
 #    }
 #    $mathf.eqnunit.pulldown configure -menu $m
-    pack $mathl.eqnunit.pulldown
-    pack $mathl.eqnunit -anchor w -padx 4 -pady 6
+    pack $mathl.eqnunit.pulldown -side right
+    pack $mathl.eqnunit -anchor w -padx 4 -pady 6 -fill x
     ttk::frame $mathl.step
     ttk::label $mathl.step.caption -text [tr. "Time step index:"]
     pack $mathl.step.caption -side left
@@ -288,8 +288,17 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     #foreach item [concat Default $stepNames] {
     #  $m add command -label $item -command "set disaggregate(step) \"$item\""
     #}
-    pack $mathl.step.pulldown
-    pack $mathl.step -anchor w -padx 4 -pady 6
+    pack $mathl.step.pulldown -side right
+    pack $mathl.step -anchor w -padx 4 -pady 6 -fill x
+    ttk::frame $mathl.0index
+    ttk::label $mathl.0index.caption -text [tr. "First index is 0:"]
+    pack $mathl.0index.caption -side left
+    #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
+    ::ttk::combobox $mathl.0index.pulldown -textvariable disaggregate(0index) \
+	-values [list [tr. Default] [tr. Yes] [tr. {No}]] \
+            -width 10 -state readonly
+    pack $mathl.0index.pulldown -side right
+    pack $mathl.0index -anchor w -padx 4 -pady 6 -fill x
     pack $t.complex.math -padx 4 -pady 4 -fill both -expand true
     # next bit not used -- cloud equivalence is property of compartment
     # so there is space here to control some as yet uninvented feature
@@ -456,9 +465,9 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 		 $disaggregate(interp) $disaggregate(fatness) $icount $step \
 		 $disaggregate(desc) $disaggregate(comment) \
 		 $disaggregate(eqnunit) $disaggregate(hide) \
-		 $disaggregate(separate) $disaggregate(xproc) \
-		 $disaggregate(xinc) $disaggregate(xunit) $disaggregate(xlibs) \
-		 $enumTypes]
+		 $disaggregate(separate) $disaggregate(0index) \
+		 $disaggregate(xproc) $disaggregate(xinc) $disaggregate(xunit) \
+		 $disaggregate(xlibs) $enumTypes]
     } else {
         set result {}
     }

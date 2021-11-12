@@ -1160,10 +1160,11 @@ set_properties(Wid, Model) :-
 	(New_P_list = '', !; /* dialogue was cancelled */
 	 New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewInterp,
 		       NewFatness, NewCount, NewStep, NewDesc, NewComment,
-		       NewFix, NewHide,NewSeparate, NewProc, NewInc, NewUnit,
+		       NewFix, NewHide, NewSeparate, NewIndex0,
+		       NewProc, NewInc, NewUnit,
 		       NewLibs, NewEnumSpecs],
 	 P_list = [Colour, Image, ImgPos, Nature, _I, Fatness, Count, _S, _D,
-		   _C, _E, _Proc, _Inc, _Libs, _U, _Fix, Hide, Separate],
+		   _C, _E, _Proc, _Inc, _Libs, _U, _Fix, Hide, Separate, _I0],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -1188,6 +1189,9 @@ set_properties(Wid, Model) :-
 			      build([ThreadsSt, TasksSt, TaperSt])]),
 	     SepField = [threads=Threads,tasks=Tasks,taper=Taper]),
 	    add_parameter(Model, 0, separate, SepField),
+	    (NewIndex0 = 'Default', !,
+		add_parameter(Model, 0, index0, '');
+	     add_parameter(Model, 0, index0, NewIndex0)),
 	    /* fix quirk in new strings_to_atoms */
 	    (NewLibs = '', !, RealNewLibs = []; RealNewLibs= NewLibs),
 	    add_parameter(Model, 0, external_code,

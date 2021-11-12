@@ -1772,7 +1772,7 @@ unique_name_for_new(Parent, Type, Name) :-
 
 get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Interp, Fat, Count,
 			    Step, Desc, Comment, EnumSpecs, Proc, Inc, Unit,
-			    Libs, Fix, Hide, Separate]) :-
+			    Libs, Fix, Hide, Separate, Index0]) :-
 	(Submodel has_class_refinement fill_colour of Colour,
 	    \+ Colour = clear, !;
 	    Colour = white),
@@ -1804,6 +1804,8 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Interp, Fat, Count,
 	 sicstus_format_to_chars("~d,~d,~1f", [Th, Ta, Tpr], SeparateSt),
 	 name(Separate, SeparateSt), !;
 	Separate = 0),
+	(Submodel has_class_refinement index0 of Index0, !;
+	Index0 = 'Default'),
 	(Submodel has_class_refinement external_code of ExternCode, !,
 	    member(procedure=Proc, ExternCode),
 	    member(include=Inc, ExternCode),
