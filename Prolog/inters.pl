@@ -941,7 +941,8 @@ make_intermediates(
 	    (nonvar(IndRef), !;
 		/* generate_name(c, loop, LoopName, Used), */
 		IndRef = glob(_LoopName, _)),
-	    ((Units = boolean; m_update><applies_in(SubId, index0, 'Yes')), !,
+	    ((Units = boolean; 
+                  \+ Units = a(_), m_update><applies_in(SubId, index0, 'Yes')), !,
 		SourceRef = IndRef;
 	     SourceRef = IndRef+1), % first index is 1 in model, 0 in code
 	    Args = []),
@@ -1482,7 +1483,7 @@ match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, I0, Array) :-
 	     promote_unit(Int, 1), % succeeds only if unitless
 		promote_unit(NeedType, 1),
 		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
-	(((NeedType = boolean; I0 = 'Yes'),
+	(((NeedType = boolean; \+ NeedType = a(_), I0 = 'Yes'),
 		% first index is 1 in model, 0 in code
 	        UseIndxRef = TryIndxRef;
 	      UseIndxRef = TryIndxRef-1),
