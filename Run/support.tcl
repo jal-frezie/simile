@@ -1059,7 +1059,6 @@ proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
 # in reverse order -- hence search can break if too-low index found...
     for {set off 0} {$off<4} {incr off} {
 	if {$off==4-2*$shape} continue
-	incr idx
 	set cur_nbr $trail([expr {($trailPt+($off==3?-1:$off))%$trailLen}])
 	if {$cur_nbr ne "NULL"} {
 	    set tempIntSat [nbrlistmaker ${parent}::Nbrlist<$idx>]
@@ -1068,13 +1067,14 @@ proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
 	    set ${tempIntSat}::next [set ${parent}::nbrs]
 	    set ${parent}::nbrs ${tempIntSat}
 
-	    set remIdx [expr {($shape?7:9)-$idx}]
+	    set remIdx [expr {($shape?5:7)-$idx}]
 	    set tempIntSat [nbrlistmaker ${cur_nbr}::Nbrlist<$remIdx>]
 	    set ${tempIntSat}::instanceid $remIdx
 	    set ${tempIntSat}::payload $parent
 	    set ${tempIntSat}::next [set ${cur_nbr}::nbrs]
 	    set ${cur_nbr}::nbrs ${tempIntSat}
 	}
+	incr idx
     }
     set trail([expr {$trailPt%$trailLen}]) $parent
 }
@@ -1091,10 +1091,9 @@ proc make_fixed_nbr_list {parentTxt shape rows columns rowId columnId} {
     for {set rowOff -1} {$rowOff<=1} {incr rowOff} {
 	for {set colOff -1} {$colOff<=1} {incr colOff} {
 	    if {$colOff*(2*$shape-3) == abs($rowOff)} continue
-	    incr idx
 	    set oRow [expr {$rowId+$rowOff}]
 	    set oCol [expr {$columnId+$colOff}]
-	    if {$oRow>0 && $oRow<=$rows && $oCol>0 && $oCol<=$columns} {
+	    if {$oRow>=0 && $oRow<$rows && $oCol>=0 && $oCol<$columns} {
 		set tempIntSat [nbrlistmaker ${parent}::Nbrlist<$idx>]
 		set ${tempIntSat}::instanceid $idx
 		set remote [string range $parent 0 [string last < $parent]-1]
@@ -1102,6 +1101,7 @@ proc make_fixed_nbr_list {parentTxt shape rows columns rowId columnId} {
 		set ${tempIntSat}::next [set ${parent}::nbrs]
 		set ${parent}::nbrs ${tempIntSat}
 	    }
+	    incr idx
 	}
     }
 }
@@ -1136,7 +1136,7 @@ proc locate {ptr idCount args} {
 proc locate_nbr {ptr metaTxt soughtIndex} {
     upvar 1 $metaTxt metaptr
     while {$ptr ne 0} {
-	if {[set ${ptr}::instanceid] == $soughtIndex} {
+	if [set ${ptr}::instanceid]==$soughtIndex { ;# substitute before test!
 	    set metaptr [set ${ptr}::payload]
 	    return 1
 	}
@@ -1277,7 +1277,7 @@ proc GetTclCompProperty {prop args} {
 	Objects {
 	    set result {}
 # objects must be in order for ModelInspector to work
-	    for {set record 2} {$record<=$nodecount} {incr record} {
+	    for {set record 1} {$record<$nodecount} {incr record} {
 		lappend result [lindex $nodedata($record) 0]
 	    }
 	    return $result
@@ -1295,6 +1295,9 @@ proc GetTclCompProperty {prop args} {
 	} Dims|Trans {
 	    if {[set rec [FindRecord $node]] eq ""} {return noitem}
 	    set dimRefs [GetFullDims $rec typeList]
+	    set boolList [list boolean false true]
+	    set hexList [list hexkey 7h 5h 9h 3h 11h 1h]
+	    set rectList [list rectkey sw s se w e nw n ne]
 	    set count 0
 	    set transList {}
 	    while {$count<[llength $dimRefs]-1} {
@@ -1307,13 +1310,13 @@ proc GetTclCompProperty {prop args} {
 		    lappend transList [lrange $usedET 1 end]
 		} elseif {[string equal FLAG $aDim]} {
 		    lset dimRefs $count 2
-		    lappend transList [list boolean false true]
+		    lappend transList $boolList
 		} elseif {[string equal HEX_NBR $aDim]} {
 		    lset dimRefs $count 6
-		    lappend transList {}
+		    lappend transList $hexList
 		} elseif {[string equal RECT_NBR $aDim]} {
 		    lset dimRefs $count 8
-		    lappend transList {}
+		    lappend transList $rectList
 		} else {
 		    lappend transList {}
 		}
@@ -1328,7 +1331,11 @@ proc GetTclCompProperty {prop args} {
 				    [expr [llength $typeList]+$vType+9]]
 		    lappend transList [lrange $usedET 1 end]
 		} elseif {[string equal FLAG $vType]} {
-		    lappend transList [list false true]
+		    lappend transList [lrange $boolList 1 end]
+		} elseif {[string equal HEX_NBR $vType]} {
+		    lappend transList $hexList
+		} elseif {[string equal RECT_NBR $vType]} {
+		    lappend transList $rectList
 		} else {
 		    lappend transList {}
 		}
@@ -1416,10 +1423,10 @@ proc GetFullCaption {line} {
 
 proc TypeAsList {arrName count} {
     upvar \#0 $arrName arrVal
-    upvar \#0 $arrVal($count,2) tName
-    set result [list $arrVal($count,1) $tName]
-    upvar \#0 $arrVal($count,3) arrTypes
-    for {set elt 1} {$elt<=$arrVal($count,1)} {incr elt} {
+    upvar \#0 $arrVal($count,1) tName
+    set result [list $arrVal($count,0) $tName]
+    upvar \#0 $arrVal($count,2) arrTypes
+    for {set elt 0} {$elt<$arrVal($count,0)} {incr elt} {
 	upvar \#0 $arrTypes($elt) arrTxt
 	lappend result $arrTxt
     }
@@ -1439,8 +1446,8 @@ proc GetFullDims {line ETptrs} {
 # add this levels type data -- reverse order cos outer models start list
     set count [lindex $line 2]
     while {$count} {
-	lappend localETs [TypeAsList [lindex $line 3] $count]
 	incr count -1
+	lappend localETs [TypeAsList [lindex $line 3] $count]
     }
 # correct earlier enum type references to take account of this level
     set count [llength $parentDims]

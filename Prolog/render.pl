@@ -951,8 +951,8 @@ make_tcl_array_set(Inds, Val, Done) :-
 	    name(IndCsv, IndCsvStr),
 	    Done = [IndCsv, Val];
 	% tcl constant arrays start at index
-	(Val = ['NULL' | _] -> Start = 0; Start = 1), % trail initialization 
-	make_tcl_array_elts(Inds, Start, Val, Done).
+%	(Val = ['NULL' | _] -> Start = 0; Start = 1), % trail initialization 
+	make_tcl_array_elts(Inds, 0, Val, Done).
 
 make_tcl_array_elts(_,_, [], []).
 make_tcl_array_elts(Inds, N, [Val | Rest], Done) :-
