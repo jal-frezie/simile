@@ -33,7 +33,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 	
 	/* If managing units, apply conversion; error message brilliant */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
-	(m_update><use_units_in(Sm, 'Yes'),
+	(m_update><applies_in(Sm, eqn_units, 'Yes'),
 	    \+ ((Units = real;  promote_unit(Units, 1)), Substs = []),
 	    % No conv if dimensionless and no params/timerefs
 	    \+ promote_unit(Units, XUnits),
@@ -941,7 +941,7 @@ make_intermediates(
 	    (nonvar(IndRef), !;
 		/* generate_name(c, loop, LoopName, Used), */
 		IndRef = glob(_LoopName, _)),
-	    (Units = boolean, !,
+	    ((Units = boolean; m_update><applies_in(SubId, index0, 'Yes')), !,
 		SourceRef = IndRef;
 	     SourceRef = IndRef+1), % first index is 1 in model, 0 in code
 	    Args = []),
@@ -1120,9 +1120,10 @@ Now one that uses a special conditional level */
 	         length(Limits, Count),
 	         PtrInit = [],
 	         all(inters, type_ind, [build(Limits), build(XpectTypes)])),
+	       m_update><applies_in(SubId, index0, I0),
 	       all(inters, match_index_units,
 		   [build(XpectTypes), build(IndxRefs), build(Ints),
-		    build(IntIndxRefs), unify(Step), unify(Array)]);
+		    build(IntIndxRefs), unify(Step), unify(I0), unify(Array)]);
 	     throw(only_works_on_array(element, Array))),
 	    
 	    append(ASetups, ISetups, Setups),
@@ -1448,7 +1449,8 @@ decode_number(Source, SubId, Step, SourceRef, Units) :-
 	get_actual_size(SubId, Source, quoted, SrcNums, SrcTypes, SrcUnits),
 	(SrcNums = [SrcNum], SrcTypes = [SrcType], SrcUnits = [SrcUnit], !;
 	  throw(not_single_fixed_dimension(Source, SrcNums))),
-	(member(Source, [0, 0.0]), m_update><use_units_in(SubId, 'Yes') -> 
+	(member(Source, [0, 0.0]), 
+	        m_update><applies_in(SubId, eqn_units, 'Yes') -> 
 	     GenUnits = real; GenUnits = SrcUnit),
 	% allow value of 0 to match any physical unit (still int if disabled)
 	remove_physical_units_if_disabled(SubId, GenUnits, Units),
@@ -1459,13 +1461,13 @@ decode_number(Source, SubId, Step, SourceRef, Units) :-
 	    SourceRef = SrcNum).
 
 remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
-	(m_update><use_units_in(SubId, 'No'),
+	(m_update><applies_in(SubId, eqn_units, 'No'),
 	    nonvar(SrcUnits),
 	    get_conversion(_, SrcUnits, SrcUnits, _), !,
 	    Units = 1;
 	standard_name(SrcUnits, Units)).
 
-match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, Array) :-
+match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, I0, Array) :-
 	(NeedType = XpectType;
             % bodge: if building code, bounds have been made integer, so
 	    % accept boolean or ET as index
@@ -1480,7 +1482,7 @@ match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, Array) :-
 	     promote_unit(Int, 1), % succeeds only if unitless
 		promote_unit(NeedType, 1),
 		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
-	((NeedType = boolean,
+	(((NeedType = boolean; I0 = 'Yes'),
 		% first index is 1 in model, 0 in code
 	        UseIndxRef = TryIndxRef;
 	      UseIndxRef = TryIndxRef-1),

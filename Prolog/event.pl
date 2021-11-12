@@ -30,7 +30,7 @@ units_for(Comp, UnitStr) :-
 	    Base = submodel),
 	to_text_prefix(Dims, Pref),
 	(member(Base, [1, 1/1]), !, append(Pref, "real", UnitStr);
-	 Base = 1/day, m_update><use_units_in(Comp, 'No'), !,
+	 Base = 1/day, applies_in(Comp, eqn_units, 'No'), !,
 	     append(Pref, "1/time", UnitStr);
 	sicstus_format_to_chars("~s~w", [Pref, Base], UnitStr)).
 
@@ -1087,7 +1087,7 @@ spread_dims(Node) :-
 		  UseArray = FoundArray,
 		    SpecChanged = dims),
 		(Type = real, !, Base = 1; Base = Type),
-		((use_units_in(Obj, 'No');
+		((applies_in(Obj, eqn_units, 'No');
 		  IList = [], inters><promote_unit(Base,1)),
 		    CheckLevel = 1;
 		  CheckLevel = 2),
@@ -1097,7 +1097,7 @@ spread_dims(Node) :-
 		    SpecChanged = units),
 		update_links_and_vars(IList);
 	      \+ GivenBase = any,
-	        m_update><use_units_in(Node, 'Yes'),
+	        applies_in(Node, eqn_units, 'Yes'),
 	        value_propagates(out, Node, Next, _Link),
 		multi_prop(out, Next, Node, 5),		
 % if eqn does not parse following unit change, see if it is in a loop

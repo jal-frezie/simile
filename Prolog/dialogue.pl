@@ -339,7 +339,7 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_pb, Is_P_st, Desc_st,
 	      (EqnBase = real; % ...and the equation evaluates to
 	       promote_unit(EqnBase, 1)); %  a dimensionless quantity,
 	      EqnBase = any; % or no eqn, min or max have been enterd
-	      use_units_in(Function, 'No')), % or else if math checking is off,
+	      applies_in(Function, eqn_units, 'No')), % or no math checking
 		CheckLevel = 1; % allow it to have any given physical units
 	      CheckLevel = 2), % otherwise dimensions must match
 	    (MinMaxNeeded = 1 -> % limit event -- boolean if 1 bound, int if 2
@@ -377,7 +377,7 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_pb, Is_P_st, Desc_st,
 		UnitError = [];
 	    ((InterInputs = [], member(EqnBase, [any, const_int, const_ratio,
 						 int, 1]);
-	      use_units_in(Function, 'No')),
+	      applies_in(Function, eqn_units, 'No')),
 		CheckLevel = 1;
 	    CheckLevel = 2),
 	    % Allow numerical or empty entries to have any physical units

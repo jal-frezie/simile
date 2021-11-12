@@ -29,7 +29,7 @@ sicstus_module(m_update,
 		list_cross_border_specs/2, is_top_arc/1,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
 		add_new_line_between/4, change_class/3, get_disag_params/2,
-		time_step_for/3, use_units_in/2,
+		time_step_for/3, applies_in/3,
 		make_ghost/3, get_possible_start/2]).
 
 sicstus_use_module([library(lists),
@@ -1851,12 +1851,12 @@ merge_defns([[Type | Mems] | More], Defns, [[Type | Mems] | AllDefns]) :-
 	    merge_defns(More, KeptDefns, AllDefns);
 	  merge_defns(More, Defns, AllDefns).
 	
-use_units_in(root, 'No').
-use_units_in(Model, Do) :-
-	Model has_class_refinement eqn_units of Local, !,
+applies_in(root, _, 'No').
+applies_in(Model, Flag, Do) :-
+	Model has_class_refinement Flag of Local, !,
 	    Do = Local;	  
 	find_all_comps(Parent, Model),
-	    use_units_in(Parent, Do).
+	    applies_in(Parent, Flag, Do).
 
 /* make_ghost establishes a ghost relationship -- Ghost becomes a ghost of Base.
 Ghost ceases to be a ghost of anything it was previously a ghost of. */
