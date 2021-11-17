@@ -2520,7 +2520,8 @@ count_and_list_lookups(Eqn, N, Eqns) :-
 assign_and_test_limit(_, [], [], [], 1).
 assign_and_test_limit(IdVar, [make(_,_,_,_, [open_index(IdRef, Bound)]) | R1],
 		      [IxExpr | R2], [assign(IdRef, IxExpr) | R3],
-		      IxExpr>=0 && IxExpr<UpBound && R4) :-
+		      IxExpr>0 && IxExpr<=UpBound && R4) :-
+                      % above inequalities different for index0
 	(Bound = pra_bound(PraPtr, PraName),
 	    append_atoms(PraName, made, MadeBound),
 	    UpBound = arr(PraPtr, MadeBound, []);
