@@ -31,7 +31,7 @@ sicstus_module(state,
 
 sicstus_use_module([library(lists), sp_only]).
 
-:- dynamic(use_temp_dir/1, use_pref_dir/1).
+:- dynamic([use_temp_dir/1, use_pref_dir/1]).
 
 kickoff(Vnum) :-
 	user><any_tcl_eval(['ControlDraw', br(Vnum)], 1, EnvVars),

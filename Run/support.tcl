@@ -1177,8 +1177,8 @@ proc compare_instance_status {testInstName refInst num} {
     #    ShowMess debug info "testInst $testInst refInst $refInst" ok
     if {[string match 0 $testInst]} {return 1}
     for {set ptr 0} {$ptr < $num} {incr ptr} {
-        if {[lindex $testInst $ptr]<[lindex $refInst $ptr]} {return -1}
-        if {[lindex $testInst $ptr]>[lindex $refInst $ptr]} {return 1}
+        if [lindex $testInst $ptr]<[lindex $refInst $ptr] {return -1}
+        if [lindex $testInst $ptr]>[lindex $refInst $ptr] {return 1}
     }
     return 0
 }

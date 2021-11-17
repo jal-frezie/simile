@@ -497,7 +497,7 @@ strings_direct( L, for_start, [Name,Start,End,Step], Indent, Stream) :-
 	    Test = (NameRef >= End)),
 	format(Stream, Template, [Indent," ",Init, Test, Incr]).
 
-/* start of a while loop */
+   start of a while loop */
 strings_direct( L, while_start, Expr, Indent, Stream) :-
 	(L = c, Fmt = "~*swhile ( ~w ) {\n";
 	    L = tcl, Fmt =  "~*swhile {~w} {\n"),
@@ -693,7 +693,8 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 		DefEval = 'SPLIT';
 		DefEval = 'DERIVED'); */
 	    InstType = submodel, !, Type = 'VALUELESS',
-	        [Wee, Muckle] = [0, 0],
+	        (m_update><applies_in(Node, index0, 'Yes') -> Wee = 0; Wee = 1),
+	        Muckle = 0, % for submodel, min is index of 1st instance
 	        (by_record(Node), !,
 		    DefEval = 'TABLE';
 		 is_population(Node), !,

@@ -221,7 +221,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    query(overlap(insert, components), warning, top, [ok], _),
 		restart_move)).
 
-:- dynamic(combined_box_is/1, lost_ghost_in_seln/2).
+:- dynamic([combined_box_is/1, lost_ghost_in_seln/2]).
 
 merge_box([L1, T1, R1, B1]) :-
 	(retract(combined_box_is([L2, T2, R2, B2])),

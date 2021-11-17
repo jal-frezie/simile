@@ -198,12 +198,9 @@ build_instances(Language, DestDir, Parent, TopNode,
 	  error_free(build),
 	   backup><is_toplevel(Parent)), !,
 	    /* we need an executable for this level */
-	    (Language = c,
-	     safe_tcl_eval(['NeedNewExec', Parent], ChangeTop),
+	    safe_tcl_eval(['NeedNewExec', Parent], ChangeTop),
 	     (ChangeTop = "0" -> OldTgt = 1;
-	      OldTgt = 0), !;
-	    /* if no c_new look for dll from save file with 1 in name */
-	    OldTgt = 0),
+	      OldTgt = 0),
 	    check_directory(CheckDir),
 	    % Only create directory if building code -- for now I
 	    % only build code for top-level models so do not need
@@ -216,7 +213,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 		Includes = [LostFn, WhereSought],
 	        raise_exception(missing_function(LostFn, WhereSought))),
 
-	    (\+ ChangeTop == 1, % no change to model; reuse executable?
+	    (OldTgt = 1, % no change to model; reuse executable?
 		Stat = 0,
 		\+ Action = export_sharelib, % always build new if exporting?
 		safe_tcl_eval(['ReuseShareLib', br(WCheckDir), Language, 
@@ -497,7 +494,7 @@ used when entering file parameters */
 %	state><version_is(VStr),
 %	name(SimV, VStr),
 %	V is SimV + 4,
-	get_mdl_exec_vers(SimV),
+	database><mdl_exec_vers_is(SimV),
 	state><edition_is(Edition),
 	library><count_functions(Top, FnCount),
 	safe_tcl_eval('clock seconds', DateStr),

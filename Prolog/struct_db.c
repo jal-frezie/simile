@@ -68,6 +68,7 @@ PlBool list_vect_ints(intptr_t x, intptr_t y, PlTerm tgt)
     #define TERMIFY(CH) PL_new_atom(strdup(CH))
 
     #define Pl_Un_Integer(n, t) PL_unify_integer(t, n)
+    #define Pl_Un_Float(a, t) PL_unify_float(t, a)
     #define Pl_Un_Atom(a, t) PL_unify_atom(t, a)
 
 const char* term_to_chars(PlTerm in, PlAtom* out) {

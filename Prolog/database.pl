@@ -23,7 +23,9 @@ sicstus_module(database, [
 	/* for node */
 		node_class/2, node_refinement/3, node_attribute/3,
 	/* for graphics */
-		graphical_info/3]).
+		graphical_info/3,
+	/* For model code, to match what client requires */
+		mdl_exec_vers_is/1]).
 
 sicstus_use_module([library(lists), sp_only, utility, output]).
 		    
@@ -68,6 +70,8 @@ clear_model([Funt/Args | Rest]) :-
 /* Stuff needed for c database */
 % sicstus_load_foreign_resource(struct_db).
 :- dynamic(node_id_for_root_is/1).
+
+mdl_exec_vers_is(V) :- get_mdl_exec_vers(V).
 
 empty_tree(PathToObj) :-
 	load_foreign_library(PathToObj),
