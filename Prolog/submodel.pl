@@ -217,7 +217,7 @@ extract_nodes(Node, Parent, [Child | Rest]) :-
 	Child is_also_part_of Parent,
 	extract_nodes(Node, Parent, Rest).
 	
-	
+/*	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % all_same_parent checks that all the nodes in a list of nodes and arcs have
 % the same parent and returns its name. It also separates out the nodes and
@@ -239,7 +239,7 @@ all_same_parent( [Thing|Things], Parent, Nodes, [Thing|InclFlows], Arcs ) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % add_link_equivalence convenient interface to the ADT to add equivalences
-
+*/
 add_link_equivalence( Node, From-To ) :-
 	\+ Node has_link_equivalences _Equivs,
 	!,

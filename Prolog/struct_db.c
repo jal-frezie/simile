@@ -73,6 +73,7 @@ PlBool list_vect_ints(intptr_t x, intptr_t y, PlTerm tgt)
 
 const char* term_to_chars(PlTerm in, PlAtom* out) {
   PL_get_atom(in, out);
+  PL_register_atom(*out);
   return PL_atom_chars(*out);
 }
 

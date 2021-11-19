@@ -2347,13 +2347,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 		    /* do not go into a sumbodel if I cannot get the existence
 		    test done by the time I come out */
 		\+ (member(make(existence_tested(Sm), _,_, [_,_,_,D], _), All),
-		       var(D)),
-
-	    % Check for incomplete single-loop chains before exiting loop
-		\+ (member(make(_, Conds-_, _,_,_), SubPass),
-		    nonvar(Conds), % filter dummy instructions from d_c_s
-		    member(later(Hanger), Conds),
-		    not_yet_ordered(Hanger));
+		       var(D));
 	     
 	     order_assignments(Phase, [SmLevel | Path], SubEndPts,
 				 All, SubPass)),		     
@@ -2363,6 +2357,12 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	actually have been any new commands generated, but now the whole
 	instructions are returned at this point) */
 	    \+ SubPass = [],
+
+	    % Check for incomplete single-loop chains before exiting loop
+	    \+ (member(make(_, Conds-_, _,_,_), SubPass),
+		nonvar(Conds), % filter dummy instructions from d_c_s
+		member(later(Hanger), Conds),
+		not_yet_ordered(Hanger)),
 	    
 	    /* If this line uncommented, do not do anything that would use the
 	    check-member feature */
@@ -2786,7 +2786,7 @@ all_phase_checked(Pass) :-
     Close = make(none,[]-_,_, Doing, [finish_level]),
     Doing == Phase, !, % get first matching close!
     all_phase_checked(Out).
-    
+
 fwd_submodel_assignments(Phase, Path, RawAssign, All, OrderedPasses,
 			FoundTest) :-
     (Phase == -2 ->
