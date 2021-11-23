@@ -345,7 +345,9 @@ proc WatchModel {gui end} {
 	if {$status eq ""} { # has run to end
 	    set status [list [expr {1-($gui==2)}] $end]
 	}
-	set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
+	if {[llength $status] == 2} {
+	    set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
+	}
 	set going [expr {[lindex $status 0]==2}]
 	if {$going} {
 	    after 1 WatchModel $gui $end
@@ -364,7 +366,8 @@ proc CExecuteModel {isRK start finish args} {
     after idle WatchModel 0 $finish
 
     vwait modelStopped
-    if {[llength $modelStopped]>2} { # error -- re-throw
+    if {[llength $modelStopped]>2 && \
+	    [lindex $modelStopped 0] eq "tcl_model_err"} { # error -- re-throw
 	error $modelStopped
     }
     return $::modelStopped
