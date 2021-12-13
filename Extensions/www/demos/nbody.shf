@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
+<shf simile_version="6.11">
+<external x="789" y="815" w="975" h="724"/>
+<std_tool_layout left_panel_width="280" run_control_height="204"/>
+<notebook>
+  <page caption="Space">
+    <panedwindow orient="vertical">
+      <pane>
+         <container type="Shapes3D20141208">
+          <![CDATA[{spheres /body/x /body/y /body/z /body/diam {,colours /body/i #00000000ffff #ffffa5a50000 #0000ffff0000 #a5a52a2a2a2a #808000008080 #ffff00000000 #ffffffff0000 #808080808080}}]]>
+        </container>
+      </pane>
+    </panedwindow>
+  </page>
+</notebook>
+</shf>
