@@ -12,7 +12,7 @@ function Layers2D (port) {
 		.attr("transform", "translate(" + d3.event.translate +
 		      ")scale(" + d3.event.scale + ")");
 	});
-    d3.select('#' + port + '_diag').attr("class","pane").call(this.diagZoom);
+    // d3.select('#' + port + '_diag').attr("class","pane").call(this.diagZoom);
   this.status = "displaying";
 }
 
@@ -65,6 +65,7 @@ Layers2D.prototype.addLayer = function (type, state) {
 	layerSpec.image = layerSpec.gLayer.append("svg:image")
 	    .attr("width",layerSpec.ncol + "px")
 	    .attr("height",layerSpec.nrow + "px")
+	    .attr("pointer-events", "none")
 	    .attr("xlink:href", "images/bigsimile.gif");
 	// find tgts entry for colour and sub it with gif data request
 	colourIdx = this.tgts.indexOf(layerSpec.color);
@@ -120,10 +121,11 @@ Layers2D.prototype.addLayer = function (type, state) {
 	}
 	break;
     case "InputPointer20210609":
-	layerSpec.gLayer.addEventListener("mousedown",startStroke);
-	layerSpec.gLayer.addEventListener("mousemove",continueStroke);
-	layerSpec.gLayer.addEventListener("mouseup",finishStroke);
-	break;
+    layerSpec.domElt = d3.select('#' + this.port + '_diag').node();
+    layerSpec.actCount = 0;
+	layerSpec.domElt.addEventListener("mousedown",startStroke);
+	layerSpec.domElt.addEventListener("mousemove",continueStroke);
+	layerSpec.domElt.addEventListener("mouseup",finishStroke);
     }
     // are the two local copies for posts tripping each other up??
     $.post('model_action.php', {"base":fileBase, "act":"Query",
@@ -153,23 +155,53 @@ Layers2D.prototype.addLayer = function (type, state) {
 	   });
 }
 
-function startStroke(evt) {
+function doStroke(evt, action) {
     // OK, how do I get the context back?
-    for (var hlpr in currentHelpers) {
-	for (var layerSpec in currentHelpers[hlpr].State) {
+    var myTab = evt.target.parentNode.id;
+    // console.log("retrieved " + myTab);
+    if (currentHelpers[myTab] == undefined) return;
+    var found = false;
+ 	for (var n in currentHelpers[myTab].State) {
+ 	    layerSpec = currentHelpers[myTab].State[n];
+	//console.log("Trying " + layerSpec.type);
 	    // hope is OK if none!
-	    if (layerSpec.gLayer == evt.target) break;
+	    if (layerSpec.domElt == evt.target) {
+	    // console.log("Success!");
+	    found = true;
+	    break;
+	    }
 	}
-    }
-    layerSpec.actCount = 1;
+	if (!found || action == 0 && layerSpec.actCount == 0) return; // non-drag move
+    if (action == -1)
+        layerSpec.actCount = action;
+    layerSpec.actCount += 1;
+    
+    // Now map the coords back to model space
+    const pt = evt.target.createSVGPoint();
+    pt.x = evt.clientX;
+    pt.y = evt.clientY;
+    const modelP = pt.matrixTransform(evt.target.lastElementChild.getScreenCTM().inverse());
+    // console.log("Translated " + pt.x + ", " + pt.y + " to " + modelP.x + ", " + modelP.y);
     parmBlock = {};
-    parmBlock[model_json[layerSpec.xcoord].captpath] = 'NOW ' + evt.offsetX;
-    parmBlock[model_json[layerSpec.ycoord].captpath] = 'NOW ' + evt.offsetY;
+    parmBlock[model_json[layerSpec.xcoord].captpath] = 'NOW ' + (1+modelP.x);
+    parmBlock[model_json[layerSpec.ycoord].captpath] = 'NOW ' + (1-modelP.y);
     parmBlock[model_json[layerSpec.tgt].captpath] = 'NOW ' + layerSpec.actCount;
     sendValues(parmBlock);
-    model_reset(1);
+    // model_reset(1);
 } // ok debug that!
 
+function startStroke(evt) {
+    doStroke(evt,1);
+}
+  
+function continueStroke(evt) {
+    doStroke(evt,0);
+}
+
+function finishStroke(evt) {
+    doStroke(evt,-1);
+}
+  
 Layers2D.prototype.display = function (time, latest, connect) {
     for (var layer in this.State)
 	this.displayLayer(time, latest, connect, layer)

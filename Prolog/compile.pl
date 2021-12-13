@@ -1391,7 +1391,7 @@ nodes.
 			  [created(Name), settled(Name)],
 			  Path, Step, []),
 		     % need culled and created to get in right step
-		    make(enumerate(Name), [/* evt_culled(Name), */ can_enter(Name),
+		    make(enumerate(Name), [/* evt_culled(Name), can_enter(Name), */
 					   on_step], LocalPath, Step, []),
 		    make(startable(Name), [init_list(Name)], Path, Step, []),
 		    make(init_list(Name), [], Path, Step,
@@ -1427,7 +1427,7 @@ nodes.
 	    be an explicit precondition of existence_tested to make sure it
 	    happens in the right phase */
 	    Specials = [make(enumerate(Name),
-			     [existence_tested(Name), can_enter(Name)],
+			     [existence_tested(Name)],
 			     LocalPath, Step, []),
 			make(existence_tested(Name),
 			     % 2017 removed earlier() from can_enter because it
@@ -2286,7 +2286,7 @@ try_longer_steps_in(Level, Sm, MinStep) :-
     (Loop = vm_loop(_,_,_,MinStep);
      Loop = fm_loop(_, _D, A, _),
      nonvar(A), % removed disjunct D=[_D|_] which allowed any multi-instance 
-       MinStep = -1).
+       MinStep = -2).
 
 needs_shorter_step(make_level(_Level, Insts, Lower), Phase) :-
     member(make(_,_,_, [_,_,Need | _], _), Insts),
@@ -2310,6 +2310,8 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	%     Path = [], Capt = top),
 	% tk_update_infobox(pl_locn, [Capt, Phase]),
 	order_phase(Phase, Path, Items, All, ThisPhase, []),
+	order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign),
+	append(ThisPhase, OrderedAssign, Assign).
 
 	/* Now check if we picked any instructions at this level with 'later'
 	conditions that we couldn't resolve: if so, redo order_phase.
@@ -2324,8 +2326,8 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	       \+ suffix([_Gap | CPath], Path)), */
 	% !. cut added to prevent crash in swipl debugger, should be green
 
-	
-	( %unfinished_submodels(Later, Phase, Path, Subs),
+order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign) :-	
+	 %unfinished_submodels(Later, Phase, Path, Subs),
 	  member(SubEndPts, Subs),
 	    SubEndPts = make_level(SmLevel, _,_),
 	    \+ (SmLevel = sm(Sm, _,_,_), % check for unmade can_enter cond
@@ -2394,8 +2396,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 		append([FirstStep, CondPass, LastStep, NewOrdered],
 		       OrderedAssign);
 	     append(CondPass, NewOrdered, OrderedAssign));
-	    OrderedAssign = []),
-	append(ThisPhase, OrderedAssign, Assign).
+	    OrderedAssign = [].
 
 do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
 	       FirstStep, LastStep) :-
@@ -2520,7 +2521,7 @@ count_and_list_lookups(Eqn, N, Eqns) :-
 assign_and_test_limit(_, [], [], [], 1).
 assign_and_test_limit(IdVar, [make(_,_,_,_, [open_index(IdRef, Bound)]) | R1],
 		      [IxExpr | R2], [assign(IdRef, IxExpr) | R3],
-		      IxExpr>0 && IxExpr<=UpBound && R4) :-
+		      IxExpr>=0 && IxExpr<UpBound && R4) :-
                       % above inequalities different for index0
 	(Bound = pra_bound(PraPtr, PraName),
 	    append_atoms(PraName, made, MadeBound),
@@ -2827,7 +2828,7 @@ fwd_submodel_assignments(Phase, Path, RawAssign, All, OrderedPasses,
        FoundTest = test_at(TP, NewGo, Len)),
      append(OncePasses, RecursePasses, OrderedPasses))).
 
-    
+/*    
 order_submodel_assignments(Phase, Path, RawAssign, All,
 			   OrderedPasses, FoundTest) :-
     order_assignments(Phase, Path, RawAssign, All, FirstPass),
@@ -2866,7 +2867,6 @@ order_submodel_assignments(Phase, Path, RawAssign, All,
 	      NewGo is Go+Lead,
 	      FoundTest = test_at(TP, NewGo, Len); true))).
     
-/*
 old_order_submodel_assignments(Phase, Path, RawAssign, All,
 			   OrderedPasses, FoundTest) :-
 	Phase < -2, !,

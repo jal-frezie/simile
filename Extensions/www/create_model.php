@@ -16,8 +16,8 @@
 <script src="js/jquery.jui_dropdown.js"></script>
 <script src="js/jquery.dataTables.js"></script>
 <!-- script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script -->
-<script src="js/three.min.js"></script>
-<script src="js/OrbitControls.js"></script>
+<!-- script src="js/three.min.js"></script-->
+<!-- script src="js/OrbitControls.js"></script-->
 <script type="text/javascript" src="js/jscolor/jscolor.js"></script>
 <script src="js/split.js"></script>
 <style>
@@ -273,7 +273,7 @@ if (isset($_POST['client_exec'])) {
 ?>
 <script src='slider.js'></script>
 <script src='layers2d.js'></script>
-<script src='shapes3d.js'></script>
+<script type='module' src='shapes3d.js'></script>
 </head>
 <body onload="prepare()">
  <div id="dialog-1" title="Dialog Title goes here...">empty</div>

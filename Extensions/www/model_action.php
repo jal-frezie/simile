@@ -89,8 +89,7 @@ switch ($_POST['act']) {
    case "BuildShareLib":
    case "BuildShareLibInLine":
 
-$shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
+$tculargs = array($simileLocn, $simileHome, $_POST['base']);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
    1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
@@ -120,7 +119,7 @@ fclose($pipes[1]);
 // proc_close in order to avoid a deadlock
 $return_value = proc_close($process);
 
-if ( file_exists($simileHome . "/" . $shlibName)) {
+if ( file_exists($_POST['base'] . ".so")) {
    if ($_POST['act'] == "BuildShareLib") {
 //  return last line of $pipe_contents for execution parameters
        echo end(explode("\n", $pipe_contents));
@@ -160,8 +159,7 @@ case "GetAsmJs":
 
    case "CreateSocket":
    
-$shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
+$tculargs = array($simileLocn, $simileHome, $_POST['base']);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
    1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
@@ -227,8 +225,9 @@ break;
 
    case "Describe":
    case "Report":
-      $line1 = doTcl("join [set catalog] .");
-      $paths = explode(".", $line1);
+      $line1 = doTcl("join [set catalog] ..");
+// use two dots as single dot separates caption from included model fragments
+      $paths = explode("..", $line1);
       $arrLength=count($paths);
 
       for($x=0;$x<$arrLength;$x++) {
@@ -317,6 +316,7 @@ break;
       $spew = [];
       $updates = json_decode($sample);
       foreach ($updates as $idx => $pv) {
+         if ($idx == 'seqNo') continue; // used to sort requests
          $nicePath = escapeNasties($idx);
          $result = doTcl("SetParameter [set aH($nicePath)] [list $pv]");
          if ($result== '-1' || $result == '0' || $result == '1') {
@@ -381,6 +381,11 @@ break;
 	 }
 	 $pt++;
       }
+     if ($_POST['act'] == "Execute") {
+	 } else { // put execution status at end of array
+         $hlpArr[$pt] = $stop[0];
+	 }
+     
       echo json_encode($hlpArr);
       break;
 

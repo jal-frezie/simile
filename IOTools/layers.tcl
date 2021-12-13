@@ -62,7 +62,7 @@ itcl::class similescript::$newHelperClass {
         pack $vp.ysc -side right -fill y
         canvas $vp.c -xscrollcommand [list $this SetWithLegends x] \
 	    -yscrollcommand [list $this SetWithLegends y] -bg beige
-	puts "Creating $vp.c"
+	# puts "Creating $vp.c"
 	::canvasnotes20070919::MakeCanvasAnnotatable $vp.c
 	bind $vp.c <Configure> [list $this PosnLegends]
         pack $vp.c -fill both -expand true

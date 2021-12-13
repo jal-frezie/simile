@@ -145,7 +145,7 @@ template <class GridSMClass>
 void make_fixed_nbr_list (GridSMClass* parent, int shape, int rows, int columns,
 			  int rowId, int columnId) {
   int idx = 0, oRow, oCol; 
-  if (shape==1 || rowId%2==1) 
+  if (shape==1 || rowId%2==0) 
     --shape; // shape now as in last proc
   // order of addition is chosen to match what happens with vm grid
   parent->nbrs = NULL;

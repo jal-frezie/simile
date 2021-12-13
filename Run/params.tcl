@@ -1449,7 +1449,7 @@ proc LoadBase64CharData {encoded} {
     set paramMetadata($compName,saveBinary) 1
     if {[info exists widgetNames($compName)]} { ;# should imply widget exists
 	FillIfSmall $widgetNames($compName).e [concat $paramData($compName)] \
-	    [GetCompProperty $topNode Trans $nodeId]
+	    [GetCompProperty $parseStatus(topNode) Trans $nodeId]
 	$widgetNames($compName).e configure -state disabled
 	AbleHandEditControls $widgetNames($compName)
     }

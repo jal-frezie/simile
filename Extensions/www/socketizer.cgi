@@ -1,6 +1,6 @@
 #!/usr/bin/tclsh
 encoding system utf-8
-foreach local {sPath sHome mdl shLib} val $argv {
+foreach local {sPath sHome mdl} val $argv {
     set $local $val
 }
 
@@ -11,10 +11,10 @@ source [file join $sPath Run client5d.tcl]
 # we also want to convert tk canvas graphics to svg for the layer helper
 package require can2svg
 
-proc InstallModelExec {shLib} {
-catch {
+proc InstallModelExec {mdl} {
+#catch {
  global mH iH aH catalog
- set mH [loadmodel [file join $::sHome $shLib] SimiLive]
+    set mH [loadmodel ${mdl}.so SimiLive]
  set iH [CreateModel $mH]
  set hook {}
  set catalog [ListObjPaths $mH]
@@ -28,11 +28,11 @@ catch {
 	}
     }
  }
- llength $catalog} res
- return $res
+ #llength $catalog} res
+ #return $res
 }
 
-InstallModelExec $shLib
+InstallModelExec $mdl
 
 # now create a server that executes everything it gets at global scope 
 # (add security later) and returns the response

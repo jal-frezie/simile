@@ -1,3 +1,6 @@
+import * as THREE from 'https://cdn.skypack.dev/three@0.135.0'
+import { OrbitControls } from 'https://cdn.skypack.dev/three@0.135.0/examples/jsm/controls/OrbitControls.js';
+
 // requestAnim shim layer by Paul Irish
 window.requestAnimFrame = (function(){
     return  window.requestAnimationFrame       ||
@@ -16,9 +19,9 @@ function Shapes3D (port) {
     this.State = [];
     this.showing = {};
   this.status = "displaying";
-      w = 800;
+      var w = 800;
 //      w = parseInt(d3.select('#tabs').style('width'), 10)-50;
-      h = 800;
+      var h = 800;
 //      h = notebookPaneHeight()-120;
 
     var scene = new THREE.Scene();
@@ -35,7 +38,7 @@ function Shapes3D (port) {
     document.getElementById(port + "_div").appendChild( renderer.domElement );
 
     // CONTROLS
-    controls = new THREE.OrbitControls( camera, renderer.domElement );
+    var controls = new OrbitControls( camera, renderer.domElement );
 
 	///////////
 	// LIGHT //
@@ -100,7 +103,7 @@ function Shapes3D (port) {
     this.renderer = renderer;
     this.updated = 0;
 
-    that = this;
+    var that = this;
     var animate = function () {
 	window.requestAnimFrame( animate );
 	// cube.rotation.x += 0.1; cube.rotation.y += 0.1;
@@ -120,10 +123,12 @@ function Shapes3D (port) {
     animate();
 }
 
+window.Shapes3D = Shapes3D;
+
 function ShowMenuButton (that) {
-    dropHandle = '#' + that.port + '_drop2';
-    launchHandle = that.port + '_launcher2';
-    menuHandle = that.port + '_menu2';
+    var dropHandle = '#' + that.port + '_drop2';
+    var launchHandle = that.port + '_launcher2';
+    var menuHandle = that.port + '_menu2';
     $(dropHandle).html("\
   <div id='" + launchHandle + "_container'>\
     <button id='" + launchHandle + "'>Select new item type</button>\
@@ -213,10 +218,10 @@ function AddTemplateToScene (that, template, newComps) {
 	$.post('model_action.php', {"base":fileBase, "act":"Query",
 				    "note":JSON.stringify(newComps)},
  	       function(newDataCode) {
-		   newDataArr = JSON.parse(newDataCode);
+		   var newDataArr = JSON.parse(newDataCode);
  		   newData = {};
- 		   for (j=0; j<newComps.length; ++j) {
- 		       nItm = newComps[j]
+ 		   for (var j=0; j<newComps.length; ++j) {
+ 		       var nItm = newComps[j]
  		       newData[nItm] = newDataArr[j];
 		       // do not use popups they may be incomplete
 		   }
@@ -226,6 +231,7 @@ function AddTemplateToScene (that, template, newComps) {
     that.State.push(template);
     that.updated = 2;
 }
+window.AddTemplateToScene = AddTemplateToScene;
 
 function MakeSelection (that, selected) {
 //    console.log('MS ' + JSON.stringify(that));
@@ -279,7 +285,7 @@ function nestedAtLeast(ob, depth) {
     if (depth == 0)
 	return 1
     else if (typeof(ob) == "object")
-    	for (subOb in ob)
+    	for (var subOb in ob)
 	    return nestedAtLeast(subOb, depth-1);
     else
 	return 0
@@ -358,16 +364,16 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	}
 	instruct[6] = {};
 	
-	allDefns = {};
-	for (i=1;i<5;++i) {
+	var allDefns = {};
+	for (var i=1;i<5;++i) {
 	    allDefns[["n","x","y","z","r"][i]] = addAsApprop(latest, instruct[i]);
 	}
-	sphereMats = [];
+	var sphereMats = [];
 	allDefns.c = MakeColourKey(instruct[5], latest, sphereMats);
-	defns = flattenAll("s", allDefns, 0);
+	var defns = flattenAll("s", allDefns, 0);
 	var sphereGeometry = new THREE.SphereGeometry(1.0, 32, 16 ); 
 	for (i in defns) {
-	    defn = defns[i];
+	    var defn = defns[i];
 	    if (defn.r < 1) continue;
 	    // Sphere parameters: radius, segments along width, segments along height
 	    // use a "lambert" material rather than "basic" for realistic lighting.
@@ -381,7 +387,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	}
 	break;
     case "lines":
-	for (var old in instruct[9]) {
+	for (old in instruct[9]) {
 	    this.scene.remove(instruct[9][old]);
 	    delete(instruct[9][old]);
 	}
@@ -391,7 +397,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	for (i=1;i<8;++i) {
 	    allDefns[["n","sx","sy","sz","fx","fy","fz","w"][i]] = addAsApprop(latest, instruct[i]);
 	}
-	lineMats = [];
+	var lineMats = [];
 	allDefns.c = MakeColourKey(instruct[8], latest, lineMats);
 	defns = flattenAll("l", allDefns, 0);
 	var lineGeometry = new THREE.CylinderGeometry(0.5,0.5,1.0);
@@ -414,7 +420,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	    line.position.set((defn.fx+defn.sx)/2,
 			      (defn.fz+defn.sz)/2,
 			      (defn.fy+defn.sy)/2);
-	    xyExt = Math.pow(defn.fx-defn.sx,2)+ Math.pow(defn.fy-defn.sy,2);
+	    var xyExt = Math.pow(defn.fx-defn.sx,2)+ Math.pow(defn.fy-defn.sy,2);
 	    line.scale.set(defn.w, Math.sqrt(xyExt +
 					 Math.pow(defn.fz-defn.sz,2)),
 			   defn.w);
@@ -475,7 +481,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	    for (i=1;i<4;++i) {
 		allDefns[["n","x","y","h"][i]] = latest[instruct[i]];
 	    }
-	    nC = lolliCols[lolliCount++];
+	    var nC = lolliCols[lolliCount++];
 	    var sphereMaterial = new THREE.MeshLambertMaterial( {color: nC} ); 
 	    var sphereGeometry = new THREE.SphereGeometry(1.0, 32, 16 ); 
 	    var lineMaterial = new THREE.MeshLambertMaterial({color: 0x084000});
@@ -513,7 +519,8 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	    allDefns[["n","cx","cy","cz","r","e","rx","ry","rz"][i]] =
 		addAsApprop(latest, instruct[i]);
 	}
-	frontMats = backMats = [];
+	var frontMats = [];
+	var backMats = [];
 	allDefns.f = MakeColourKey(instruct[9], latest, frontMats);
 	allDefns.b = MakeColourKey(instruct[10], latest, backMats);
 

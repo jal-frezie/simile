@@ -1,6 +1,6 @@
 #!/usr/bin/tclsh
 encoding system utf-8
-foreach local {sPath sHome mdl shLib} val $argv {
+foreach local {sPath sHome mdl} val $argv {
     set $local $val
 }
 puts "Here [pwd] args $argv<br>"
@@ -13,7 +13,7 @@ if {![file exists [file join $sHome .simile userinfo.txt]]} {
     exec touch $sHome/userinfo.txt ;# make sure its newer than Simile install
 }
 set env(HOME) $sHome
-catch {file delete [file join $sHome $shLib]}
+catch {file delete $mdl.so}
 catch {file delete [file join $sHome .simile Desktop1.smx]}
 # puts $auto_path<br>
 if {[catch {
@@ -21,7 +21,7 @@ if {[catch {
 
     similescript::ModelWindow modelWin
     modelWin Open $mdl.sml
-    modelWin BuildShareLib [file join $sHome $shLib]
+    modelWin BuildShareLib $mdl.so ;# was [file join $sHome $shLib]
 # now export the svg not over the original model
     puts "svg to $mdl.svg"
     modelWin BuildSVGDiagram $mdl.svg

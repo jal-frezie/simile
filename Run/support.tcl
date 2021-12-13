@@ -53,6 +53,171 @@ proc graph_lookup {xval index} {
 proc setup_enum_type_data {args} {
 }
 
+proc tcl_insert {node newVs} {
+    global nodedata
+
+    set line [FindRecord $node]
+    if {[llength $line]} {
+	set tree [lindex $line 8]
+	set type [lindex $line 1]
+	set dims [GetTclCompProperty dummy Dims $node]
+	return [list [FillValue ::AME_model<> $tree $type $dims {} 0 $newVs]]
+    }
+    return novalue
+}
+proc ExplainError {myNode errList origError} {
+    global introspect
+    
+    set severity -1
+    set what [lindex $errList 0]
+    set dest [lindex $errList 1]
+    set mtime [lindex $errList 2]
+    set mstep [lindex $errList 3]
+    set whoopsie [lindex $errList 4]
+    switch $what {
+	evalmodel {set operation "calculating the value of"}
+	updatemodel {set operation "updating the state"}
+	resetmodel {set operation "resetting"}
+	default {set operation "doing $what for"}
+    }
+#	advancemodel {set operation "advancing the time point for"}
+    set target something
+    if {[string is integer -strict $dest]} { ;# graph id (tcl only for now)
+	foreach {n record} [array get ::nodedata] {
+	    if {[lindex $record 9]==$dest} {
+		set target "[GetFullCaption $record] (node [lindex $record 0])"
+		break;
+	    }
+	}
+	if {[llength $introspect]} {
+	    append target " at indices [join $introspect ,]"
+	}
+    } elseif {[string first :: $dest]>-1} { ;# a Tcl namespace hierarchy
+	set targetList [DescribeComponent $myNode $dest]
+	if {![namespace exists [join [lrange [split $dest :] 0 end-2] :]]} {
+	    set whoopsie dest_missing
+# Just remind me, when does this happen? 
+# Probably never, due to base index range checking
+	}
+	set target [lindex $targetList 0]
+    } elseif {![string equal none $dest]} { ;# caption extracted by c++ error handling
+	if {[llength $dest] == 1} {
+	    set target $dest
+	} else {
+	    set target \
+		"[lindex $dest 0] at indices [join [lrange $dest 1 end] ,]"
+	}
+    }
+
+    switch -glob -- $whoopsie {
+	"can't read \"*\": no such element in array" - 
+	"can't read \"*\": no such variable" {
+	    set ref [lindex [split $whoopsie \"] 1]
+	    set sourceList [DescribeComponent $myNode $ref] 
+	    if {![namespace exists [join [lrange [split $ref :] 0 end-2] :]]} {
+		set problem "it found that there was no submodel instance when trying to get [lindex $sourceList 0]"
+	    } else {
+		set problem "it found that there was no value for [lindex $sourceList 0]"
+	    }
+	} dest_missing {
+	    set problem "it found there was no instance with these indices. This may mean that you have specified a base model instance by an index which is out of range"
+	} "User-defined interruption code *" {
+	    set code [lindex $whoopsie end]
+	    set problem "there was a user-defined interruption: $code"
+	    set severity 0
+	} "abort request from the user" {
+	    set problem "the user chose to abort a long operation"
+	    set severity 0
+	} discontinuity {
+	    set problem "there was a discontinuity which could not be dealt with by adaptive step size control"
+	    set severity 0
+	} event {
+	    set problem "there was a limit event, producing a pause"
+	    set severity 0
+	} min {
+	    set problem "the compartment value went below its minimum"
+	    set severity 0
+	} max {
+	    set problem "the compartment value went above its maximum"
+	    set severity 0
+	} "Illegal operation signal *" {
+	    set code [lindex $whoopsie end]
+	    set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 
+		SIGIOT SIGEMT SIGFPE SIGKILL SIGBUS SIGSEGV SIGSYS SIGPIPE 
+		SIGALRM SIGTERM SIGUSR1 SIGUSR2 SIGCHLD SIGPWR SIGWINCH 
+		SIGURG SIGIO SIGSTOP SIGTSTP SIGCONT SIGTTIN
+		SIGTTOU SIGVTALRM SIGPROF} $code]
+	    set problem "there was an OS signal: $code ($which)"
+	} "domain error: argument not in valid range" -
+	"floating-point value too large to represent" -
+	"divide by zero" {
+	    set problem "there was a math error: $whoopsie"
+	} default {
+	    # could not get cause of error, raise again as general problem
+	    set problem "there was a $whoopsie"
+	}
+    }
+    
+    switch -- $mstep {
+	-2 {
+	    set action initialization
+	    set timing {}
+	    #		ScrubRun $node 0
+	} -1 {
+	    set action parameterization
+	    set timing {}
+	    #		ScrubRun $node 0
+	} 0 {
+	    set action reset
+	    set timing {}
+	} default {
+	    if {$what eq "resetmodel"} {
+		set action "processing an input"
+	    } else {
+		set action execution
+	    }
+	    set timing " at time $mtime"
+	}
+    }
+    switch -- $severity {
+	-1 {
+	    set specifics [list model_crash $operation $target $action $timing \
+		       $problem $origError]
+	    set icon warning
+	} 0 {
+	    set specifics [list model_pause $operation $target $action $timing \
+		       $problem]
+	    set icon info
+	}
+    }
+    AddLogEntry $myNode $specifics
+    ExecQuery $specifics $icon top {} ok
+    # do it after idle so this process is not hung till user responds
+#    RaiseModelWindow $myNode
+    return $severity
+}
+
+proc DescribeComponent {topNode ref} {
+    set hierarchy [split $ref :] ;# joins actually :: so every other elt null
+    set inds {} ;# inds no longer needed, kept as spare part
+    set context [MakeContext $topNode [lrange $hierarchy 0 end-2]]
+    set variable [lindex $hierarchy end]
+    set br [string first \( $variable]
+    if {$br == -1} {
+	set captPath [NewCaptionIfAvail $topNode $hierarchy 1 $variable]
+	set vdesc "variable [lindex $captPath 0]"
+    } else {
+	set locals [split [string range $variable [incr br 1] end-1] ,]
+	eval {lappend inds} $locals
+	set captPath [NewCaptionIfAvail $topNode $hierarchy \
+			  [concat $locals [list 1]] \
+			  [string range $variable 0 [incr br -2]]]
+	set vdesc "element [join [lrange $captPath 1 end-1] ,] of variable [lindex $captPath 0]"
+    }
+# next turn last arg into node
+    return [list $vdesc$context $inds]
+}
+
 proc NewCaptionIfAvail {topNode dest inds in_code} {
     global nodedata
 
@@ -1130,6 +1295,7 @@ proc locate {ptr idCount args} {
 				$args $idCount]]==-1} {
         set ptr [set ${submodelptr}::next]
     }
+    # puts [info level 0]--$status--$ptr
     return [expr {$status?0:$ptr}]
 }
 
@@ -1155,8 +1321,8 @@ proc init_pop {metaTxt crNode ptCount channelId maker name} {
 	    set ${submodelptr}::new_instance 0
 	    set $meta [set ${submodelptr}::next]
 	} else { ;# Instance exists
-#	    ${byrecspointer}::submodel1maker submodel1<$loop>
-#	    set submodel1pointer ${byrecspointer}::submodel1<$loop>
+	    #	    ${byrecspointer}::submodel1maker submodel1<$loop>
+	    #	    set submodel1pointer ${byrecspointer}::submodel1<$loop>
 	    # fantasy cmd replacing above:
 	    set submodelptr [eval [list $maker] $name<$ptCount>]
 	    set ${submodelptr}::instanceid $ptCount

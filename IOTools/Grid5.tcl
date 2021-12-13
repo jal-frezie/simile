@@ -896,6 +896,7 @@ namespace eval grid005 {
 # was this to make it go faster or avoid some heinous Tk bug?
 # removed 1/9/09 so grid not out-of-date when restored to view
 	array unset useNodes $winId,groJob
+	if {![winfo exists $winId.c]} return ;# destroyed since event
 	set mult $useNodes($winId,mult) ;# shorthand
 	set sqz $useNodes($winId,sqz) ;# shorthand
         set visible [concat [$winId.c xview] [$winId.c yview]]
@@ -912,7 +913,8 @@ namespace eval grid005 {
 	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB \
 	    -to 0 0 -zoom $mult $sqz -shrink
 	if {$useNodes($winId,hex) && $mult>1} {
-	    for {set line [expr {($dataB-1)/2*2}]} {$line>$dataT} {incr line -2} {
+	    set firstShifted [expr {$dataB-($useNodes($winId,nrow)-$dataB)%2-1}]
+	    for {set line $firstShifted} {$line>$dataT} {incr line -2} {
 		$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 		    -from [expr {int($dataL)}] $line $dataR [expr {$line+1}] \
 		    -to [expr {$mult/2}] [expr {int($sqz*($line-int($dataT)))}] -zoom $mult $sqz

@@ -403,7 +403,7 @@ function createInitialHelpers() {
 			}
 		    }
 		} else {
-		    helperElt = $(hlpDoc).find("shf")[0].lastChild;
+		    helperElt = $(hlpDoc).find("shf")[0].lastElementChild;
 		}
 	    }
 	    AddHelperHierarchy('right', helperElt);
@@ -601,11 +601,13 @@ function model_step(current, start, end, span) {
 	}
 	if (current < end) {
 	    savedStart = start;
-	    return;
-	}
-	newRemain = end - start;
-	newProgress = 0;
-	savedStart = "stop";
+	    newCurrent = current;
+	} else {
+        newCurrent = end;
+        end = 2*end - start;
+        start = newCurrent;
+	    savedStart = "stop";
+    }
     } else {
 	log = parseFloat($("#le").val());
 	interval = Math.min(end-current,span);
@@ -628,13 +630,18 @@ function model_step(current, start, end, span) {
 		// console.log('Data returned ' + newVals);
 // now, process the values while fetching the next lot (after timeout in case
 // still processing last lot)
+		var execHistory = JSON.parse(newVals);
+		var tail = execHistory.slice(-2);
+		if (!tail[1]) { // last element is execution status
+		    savedStart = "pause";
+            newCurrent = tail[0].slice(-1)[0]; // time stamp of last data set
+		}
 		setTimeout(function () {
 		    model_step(newCurrent, start, end, span);
 		});
 
-		var execHistory = JSON.parse(newVals);
-		for (pt=0; pt<execHistory.length; pt++) {
-		    timePt = execHistory[pt].slice(-1)[0]; // last value
+		for (pt=0; pt<execHistory.length-1; pt++) {
+		    var timePt = execHistory[pt].slice(-1)[0]; // last value
 		    var timeVal = parseFloat(timePt)/timeUnit;
 		    // console.log("Displaying results for time " + timeVal);
 		    allResults = {};
@@ -653,10 +660,10 @@ function model_step(current, start, end, span) {
 		    // screen till all are done -- need setTimeout.
 		}
 	    }); // ExecuteMulti
+	}
 	$("#ct").val(newCurrent);
 	newProgress = 100*(newCurrent-start)/(end-start);
-    }
-    $("#rl").val(newRemain);
+    $("#rl").val(end-newCurrent);
     $( "#progress" ).progressbar({
 	value: newProgress
     });
@@ -876,7 +883,7 @@ function toModel(zapTgt, id) {
     parmBlock = {};
     parmBlock[model_json[id].captpath] = 'NOW ' + GetSliderValue(zapTgt);
     sendValues(parmBlock);
-    model_reset(1);
+//    model_reset(1);
 }
 
 function FileParams (port) {
@@ -1957,7 +1964,8 @@ Grid5.prototype.acceptClick = function (nodeId) {
 		   .attr("xlink:href", that.headerGIF + responses[arrInd]);
 	       if (that.hex) {
 		   d3.select('#' + that.port + '_img')
-		       .attr("transform","scale(1.732,1.5)"); 
+		       .attr("transform","translate(0," + 1.5*that.height +
+		       ")scale(1.732,-1.5)"); 
 	       }
 	   }); // Query
 
@@ -2190,8 +2198,10 @@ function loadParams() {
   sendValues(parmBlock);
 }
 
+var parmReqOrdinality = 0;
 function sendValues(parmBlock) {
-//alert(JSON.stringify(parmBlock));
+//console.log(JSON.stringify(parmBlock));
+  parmBlock["seqNo"] = ++parmReqOrdinality; // used to sort requests
   $.ajax({
     type: "POST",
     url: "model_action.php",

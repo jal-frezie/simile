@@ -200,6 +200,10 @@ proc ResponseTo {paramList} {
 	    set result [ParamsFromGUI $service($params(base))]
 	} Reset {
 	    set iH $service($params(base))
+	    set i 0
+	    foreach dt [split $params(step) +] {
+		c_setstepmodel $iH $dt [incr i]
+	    }
 	    set isRK [expr {$params(method) ne "Euler"}]
 	    CResetModel $params(current) $isRK $params(depth)
 	    set reqs [::json::json2dict [urlDecode $params(note)]]
@@ -269,9 +273,15 @@ proc relay {from to in} {
 	set blk [read $from]
 	if {$in} {
 	} else {
-	    set self $::web_service(host):$::web_service(port)
-	    set blk [string map [list "Host: $self" "Host: $::web_service(tgt)"] $blk]
-	    if {[string range $blk 0 30] eq "POST /model_action.php HTTP/1.1"} {
+	    if {[string first "POST /create_model.php HTTP/1.1" $blk]==0} {
+		set blk [string replace $blk 5 5 $web_service(path)/]
+	    }
+	    set self $web_service(host):$web_service(port)
+	    set blk [string map [list "Host: $self" "Host: $web_service(tgt)"] $blk]
+	    if {[string first "GET /" $blk]==0} {
+		set blk [string replace $blk 4 4 $web_service(path)/]
+	    }
+	    if {[string first "POST /model_action.php HTTP/1.1" $blk]==0} {
 		set paramLine [string range $blk [string last \n $blk end]+1 end]
 		while {[string length $paramLine]<8} {
 		    # should really get required length from headers
@@ -284,7 +294,7 @@ proc relay {from to in} {
 		set result [ResponseTo $paramList]
 		Respond $from $result
 		return ;# do not bother the server
-	    }
+	    } 
 	}
 	puts -nonewline $to $blk
     }
@@ -299,8 +309,8 @@ proc accept {clientsock clienthost clientport} {
     fileevent $serversock readable [list relay $serversock $clientsock 1]
 }
 
-proc start_server {host port tgt runParams} {
+proc start_server {host port tgt path runParams} {
     array set ::web_service [list host $host port $port tgt $tgt \
-				 parms $runParams]
+				 path $path parms $runParams]
     socket -server accept -myaddr $host $port
 }
