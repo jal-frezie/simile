@@ -935,7 +935,7 @@ proc LetItShow {t {doneVar {}}} {
 	set ::$doneVar 1
 	return
     }
-    # UpdateByOS
+    UpdateByOS
 #puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
 	tkwait visibility $t
@@ -964,9 +964,24 @@ proc LetItShow {t {doneVar {}}} {
 # have variable that gets set on exit, if scripting just set it
 # otherwise do interaction here
         set oldGrab [grab current]
-	grab $t
+	if {[string length $oldGrab]} {
+	    grab release $oldGrab
+	}
+	after idle raise $t ;# or Windows puts it behind progress dialogue :(
+	# MacOS may disable dialog if grabbed now so only do if needed
+	if {[tk windowingsystem] eq "none"} { ;# aqua tcltk fixed now
+	    focus $t
+	    if {[llength [bind $wotParent <FocusOut>]]} {
+		set oldGrab $wotParent
+		bind $wotParent <FocusOut> {}
+	    }
+	    bind $t <FocusOut> "grab $t"
+	} else {
+	    grab $t
+	}
 	tkwait variable $doneVar
-        if {[string length $oldGrab]} {
+        bind $t <FocusOut> {}
+	if {[string length $oldGrab]} {
 	    grab $oldGrab
 	} else {
 	    grab release $t
@@ -999,8 +1014,8 @@ proc PackItUp {t} {
 	    unset ::concealedMenu($t)
 	}
 # Make menu updates happen before something else does same thing
-# (Causes problems with aborting execution in MacOS)
-	# UpdateByOS
+# (May cause problems with aborting execution in MacOS)
+	UpdateByOS
     }
 }
 

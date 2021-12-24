@@ -1141,7 +1141,8 @@ proc ControlDraw {prologVersion} {
         # Add to path and recently opened files data
         RecordPathChoice .sml $OPEN_MODEL {}
     } else {
-        set OPEN_MODEL [lindex [glob -nocomplain $custom(prefDir)/*.smx] 0]
+ 	set matchUnsaved $custom(prefDir)/$::msgs(desktop_abbrev)*.smx
+	set OPEN_MODEL [lindex [glob -nocomplain $matchUnsaved] 0]
 # if there are any logfiles from unsaved models, pick one
     }
     

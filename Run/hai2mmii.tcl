@@ -171,7 +171,7 @@ proc AddToWatched {node} {
     global helperTable
 
     lappend helperTable($helperTable(beingCalled),foci) $node
-    if {$helperTable(beingCalled) eq ""} return
+    if {$helperTable(beingCalled) eq ""} {error "stealth helper"}
 #    $helperTable(VariableList)::AddHelperLeaf $::runState($::myNode,inspId) \
 	#	$node $helperTable(beingCalled)
     $::runState($::myNode,inspId) HelperLeaf $node $helperTable(beingCalled) 1

@@ -2751,10 +2751,16 @@ select_ext_tests(All, XTests) :-
 	XTests = [].
 
 hang_on_tree(Inst, Using, make_level(_Cur, Insts, SubTrees)) :-
-	Inst = make(_,_, Path, _,_),
+	Inst = make(_,_, Path, _, Act),
 %	remove_non_loopers(PathPlus, Path),
 	append(Tail, Using, Path),
-	(Tail = [], member(Inst, Insts);
+	% second disjunct in following moves instructions without actions
+	% outside any boring submodels they are in, as that can mess up
+	% sequencing for intermediates in in_preceding() of array values
+	((Tail = []; Act = [], \+ (member(Useful, Tail),
+				   \+ (Useful = sm(_,_,_, fm_loop([], _, A, _)),
+				   var(A)))) ->
+	      member(Inst, Insts);
 	    suffix([Next], Tail),
 	    member(NextTree, SubTrees),
 	    NextTree = make_level(Next, _,_), !,

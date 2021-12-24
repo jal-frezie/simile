@@ -447,7 +447,7 @@ if {[info exists masterId]} { ;# we are in separate interp
     }
  
 # This one needs to wait till previous call finished    
-    proc ShiftDisplays {nodeId args} {
+proc ShiftDisplays {nodeId args} {
 	global dispDone
 	waitForDisps
 	if {$dispDone} { ;# helper has stuffed up
@@ -1178,8 +1178,9 @@ proc ParamsFromGUI {inst} {
 }
 
 proc StartWebService {node scratch {runParams {}}} {
-    array set ::web_service [list local $scratch node $node]
+    array set ::web_service [list local $scratch node $::nodeId]
     start_server localhost 7464 similive.simulistics.com {} $runParams
+#    start_server localhost 7464 hotwheels /SimiLive $runParams
     switch $::tcl_platform(os) {
 	Linux {
 #	    exec xdg-open file://[file join $scratch load_tools.html]

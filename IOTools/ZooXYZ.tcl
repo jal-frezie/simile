@@ -564,6 +564,7 @@ itcl::class similescript::$newHelperClass {
 	set viewVector($winId,Y) [winfo height $winId.c]
 	$winId.c delete -withtag graticule
 	::gen3d1::DrawGrid $winId graticule
+	set ::helperTable(beingCalled) $this
 	Display 0 0 0
     }
 
