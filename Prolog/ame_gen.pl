@@ -1114,11 +1114,11 @@ Obj is_class_of_sort Class :-
 			   cond_value],
 		creation-[regular_box, box, rectangle, channel, has_function,
 			  init_eval, level, value_outside, pop_only],
-		immigration-[regular_box, box, rectangle, channel, 
+		immigration-[regular_box, box, rectangle, channel, rate,
 				has_function, level, value_outside, pop_only],
-		reproduction-[regular_box, box, rectangle, channel, 
+		reproduction-[regular_box, box, rectangle, channel, rate,
 				has_function, level, pop_only],
-		loss-[regular_box, box, rectangle, channel, has_function,
+		loss-[regular_box, box, rectangle, channel, rate, has_function,
 		      pop_only]]),
 	member(Class, SortList).
 

@@ -2813,6 +2813,10 @@ proc MenuExit {topNode winId} {
 
 proc byebye {winId} {
     KillTransients $winId
+    set mre ::helperTable($::window_info($winId,top_node),whichRunEnv)
+    if {[info exists $mre]} {
+	KillTransients [set $mre]
+    }
     SafeEqnBarEdit [winfo parent $winId]
     set runOnEmpty [string equal aqua [tk windowingsystem]]
     after idle prolog tk_off_window('$winId',$runOnEmpty)

@@ -18,7 +18,7 @@ namespace eval DisplayFormat {
 	# This returns whichever of regular or scientific is most compact for
 	# required precision -- and Tcl has a notation for that
 	set digits [expr {1+log10(abs($val))}]
-	if {$digits<5 && $prec<0} {
+	if {$prec>-5 && $prec<0} {
 	    set prec 0 ;# do not use sci just to show less precision
 	}
 	set gPrec [expr {int(floor(max(0,$prec+$digits)))}]

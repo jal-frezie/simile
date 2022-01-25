@@ -234,13 +234,18 @@ instance_of(Type, Node, Path,
 	is_instance(internal, st(Node), none, Diffs, diffs-[], DiffSt),
 	Arc is_connector from _ to Node,
 	initiates(Arc, Function),
+	get_units(Function, U, _),
 	(generate_input_pair(Function, discrete, _EvtPair) ->
-	 % channel is event -- just add magnitude
+	     % channel is event -- just add magnitude
+	     ConvTo = 1,
 	     Updater = in_update(Home+Struct);
 	 % this format identifies discrete immigrations
 	 % channel is continuous -- increment compartment style
-	Updater = with_phase(Step, [], Home+stage_incr(Diffs, Step,
-						       Struct, 0,0,0))).
+	 default_tick_is(Tick),
+	 ConvTo = 1/Tick,
+	 Updater = with_phase(Step, [], Home+stage_incr(Diffs, Step,
+							Term, 0,0,0))),
+        try_conversion(Struct, U, ConvTo, Term).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* functions do not have any unit translations built into them, as it is assumed
@@ -448,9 +453,14 @@ instance_of(loss, Node, Path,
 	Arc is_connector from _ to Node,
 	initiates(Arc, Function),
 	(generate_input_pair(Function, discrete, _), !,
-	    Expr = in_update(rand(0,1)<Home);
+	    Def = 1,
+	    Expr = in_update(rand(0,1)<Convd);
 	    % this format identifies event losses
-	  Expr = with_phase(Step, [], at_phase(loses(Home, Step)))).
+	  get_units(Function, U, _),
+	    default_tick_is(Tick),
+	    Def = 1/Tick,
+	    Expr = with_phase(Step, [], at_phase(loses(Convd, Step)))),
+	try_conversion(Home, U, Def, Convd).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* variables don't have any expressions of their own, they just have values which

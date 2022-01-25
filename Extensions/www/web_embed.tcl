@@ -62,6 +62,13 @@ proc urlDecode {str} {
     return [encoding convertfrom utf-8 [subst -nobackslash -novariable $modStr]]
 }
 
+proc urlEncode {str} {
+    set uStr [encoding convertto utf-8 $str]
+    set chRE {[^-A-Za-z0-9._~\n]};		# Newline is special case!
+    set replacement {%[format "%02X" [scan "\\\0" "%c"]]}
+    return [string map {"\n" "%0A"} [subst [regsub -all $chRE $uStr $replacement]]]
+}
+
 proc AnyValue {iH itm max} {
     if {[llength $itm]!=1} {
 	array set bits $itm
@@ -85,6 +92,10 @@ proc ValuesOfInterest {iH reqs} {
 	lappend resps [AnyValue $iH $itm 16777216]
     }
     return $resps
+}
+
+proc Sanitize {rough} {
+    return [string map {\" \\\" \t \\t} $rough]
 }
 
 proc ResponseTo {paramList} {
@@ -150,21 +161,22 @@ proc ResponseTo {paramList} {
 		    } else {
 			lappend dict \#
 		    }
-		    lappend dict text [file tail $path] captpath $path \
-			icon images/[GetCCompProperty Class $id].gif
+		    lappend dict text \"[Sanitize [file tail $path]]\" \
+			captpath \"[Sanitize $path]\" \
+			icon images/[GetCCompProperty DUMMY Class $id].gif
 		    # include path too
 		    foreach {prop key} \
 			{equation Spec comment Comment eval Eval min MinVal \
 			     max MaxVal type Type units Units} {
-			set jBit [GetCCompProperty $key $id]
-			lappend dict $prop \"[string map {\" \\\"} $jBit]\"
+			set jBit [GetCCompProperty DUMMY $key $id]
+			lappend dict $prop \"[Sanitize $jBit]\"
 		    }
 		    lappend dict dims \
 			[JsonifyArray [GetCCompProperty Dims $id]]
 		    lappend ency $id [JsonifyDict $dict]
 		} else { ;# Report
 		    set goodJSON [AnyValue $service($params(base)) $id 1024]
-		    lappend ency $id \"[string map {\" \\\"} $goodJSON]\"
+		    lappend ency $id \"[Sanitize $goodJSON]\"
 		    # run.js wants strings not nested JSON objects
 		}
 	    }
@@ -258,9 +270,10 @@ Connection: Keep-Alive
 Content-Type: text/html; charset=UTF-8
 
 $what"
-    fconfigure $to -translation crlf
+# convert string to crlfs first or length comes out wrong
+#    fconfigure $to -translation crlf
     puts -nonewline $to $resp
-    fconfigure $to -translation binary
+#    fconfigure $to -translation binary
 }
 	
 proc relay {from to in} {
@@ -292,7 +305,8 @@ proc relay {from to in} {
 		     eval lappend paramList [split $paramVal =]
 		}
 		set result [ResponseTo $paramList]
-		Respond $from $result
+		Respond $from [encoding convertto utf-8 \
+				   [string map {\n \r\n} $result]]
 		return ;# do not bother the server
 	    } 
 	}

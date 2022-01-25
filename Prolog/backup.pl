@@ -494,8 +494,18 @@ case... */
 make_auto_name(Name, NewExtn, AutoName) :-
 	name(Name, NameStr),
 	(member(Extn, [".sml", ".SML", ".sim", ".SIM", ".ame", ".AME",
-		      ".pl", ".PL", ".ses", ".SES"]),
-	    append(BaseStr, Extn, NameStr);
-	BaseStr = NameStr), !,
-	append(BaseStr, NewExtn, AutoNameStr),
-	name(AutoName, AutoNameStr).
+			".pl", ".PL", ".ses", ".SES"]),
+	      append(BaseStr, Extn, NameStr) -> true;
+	 BaseStr = NameStr),
+	(UseBase = BaseStr;
+	 use_pref_dir(Writable),
+	   name(Writable, WritableStr),
+	   append([_Dir, "/", Rootname], BaseStr),
+	   \+ append([_, "/", _RealRoot], Rootname),
+	   append([WritableStr, "/", Rootname], UseBase)),
+	append(UseBase, NewExtn, AutoNameStr),
+	name(AutoName, AutoNameStr),
+	(output><my_file_exists(AutoName);
+        open_native(AutoName, append-quiet, Stm), % check usable
+	  close(Stm),
+	  output><my_delete_file(AutoName)), !.

@@ -1927,21 +1927,7 @@ proc VisitUrl {x} {
         } aqua {
             exec open $x 
         } x11 {
-            set url $x
-            if {![info exists env(BROWSER)]} {
-                foreach possBrowser {firefox konqueror mozilla netscape iexplorer lynx opera} {
-                    set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
-                    if {[llength $env(BROWSER)]} {
-                        break
-                    }
-                }
-            }
-            if {[catch {exec $env(BROWSER) -remote $url}]} {
-                # perhaps browser doesn't understand -remote flag
-                if {[catch {exec $env(BROWSER) $url &} emsg]} {
-                    error "Error displaying $url in browser\n$emsg"
-                }
-            }
+	    exec xdg-open $x >& /dev/null
         }
     }
 }
@@ -2623,7 +2609,7 @@ proc TtkLikeDialogue {dlg args} {
     foreach button $options(-buttons) {
 	incr column
 	eval [linsert $buttonOptions($button) 0 ttk::button $cmd.$button]
-        $cmd.$button configure -command [list SetDlgRes $button]
+        $cmd.$button configure -command [list SetDlgRes $options(-parent) $button]
     	grid $cmd.$button -row 0 -column $column \
 	    -padx [list 6 0] -sticky ew
 	grid columnconfigure $cmd $column -uniform buttons
@@ -2696,7 +2682,10 @@ proc Query {specifics icon helpRef parent opts} {
 	default {set moreCapt [tr. "More options..."]}
     }
     set key [lindex $specifics 0]
-    set mBoxCmd [list TtkLikeDialogue .shortDlg -icon $icon -command SetDlgRes \
+    set useParent [ChooseParent $parent [set oldFocus [focus]]]
+    set shortDlg $useParent.shortDlg
+    set done dialogues($useParent,done)
+    set mBoxCmd [list TtkLikeDialogue $shortDlg -icon $icon -command SetDlgRes \
 		     -buttons [list $defButton more] \
 		     -default $defButton -cancel $defButton \
 		     -labels [list $defButton $defCapt more $moreCapt]]
@@ -2728,7 +2717,7 @@ proc Query {specifics icon helpRef parent opts} {
 	}
     }
 
-    if {[info exists ::SimileAutoObjLoaded] || [winfo exists .shortDlg]} {
+    if {[info exists ::SimileAutoObjLoaded] || [winfo exists $shortDlg]} {
 # Scripted execution or dialogue already displayed: return with no fuss
 # (headless should get response from command line?)
 # ...unless it's an error, in which case, throw and stop script.
@@ -2763,7 +2752,6 @@ proc Query {specifics icon helpRef parent opts} {
 # which breaks a 'see all', try just re-parenting the dialogues...
 #    HideProgressBox
 
-    set useParent [ChooseParent $parent [set oldFocus [focus]]] 
     lappend mBoxCmd -parent $useParent
     eval $mBoxCmd
 
@@ -2771,27 +2759,27 @@ proc Query {specifics icon helpRef parent opts} {
     if {[string equal abandon $key] && \
 	    [string equal [tr. {Full dialogue}] \
 		 [PrefValue custom(quickExit) quickExit]]} {
-	set dialogues(done) more
+	set $done more
     } else {
-	LetItShow .shortDlg dialogues(done)
+	LetItShow $shortDlg $done
     }
-    PackItUp .shortDlg
-    if {[string equal more $dialogues(done)]} {
+    PackItUp $shortDlg
+    if {[string equal more [set $done]]} {
 	if {![string equal abort $defButton]} { ;# add more detail now
 #	    wm withdraw .shortDlg
 	    set result [ExpandQuery $specifics $title $icon \
 			    $message $helpRef $useParent $opts]
 	} else { ;# "see all": display remaining messages together
 	    AddMsgsToLog
-	    set result $dialogues(done)
+	    set result [set $done]
 	    after 10 [list StopMsgLogging $specifics $title $icon \
 			    $helpRef $parent ok]
 	}
     } else {
-	set result $dialogues(done)
+	set result [set $done]
     }
 #    ReplaceProgressBox
-    unset dialogues(done)
+    unset $done
 
     focus -force $oldFocus
 #    UpdateByOS
@@ -2811,10 +2799,10 @@ proc AddMsgsToLog {} {
     lappend dialogues(logText) {}
 }
 
-proc SetDlgRes {val} {
+proc SetDlgRes {parent val} {
     global dialogues
 
-    set dialogues(done) $val
+    set dialogues($parent,done) $val
 }
 
 # tweaked to cover any type of modal box -- remove progress box to stop Prolog

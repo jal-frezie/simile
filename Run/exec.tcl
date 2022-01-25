@@ -302,6 +302,9 @@ proc CResetModel {initTime args} {
 }
 
 proc ResetModel {myNode howInt initTime redo} {
+    global model_id instance_id dispDone
+
+    set dispDone 0 ;# allow execution to call back
     set preserveSliders [expr {$howInt-1}] ;# -1 selects new slider rollover
     if {[catch {
 	if {[RunningInC $myNode]} {
@@ -596,7 +599,7 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 	    set offset 0
 	    set newList [NumberElements \
 			     [DoByteArrayToList $fieldChar $fieldSize \
-				  [lrange $list 3 end-3] [lindex $list end]]]
+				  [lrange $list 3 end-4] [lindex $list end]]]
 	    if {$when} {
 		lappend newList [lindex $list end-2] restart \
 		    others [lindex $list end-1]
@@ -1181,11 +1184,7 @@ proc StartWebService {node scratch {runParams {}}} {
     array set ::web_service [list local $scratch node $::nodeId]
     start_server localhost 7464 similive.simulistics.com {} $runParams
 #    start_server localhost 7464 hotwheels /SimiLive $runParams
-    switch $::tcl_platform(os) {
-	Linux {
-#	    exec xdg-open file://[file join $scratch load_tools.html]
-	}
-    }
+    VisitUrl file://[file join $scratch load_tools.html]
 }
 
 # this could be more efficient
