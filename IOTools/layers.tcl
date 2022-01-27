@@ -62,7 +62,6 @@ itcl::class similescript::$newHelperClass {
         pack $vp.ysc -side right -fill y
         canvas $vp.c -xscrollcommand [list $this SetWithLegends x] \
 	    -yscrollcommand [list $this SetWithLegends y] -bg beige
-	# puts "Creating $vp.c"
 	::canvasnotes20070919::MakeCanvasAnnotatable $vp.c
 	bind $vp.c <Configure> [list $this PosnLegends]
         pack $vp.c -fill both -expand true
@@ -320,18 +319,23 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method SaveAsFile {} {
-	if {[tk windowingsystem] eq "aqua"} {
-	    # photo load from canvas broken on Mac so do PostScript instead
+	if {[tk windowingsystem] eq "broken"} {
+	    # photo load from canvas was broken on Mac so did PostScript instead
 	    PostScrog $winId.viewport.c [GetNode] ps
 	} else {
-	    package require img::window
-
 	    # should have dialog to set for options
 	    set filename [ChooseFile image.png [tr. "Save image as:"] 1 [GetNode]]
 	    if {[string length $filename]} {
-		set img [image create photo -format window -data $winId.viewport.c]
-		$img write $filename \
-		    -format [string range [file extension $filename] 1 end]
+		set fmt [string range [file extension $filename] 1 end]
+		if {[lsearch {svg ps} $fmt]>-1} {
+		    set ::preSelect $filename
+		    PostScrog $winId.viewport.c dummy $fmt
+		} else {
+		    package require img::window
+		    set img [image create photo -format window -data $winId.viewport.c]
+		    $img write $filename \
+			-format [string range [file extension $filename] 1 end]
+		}
 	    }
 	}
     }

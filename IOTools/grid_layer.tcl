@@ -357,7 +357,7 @@ itcl::class similescript::$newLayerClass {
 	    set inds [expr {$useNodes($winId,ncol)*($row-1)+$col}]
 	    set value [lindex [lindex [Flatten $curValues] $inds] 1]
 	}
-	return "Index $row,$col Value $value"
+	return "Index $col,$row Value $value"
     }
 
     public method ZoomTo {xzoom yzoom} {

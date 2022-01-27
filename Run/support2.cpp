@@ -29,7 +29,7 @@ int AME_model::do_evalmodel(int phase) {
   if (phase <= 0) {
     signal(SIGSEGV,exit_sighandler);
 #ifdef SIM_OPSYS_Darwin
-    signal(SIGINFO,exit_sighandler); // sent by gui thread on user abort
+    // signal(SIGINFO,exit_sighandler); // sent by gui thread on user abort
 #endif
   }
 
