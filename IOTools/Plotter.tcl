@@ -982,6 +982,7 @@ namespace eval ::$keyValue {
         
         $w.canvas delete prompt
         drawGraphpad $w
+	set ::helperTable(beingCalled) $::helperTable($w,whichInstance)
         display $w [GetModelTime] 0 0
     }
     

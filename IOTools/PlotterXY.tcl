@@ -913,6 +913,7 @@ namespace eval ::$keyValue {
 	set runCount 1
         
         drawGraphpad $w
+	set ::helperTable(beingCalled) $::helperTable($w,whichInstance)
         display $w [GetModelTime] 0 0
         display $w [GetModelTime] 0 0
     }

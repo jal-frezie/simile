@@ -705,6 +705,7 @@ namespace eval RunEnv {
                 }
             }
         }
+	UpdateByOS ;# prevents MacOS crash
         destroy $mreId
         unset helperTable($node,whichRunEnv)
 	return 1
