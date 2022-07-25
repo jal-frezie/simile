@@ -4,7 +4,7 @@
 //
 
 // stuff for building and installing the model
-similive_site = "http://hotwheels.lan/similive/model_action.php";
+similive_site = "http://similive.simulistics.com/model_action.php";
 
 function json_to_saved_sml(mwStr,    // systo model in JSON form
 			callback) { // function to call when done

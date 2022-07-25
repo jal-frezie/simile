@@ -65,8 +65,7 @@ print_to_codes(TermStr, Term) :-
 			     TermStr).
 
 number_atom(N, A) :-
-	number_chars(N, C),
-	atom_chars(A, C).
+    atom_number(A, N).
 
 gnu_round(N, IN) :-
 	IN is integer(round(N)).

@@ -158,7 +158,7 @@ UINT __stdcall ValidateSerial_Sample(MSIHANDLE hInstall)
     return 1;
   }
 
-  if (!strcmp(szPidKey, "     -      (not required for evaluation edition)"))
+ if (!strcmp(szPidKey, "     -      (not required for evaluation edition)"))
     snIsValid = 0; // nothing entered -- evaluation edition
   else {
   // First we must convert this to utf-16 (Unicode wide chars) before carrying

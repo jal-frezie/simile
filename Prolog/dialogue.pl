@@ -216,7 +216,8 @@ update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	append(EarlyInputs,
 	       [input_link(Link, New_var, _, Current_unit, _) | LateInputs],
 	       Input_list),
-	length(EarlyInputs, LineIndx), !,
+	length(EarlyInputs, LineIndx),
+	append(EarlyInputs, LateInputs, OtherInputs), !,
 	get_term(Parm_st, New_param, Complaint0),
 	text><expand_message(param, [], TrField),
 	(\+ Complaint0 = [], !,
@@ -238,9 +239,14 @@ update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	    Complaint3 = Complaint2),
 
 	(Complaint3 = [],
-	    member(Grp, [EarlyInputs, LateInputs]),
-	    member(input_link(_,_, New_param, _,_), Grp), !,
-	    Complaint = duplicate_param(TrField, New_param);
+	    member(input_link(_, RoleTexts, CurName, RU, _),
+		   OtherInputs),
+	    (New_param = CurName,
+	       Complaint = duplicate_param(TrField, New_param);
+	     ClearedLink = input_link(_, RoleTexts, DefName, RU, _),
+	       m_update><generate_new_name(ClearedLink, _),
+	       New_param = DefName,
+	       Complaint = deceptive_param(TrField, New_param)), !;
 	 Complaint = Complaint3),
 	
 	(Complaint = [], !,

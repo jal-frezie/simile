@@ -89,6 +89,9 @@ endif
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
 	USETCL =  -DUSE_TCL_STUBS -L../$(TCLFW) -ltclstub$(VERS)
+#	ADJUST_LOCAL_LIBS = install_name_tool -change ../System64/lib/$(1) @loader_path/$(1)
+# Above will work OK for developer but installation will fail due to
+# 'unsafe use of relative rpath' -- so need more long-winded method below
 	ADJUST_LOCAL_LIBS = install_name_tool -change ../$(1) @executable_path/../Resources/$(1)
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
@@ -202,9 +205,11 @@ $(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
 		-cc-options,$(MAKEPIC) \
 		-ld-options,$(MAKESL); cd ..
 # note that libxml2 includes and libs are not needed
+clean_prolog:
+	rm -f $(PROLOGSTATE) $(PROLOG_DB)
 endif
 ifeq ($(PROLOG),GNU)
-UINFO_TPL = mdlrinfo.gnu
+UINFO_TPL=userinfo.gnu
 ifeq ($(PLATFORM),Darwin)
 # all hell breaks loose as we try to build x64 and arm versions
 PROLOGSTATE_X = $(PROLOGSTATE)_x
@@ -248,7 +253,7 @@ $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
 $(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c gmain.pl; cd ..
 $(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
-	cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
+	cd Prolog; gplc -c -C '-D_GNU_PROLOG -fPIE' \
 		-o ../$(PROLOG_DB) struct_db.c; cd ..
 clean_prolog:
 	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
@@ -654,9 +659,9 @@ install:
 		$(SUPP) \
 		$(SYSDIR)/lib/SimileAutoObj/SimileAutoObj.itcl \
 		$(SYSDIR)/lib/SimileAutoObj/pkgIndex.tcl \
-		$(SYSDIR)/lib/Stubs/can2svg/can2svg.tcl \
-		$(SYSDIR)/lib/Stubs/can2svg/pkgIndex.tcl \
-		$(SYSDIR)/lib/Stubs/can2svg/uriencode.tcl \
+		$(SYSDIR)/lib/Stubs/can2svg1.2/can2svg.tcl \
+		$(SYSDIR)/lib/Stubs/can2svg1.2/pkgIndex.tcl \
+		$(SYSDIR)/lib/Stubs/can2svg1.2/uriencode.tcl \
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
 		$(SHIM) \
 		$(UNPK) \

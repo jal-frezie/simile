@@ -4,6 +4,8 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <tchar.h>
+#include <process.h>
+#define GETPID _getpid()
 #define PIPENEW(ENDS) CreatePipe(ENDS, ENDS+1, NULL, 0)
 #define PIPEREAD(SPOUT,BUF,COUNT) ReadFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
 #define PIPEWRITE(SPOUT,BUF,COUNT) WriteFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
@@ -13,6 +15,7 @@ long unsigned int spareForCount;
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#define GETPID getpid()
 #define PIPENEW(ENDS) pipe(ENDS)
 #define PIPEREAD(SPOUT,BUF,COUNT) read(SPOUT,BUF,COUNT)
 #define PIPEWRITE(SPOUT,BUF,COUNT) write(SPOUT,BUF,COUNT)
@@ -215,11 +218,27 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
 /*****************************************************************/
 // STUFF FOR INCLUDING A REMOTE SUBMODEL BY PIPE INTERFACE       //
 /*****************************************************************/
+
+void sub_pid(const char* raw, char* cooked) {
+  char *zapped, num[16];
+  sprintf(num, "%d", GETPID);
+  strcpy(cooked, raw);
+  while ((zapped = strstr(cooked, "$PID"))) {
+    memmove(zapped+strlen(num), zapped+4, strlen(zapped)-3);
+    // 3=4-1: move chars after $PID inc terminator
+    memmove(zapped, num, strlen(num));
+  }
+}
+
 int setServerPipe (const char* pipeName, TSPOUT* service) {
+  char subbedPN[BUFSIZE];
+  
+  sub_pid(pipeName, subbedPN);
+  remove(subbedPN); // in case was left by previous crash
 #ifdef _WIN32
   // use named pupes
   char nbuffer[BUFSIZE] = "\\\\.\\pipe\\";
-  strcat(nbuffer, pipeName);
+  strcat(nbuffer, subbedPN);
   TCHAR *ttemp = new TCHAR[strlen(nbuffer)+1];
   _tcscpy(ttemp, nbuffer); // remember to free it
   *service = (TSPOUT)ttemp;
@@ -235,7 +254,7 @@ int setServerPipe (const char* pipeName, TSPOUT* service) {
   memset(&name, 0, sizeof(struct sockaddr_un));
 
   name.sun_family = AF_UNIX;
-  strncpy(name.sun_path, pipeName, sizeof(name.sun_path) - 1);
+  strncpy(name.sun_path, subbedPN, sizeof(name.sun_path) - 1);
 
   ret = bind(connection_socket, (const struct sockaddr *) &name,
 	     sizeof(struct sockaddr_un));
@@ -251,10 +270,16 @@ int setServerPipe (const char* pipeName, TSPOUT* service) {
   return 0;
 }
 
-void run_external(const char* cmd) {
+void run_external(BOOLEAN *doneFlag, const char* cmd) {
   // needed because just calling system() complains return value is not used
   // even though command ends in '&' so always always always returns 0
-  if (system(cmd)) {}
+  char subbedCmd[BUFSIZE];
+  if (!*doneFlag) {
+    sub_pid(cmd, subbedCmd);
+    // printf("About to run %s\n", subbedCmd);
+    if (system(subbedCmd)) {}
+    *doneFlag = 1;
+  }
 }
 
 int getClientPipe (TSPOUT service, TSPOUT* data_socket) {
@@ -312,7 +337,7 @@ int find_member(char* member, enum_type_data *dimType) {
 
 int get_BOOLEAN_from_pipe(TSPOUT where, BOOLEAN* what) {
   int ness=PIPEREAD(where, (char*)what, sizeof(BOOLEAN));
-  //  printf("Recvd %d\n", *what);
+  // printf("Recvd %d\n", *what);
   return ness;
 }
 int get_int_from_pipe(TSPOUT where, int* what) {
@@ -327,7 +352,7 @@ int get_double_from_pipe(TSPOUT where, double* what) {
 }
 int get_array_from_pipe(TSPOUT where, void* what, int count) {
   int ness=PIPEREAD(where, (char*)what, count);
-  // printf("Recvd %d bytes\n", ness);
+  // printf("Recvd %d of %d bytes\n", ness, count);
   int rem = count-ness;
   if (rem>0) get_array_from_pipe(where, (char*)what+ness, rem);
   return count;
@@ -395,7 +420,7 @@ int put_member_in_pipe(TSPOUT where, int graph, const char* ETid, int what) {
 
 int get_client_indices(TSPOUT where, int sm_graph_id, int destIdcs[]) {
   char instName[BUFSIZE];
-  int nodeLine, mdDims[32], curDim, place, nTypes;
+  int nodeLine, mdDims[32], curDim, destPlace=0, srcPlace=0, nTypes;
   enum_type_data *types[32];
 
   // first, translate that graph id to a node line
@@ -405,18 +430,17 @@ int get_client_indices(TSPOUT where, int sm_graph_id, int destIdcs[]) {
   nTypes = make_full_caption(nodeLine, instName, mdDims, types);
   // instName set to submodel caption path -- not used
 
-  place=0;
-  while (curDim = mdDims[place]) { // assignment
-    // while (curDim = mdDims[place]) {} // assignment
-    if (curDim > ENUM_BASE) // numerical dimension, boring
-      get_int_from_pipe(where, destIdcs + place);
-    else { // enumerated type dimension, rock'n'roll
+  while ((curDim = mdDims[srcPlace++])) { // assignment
+    if (curDim == START_VM || curDim == END_VM) continue;
+    if (curDim <= ENUM_BASE) { // enumerated type dimension, rock'n'roll
       get_chars_from_pipe(where, instName);
-      destIdcs[place] = find_member(instName, types[ENUM_BASE-curDim]);
-     if (destIdcs[place] == -1) return 78; // none match, raise issue
+      destIdcs[destPlace] = find_member(instName, types[ENUM_BASE-curDim]);
+     if (destIdcs[destPlace] == -1) return 78; // none match, raise issue
+    } else { // numerical dimension
+      get_int_from_pipe(where, destIdcs + destPlace);
     }
-    ++destIdcs[place]; // convert to treehugger convention
-    ++place;
+    ++destIdcs[destPlace]; // convert to treehugger convention
+    ++destPlace;
   }
   return 0;
 }

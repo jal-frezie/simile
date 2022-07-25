@@ -52,7 +52,7 @@ namespace eval ::$keyValue {
 	    .newfile* {
 		set typesToShow {INPUT TABLE BLOCK POPULATION GRID HONEYCOMB}
 	    } .newsub* {
-		set typesToShow {BLOCK GRID HONEYCOMB}
+		set typesToShow {BLOCK POPULATION GRID HONEYCOMB}
 		set showTopLevel 1
 		$tableframe.table insert {} end -id $::myNode -open 1 \
 		    -text "TOP LEVEL" -image $iconImages(new)

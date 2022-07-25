@@ -115,16 +115,17 @@ namespace eval runcontrol33857 {
 	bind $runState($node,cnvs) <Enter> \
 	    +[namespace code [list RunStatusText %W]]
         after idle set runState($node,fractDone) 0
-	set runState($node,progressBar) \
-	    [::ttk::progressbar $rcf.upper.bf.bar -maximum 100 \
-		-variable runState($node,progress)]
-	set runState($node,progress) 0
 #	set runState($node,progressBar) \
-#	    [frame $rcf.upper.bf.bar -width 80 -height 20 -bg white]
-#	set progf [frame $runState($node,progressBar).fill -height 20 -bg blue]
-#	pack $progf -side left -fill y
-#	bind $runState($node,progressBar) <Configure> \
-#	    [namespace code [list ShiftBar %W $node]]
+#	    [::ttk::progressbar $rcf.upper.bf.bar -maximum 100 \
+#		-variable runState($node,progress)]
+	set runState($node,progress) 0
+	set runState($node,progressBar) \
+	    [frame $rcf.upper.bf.bar -width 80p -height 10p -bd 4p -bg white \
+		-relief ridge]
+	set progf [frame $runState($node,progressBar).fill -height 10p -bg blue]
+	pack $progf -side left -fill y
+	bind $runState($node,progressBar) <Configure> \
+	    [namespace code [list ShiftBar %W $node]]
 	pack $runState($node,progressBar) \
 	    -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
@@ -378,6 +379,8 @@ namespace eval runcontrol33857 {
 	}
 	SendData $node
 	set runState($node,currentMode) $action
+	variable frames
+	focus $frames($node,rcf) ;# no updates on Mac if focus not viewable
 	RollSimulation $node
     }
     
@@ -459,7 +462,7 @@ namespace eval runcontrol33857 {
 	    set runState($node,progress) \
 		[expr 100*($now-$runState($node,remembered_start))/ \
 		     $runState($node,run_length)]
-#	    ShiftBar $runState($node,progressBar) $node
+	    ShiftBar $runState($node,progressBar) $node
 	}
 	$runState($node,cnvs) itemconfigure 1 -fill $col
 	return [lsearch {reset start stop exit} $runState($node,currentMode)]
@@ -478,8 +481,8 @@ namespace eval runcontrol33857 {
 	set endRun [UpdateBar $myNode \
 			[expr $current/$runState($myNode,unitLength)] $col]
 	if {$col eq "black"} { # execution stopped, cancel stuck dialog
-	    if {[winfo exists .shortDlg]} {
-		SetDlgRes no ;# closes short dlg
+	    if {[winfo exists $runState($myNode,cnvs).shortDlg]} {
+		SetDlgRes $runState($myNode,cnvs) no ;# closes short dlg
 		set ::dialogues(ack) 1 ;# closes long dlg
 	    } elseif {[info exists runState(abortJob)]} {
 		after cancel $runState(abortJob)
@@ -512,7 +515,7 @@ puts "cond: [string equal stop $runState($node,currentMode)] && \
 	    	![info exists runState(abortJob)]"
 	if {[string equal stop $runState($node,currentMode)] && \
 		[clock clicks -milliseconds]-$updateLastDone>3000 && \
-	    	![info exists runState(abortJob)]} {
+		![winfo exists $runState($node,cnvs).shortDlg]} {
 	    # pretend button never pushed
 	    # ShareAction $node 0
 	    # set runState($node,currentMode) start

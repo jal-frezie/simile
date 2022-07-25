@@ -6,7 +6,8 @@ itcl::class similescript::$newHelperClass {
     inherit Helper
     public variable inTitle tbc
     variable template {}
-
+    variable nodeIdCache
+    
     proc Identify {} {
 	return "3-D Shape Plotter"
     }
@@ -53,6 +54,7 @@ itcl::class similescript::$newHelperClass {
 		AddItem [lindex $winTitle 1]
 		tkwait window $winId.bottom.ms
 	    } else {
+		CacheNodeIds [lindex $state 0]
 		set State $state
 	    }
 	    array set titlePosns {spheres 4 lines 7 ellipses 4 polygons 5}
@@ -68,6 +70,7 @@ itcl::class similescript::$newHelperClass {
 	    set ident [lindex $itemSet 0]
 	    set updatedSet [::gen3d1::VerifyVariables [GetNode] $ident [lrange $itemSet 1 end]]
 	    if {[llength $updatedSet]} {
+		CacheNodeIds $updatedSet
 		lappend State [linsert $updatedSet 0 $ident]
 	    } else {
 		tk_messageBox -message "Set of [lindex $itemSet 0] not restored"
@@ -113,6 +116,14 @@ itcl::class similescript::$newHelperClass {
 	# $winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
 	pack [::ttk::menubutton $winId.bottom.mb -text "Select new item type" \
 		  -menu $winId.m]
+    }
+
+    method CacheNodeIds {possPaths} {
+	foreach showable $possPaths {
+	    if {![string first / $showable]} {
+		set nodeIdCache($showable) [GetIdFromCaptionPath $showable]
+	    }
+	}
     }
 
     public method AddItem {type} {
@@ -288,6 +299,7 @@ itcl::class similescript::$newHelperClass {
     public method Click {path} {
 	$modelInst ReleaseClicks
 	destroy $winId.bottom.e
+	set nodeIdCache($path) [GetIdFromCaptionPath $path]
 	MakeSelection $path
     }
 
@@ -352,7 +364,7 @@ itcl::class similescript::$newHelperClass {
 	    return [ColoursFor [$modelInst GetValue [lindex $arr 1] -all 1 \
 				    -numeric 1] $min $max [lrange $arr 2 end]]
 	} elseif {![string first / $arr]} { ;# model component
-	    return [$modelInst GetValue $arr -all 1]
+	    return [$modelInst GetValue $nodeIdCache($arr) -all 1 -numeric 1]
 	} else { ;# numerical, colour or choice constant
 	    return $arr
 	}

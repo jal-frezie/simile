@@ -908,13 +908,17 @@ make_intermediates(
 	    name(Op, OpStr),
 	    lower(OpStr, LopStr),
 	    name(TRef, LopStr),
-	    member(TRef, [time, dt]), % ind_time removed
+	    member(TRef, [time, dt, remote_time]), % ind_time removed
 	    (Step = dummy -> MaxStep = 7; MaxStep is max(1,Step)),
 	    ((N=0; N = ''), TArg = Step;
 		% now done in insert_paths so only needed here for parsing
 		integer(N), N>=0, N=<MaxStep, TArg = N;
 		throw(bad_index_number(N, Op, MaxStep))),
-	    SourceRef =.. [TRef, TArg],
+	    (TRef = remote_time, \+ Step = dummy ->
+	        DestPath = [sm(DestName, _, DestPtr, _) | _],
+		append_atoms(DestName, '_ckRem', TName),
+		SourceRef = arr(DestPtr, TName, []);
+	    SourceRef =.. [TRef, TArg]),
 	    default_tick_is(OrigUnits),
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !,
 	    Args = [time];
@@ -1328,9 +1332,9 @@ Now one that uses a special conditional level */
 		    (member(any, UnitList),
 			Units = any;
 		      select(One, UnitList, [Other]), % == permutation
-		      \+ (promote_unit(One, 1); One = real),
+		      \+ promote_unit(One, 1),
 		      % succeeds only if unitless, or matches any units
-			((promote_unit(Other, 1); Other = real),
+			(promote_unit(Other, 1),
 			    (UnitList == [Other, One], Lop = (/),
 				Units = 1/One;
 				Units = One),
@@ -1361,6 +1365,7 @@ Now one that uses a special conditional level */
 		    raise_units(Base, Exp, Units),
 			SourceRef = ValRef);
 		 (ValRef = sofar(SourceRef);
+		     ValRef = as_it_comes(SourceRef);
 		     ValRef = default(_), SourceRef = 0),
 		    UnitList = [Units];
 		 (var(Lop),
@@ -1398,6 +1403,8 @@ Now one that uses a special conditional level */
 	        Wrapper = later,
 		all(inters, dissociate,
 		    [unify(Wrapper), build(SubArgs), build(Args)]);
+	    Source = as_it_comes(_), !,
+	        Args = []; 
 	    Args = SubArgs);
 	throw(undecipherable_operand(Source, SubId)).
 
@@ -1734,6 +1741,7 @@ builtin('Model properties', index, boolean, [int_or_enum_type_const]).
 builtin('Model properties', channel_is, boolean, [channel]).
 builtin('Model properties', dt, real, [const_int_or_none]).
 builtin('Model properties', time, real, [const_int_or_none]).
+builtin('Model properties', remote_time, real, [const_int_or_none]).
 builtin('Model properties', at_phase, any, [any]).
 builtin('Model properties', at_phase, any, [int, any]).
 builtin('Model properties', default, any, [any]).
@@ -1873,6 +1881,8 @@ operator(//, int, [int, int]).
 operator('%', int, [int, int]).
 operator(/, const_ratio, [const_int, const_int]).
 operator(/, 1, [1,1]).
+operator('&', int, [int, int]).
+operator('|', int, [int, int]).
 
 /* Comparison ops need int arg version to avoid unnecessarily constraining
 parameters to real (and because everything does) */
@@ -2271,7 +2281,7 @@ wait_for_submodels([Level | AlsoExited], Waits) :-
 			set(_, loop(pra_bound(_, MM), _))]); % by record
 	  Level = sm(MM, _,_, fm_loop(_,_,al_action(Al, _), _)),
 	      nonvar(Al)), !, % alarm submodel
-	    (MM = outside(Model) -> true; MM = Model),
+	    (outside(MM, Model) -> true; MM = Model),
 	 Waits = [enumerate(Model) | Others];
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).
@@ -2325,9 +2335,12 @@ loops([sm(_,_,_,_)|_]). % a flattened list
 get_model_and_loops(Context, Dest, Loops, Base) :-
 	append(LLoops, Base, Context),
 	get_model(Dest, Base),
-	(append(A, [sm(outside(M), B, C, D) | E], LLoops) ->
+	(append(A, [sm(OM, B, C, D) | E], LLoops), outside(OM, M) ->
 	    append(A, [sm(M, B, C, D) | E], Loops); Loops = LLoops), !.
 
+outside(O, I) :-
+    nonvar(O), O = outside(I).
+    
 get_model(Context, Path) :-
 	suffix(Path, Context),
 	    Path = [sm(_,_,_,_) | _], !;

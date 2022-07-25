@@ -24,6 +24,9 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,bpp) 8 ;# in case saved before this invented
 	    foreach {att val} $state {
 		set useNodes($winId,$att) $val
+		if {![string first / $val]} {
+		    set useNodes(nC,$att) [GetIdFromCaptionPath $val]
+		}
 	    }
 	    incr useNodes($winId,nswatches)
 	    if {$useNodes($winId,state) eq "displaying"} {
@@ -80,8 +83,10 @@ itcl::class similescript::$newLayerClass {
         # This tests for the user having clicked on a suitable element
         # of the model diagram
         if {[string compare $testResult novalue]} {
-            switch $useNodes($winId,state) {
+            set compon [GetIdFromCaptionPath $path]
+	    switch $useNodes($winId,state) {
 		display0 {
+                    set useNodes(nC,color) $compon
                     set useNodes($winId,color) $path
 		    set useNodes($winId,title) "[file tail $path] (rectangular grid diagram)"
 		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
@@ -102,7 +107,8 @@ itcl::class similescript::$newLayerClass {
 			set useNodes($winId,state) display1
 		    }
 		} display1 {
-                    NumDistinct $winId $path
+                    NumDistinct $winId $compon
+                    set useNodes(nC,colvals) $compon
 		    set useNodes($winId,colvals) $path ;# not that it gets used
 		    FinishClicking
 		}
@@ -148,14 +154,13 @@ itcl::class similescript::$newLayerClass {
 	return 0
     }
 
-    public method NumDistinct {winId testPath} {
-	set node [GetIdFromCaptionPath $testPath]
+    public method NumDistinct {winId node} {
 	if {![catch {ListDistinctModelValues $node} vList]} {
 	    set useNodes($winId,ncol) [llength [lrange $vList 1 end]]
 	    set useNodes($winId,nrow) \
 		[expr {[lindex $vList 0]/$useNodes($winId,ncol)}]
 	} else {
-	    set count [DoForData [$modelInst GetValue $testPath] colvals]
+	    set count [DoForData [$modelInst GetValue $node] colvals]
 	    set useNodes($winId,ncol) [array size colvals]
 	    set useNodes($winId,nrow) \
 		[expr {$count/$useNodes($winId,ncol)}]
@@ -182,13 +187,13 @@ itcl::class similescript::$newLayerClass {
     public method DrawGrid8 {} {
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
-	set node [GetIdFromCaptionPath $useNodes($winId,color)]
+	set node $useNodes(nC,color)
 	set bpp $useNodes($winId,bpp)
 	set hex $useNodes($winId,hex)
 	set repts [expr {$hex*$bpp/8}]
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
-			    $useNodes($winId,max) $repts} rawBinary]} {
+			$useNodes($winId,max) $repts} rawBinary]} {
 	    puts "Rawbin fail: $rawBinary"
 	    DrawGrid7
 	    return
@@ -243,7 +248,7 @@ itcl::class similescript::$newLayerClass {
     public method DrawGrid7 {} {
 	set ncol $useNodes($winId,ncol)
 	set nrow $useNodes($winId,nrow)
-	set curValues [$modelInst GetValue $useNodes($winId,color) -numeric 1]
+	set curValues [$modelInst GetValue $useNodes(nC,color) -numeric 1]
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set colShift -1
 	    if {$useNodes($winId,hex)} {

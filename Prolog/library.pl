@@ -23,7 +23,7 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 	    \+ draw><get_highlit_obj(0, UseAsParent), !,
 	    ame_save(File, UseAsParent, Date, SelOnly, _);
 	(backup><is_toplevel(Model),
-	    SelOnly = no,
+	    \+ SelOnly = yes,
 	    setof(A-V, Model has_class_refinement A of V, Props);
 	 setof(Enum, ancestor_has_enum_type(Model, Enum), AllEnums),
 	    Props = [enum_types-AllEnums];	       
@@ -74,10 +74,12 @@ save_nodes( [Node|Nodes], Stream, SelOnly, ArcData ) :-
     save_arcs(NewArcsUsed, ArcData),
 	save_links( Node, Stream, SelOnly ),
 	save_refs( Node, Stream, SelOnly ),
+	(Node has_class function, SelOnly = export ->
+	    NewNodes = Nodes;
 	any_setof( Child,
 		   (Node has_part Child, go_with(Child, SelOnly)),
 		   Children ),
-	append( Children, Nodes, NewNodes ),
+	append( Children, Nodes, NewNodes )),
 	save_nodes( NewNodes, Stream, SelOnly, ArcData),
 	any_setof(ArcMem, arcmem(NewArcsUsed, ArcMem), ArcMems),
 	save_nodes( ArcMems, Stream, SelOnly, ArcData ).
@@ -156,7 +158,7 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 go_with(Comp, SelOnly) :-
-	SelOnly = no, !;
+	\+ SelOnly = yes, !;
 	go_with(Comp).
 
 go_with(Comp) :-
@@ -173,7 +175,7 @@ go_with(Comp) :-
 	    go_with(Use), !;
 	contains(Fn, Comp),	% comp in function-defining fragment
 	    \+ Fn = Comp,
-	    find_type(Fn, function),
+	    Fn has_class function,
 	    implicit_function(Host, Fn),
 	    go_with(Host).
 
@@ -340,7 +342,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	  query(future_shock(SimileV), warning, top, [ok], _))).
 
 count_functions(Model, N) :-
-	setof(Node, (contains(Model, Node), find_type(Node, function)), Nodes),
+	setof(Node, (contains(Model, Node), Node has_class function), Nodes),
 	    length(Nodes, N), !;
 	N = 0.
 
@@ -514,7 +516,7 @@ adjust_to_9(Trans) :-
 		    VisObj has_new_class_refinement CmtField of CmtValue);
 % replace bounding boxes of primitives with centre points
 	    Obj has_graphical_attribute bounding_box of BB,
-		\+ find_type(Obj, submodel),
+		\+ Obj has_class submodel,
 		Obj no_longer_has_graphical_attribute bounding_box of BB,
 		image><middle(BB, Pt),
 		Obj has_new_graphical_attribute centre of Pt);
@@ -610,7 +612,7 @@ adjust_to_10(Parent) :-
 	update_per_record_bracket_style(Parent);
 	% Influence properties now on last section because it is not shared
 	contains(Parent, Influence),
-	    find_type(Influence, influence),
+	    Influence has_type influence,
 	    (Influence no_longer_has_attribute use_sofar of V,
 	        find_name_host(Influence, NewAttrLocn),
 	        NewAttrLocn has_new_attribute use_sofar of V,
@@ -622,7 +624,7 @@ adjust_to_10(Parent) :-
         contains(Parent, Sm),
 	    Sm has_graphical_attribute internal_extent of Box,
             Sm has_part Crossing,
-            find_type(Crossing, border),
+            Crossing has_class border,
             Crossing no_longer_has_graphical_attribute centre of Ctr,
 	    event><get_posn_around(Ctr, Box, Theta),
             Crossing has_new_graphical_attribute along of Theta,
@@ -710,7 +712,7 @@ replace_substrings(Lose, Start, Gain, Result) :-
 	Result = Start.
 	
 posn_if_needed(Prim, Pt) :-
-	find_type(Prim, Type),
+	Prim has_class Type,
 	(Type = submodel, !,
 	    \+ Prim has_graphical_attribute bounding_box of _;
 	member(Type, [variable, cloud]),

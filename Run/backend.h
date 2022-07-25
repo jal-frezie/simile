@@ -177,7 +177,7 @@ EXPORT int handle_model_param_request(void*, void*, int, int, int*);
 EXPORT int stat_check(void*);
 
 int setServerPipe(const char*, TSPOUT*);
-void run_external(const char*);
+void run_external(BOOLEAN*, const char*);
 int getClientPipe(TSPOUT, TSPOUT*);
 int get_client_indices(TSPOUT, int, int[]);
 int exchPipe(TSPOUT, char*, int, int);

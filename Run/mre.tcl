@@ -989,10 +989,17 @@ namespace eval RunEnv {
             bind $child <Button-1> "+::RunEnv::SetCurrentContainer $Container"
         }
     }
-    
+
+    proc OStrim {} {
+	switch [tk windowingsystem] {
+	    aqua {return 0.8}
+	    X11 {return 1.25}
+	    default {return 1.25}
+	}
+    }
+
     proc SaveView {newName} {
         global helperTable simtmpdir
-        variable dp0
         variable currentNode
         
 	if {[info exists helperTable($currentNode,stateName)]} {
@@ -1008,14 +1015,21 @@ namespace eval RunEnv {
         if {![llength $saveName]} { ;# operation cancelled
 	    return
 	} else {
-            set mainframe $helperTable($currentNode,whichRunEnv)
+	    DoViewSave $helperTable($currentNode,whichRunEnv) $saveName
+	    do_in_editor AttackGlobalVariable helperTable \
+		($currentNode,stateName) $saveName
+	    PreserveSetup 0
+	}
+    }
+
+    proc DoViewSave {mreId saveName} {
+        variable dp0
 #            set tempFile [file join $simtmpdir temp_out.shf]
 #            set stream [NetOpen $tempFile w]
 #            set metaList {}
 	    foreach {num denom} \
-		[ChooseIntegerRatio [expr {$::defScaling/1.25}] 0.9] {}
+		[ChooseIntegerRatio [expr {$::defScaling/[OStrim]}] 0.9] {}
             set metaStream [NetOpen $saveName w]
-	    set mreId $helperTable($currentNode,whichRunEnv)
 
             # save skeleton mre config
 #            lappend metaList "[winfo x $mreId] [winfo y $mreId] \
@@ -1026,16 +1040,12 @@ namespace eval RunEnv {
 	    puts $metaStream {<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>}
 	    puts $metaStream "<shf simile_version=\"$::env(SIMILE_VERSION)\">"
 	    puts $metaStream "<external x=\"[winfo x $mreId]\" y=\"[winfo y $mreId]\" w=\"[expr {[winfo width $mreId]*$denom/$num}]\" h=\"[expr {[winfo height $mreId]*$denom/$num}]\"/>"
-	    puts $metaStream "<std_tool_layout left_panel_width=\"[expr {[lindex [[GetFrame $mainframe].mainpw sash coord 0] 0]*$denom/$num}]\" run_control_height=\"[expr {[lindex [[GetFrame $mainframe].mainpw.controlPane.panedwindow sash coord 0] 1]*$denom/$num}]\"/>"
+	    puts $metaStream "<std_tool_layout left_panel_width=\"[expr {[lindex [[GetFrame $mreId].mainpw sash coord 0] 0]*$denom/$num}]\" run_control_height=\"[expr {[lindex [[GetFrame $mreId].mainpw.controlPane.panedwindow sash coord 0] 1]*$denom/$num}]\"/>"
 
             SaveChildrenConfig $dp0 {} $num $denom
             
 	    puts $metaStream "</shf>"
             close $metaStream
-	    do_in_editor AttackGlobalVariable helperTable \
-		($currentNode,stateName) $saveName
-	    PreserveSetup 0
-	}
     }
     
     proc SaveChildrenConfig {page indent num denom} {
@@ -1158,7 +1168,7 @@ namespace eval RunEnv {
 	} else {
 	    set parseStatus(currentNode) $currentNode
 	    foreach {num denom} \
-		[ChooseIntegerRatio [expr {$::defScaling/1.25}] 0.9] {}
+		[ChooseIntegerRatio [expr {$::defScaling/[OStrim]}] 0.9] {}
 	    set parseStatus(mapScale) $num/$denom
 	
 	    if {[catch {$parseStatus(shfParser) parse [DefuseXmlBombs $dada]} \
@@ -1348,7 +1358,7 @@ namespace eval RunEnv {
         set win $helperTable($currentNode,whichRunEnv)
 	set mainframe $win
 	foreach {num denom} \
-	    [ChooseIntegerRatio [expr {$::defScaling/1.25}] 0.9] {}
+	    [ChooseIntegerRatio [expr {$::defScaling/[OStrim]}] 0.9] {}
         # read and set .mre position and size
         PullMember line
         scan $line "%i %i %i %i" x y width height

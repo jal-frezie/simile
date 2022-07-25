@@ -1681,8 +1681,8 @@ proc DoWelcomeDialog {dtId} {
                 set regData [::http::formatQuery Name $userinfo(name) \
                         Organisation $userinfo(corp) Email $userinfo(email) \
                         Version $userinfo(Version) OS $tcl_platform(os)]
-                ::http::geturl -timeout 1000 http://www.simulistics.com/products/SendMail.asp \
-                        -query $regData}]} {
+                ::http::geturl http://www.simulistics.com/products/SendMail.asp \
+                        -timeout 1000 -query $regData}]} {
             set userinfo(done) 1
         }
     }
@@ -1833,7 +1833,7 @@ proc TradeXML {c exp} {
     OpenProgressBox $c
     FillProgressBox wait_for_web {}
     set url http://webflow.simileweb.com/processes/$service/
-    if {[catch {::http::geturl -timeout 1000 $url -type $content_type -binary true \
+    if {[catch {::http::geturl $url -timeout 1000 -type $content_type -binary true \
 		    -headers $headers -query $body} token]} {
 	CloseProgressBox
 	Query [list web_fail $token] warning top $c ok
@@ -1922,7 +1922,7 @@ proc VisitUrl {x} {
     global env
     switch [tk windowingsystem] {
         win32 {
-            set x [regsub -all -nocase {htm} $x {ht%6D}]
+            # set x [regsub -all -nocase {htm} $x {ht%6D}]
             exec rundll32 url.dll,FileProtocolHandler $x & 
         } aqua {
             exec open $x 
@@ -2030,9 +2030,10 @@ proc ShowAbout {winId} {
 
 proc GetLatestVers {} {
     package require http
+    return 0 ;# will not work without https, bundled tls etc
 # catch everything -- failure to connect, unexpected sign-in web page, etc.
     if {[catch {
-	set token [::http::geturl -timeout 1000 http://www.simulistics.com/cgi-bin/products/current-version.php]
+	set token [::http::geturl http://www.simulistics.com/cgi-bin/products/current-version.php -timeout 1000]
 	upvar #0 $token versReq
 	array set versInfo $versReq(body)
 	set latest $versInfo(simileVerNo)
@@ -2664,7 +2665,7 @@ proc TtkLikeDialogue {dlg args} {
 proc ChooseParent  {parent active} {
     if {[llength $active]} {set active [winfo toplevel $active]}
     if {![string length $parent] && [string length $active]>1 && \
-	    [winfo viewable $active]} {
+	    [winfo viewable $active] && $active ne ".splash"} {
 	set parent $active ;# window . is hidden so must not
     }
     return $parent
@@ -2682,10 +2683,7 @@ proc Query {specifics icon helpRef parent opts} {
 	default {set moreCapt [tr. "More options..."]}
     }
     set key [lindex $specifics 0]
-    set useParent [ChooseParent $parent [set oldFocus [focus]]]
-    set shortDlg $useParent.shortDlg
-    set done dialogues($useParent,done)
-    set mBoxCmd [list TtkLikeDialogue $shortDlg -icon $icon -command SetDlgRes \
+    set mBoxCmd [list -icon $icon -command SetDlgRes \
 		     -buttons [list $defButton more] \
 		     -default $defButton -cancel $defButton \
 		     -labels [list $defButton $defCapt more $moreCapt]]
@@ -2717,10 +2715,19 @@ proc Query {specifics icon helpRef parent opts} {
 	}
     }
 
-    if {[info exists ::SimileAutoObjLoaded] || [winfo exists $shortDlg]} {
+    if {[info exists ::SimileAutoObjLoaded]} {
+	set skip 1
+    } else {
+        set useParent [ChooseParent $parent [set oldFocus [focus]]]
+	set shortDlg $useParent.shortDlg
+	if {[winfo exists $shortDlg]} {
+	    set skip 1
+	}
+    }
 # Scripted execution or dialogue already displayed: return with no fuss
 # (headless should get response from command line?)
 # ...unless it's an error, in which case, throw and stop script.
+    if {[info exists skip]} {
 	if {$icon eq "error" && \
 		[lsearch {unhandled_tcl_error too_much_data} $key]==-1} {
 	    error [list slip-up $txtNotes]
@@ -2752,8 +2759,9 @@ proc Query {specifics icon helpRef parent opts} {
 # which breaks a 'see all', try just re-parenting the dialogues...
 #    HideProgressBox
 
+    set done dialogues($useParent,done)
     lappend mBoxCmd -parent $useParent
-    eval $mBoxCmd
+    eval [list TtkLikeDialogue $shortDlg] $mBoxCmd
 
 # (in case Mac version siezes)
     if {[string equal abandon $key] && \

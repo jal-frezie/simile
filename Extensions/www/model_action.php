@@ -50,6 +50,7 @@ function do_query($req) {
       $val = json_decode(doTcl("GetJsonValuesById [set iH] "
 	        . $req . " " . 1048576));
    }
+   if ($val === null) $val = ""; // work round weirdness of php
    return $val;
 }
 
@@ -88,7 +89,6 @@ switch ($_POST['act']) {
 
    case "BuildShareLib":
    case "BuildShareLibInLine":
-
 $tculargs = array($simileLocn, $simileHome, $_POST['base']);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
@@ -96,7 +96,7 @@ $descriptorspec = array(
    2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
 );
 
-$process = proc_open($cgiRel . "/tcular.cgi " . implode($tculargs, " "),
+$process = proc_open($cgiRel . "/tcular.cgi " . implode(" ", $tculargs),
     $descriptorspec, $pipes);
 if (! is_resource($process)) { exit('Failed to start build process'); }
 
@@ -122,7 +122,8 @@ $return_value = proc_close($process);
 if ( file_exists($_POST['base'] . ".so")) {
    if ($_POST['act'] == "BuildShareLib") {
 //  return last line of $pipe_contents for execution parameters
-       echo end(explode("\n", $pipe_contents));
+//       echo end(explode("\n", $pipe_contents));
+	echo substr($pipe_contents,strrpos($pipe_contents,"\n")+1,strlen($pipe_contents));
 //       echo $pipe_contents; // whole lot for debugging purposes
     }
 } else {
@@ -138,15 +139,15 @@ case "GetAsmJs":
    $shlibName = pathinfo($_POST['base'],PATHINFO_FILENAME);
    $tculargs = array($simileLocn, $simileHome, $emPath, $_POST['base'],
    	     $shlibName);
-   $knob = popen($cgiRel . "/tcular_clexec.cgi " . implode($tculargs,
-      " "), 'r');
+   $knob = popen($cgiRel . "/tcular_clexec.cgi " . implode(" ", $tculargs),
+	'r');
    $pipe_contents = stream_get_contents($knob);
    // echo "<!-- Pipe contents: $pipe_contents -->";
    fclose($knob);
 
    $asmStm = fopen($simileHome . "/" . $shlibName . ".asm.js", "r");
    if ($asmStm) {
-      $rps = end(explode("\n", $pipe_contents));
+      $rps = substr($pipe_contents,strrpos($pipe_contents,"\n")+1,strlen($pipe_contents));
       echo "pipeBits = $rps;" . stream_get_contents($asmStm);
       fclose($asmStm);
    } else {
@@ -166,7 +167,7 @@ $descriptorspec = array(
    2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
 );
 
-$process = proc_open($cgiRel . "/socketizer.cgi " . implode($tculargs, " "), 
+$process = proc_open($cgiRel . "/socketizer.cgi " . implode(" ", $tculargs),
     $descriptorspec, $clPipes);
 if (! is_resource($process)) { exit('Failed to start test process'); }
 
@@ -318,7 +319,7 @@ break;
       foreach ($updates as $idx => $pv) {
          if ($idx == 'seqNo') continue; // used to sort requests
          $nicePath = escapeNasties($idx);
-         $result = doTcl("SetParameter [set aH($nicePath)] [list $pv]");
+         $result = doTcl("SetParameter $nicePath [list $pv]");
          if ($result== '-1' || $result == '0' || $result == '1') {
          } else {
             $spew[] = $nicePath . "-->" . $result;
@@ -346,6 +347,7 @@ break;
       $step = $_POST['step'];
       $log = $_POST['log'];
       $method = $_POST['method'];
+      $errLimit = $_POST['errLimit'];
 
       $steps = explode(" ",$step);
       for($x=0;$x<count($steps);$x++) {
@@ -360,7 +362,7 @@ break;
 	 if ($endInt > $endPt) {
 	     $endInt = $endPt;
 	 }
-	 $stop = doTcl("DoExecuteModel [set iH] $method $t $endInt 0 0");
+	 $stop = doTcl("DoExecuteModel [set iH] $method $t $endInt $errLimit 0");
 //	 if ($stop != $endInt) {
 //	     exit("Model stopped at " . $stop . " running to " . $endInt);
 // probably want to make another call to get error message

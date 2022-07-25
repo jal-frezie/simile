@@ -1,10 +1,176 @@
-<form name="myform"
-      action="http://localhost:7464/create_model.php" method="post" enctype="multipart/form-data">
-   <input type="hidden" name="model_src" value="local">
-   <input type="hidden" name="param_src" value="none">
-   <input type="hidden" name="helper_src" value="none">
-</form>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Simile model execution</title>
+<link rel="stylesheet" href="dist/themes/default/style.css" />
+<!-- link href=" jquery-ui.min.css" rel="stylesheet" /-->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/humanity/jquery-ui.css" />
+<!-- link href="css/xcharts.min.css" rel="stylesheet" /-->
+<!-- link href="css/jquery.jui_dropdown.css" rel="stylesheet" /-->
+<link href="css/jquery.dataTables.css" rel="stylesheet" />
+<!-- script src="external/jquery/jquery.js"></script-->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- script src="jquery-ui.min.js"></script-->
+<script src="https://code.jquery.com/ui/1.13.1/jquery-ui.min.js"></script>
+<!-- script src="js/jquery.scrollTo-min.js?1.4.11"></script -->
+<script src="dist/jstree.min.js"></script>
+<script src="js/d3.v3.min.js" charset="utf-8"></script>
+<!-- script src="js/xcharts.min.js"></script-->
+<!-- script src="js/jquery.jui_dropdown.js"></script-->
+<script src="js/jquery.dataTables.js"></script>
+<!-- script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script -->
+<!-- script src="js/three.min.js"></script-->
+<!-- script src="js/OrbitControls.js"></script-->
+<script type="text/javascript" src="js/jscolor/jscolor.js"></script>
+<script src="js/split.js"></script>
+<style>
+* {
+  margin: 0;
+}
+html, body {
+  height: 100%;
+  overflow: hidden; <!-- windows in tab will be sized to notebook parent
+and thus be too big once tabs added causing unnecessary scrollbar -->
+}
 
-<script type="text/javascript">
-    document.myform.submit("Submit");
-</script>
+#tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
+.axis path, .axis line {
+  fill: none;
+  stroke: #bbb;
+}
+
+.axis text {
+   font-family: sans-serif;
+   font-size: 12px;
+}
+
+rect.pane {
+  cursor: move;
+  fill: none;
+  pointer-events: all;
+}
+
+<!-- demo_dropdown 2 ---------------------------------------------------------->
+.container2 {
+  margin: 20px 30px 10px 30px ;
+  display: inline-block;
+}
+ 
+.menu2 {
+  position: absolute;
+  width: 120px !important;
+  margin-top: 3px !important;
+}
+ 
+div.tooltip {   
+  position: absolute;           
+  text-align: center;           
+  width: 120px;                  
+  height: 28px;                 
+  padding: 2px;             
+  font: 12px sans-serif;        
+  background: lightsteelblue;   
+  border: 0px;      
+  border-radius: 8px;           
+  pointer-events: none;         
+}
+<!-- for panes -->
+  .split {
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .content {
+    border: 1px solid #C0C0C0;
+    box-shadow: inset 0 1px 2px #e4e4e4;
+    background-color: #fff;
+  }
+
+  .gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+  }
+
+  .gutter.gutter-horizontal {
+    cursor: col-resize;
+    background-image: url('images/grips/vertical.png');
+  }
+
+  .gutter.gutter-vertical {
+    cursor: row-resize;
+    background-image: url('images/grips/horizontal.png');
+  }
+
+  .split.split-horizontal, .gutter.gutter-horizontal {
+    height: 100%;
+    float: left;
+  }
+
+ <!-- for popup dialogues -->
+ .ui-widget-header,.ui-state-default, ui-button{
+ background:#b9cd6d;
+ border: 1px solid #b9cd6d;
+ color: #FFFFFF;
+ font-weight: bold;
+ }
+</style>
+ 
+<script>
+var fileBase = '';
+</script><script src='run.js'></script><script src='slider.js'></script>
+<script src='layers2d.js'></script>
+<script type='module' src='http://localhost:7464/shapes3d.js'></script>
+</head>
+<body onload="prepare()">
+ <div id="dialog-1" title="Dialog Title goes here...">empty</div>
+ <div id="Buttonbar">
+    <button title="Plot value against time" onclick="new_helper('plot')"><img src="images/graph.gif"/></button>
+    <button title="XY Plot" onclick="new_helper('plotxy')"><img src="images/plotxy.gif"/></button>
+    <button title="Table of values" onclick="new_helper('table')"><img src="images/table.gif"/></button>
+    <button title="Sliders for inputs" onclick="new_helper('sliders')"><img src="images/slider.gif"/></button>
+    <button title="3-D shape viewer" onclick="new_helper('shapes')"><img src="images/3d_objects.png"/></button>
+    <button title="Rectangular grid" onclick="new_helper('grid')"><img src="images/grid.gif"/></button>
+    <button title="Polygon map" onclick="new_helper('polys')"><img src="images/polys.png"/></button>
+    <button title="Edit parameter values" id="opener"><img src="images/property.gif"/></button>
+  </div>
+  <!-- Now put the rest in a set of resizable panes...later -->
+  <div id="Left" class="split split-horizontal">
+    <div id="topleft" class="split split-vertical">
+      <table id="RunControl" border="2" style="width:100%"> 
+      <tr><td colspan="2">
+          <button type="button" style="width:20%" onclick="model_reset(0)">
+            <img src="images/stop.gif"></button>
+          <button type="button" style="width:20%" onclick="model_exec()">
+            <img id="button_op" src="images/play.gif"></button>
+          <div id="progress" style="width:55%;float:right"></div>
+          <tr><td>Execute for: </td><td><input id="rl" type="text" name="runlength" 
+                                               size="8" value=100> 
+              <label class=unit>unit</label></td></tr>
+          <tr><td>Current time: </td><td><input id="ct" type="text" name="current" 
+                                                size="8" value=0> 
+              <label class=unit>unit</label></td></tr>
+          <tr><td>Update each </td>
+            <td><input id="ue" type="text" name="runstep" size="8" value=10>
+              <label class=unit>unit</label></td></tr>
+          <tr><td>Log each </td>
+            <td><input id="le" type="text" name="logstep" size="8" value=1>
+              <label class=unit>unit</label></td></tr>    <tr><td>Time step(s): </td><td><input id="ts" type="text" name="step" size="8"
+                                                value=0.1> <label class=unit>unit</label></td></tr>
+      </table>
+      </div>
+    <div id="explorer" class="split split-vertical" style="overflow:auto"></div>
+  </div>
+  <div id="right" class="split split-horizontal">
+  </div>
+  <div id="WaitDialog"   class="hidden" style="text-align: center">
+    <img  src="images/ajax-loader.gif" />
+    <div style="margin-top: 10px; color: black">
+      <b>Please wait</b>
+    </div>
+  </div>
+</body>

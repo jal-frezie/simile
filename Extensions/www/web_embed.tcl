@@ -33,27 +33,27 @@ proc JsonifyArray {ugly} {
     return \[$result\]
 }
 
-proc JsonifyAny {ugly} {
-    if {[llength $ugly]==1} {
-	set val $ugly
-	if {![string is double -strict $val] && \
-		[string first [string index $val 0] \[\{\"]==-1} {
-	    set val \"$val\"
-	}
-	return $val
-    } else {
-	set result {}
-	set safety {\n \\n}
-	foreach {indx val} [string map $safety $ugly] {
-	    if {[string length $result]} {
-		append result {, }
-	    }
-	    append result \"$indx\":\ [JsonifyAny $val]
-	}
-	return \{$result\}
-    }
-}
-
+#proc JsonifyAny {ugly} {
+#    if {[llength $ugly]==1} {
+#	set val $ugly
+#	if {![string is double -strict $val] && \
+#		[string first [string index $val 0] \[\{\"]==-1} {
+#	    set val \"$val\"
+#	}
+#	return $val
+#    } else {
+#	set result {}
+#	set safety {\n \\n}
+#	foreach {indx val} [string map $safety $ugly] {
+#	    if {[string length $result]} {
+#		append result {, }
+#	    }
+#	    append result \"$indx\":\ [JsonifyAny $val]
+#	}
+#	return \{$result\}
+#    }
+#}
+#
 proc urlDecode {str} {
     set specialMap {"[" "%5B" "]" "%5D" + " "}
     set seqRE {%([0-9a-fA-F]{2})}
@@ -73,13 +73,21 @@ proc AnyValue {iH itm max} {
     if {[llength $itm]!=1} {
 	array set bits $itm
 	set hdl [handle_data dummyMHandle $iH $bits(node)]
-	set stac [extract_gif_tail $hdl $bits(bottom) $bits(top)]
-	append stac [binary format cc 0 0x3b]
-	set resp [base64 -mode encode -- $stac]
+	switch $bits(format) {
+	    binary {
+		set stac [extract_gif_tail $hdl $bits(bottom) $bits(top)]
+		append stac [binary format cc 0 0x3b]
+		set resp [base64 -mode encode -- $stac]
+	    } distinct {
+		set resp [llength [lrange [distinct_values $hdl] 1 end]]
+	    }
+	}
     } else {
 	set hdl [handle_data dummyMHandle $iH $itm]
-	#	set resp [thread::send $::masterId [list extract_json $hdl $max]]
-	set resp [JsonifyAny [extract_list $hdl $max]]
+	set loseZeros [expr {[lsearch {EVENT SQUIRT} \
+				  [GetCCompProperty Class $itm]]+1}]
+	set resp [extract_json $hdl $max $loseZeros]
+	# set resp [JsonifyAny [thread::send $::masterId [list extract_list $hdl $max $loseZeros]]]
 	
     }
     free_data_handle $hdl
@@ -95,10 +103,12 @@ proc ValuesOfInterest {iH reqs} {
 }
 
 proc Sanitize {rough} {
-    return [string map {\" \\\" \t \\t} $rough]
+    return [string map {\" \\\" \t \\t \\ \\\\} $rough]
 }
 
+
 proc ResponseTo {paramList} {
+    # puts [info level 0]
     global service
     array set params $paramList
    
@@ -106,14 +116,15 @@ proc ResponseTo {paramList} {
 	BuildShareLib {
 	    package require json
 	    package require can2svg
-	    package require base64
+	    package require Trf ;# for native code base64
 
 	    set mH $::model_id
 	    set iH [c_createmodel $mH]
 	    set service($params(base)) $iH
-	    # Now create data structs for scalar parameters
+	    # Now create data structs for all parameters except per-record
 	    foreach obj [listobjects $mH] {
-		if {[lsearch {INPUT} [GetCCompProperty Eval $obj]]>-1 && [llength [GetCCompProperty Dims $obj]]==1} { ;# [0]
+		if {[lsearch {INPUT TABLE} [GetCCompProperty Eval $obj]]>-1 && [lsearch [GetCCompProperty Dims $obj] RECORDS]==-1} {
+		    # per-records too difficult -- avoid
 		    set ::aH($obj) [c_createparamarray $iH $obj]
 		}
 	    }
@@ -163,12 +174,12 @@ proc ResponseTo {paramList} {
 		    }
 		    lappend dict text \"[Sanitize [file tail $path]]\" \
 			captpath \"[Sanitize $path]\" \
-			icon images/[GetCCompProperty DUMMY Class $id].gif
+			icon images/[GetCCompProperty Class $id].gif
 		    # include path too
 		    foreach {prop key} \
 			{equation Spec comment Comment eval Eval min MinVal \
 			     max MaxVal type Type units Units} {
-			set jBit [GetCCompProperty DUMMY $key $id]
+			set jBit [GetCCompProperty $key $id]
 			lappend dict $prop \"[Sanitize $jBit]\"
 		    }
 		    lappend dict dims \
@@ -192,7 +203,8 @@ proc ResponseTo {paramList} {
 		set id [getnodeid $::model_id $path]
 		set trans [GetCCompProperty Trans $id]
 		set times [string equal INPUT [GetCCompProperty Eval $id]]
-		set dims {} ;# only ones we have created space for so far!
+		set dims [GetCCompProperty Dims $id]
+		if {[lsearch $dims RECORDS]>-1} continue ;# too complicated
 		if {$times} {
 		    if {[info exists parmTimeStamps($id)] && \
 			    $parmTimeStamps($id)>=$parmReqOrdinality} {
@@ -202,14 +214,18 @@ proc ResponseTo {paramList} {
 		    set dims [linsert $dims 0 TIME]
 		}
 		set ::param_id(cur) $::aH($id)
-		set resp [ListToArray DUMMY {} cur {} {} $trans $dims $stack \
-				$times 1]
+		set resp [ListToArray DUMMY {} cur {} {} $trans \
+			      [lrange $dims 0 end-1] $stack $times 1]
 		if {[lsearch {-1 0 1} $resp]==-1} {
 		    puts $path-->$resp
 		}
 	    }
 	} LoadSPF {
 	    set result [ParamsFromGUI $service($params(base))]
+	} GetParamVals {
+	    # get strings from GUI side as we have no functions to get from c++
+	    set prmStrs [thread::send $::masterId [list array get ::paramData]]
+	    set result [JsonifyDict $prmStrs]
 	} Reset {
 	    set iH $service($params(base))
 	    set i 0
@@ -255,10 +271,11 @@ proc ResponseTo {paramList} {
 	    error "Unhandled request $paramList"
 	}
     }
+    # puts "Responded: $result"
     return $result
 }
 
-proc Respond {to what} {
+proc Respond {to what mt} {
 
     set resp "HTTP/1.1 200 OK
 Date: [clock format [clock seconds]]
@@ -267,12 +284,15 @@ Access-Control-Allow-Origin: *
 Content-Length: [string length $what]
 Keep-Alive: timeout=5, max=100
 Connection: Keep-Alive
-Content-Type: text/html; charset=UTF-8
+Content-Type: $mt; charset=UTF-8
 
 $what"
 # convert string to crlfs first or length comes out wrong
 #    fconfigure $to -translation crlf
-    puts -nonewline $to $resp
+    if {[catch {puts -nonewline $to $resp} sktErr]} {
+	puts "Channel failure $sktErr"
+	puts "Socket status [chan configure $::web_service(curent) -error]"
+    }
 #    fconfigure $to -translation binary
 }
 	
@@ -286,15 +306,27 @@ proc relay {from to in} {
 	set blk [read $from]
 	if {$in} {
 	} else {
-	    if {[string first "POST /create_model.php HTTP/1.1" $blk]==0} {
-		set blk [string replace $blk 5 5 $web_service(path)/]
-	    }
-	    set self $web_service(host):$web_service(port)
-	    set blk [string map [list "Host: $self" "Host: $web_service(tgt)"] $blk]
 	    if {[string first "GET /" $blk]==0} {
+		set lineEnd [string first " HTTP/1." $blk 5]
+		set soughtLocn [file join $web_service(inst) Extensions www [string range $blk 5 $lineEnd-1]]
+		if {[file exists $soughtLocn]} {
+		    # serve local version if present -- only load_tools.html
+		    # needs to be local
+		    set stm [open $soughtLocn r]
+		    set response [read $stm]
+		    set mimeTrans {.html text/html .js text/javascript \
+				       .gif image/gif .jpg image/jpeg \
+				       .png image/png}
+		    set mt [lindex $mimeTrans [lsearch $mimeTrans [file extension $soughtLocn]]+1]
+		    Respond $from $response $mt
+		    close $stm
+		    return
+		}
+		set self $web_service(host):$web_service(port)
+		set blk [string map [list "Host: $self" "Host: $web_service(tgt)"] $blk]
 		set blk [string replace $blk 4 4 $web_service(path)/]
 	    }
-	    if {[string first "POST /model_action.php HTTP/1.1" $blk]==0} {
+	    if {[string first "POST /model_action.php HTTP/1." $blk]==0} {
 		set paramLine [string range $blk [string last \n $blk end]+1 end]
 		while {[string length $paramLine]<8} {
 		    # should really get required length from headers
@@ -306,7 +338,7 @@ proc relay {from to in} {
 		}
 		set result [ResponseTo $paramList]
 		Respond $from [encoding convertto utf-8 \
-				   [string map {\n \r\n} $result]]
+				   [string map {\n \r\n} $result]] text/html
 		return ;# do not bother the server
 	    } 
 	}
@@ -323,8 +355,8 @@ proc accept {clientsock clienthost clientport} {
     fileevent $serversock readable [list relay $serversock $clientsock 1]
 }
 
-proc start_server {host port tgt path runParams} {
+proc start_server {host port tgt path inst runParams} {
     array set ::web_service [list host $host port $port tgt $tgt \
-				 path $path parms $runParams]
-    socket -server accept -myaddr $host $port
+				 path $path inst $inst parms $runParams]
+    set ::web_service(curent) [socket -server accept -myaddr $host $port]
 }

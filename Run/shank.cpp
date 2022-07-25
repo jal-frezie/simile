@@ -1365,6 +1365,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     SetdT( tweak_phase,steps[tweak_phase]);
   }
   resetting = top_phase;
+  keepingSliders = (how_int == -1);
   if (top_phase<=0) {
     last_op = 0;
     last_exit = last_update = last_check = 0; // reset timekeeping
@@ -2946,10 +2947,10 @@ char* myexit(void* modelType, void* modelHandle) {
   return NULL; // message displayed in destructor cos it is not allowed
   // to have params or retval
 }
-/*
+
 char* getNodeId(void* modelType, char* capt) {
   int tgtIndex;
 
-  return ((ModelServer*)modelType)->nodeModelAndId(capt);
+  tgtIndex = ((ModelServer*)modelType)->CompFromCapt(capt);
+  return ((ModelServer*)modelType)->nodedata[tgtIndex].name;
 }
-*/

@@ -134,6 +134,7 @@ set vm_usage [expr $::tclBitness*$::tclBitness/2] ;# in megs
 set spraf {}
 while {![string match ready $spraf]} {
     if {$vm_usage<16} {
+	puts $PROLOG_CMD
 	error $loss
     }
 

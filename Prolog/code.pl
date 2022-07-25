@@ -21,7 +21,7 @@ tk_code(Model, CompOrBuild, _Tgt) :-
 	menu><get_default_export_name(Model, IdentStr, DefN),
 	forms><get_program_file(DefN, Model, Tgt),
 	\+ Tgt = '', % cancelled
-	use_temp_dir(Temp),
+	state><use_temp_dir(Temp),
 	find_all_comps(Base, Model),
 	(Base = root,
 	    CompDir = Temp;

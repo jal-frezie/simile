@@ -1,16 +1,14 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
-<shf simile_version="6.1">
-<external x="630" y="1340"  w="1020" h="717"/>
+<shf simile_version="6.12">
+<external x="649" y="314" w="1020" h="717"/>
 <std_tool_layout left_panel_width="270" run_control_height="175"/>
 <notebook>
   <page caption="Plant heights">
     <panedwindow orient="vertical">
       <pane>
          <container type="gen3d1">
-          <![CDATA[
-displaying -0.30 0.50 /Tree/TXposn /Tree/TYposn /Tree/SIZE /Quadrat/Xposn /Quadrat/Yposn /Quadrat/Crop/LEAF /annotation/ {}
-          ]]>
+          <![CDATA[displaying -0.3 0.5 /Tree/TXposn /Tree/TYposn /Tree/SIZE /Quadrat/Xposn /Quadrat/Yposn /Quadrat/Crop/LEAF /annotation/ {}]]>
         </container>
       </pane>
     </panedwindow>
@@ -18,10 +16,13 @@ displaying -0.30 0.50 /Tree/TXposn /Tree/TYposn /Tree/SIZE /Quadrat/Xposn /Quadr
   <page caption="Bloxx">
     <panedwindow orient="vertical">
       <pane>
-         <container type="threeDoodle98">
-          <![CDATA[
-displaying xcoord /Quadrat/Xposn ycoord /Quadrat/Yposn colorValue /Quadrat/Crop/SHADE sizeval /Quadrat/Crop/LEAF
-          ]]>
+         <container type="Layers20131022">
+          <![CDATA[-211.0 -160.0 3.0202396441137984 3.0202396441137984 {-207.575 -156.6 516.425 452.4} ::similescript::RectGrid20131119 {c2 #20001a9b0000 cmid red datamin 1e100 c3 #300027e80000 c4 #400035350000 datamax 1e-100 c5 #500042820000 c6 #60004fd00000 ETCount 0 c7 #70005d1d0000 c8 #80006a6a0000 legendSide n c9 #8fff77b70000 min 0.0 max 20.0 xscale 10 cbot black bpp 8 imgs 0 resetDone 0 xoff -50 editMode 0 tgtDims {20 20 0} range 20.0 hex 0 nswatches 31 nC,color node00064 dataETs {} c10 #9fff85050000 ncol 20 colvals USE_INDICES c11 #afff92520000 c12 #bfff9f9f0000 integer 0 c13 #cfffacec0000 c14 #dfffba3a0000 c15 #efffc7870000 state displaying c16 #ffffd4d40000 c17 #ffffd7b51111 c18 #ffffda952222 yoff -150 c19 #ffffdd763333 c20 #ffffe0574444 allETs {{} {} {}} c21 #ffffe3385555 nrow 20 c22 #ffffe6186666 c23 #ffffe8f97777 c24 #ffffebda8888 yscale 10 c25 #ffffeebb9999 title {GRAIN (rectangular grid diagram)} c26 #fffff19baaaa c27 #fffff47cbbbb c28 #fffff75dcccc c30 #fffffd1eeeee c29 #fffffa3edddd ctop white colourMapTweaked 0 c31 #ffffffffffff color /Quadrat/Crop/GRAIN bw 1 nC,color node00064 displayUpdate 1 c0 #000000000000 c1 #10000d4d0000} ::similescript::Animals20131029 {ycoord /Tree/TYposn transform {0 0 1 -1} state displaying title {SIZE (moving trees)} dir -1.57 size /Tree/SIZE xcoord /Tree/TXposn cmds {$c create polygon -100.0 -20.0 -50.0 -13.0 0.0 -10.0 0.0 10.0 -50.0 13.0 -100.0 20.0 -fill brown -smooth true -tags unpositioned
+$c create oval 0.0 -50.0 100.0 50.0 -fill green -tags unpositioned
+set hotspot {0 0}
+set scale 200
+set axis 0
+}}]]>
         </container>
       </pane>
     </panedwindow>

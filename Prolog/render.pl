@@ -851,12 +851,15 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	     (Pairs = [_Either-FullStr];
 	      select(_Desc-Pt1, Pairs, [comment-Pt2]),
 	      append_atoms([Pt1, '\n', Pt2], FullStr));
-          member(Field-Attr, [spec-spec, spec-value, units-units]),
+         (Node has_class_refinement external_code of ExtCode, wake,
+	      member(Field-Attr, [spec-procedure, units-unit]),
+	      member(Attr=Term, ExtCode), \+ Term = none;
+	 member(Field-Attr, [spec-spec, spec-value, units-units]),
 	  Node has_class_refinement Attr of Repn,
 	  (Attr = spec, catch((tcltk><all_utf8_to_ttfn(Repn, TtfnRepn),
 			       name(Term, TtfnRepn)),
 			      _Er, fail); % old style spec
-	   Term = Repn), !,
+	   Term = Repn)), !,
              sicstus_format_to_chars("~w", [Term], FullStrStr),
              sicstus_atom_chars(FullStr, FullStrStr)),
 	templatify(L, FullStr, Ptr, Decl),

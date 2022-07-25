@@ -23,7 +23,7 @@ proc InstallModelExec {mdl} {
 	lappend hook $obj
 	# Not needed if loading from .spf, and can mess up per-record
 	# -- but needed for sliders so add for solo time series
-	if {[llength [GetModelProperty $mH $obj Dims]]==1} { ;# [0]
+	if {[lsearch [GetModelProperty $mH $obj Dims] RECORDS]==-1} { ;# [0]
 	    set aH($obj) [CreateParamArray $iH $obj]
 	}
     }

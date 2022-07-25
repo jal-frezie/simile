@@ -27,10 +27,13 @@ if {!$headless} {
     switch [tk windowingsystem] {
 	x11 {
 	    set hideTinies 40
+	    set borderSpread 0
 	} win32 {
 	    set hideTinies 6
+	    set borderSpread 2
 	} aqua {
 	    set hideTinies 5
+	    set borderSpread 0
 	}
     }
 }
@@ -64,6 +67,20 @@ proc ShiftAll {shift args} {
     return $res
 }
 
+# generate appropriate stippling switches
+proc FuzzFor {w density} {
+    if {$density eq "gray50"} {
+	if {$w eq "ToSVG" || [tk windowingsystem] eq "aqua"} {
+	    set fuzz {-dash {1 1}}
+	} else {
+	    set fuzz {-stipple gray50}
+	}
+    } else {
+	set fuzz {}
+    }
+    return $fuzz
+}
+
 proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
@@ -72,8 +89,9 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     $w create rectangle $ml $mt $mr $mb -outline {} -fill $fCol \
 	-tags "$tagSet has_info"
     set stackDepth 0
-    $w create line $mr $mt $ml $mt $ml $mb -width $width \
-            -tags "$tagSet size_on_this realwidth($width)"
+    set switches [concat {-width $width} [FuzzFor $w $density] \
+		      {-tags "$tagSet size_on_this realwidth($width)"}]
+    eval {$w create line $mr $mt $ml $mt $ml $mb} $switches
 
     set decor [expr $extras/10] ;# no decor yet for input param compartments
     set stack [expr $extras-10*$decor]
@@ -84,8 +102,7 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
         set st [expr $mt+$stackDistance]
         set sr [expr $mr+$stackDistance]
         set sb [expr $mb+$stackDistance]
-        $w create line $sr $st $sr $sb $sl $sb -width $width \
-                -tags "$tagSet size_on_this realwidth($width)"
+        eval {$w create line $sr $st $sr $sb $sl $sb} $switches
         incr stackDepth
     }
 #    ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
@@ -156,7 +173,7 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
 
 proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
-    set rad [expr ($mr-$ml)/2]
+    set rad [expr ($mr-$ml)/2.0]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
 
@@ -167,11 +184,12 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set look variable
     set fCol $::looks($::window_info($w,top_node),$look,fill)
     set width [GetLineSize $w $look $fatness]
-    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]
-
+    set fuzz [FuzzFor $w $density]
+    set blobSws [concat $fuzz [list -tags "$tagSet has_info bg_blob"]]
+    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $blobSws]
     set extras [expr $extras-100*$style]
-    set generic [list -width $width \
-		     -tags "$tagSet size_on_this realwidth($width) has_info"]
+    set generic [concat "-width $width" $fuzz \
+		     [list -tags "$tagSet size_on_this realwidth($width) has_info"]]
     # second approximation to fill
 #    scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
 #    scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
@@ -194,7 +212,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	scan [GetPoints $ob (-$outer)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 	
 #	eval {$w create polygon $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {}} $generic
-	DrawBlob $w $hm $vm [expr 2*($rad+$width/2)/5] "$tagSet has_info"
+	DrawBlob $w $hm $vm [expr 2*($rad+$width/2)/5] $blobSws
     } else {
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
@@ -203,12 +221,14 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
 #		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
-	eval {$w create arc $ml $mt $mr $mb -start 45 -extent 90 \
+	set sliceBounds [list [expr {$ml+$width/2.0}] [expr {$mt+$width/2.0}] \
+			     [expr {$mr-$width/2.0}] [expr {$mb-$width/2.0}]]
+	eval {$w create arc} $sliceBounds {-start 45 -extent 90 \
 		  -style pieslice -outline {} -fill $fCol} $generic
-	eval {$w create arc $ml $mt $mr $mb -start 225 -extent 90 \
+	eval {$w create arc} $sliceBounds {-start 225 -extent 90 \
 		  -style pieslice -outline {} -fill $fCol} $generic
-	eval {$w create arc $ml $mt $mr $mb -start 45 -extent 180 \
-		  -style arc} $generic
+#	eval {$w create arc $ml $mt $mr $mb -start 45 -extent 180 \
+#		  -style arc} $generic
     }
     set decor [expr $extras/10]
     set stack [expr $extras-10*$decor]
@@ -241,7 +261,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	}
     }
 	    
-    set stackDepth 0
+    set stackDepth 1
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
 #        set stackSide [eval {$w create line} [ShiftAll $stackDistance \
@@ -623,7 +643,7 @@ proc PutThinArrow { w ptz extras fatness density colourScheme tagSet} {
     # next few lines put blob with diameter equal to width of
     # arrowhead at start of line
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] \
-            "$tagSet startblob"
+	[list -tags "$tagSet startblob"]
 # now experimental bit to draw extra lines around middle to indicate stack
     if {$stack>1} {
 	foreach level {-9 -3 3 9} {
@@ -646,14 +666,15 @@ proc PutRelation { w ptz fatness colourScheme tagSet} {
     set arrowRad [expr [GetObjectSize $w relation $fatness]/10]
     
     set mptz [ScaleList $w $ptz]
-    eval {$w create line} $mptz {-arrow last \
+    set fuzz [FuzzFor $w gray50]
+    eval {$w create line} $mptz $fuzz {-arrow last \
                 -arrowshape [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
                 -smooth true -splinesteps $::splinePts -width $width \
 				     -tags "$tagSet realwidth($width) has_info"}
     # next few lines put blob with diameter equal to width of arrowhead at start of
     # line
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
-            "$tagSet startblob"
+	[concat $fuzz [list -tags "$tagSet startblob"]]
 #    ResetColours $w relation gray50 $colourScheme [lindex $tagSet 0]
 }
 
@@ -665,9 +686,9 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
     set arrowRad [expr $features/10]
     eval {$w create line} $mptz {-arrow last -arrowshape \
 		[list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -smooth false \
-		-width $width -tags "$tagSet realwidth($width) no_stipple has_info"}
+		-width $width -tags "$tagSet realwidth($width) has_info"}
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] \
-		   [expr 2*$arrowRad] "$tagSet no_stipple startblob"
+	[expr 2*$arrowRad] [list -tags "$tagSet startblob"]
     set stackWidth [expr {$features/50}]
     set stackDepth 2
     while {$stackDepth <= $stack} {
@@ -814,13 +835,14 @@ proc MoveLine {w id ptz} {
     foreach item [$w find withtag $id] {
         set taglist [$w gettags $item]
         if {[string match *startblob* $taglist]} {
-            set x1 [lindex $mptz 0]
-            set y1 [lindex $mptz 1]
-            $w coords $item $x1 $y1 $x1 $y1
-        } elseif {[string match *endblob* $taglist]} {
-            set xn [lindex $mptz [expr [llength $mptz] - 2]]
-            set yn [lindex $mptz end]
-            $w coords $item $xn $yn $xn $yn
+	    set was [$w coords $item]
+	    $w move $item \
+		[expr {[lindex $mptz 0]-([lindex $was 0]+[lindex $was 2])/2.0}]\
+		[expr {[lindex $mptz 1]-([lindex $was 1]+[lindex $was 3])/2.0}]
+#        } elseif {[string match *endblob* $taglist]} {
+#            set xn [lindex $mptz [expr [llength $mptz] - 2]]
+#            set yn [lindex $mptz end]
+#            $w coords $item $xn $yn $xn $yn
 	} elseif {[regexp {stackdecor\(([0-9\-]+)\)} $taglist tag level]>0} {
 	    set distOff [expr {$level*[$w itemcget $item -width]/2.0}]
             $w coords $item [CurveStackEnds $mptz $distOff]
@@ -875,9 +897,24 @@ proc PositionBowtie {w ptz} {
     return $bounds
 }
 
-proc DrawBlob {w startX startY size tags} {
-    $w create line $startX $startY $startX $startY -width $size \
-            -capstyle round -tags "$tags realwidth($size)"
+proc DrawBlob {w startX startY size switches} {
+#    $w create line $startX $startY $startX $startY -width $size \
+#            -capstyle round -tags "$tags realwidth($size)"
+# above fails to dash for MacOS stipple substitute (cross-platform TclTk bug)
+    set width [expr {$size/2.0}]
+    if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
+	set width [expr $width+$::borderSpread]
+    }
+    set rad [expr {$size/4.0}]
+    eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
+	      [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
+	      -width $width -extent 359.999} $switches
+# works but will need to improve can2svg to cope with real extent
+#    $w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
+#	[expr {$startX+$rad}] [expr {$startY+$rad}] \
+#	-width $width -tags "$tags realwidth($width)"
+# works but mac stipple workaround poor because outline dashes cannot be shorter
+# than width
 }
 
 # This puts random bits of normally non-editable text on the screen...
@@ -1028,7 +1065,7 @@ proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
 		$w dtag $object tocopy
 	    }
 	}
-	if {[string equal unchanged $density]} {
+	if {1 || [string equal unchanged $density]} {
 	    continue
 	}
 	if {[string equal dashed $density]} {
@@ -1039,7 +1076,7 @@ proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
 		if {[lsearch {line rectangle arc polygon} \
 			 [$w type $object]]>-1} {
 		    if {[llength $density]} {
-			$w itemconfigure $object -dash {1 3}
+			$w itemconfigure $object -dash {1 1}
 #		    } else {
 #			$w itemconfigure $object -dash {}
 # un-dashing messes up decorations on discrete influemce
@@ -1362,9 +1399,12 @@ proc ChangeObjectTitle { w name title} {
 # Prolog being called back in this instance, because a loop would not happen
 # sometimes due to rounding errors.
 
+set zooming 0
 proc DoZoom { winId factor {invX none} {invY none}} {
-    global window_info looks doneZoom
+    global window_info looks zooming
 
+    if {$zooming} return
+    set zooming 1
     set width $window_info($winId,width)
     set height $window_info($winId,height)
     # First, find canvas point at centre of zoom action 
@@ -1379,13 +1419,10 @@ proc DoZoom { winId factor {invX none} {invY none}} {
     set target_y [$winId canvasy $invY]
 # Mark the centre of the zoom. When doing mousewheel zooms, several ops 
 # can fall over each other, so do not re-create marker if already there.
-    if {[info exists doneZoom]} {
-	after cancel $doneZoom
-    } else {
-	$winId create line $target_x $target_y $target_x $target_y \
-	    -tags /zoom_centre/
-    }
-    set doneZoom [after 100 DeleteMarker $winId]
+# (couldn't avoid race -- create marker for each second)   
+    set ctrMark /zoom_ctr/
+    $winId create line $target_x $target_y $target_x $target_y \
+	-tags $ctrMark
 
     # next make sure that enough canvas exists for the outcome of the operation
     set extraMargin [expr {1/$factor-1}]
@@ -1410,13 +1447,9 @@ proc DoZoom { winId factor {invX none} {invY none}} {
 # no need for the following, RollBack takes care of it
 #    eval [list ResizeBackgnd $winId] $newReg
 
-    CanvasSee $winId /zoom_centre/ $invX $invY
-    return
-}
-
-proc DeleteMarker {winId} {
-    $winId delete withtag /zoom_centre/
-    unset ::doneZoom
+    CanvasSee $winId $ctrMark $invX $invY
+    $winId delete withtag $ctrMark
+    set zooming 0
 }
 
 # ZoomImage: Scale the graphical stuff in the window, and explicitly
@@ -1554,8 +1587,8 @@ proc Visible {winId obj} {
 # width or font size as appropriate.
 
 proc AdjustWidth {winId object factor} {
-    if {[regexp {realwidth\(([0-9\.]+)\)} [$winId gettags $object] \
-                tag oldWidth]<1} {
+    set tagList [$winId gettags $object]
+    if {[regexp {realwidth\(([0-9\.]+)\)} $tagList tag oldWidth]<1} {
         if {[string match text [$winId type $object]]} {
             set currentFont [$winId itemcget $object -font]
             set oldWidth [expr {[font actual $currentFont -size]*12.0}]
@@ -1565,7 +1598,11 @@ proc AdjustWidth {winId object factor} {
     } else {
         $winId dtag $object $tag
     }
-    set width [expr $oldWidth*$factor]
+    if {[string match *bg_blob* $tagList]} {
+	set width [expr $oldWidth*$factor+$::borderSpread*(1-$factor)]
+    } else {
+	set width [expr $oldWidth*$factor]
+    }
     $winId addtag realwidth($width) withtag $object
     return $width
 }
@@ -1792,8 +1829,8 @@ proc CanvasSee {c this scnX scnY} {
 	DebugMess "Missed with $this coords [$c coords $this]"
     }
     $c scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
-	$c scan dragto [expr int(-0.05*($tgtL+$tgtR))] \
-	    [expr int(-0.05*($tgtT+$tgtB))]
+    $c scan dragto [expr int(-0.05*($tgtL+$tgtR))] \
+	[expr int(-0.05*($tgtT+$tgtB))]
 }
 
 proc cleanup {canvas} {

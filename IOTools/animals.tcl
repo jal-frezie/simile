@@ -23,6 +23,12 @@ itcl::class similescript::$newLayerClass {
 	$winId bind [namespace tail $this].main <Leave> RemovePopup
 	if {[string length $state]} { ;# we are restoring 
 	    array set useNodes $state
+	    foreach {attr showable} $state {
+		if {![string first / $showable]} {
+		    set temp(nC,$showable) \
+			[GetIdFromCaptionPath $showable]
+		}
+	    }
 	    if {$useNodes(state) eq "displaying"} {
 		Display 0 0 0
 		return
@@ -77,45 +83,48 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method Click {{path {}}} {
-        set testResult [$modelInst GetValue $path]
-        # This tests for the user having clicked on a suitable element
-        # of the model diagram
 	set ms [winfo parent $winId].bottom.ms
 	set bn [winfo parent $winId].bottom.bn
 	if {$path eq ""} {
 	    set path [$bn get]
-	}
-        if {[string compare $testResult novalue]} {
-            switch $useNodes(state) {
-		xcoord {
-		    $ms configure -text "Now click on the value representing the Y coordinates."
-		    set useNodes(xcoord) $path
-		    set useNodes(state) ycoord
-		} ycoord {
-		    $ms configure -text "Now select a component whose value determines the size of the animals, or enter fixed value here:"
-		    pack [ttk::entry $bn] -side bottom
-		    bind $bn <Return> [list $this Click]
-		    set useNodes(ycoord) $path
-		    set useNodes(state) sizeval
-		} sizeval {
-		    $ms configure -text "Now select a component whose value determines their orientation, or enter fixed value here:"
-		    $bn delete 0 end
-		    set useNodes(size) $path
-		    set useNodes(title) "[file tail $path] (moving $useNodes(title))"
-		    set useNodes(state) dirval
-		} dirval {
-	            destroy $ms
-		    destroy $bn
-		    $modelInst ReleaseClicks
-		    set useNodes(dir) $path
-		    set useNodes(state) displaying
-		    Display 0 0 0
-		}
-	    }
 	} else {
-            $ms configure -text \
-		"This component does not have a value; please choose a compartment, variable or flow."
+	    set testResult [$modelInst GetValue $path -numeric 1]
+        # This tests for the user having clicked on a suitable element
+        # of the model diagram
+	    if {[string compare $testResult novalue]} {
+		set temp(nC,$path) [GetIdFromCaptionPath $path]
+	    } else {
+		$ms configure -text \
+		    "This component does not have a value; please choose a compartment, variable or flow."
+		return
+	    }
         }
+	switch $useNodes(state) {
+	    xcoord {
+		$ms configure -text "Now click on the value representing the Y coordinates."
+		set useNodes(xcoord) $path
+		set useNodes(state) ycoord
+	    } ycoord {
+		$ms configure -text "Now select a component whose value determines the size of the animals, or enter fixed value here:"
+		pack [ttk::entry $bn] -side bottom
+		bind $bn <Return> [list $this Click]
+		set useNodes(ycoord) $path
+		set useNodes(state) sizeval
+	    } sizeval {
+		$ms configure -text "Now select a component whose value determines their orientation, or enter fixed value here:"
+		$bn delete 0 end
+		set useNodes(size) $path
+		set useNodes(title) "[file tail $path] (moving $useNodes(title))"
+		set useNodes(state) dirval
+	    } dirval {
+		destroy $ms
+		destroy $bn
+		$modelInst ReleaseClicks
+		set useNodes(dir) $path
+		set useNodes(state) displaying
+		Display 0 0 0
+	    }
+	}
     }
    
     public method GetTitle {} {
@@ -142,7 +151,8 @@ itcl::class similescript::$newLayerClass {
 		    set temp($aspect) [ReplicateAsX $useNodes($aspect) \
 					   $temp(xcoord)]
 		} else {
-		    set temp($aspect) [$modelInst GetValue $useNodes($aspect)]
+		    set temp($aspect) [$modelInst GetValue \
+					   $temp(nC,$useNodes($aspect))]
 		}
 	    }
 	    DoForRXYData {} DrawAnimal $temp(size) $temp(dir) \

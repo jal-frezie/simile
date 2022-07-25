@@ -1340,6 +1340,7 @@ proc init_pop {metaTxt crNode ptCount channelId maker name} {
 
 proc compare_instance_status {testInstName refInst num} {
     upvar 1 $testInstName testInst
+    # puts [info level 0]--$testInst
     #    ShowMess debug info "testInst $testInst refInst $refInst" ok
     if {[string match 0 $testInst]} {return 1}
     for {set ptr 0} {$ptr < $num} {incr ptr} {

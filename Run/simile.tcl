@@ -39,23 +39,41 @@ if {[string match windows $tcl_platform(platform)]} {
 set oldProc Simile
 set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
 
+
 proc ChooseIntegerRatio {fraction accu} {
-    set m 1
+    set m 0
     while {1} {
-	if {$m<$fraction} {
-	    set d 1
+	if {$m} {
+	    set d [expr {round($m/(1-$fraction))}]
+	    set n [expr {$d-$m}]
 	} else {
-	    set d [expr {round($m/$fraction)}]
+	    foreach {n d} {1 1} {}
 	}
-	# set d [max round($m/$fraction) 1]
-	set close [expr $m/($fraction*$d)]
-	if {$close >= $accu && $close <= 1/$accu} {
-	    return [list $m $d]
-	}
-	incr m
+	set close [expr $n/($fraction*$d)]
+        if {$close >= $accu && $close <= 1/$accu} {
+            return [list [expr {abs($n)}] [expr {abs($d)}]]
+        }
+        incr m
     }
 }
-	
+
+#proc ChooseIntegerRatio {fraction accu} {
+#    set m 1
+#    while {1} {
+#	if {$m<$fraction} {
+#	    set d 1
+#	} else {
+#	    set d [expr {round($m/$fraction)}]
+#	}
+#	# set d [max round($m/$fraction) 1]
+#	set close [expr $m/($fraction*$d)]
+#	if {$close >= $accu && $close <= 1/$accu} {
+#	    return [list $m $d]
+#	}
+#	incr m
+#    }
+#}
+#	
 set headless [catch {set defScaling [tk scaling]}]
 # set env(prologId) gnu ;# goodbye forever Sicstus
 if {[info exists prolog_in_console]} {
@@ -68,7 +86,7 @@ if {[info exists prolog_in_console]} {
 # find on the system, to avoid buggy XML or inappropriate Itcl?
 #     set auto_path {}
 }
-if {[string match Darwin $tcl_platform(os)]} {
+if {!$headless && [string match Darwin $tcl_platform(os)]} {
 #    package require tclAE
 
     if {[string match \-psn_* [lindex $argv 0]]} {
@@ -77,13 +95,19 @@ if {[string match Darwin $tcl_platform(os)]} {
 	set argv [lrange $argv 1 end]
     }
 
+#
+# MacOS X specific procedures for the main window
+# Alastair 31 Jan 2005
+#
+
     proc ::tk::mac::OpenDocument {args} {
 # only opens the first of a group of files dropped or double-clicked,
 # but at least it handles files with spaces in the name.      
 	#        if {[catch {OpenTopLevel [lindex $args 0]} splat]}
 	set currents [array names ::window_info *,is_top_level]
 	if {[llength $currents]} {
-	    Reopen [string range [lindex $currents 0] 0 end-13] [brainwash [lindex $args 0]] dummy
+	    set cmdSrc [string range [lindex $currents 0] 0 end-13]
+	    after 100 [list Reopen $cmdSrc [brainwash [lindex $args 0]] dmy]
 	} else {
 # fails (because proc not yet loaded?) if Simile started by drag/drop
 	    set ::OPEN_MODEL [lindex $args 0]
@@ -107,6 +131,33 @@ if {[string match Darwin $tcl_platform(os)]} {
     }
 #    tclAE::installEventHandler aevt rapp handleReopenApp
 #    tk scaling 1.0
+#
+# The Quit command in the application menu ALWAYS calls exit, so we must quit 
+# by that route however it is invoked (keyboard shortcut or mouse click) -- 
+# although it helpfully calls ::tk::mac::Quit first
+#
+#  rename exit wishExit
+#  bind all <Command-q> exit
+  proc ::tk::mac::Quit {} {
+      global window_info
+      set currentDesk _
+      catch {set currentDesk \
+         $window_info([winfo toplevel [focus]].canvas,top_node)}
+# following is after 100 because funny things happen to the event loop while
+# actually executing the exit procedure in the Cocoa version, and 'after idle'
+# has never quite worked properly on the Mac
+      after 100 prolog tk_kill_everything($currentDesk)
+#...should not be needed now using ::tk::mac::Quit, but ww1t+a...
+      return 0
+  }
+#
+# Enable the Preferences command in the application menu using Carbon extension
+#
+#  package require tclCarbonHICommand
+#  carbon::enableMenuCommand pref 0
+  proc ::tk::mac::ShowPreferences {} {
+    Pref_Dialog
+  }
 } else {
 # If Simile is already running, make a new window there and exit. Note that
 # on Macs the OpenDocument takes care of this and we don't even get this far
@@ -277,7 +328,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 7.0
-set sendvars(simP) {b8}
+set sendvars(simP) {b9}
 
 if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols
@@ -405,6 +456,9 @@ if {!$headless} {
     } else {
 	set niceSize [font actual {-size -12} -size]
     }
+    if {$niceSize<=0} {
+	set niceSize 12 ;# otherwise is -12 on Buckaroo
+    }
 entry .hidden_e -font TkEntryFont -width 25
 pack .hidden_e
 
@@ -518,6 +572,7 @@ cd $SIMILE_PATH/Examples
 #   Model is $env(OPEN_MODEL)" -type ok
 
 
+set swiplLocn swipl
 switch $tcl_platform(platform) {
     windows {
 	set archExtn {}
@@ -526,6 +581,7 @@ switch $tcl_platform(platform) {
 	if {[string equal Darwin $tcl_platform(os)]} {
 # experiment with fatties
 	    set archExtn _mac
+	    set swiplLocn /Applications/SWI-Prolog.app/Contents/MacOS/swipl
 	} else {
 	    set archExtn {}
 	}
@@ -538,7 +594,7 @@ switch $tcl_platform(platform) {
 # not finished
 
 if {[string equal swi_interp $userinfo(prologId)]} {
-    set PROLOG_CMD {swipl -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
+    set PROLOG_CMD [concat $swiplLocn {-f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}]
 } else {
     switch $userinfo(prologId) {
 	gnu {
@@ -611,7 +667,7 @@ switch $userinfo(interfaceId) {
 	}
 # Cheekily try initializing the whole works
 	set dummyNode none
-	ControlDraw $dummyNode
+        ControlDraw $dummyNode
 # now open up
 	set myDir [file join $::simtmpdir exec]
 	destroy .splash

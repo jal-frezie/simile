@@ -23,6 +23,12 @@ itcl::class similescript::$newLayerClass {
 	if {[string length $state]} { ;# we are restoring 
 	    regsub -all /WIN/ $state $winId restoreString
 	    array set useNodes $restoreString
+            foreach {attr showable} $state {
+                if {![string first / $showable]} {
+                    set useNodes(nC,[string range $attr 6 end]) \
+                        [GetIdFromCaptionPath $showable]
+	        }
+            }
 	    incr useNodes($winId,nswatches)
 	    if {$useNodes($winId,state) eq "displaying"} {
 		ReTile
@@ -79,10 +85,12 @@ itcl::class similescript::$newLayerClass {
         # This tests for the user having clicked on a suitable element
         # of the model diagram
         if {[string compare $testResult novalue]} {
-            switch $useNodes($winId,state) {
+            set compon [GetIdFromCaptionPath $path]
+	    switch $useNodes($winId,state) {
 		sizeval {
 		    $winId.ms configure -text "Now select the array value \
                     representing the X coordinates of the polygon vertices."
+		    set useNodes(nC,color) $compon
 		    set useNodes($winId,color) $path
 		    set useNodes($winId,title) "[file tail $path] (polygon diagram)"
 		    set parentPath [join [lrange [split $path /] 0 end-1] /]
@@ -96,9 +104,11 @@ itcl::class similescript::$newLayerClass {
 		}
 		xcoord {
 		    $winId.ms configure -text "Now click on the value representing the Y coordinatesl."
+		    set useNodes(nC,xcoord) $compon
 		    set useNodes($winId,xcoord) $path
 		    set useNodes($winId,state) ycoord
 		} ycoord {
+		    set useNodes(nC,ycoord) $compon
 		    set useNodes($winId,ycoord) $path
 		    set useNodes($winId,state) sizeval
 		    FinishClicking
@@ -145,13 +155,13 @@ itcl::class similescript::$newLayerClass {
 	set myTag [namespace tail $this].main
 	$winId delete $myTag
 	set useNodes(temp,curValues) \
-	    [$modelInst GetValue $useNodes($winId,color) -numeric 1]
+	    [$modelInst GetValue $useNodes(nC,color) -numeric 1]
 	if {$useNodes($winId,xcoord) eq "HEX_CTRS"} {
 	    DoForData {} AddPolygon $useNodes(temp,curValues)
 	} else {
 	    DoForXYData {} AddPolygon $useNodes(temp,curValues) \
-		[$modelInst GetValue $useNodes($winId,ycoord)] \
-		[$modelInst GetValue $useNodes($winId,xcoord)]
+		[$modelInst GetValue $useNodes(nC,ycoord)] \
+		[$modelInst GetValue $useNodes(nC,xcoord)]
 	}
 	$winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %W %X %Y \
 					\[$this CurrentPopup\]"
@@ -182,7 +192,7 @@ itcl::class similescript::$newLayerClass {
 	if {[string equal displaying $useNodes($winId,state)] && \
 		($useNodes($winId,displayUpdate) || $useNodes($winId,resetDone))} {
 	    set useNodes(temp,curValues) \
-		[$modelInst GetValue $useNodes($winId,color) -numeric 1]
+		[$modelInst GetValue $useNodes(nC,color) -numeric 1]
 	    if {$useNodes($winId,displayRetile)} {
 		ReTile
 		return

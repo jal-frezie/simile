@@ -58,7 +58,7 @@ write_AVs([A=V | More], Stm) :-
 	write(Stm, '="'),
 	write_with_xml_escs(Stm, V),
 	write(Stm, '"'),
-	write_AVs(More, Stm).
+    write_AVs(More, Stm).
 
 write_with_xml_escs(Stm, Term) :-
 	sicstus_write_to_chars(Term, Str),
@@ -103,6 +103,9 @@ convert_xml_elements(PlStm, [E|Es]):-
 % within the repeat-fail loop for reading in and processing each 
 % model clause.
 do_map(A,B):- map(top,A,B),!.
+
+av_equiv(Att=Val, element(Att, [], LVal)) :-
+   Att = libraries -> map_list(atom, Val, LVal); LVal = [Val].
 
 % ######################## START OF SYMMETRICAL MAPPING SECTION ##########################
 
@@ -423,19 +426,27 @@ map(av,
 
 % Note: THIS IS NOT RIGHT.     It's done this way to conform to the current (Feb 2011) version of the Schema.
 % In practice, there is a list of external_code values; and then a list (possibly empty) of libraries.
+/*
 map(av,
-  external_code=[procedure=P,include=I,libraries=[]],
+  external_code=[procedure=P,include=I,unit=U,libraries=[]],
   element(external_code,[],
      [element(procedure,[],[P]),
       element(include,[],[I]),
+      element(unit,[],[U]),
       element(libraries,[],[])])).
 
 map(av,
-  external_code=[procedure=P,include=I,libraries=[L]],
+  external_code=[procedure=P,include=I,unit=U,libraries=[L]],
   element(external_code,[],
      [element(procedure,[],[P]),
       element(include,[],[I]),
+      element(unit,[],[U]),
       element(libraries,[],[L])])).
+*/
+% 2022: replaced with generic working version. Update schema accordingly.
+
+map(av, external_code=ExtCodeSim, element(external_code,[], ExtCodeXML)) :-
+    all('imexport', av_equiv, [build(ExtCodeSim), build(ExtCodeXML)]).
 
 map(av,
   file_name=F,
@@ -542,7 +553,7 @@ map(av,
   element(spec,[],[S2])):-
       is_list(S),!,
       name(S1,S),
-      convert_number_to_atom(S1,S2).
+      number_atom(S1,S2).
 
 map(av,
   spec=S,
@@ -567,7 +578,7 @@ map(av,
 map(av,
   use_sofar=N,
   element(use_sofar,[],[A])):-
-   convert_number_to_atom(N,A).
+   number_atom(N,A).
 
 map(av,
   value=V,
@@ -739,7 +750,7 @@ map(use,
       element(way,[],[W]),
       element(local_name,[],[Vxml]),
       element(units,[],[element('m:math',[],[Umath])])])):-
-         (number(Rprolog) -> number_atom(Rprolog,Rxml) ; Rxml = Rprolog),
+         (Rxml = none, Rprolog = none -> true; number_atom(Rprolog,Rxml)),
          map(useV,Vprolog,Vxml),
          map(math,Uprolog,Umath).
 
@@ -972,7 +983,7 @@ map(math,
 
 map(math,
    Expr,
-   element('m:apply',[],[element('m:csymbol',Props,[Opsim])|ArgsXML])):-wake,
+   element('m:apply',[],[element('m:csymbol',Props,[Opsim])|ArgsXML])):-
       var(Expr),
       permutation(Props, [encoding=text,definitionURL=DefURL]),
       map_list(math,ArgsSimFull,ArgsXML),
@@ -988,10 +999,10 @@ map(math, Expr, element('m:apply',[],
 			[element('m:csymbol', [],
 				 [element('m:ci', [], [Opsim])])
 			| ArgsXML])) :-
-	var(Opsim), % reverse version later
-	Expr =.. [Opsim|ArgsSim],
-	op(simile, infix, 2, _, Opsim),
-	map_list(math, ArgsSim, ArgsXML).
+	(var(Opsim) -> Expr =.. [Opsim|ArgsSim]; true),
+	 op(simile, infix, 2, _, Opsim),
+	 map_list(math, ArgsSim, ArgsXML),
+	Expr =.. [Opsim|ArgsSim].
 
 map(math,
    Expr,
@@ -1227,13 +1238,13 @@ number_atom(A,A).
 Not needed at all in GNU-prolog; put in client code if needed
 number_atom(N,A):-
    term_atom(N,A).
-*/
 
 % Go through and remove all instances, replacing with number_atom/2.
 convert_number_to_atom(S1,S2):-
    number(S1),
    atom_number(S2,S1).
 convert_number_to_atom(S2,S2).
+*/
 
 
 % 'Fri Mar 05 18:16:09 GMT 2010'

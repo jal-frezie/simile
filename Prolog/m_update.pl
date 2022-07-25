@@ -1709,7 +1709,9 @@ remove_floater(Node) :-
 	    Node has_class C,
 	    \+ member(C, [variable, event, cloud, border, function]);
 	  Node has_class_refinement min_val of _;
-	  Node has_class variable, is_parameter(Node, 2)), !;
+	  Node has_class C,
+	    member(C, [variable, event]),
+            is_parameter(Node, 2)), !;
 	draw><off(Node),
 	oblitterfry(Node).
 

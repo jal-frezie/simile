@@ -556,7 +556,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    append objs " \"$obj\""
 		}
 		set switchForLib -shared ;# -bundle 
-		set bldr "g++ $gppFlags $switchForLib -o $TARGET $objs $lDirs $lFiles -l5d_mac"
+		set bldr "g++ $gppFlags $switchForLib -o $TARGET $objs $lDirs $lFiles -l5d_mac -Wl,-headerpad,0x400"
 		# puts $bldr
 		puts $spout $bldr
 		# There now follows a botch worthy of Windows
@@ -575,8 +575,10 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		flush $spout
 		close $spout
 	    } else {
+		if {![info exists env(PATH)]} { ;# as for SimiLive on hotwheels
+		    array set env {PATH /usr/bin}
+		}
 		set objs \"[file join $env(SYSDIR) lib support.o]\"
-		#puts "extsrcs $extSrcs"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine).o
@@ -1141,8 +1143,8 @@ proc ControlDraw {prologVersion} {
         # Add to path and recently opened files data
         RecordPathChoice .sml $OPEN_MODEL {}
     } else {
- 	set matchUnsaved $custom(prefDir)/$::msgs(desktop_abbrev)*.smx
-	set OPEN_MODEL [lindex [glob -nocomplain $matchUnsaved] 0]
+	set matchUnsaved $custom(prefDir)/$::msgs(desktop_abbrev)*.smx
+        set OPEN_MODEL [lindex [glob -nocomplain $matchUnsaved] 0]
 # if there are any logfiles from unsaved models, pick one
     }
     
@@ -1163,7 +1165,7 @@ proc InitExecThread {node} {
 # puts "Created interp $execInterp($node,id) for $node"
     }
 
-    foreach stubCmd \
+   foreach stubCmd \
 	{load_c_stub_1 c_setparamarray tcl_setparamarray c_getparamall \
 	     c_gettimepointall PlaceInArray ListToArray RepeatReset \
 	     MarkEvtParamActive AddEventCommand SetWrapTime \
@@ -1235,7 +1237,7 @@ proc InitExecThread {node} {
 	# callback cmds will need adjusting to include global nodeid
 	foreach callbackCmd {InteractGUI ShiftDisplays MarkUncached \
     AddLogEntry ExecQuery TransEnums InDays \
-    FileParamDialogue extract_list extract_gif_tail} {
+    VisitUrl FileParamDialogue extract_list extract_json extract_gif_tail} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }
@@ -2187,6 +2189,13 @@ proc FillReopen {winId} {
     global custom
 
     if {[string equal .hi $winId]} return ;# models canot open here anyway
+    if [string match "Darwin" $::tcl_platform(os)] {
+        set accKey [tr. Cmd]
+        set accSym Command
+    } else {
+	set accKey [tr. Ctrl]
+        set accSym Control
+    }
     .openrecent delete 0 end
     set posted {}
     foreach hottie $custom(hotlist) {
@@ -2194,8 +2203,13 @@ proc FillReopen {winId} {
             break
         }
         if {[file exists $hottie] && [lsearch $posted $hottie]==-1} {
-            .openrecent add command -label [file tail $hottie] \
-                    -command [list Reopen $winId.canvas $hottie reopen]
+	    set cmd [list Reopen $winId.canvas $hottie reopen]
+	    set n [llength $posted]
+            .openrecent add command -label [file tail $hottie] -command $cmd
+	    if {$n<1} { ;# only cmd-0 binds on Mac
+		.openrecent entryconfigure last -accelerator "$accKey+$n"
+		bind $winId <$accSym-$n> $cmd
+	    }
             lappend posted $hottie
         }
     }
@@ -2236,7 +2250,7 @@ proc UpdateAbility {c where args} {
     set navBar $winId.toolSlot.navbar
     foreach {which whether} $args {
 	set newState [ChooseText $whether normal disabled]
-	${winId}top.$where entryconfigure $menuPosns($where,$which) \
+	$winId.$where entryconfigure $menuPosns($where,$which) \
 	    -state $newState
 	AcceleratorState $winId $where $which $newState
 	set what [string tolower $which]
@@ -2274,9 +2288,9 @@ proc ToggleIOToolMenu {node} {
                 if {[PrefValue custom(helperManager) helperManager]} {
                     $winData.toolSlot.navbar.runenv configure -state normal
                 } else {
-                    if {![winfo exists $topMenu.helpers]} {
+                    if {![winfo exists $winData.helpers]} {
                         set menuSpec [ListMenuContents .helpers]
-                        ReconstituteMenu $topMenu.helpers $menuSpec
+                        ReconstituteMenu $winData.helpers $menuSpec
                     }
 # Add menu at end if using MacOS, since Help menu is not defined by application
 # (oh yes it is)
@@ -2285,7 +2299,7 @@ proc ToggleIOToolMenu {node} {
 #                                -underline 0 -menu $topMenu.helpers
 #                    } else {
                         $topMenu insert "Window" cascade -label "I/O tools" \
-                                -underline 0 -menu $topMenu.helpers
+                                -underline 0 -menu $winData.helpers
 #                    }
                 }
             } else {
@@ -2293,7 +2307,7 @@ proc ToggleIOToolMenu {node} {
             }
             $winData.toolSlot.toolbar.snap configure -state $newState
 	    set snapIndx $::menuPosns(tools,Inspect\ elements)
-            $topMenu.tools entryconfigure $snapIndx -state $newState
+            $winData.tools entryconfigure $snapIndx -state $newState
         }
     }
 }

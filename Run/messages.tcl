@@ -625,6 +625,10 @@ set msgs(unwanted_syntax_message) [tr. {Your %1$s, %2$s, contains characters tha
 set msgs(duplicate_param_title) [tr. {Duplicate local name}]
 set msgs(duplicate_param_message) [tr. {Your new %1$s name, "%2$s", is already in use as a local name for another %1$s.}]
 
+set msgs(deceptive_param_title) [tr. {Deceptive local name}]
+set msgs(deceptive_param_message) [tr. {Your new %1$s name, "%2$s", is the same as the default local name for another %1$s.}]
+set msgs(deceptive_param_detail) [tr. {This might be confusing when looking at the equation.}]
+
 set msgs(bad_table_data_title) [tr. {Problem with input data}]
 set msgs(bad_table_data_message) [tr. {The data you specified is not suitable for a lookup table. %1$s}]
 

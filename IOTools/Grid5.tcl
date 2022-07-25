@@ -163,7 +163,7 @@ namespace eval grid005 {
 	    while {[string is integer -strict \
 			[set imgNo [lindex $state [incr imgBase]]]]} {
 		set imgData [lindex $state [incr imgBase]]
-		set useNodes($winId,i$imgNo) [image create photo -data $imgData]
+		set useNodes($winId,i$imgNo) [image create photo -data [base64 -mode decode $imgData]]
 		PutSize $useNodes($winId,i$imgNo)
 	    }
 	}
@@ -304,7 +304,7 @@ namespace eval grid005 {
 	    set thei [string last i $possImg]
 	    set indx [string range $possImg [incr thei] end]
 	    if {[string is integer -strict $indx]} {
-		lappend state $indx [$useNodes($possImg) data -format png]
+		lappend state $indx [base64 -mode encode [$useNodes($possImg) data -format png]]
 	    }
 	}
 	lappend state aspect [expr {$useNodes($winId,nswatches)-1}] \
@@ -524,9 +524,9 @@ namespace eval grid005 {
 #	pack [frame $coloursF.misc] -fill x -expand 1
 #	pack [button $coloursF.misc.load -text [tr. {Load RGB file}] \
 #		  -command [namespace code "LegendFromRGB $winId"]] -side left
-#	pack [ttk::checkbutton $coloursF.misc.imgs -text [tr. {Superimpose images}] \
-#		  -variable [namespace current]::useNodes($winId,imgs)] \
-#	    -side left
+	pack [ttk::checkbutton $coloursF.imgs -text [tr. {Superimpose images}] \
+		  -variable [namespace current]::useNodes($winId,imgs)] \
+	    -side left
         
 #        if {$max($winId)-$min($winId)>1} {
 	    pack $coloursF -padx 10 -pady 10 -fill x

@@ -38,6 +38,8 @@ extern Tcl_PackageInitProc Dde_SafeInit;
 static void setargv(int *argcPtr, TCHAR ***argvPtr);
 #endif
 
+#define MY_MAX_PATH 1023
+
 /*
  * Forward declarations for procedures defined later in this file:
  */
@@ -105,7 +107,7 @@ _tWinMain(
 {
     TCHAR **argv;
     int argc;
-    TCHAR buffer[MAX_PATH+1];
+    TCHAR buffer[MY_MAX_PATH+1];
     TCHAR *p;
     TCHAR *tempstr;
 
@@ -158,7 +160,7 @@ _tWinMain(
     }
     if (argc>3) {
 	MessageBeep(MB_ICONEXCLAMATION);
-	MessageBox(NULL, "More than one argument passed to Simile.exe", "Error",
+	MessageBox(NULL, L"More than one argument passed to Simile.exe", L"Error",
 		   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 	ExitProcess(1);
     }
@@ -358,13 +360,13 @@ setargv(
     TCHAR **argv;
     int argc, size, inquote, copy, slashes;
 
-    TCHAR buffer[MAX_PATH+1];
-    TCHAR buffer2[MAX_PATH+1];
+    TCHAR buffer[MY_MAX_PATH+1];
+    TCHAR buffer2[MY_MAX_PATH+1];
     TCHAR *pdest;
     int result;
 
-	memset( buffer, 0, MAX_PATH+1 );
-	memset( buffer2, 0, MAX_PATH+1 );
+	memset( buffer, 0, MY_MAX_PATH+1 );
+	memset( buffer2, 0, MY_MAX_PATH+1 );
 
     GetModuleFileName(NULL, buffer, sizeof(buffer));
 
@@ -372,12 +374,12 @@ setargv(
 	pdest = wcsrchr( buffer, '\\' );
     result = pdest - buffer;
 	wcsncpy(buffer2,buffer,result);
-	memset( buffer, 0, MAX_PATH+1 );
+	memset( buffer, 0, MY_MAX_PATH+1 );
 
 	pdest = wcsrchr( buffer2, '\\' );
     result = pdest - buffer2;
 	wcsncpy(buffer,buffer2,result);
-	memset( buffer2, 0, MAX_PATH+1 );
+	memset( buffer2, 0, MY_MAX_PATH+1 );
 
 	pdest = wcsrchr( buffer, '\\' );
     result = pdest - buffer;
@@ -388,16 +390,16 @@ setargv(
 	//wcsncat( buffer2, 0, 1 );
 
 	//wrap it in quotes in buffer
-	memset( buffer, 0, MAX_PATH+1 );
+	memset( buffer, 0, MY_MAX_PATH+1 );
 	wcsncat( buffer, L"\"", 1 );
 	wcsncat( buffer, buffer2, wcslen(buffer2) );
 	wcsncat( buffer, L"\"", 1 );
 
     cmdLine = GetCommandLine(); /* INTL: BUG */
-	memset( buffer2, 0, MAX_PATH+1 );
-    if ( (wcslen(cmdLine)+wcslen(L" ")+wcslen(buffer)) > (MAX_PATH+1) ) {
+	memset( buffer2, 0, MY_MAX_PATH+1 );
+    if ( (wcslen(cmdLine)+wcslen(L" ")+wcslen(buffer)) > (MY_MAX_PATH+1) ) {
     MessageBeep(MB_ICONEXCLAMATION);
-    MessageBox(NULL, "Simile.exe: command line too long", "Error",
+    MessageBox(NULL, L"Simile.exe: command line too long", L"Error",
 	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     ExitProcess(1);
 	}

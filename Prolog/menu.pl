@@ -250,9 +250,12 @@ resize_canvas_for(Parent) :-
 	CBox = [Ln, Tn, Rn, Bn],
 	(is_toplevel(Parent), !,
 	    % make extent cover existing canvas area
-	    get_shape(Parent, bounding_box, BBox),
-	    all(image, unite_boxes, [unify([CBox]), build([l,t,r,b]),
-				     build(BBox), build(IBox)]);
+	    get_shape(Parent, bounding_box, [LO, TO, RO, BO]),
+	    IR is Ln + max(Rn-Ln, RO-LO),
+	    IB is Tn + max(Bn-Tn, BO-TO),
+	    IBox = [Ln, Tn, IR, IB];
+%	    all(image, unite_boxes, [unify([CBox]), build([l,t,r,b]),
+%				     build(BBox), build(IBox)]);
 	  IBox = CBox),
 %	change_shape(Parent, internal_extent, [Ln, Tn, Rn, Bn]),
 % above is done in following
@@ -523,7 +526,7 @@ menu_handle(Win, file, ExportType) :-
 	    use_pref_dir(Dir),
 	    append_atoms(Dir, '/temp_out.pl', TempFile),
 	    start_progress_dialogue(Win),
-	    save_isolated(TempFile, Model, Date, no, yes),
+	    save_isolated(TempFile, Model, Date, export, yes),
 	    finish_progress_dialogue,
 	    get_default_export_name(Model, ".xml", DefName),
 	    get_program_file(DefName, TopModel, FileName),

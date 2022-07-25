@@ -301,11 +301,26 @@ proc CResetModel {initTime args} {
     return $::modelStopped
 }
 
+proc StartRemoteModels {myNode} {
+    foreach comp [GetCompProperty $myNode Objects] {
+	if {[GetCompProperty $myNode Class $comp] eq "SUBMODEL" && \
+		[GetCompProperty $myNode Units $comp] ne ""} {
+	    set cmd [GetCompProperty $myNode Spec $comp]
+
+	    if {$cmd ne ""} {
+		eval exec $cmd &
+	    }
+	}
+    }
+}
+
 proc ResetModel {myNode howInt initTime redo} {
     global model_id instance_id dispDone
 
     set dispDone 0 ;# allow execution to call back
     set preserveSliders [expr {$howInt-1}] ;# -1 selects new slider rollover
+    # StartRemoteModels $myNode ; do here rather than in c++ to catch error msg
+
     if {[catch {
 	if {[RunningInC $myNode]} {
 #	    set model_id $myNode
@@ -566,6 +581,7 @@ proc c_getvalue {node action} {
 
 proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 		      useCppArray} {
+#puts  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list when $when cpp $useCppArray"
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
@@ -601,8 +617,27 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 			     [DoByteArrayToList $fieldChar $fieldSize \
 				  [lrange $list 3 end-4] [lindex $list end]]]
 	    if {$when} {
-		lappend newList [lindex $list end-2] restart \
+		set uftsi [lindex $list end-3]
+		while {$offset < [string bytelength $rawData]} {
+		    binary scan $rawData @${offset}d spit
+		    lappend newList [expr {$uftsi*$spit}]
+		    incr offset 8
+		    if {[llength $list] == 8} { ;# TIME was only dim
+			binary scan $rawData @${offset}${fieldChar} spit
+			lappend newList $spit
+			incr offset $fieldSize
+		    } else {
+			lappend newList [NumberElements \
+				 [DoByteArrayToList $fieldChar $fieldSize \
+				      [lrange $list 4 end-4] $rawData]]
+		    }
+		}
+		lappend newList [expr {$uftsi*[lindex $list end-2]}] restart \
 		    others [lindex $list end-1]
+	    } else {
+		set newList [NumberElements \
+				 [DoByteArrayToList $fieldChar $fieldSize \
+				      [lrange $list 3 end-4] $rawData]]
 	    }
 	    set list $newList
 	}
@@ -1180,11 +1215,11 @@ proc ParamsFromGUI {inst} {
     }
 }
 
-proc StartWebService {node scratch {runParams {}}} {
+proc StartWebService {node scratch inst {runParams {}}} {
     array set ::web_service [list local $scratch node $::nodeId]
-    start_server localhost 7464 similive.simulistics.com {} $runParams
-#    start_server localhost 7464 hotwheels /SimiLive $runParams
-    VisitUrl file://[file join $scratch load_tools.html]
+    start_server localhost 7464 similive.simulistics.com {} $inst $runParams
+#    start_server localhost 7464 hotwheels /SimiLive $inst $runParams
+    VisitUrl http://localhost:7464/load_tools.html
 }
 
 # this could be more efficient

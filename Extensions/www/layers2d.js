@@ -3,7 +3,9 @@ function Layers2D (port) {
     this.tgts = [];
     this.State = [];
     this.scaleGrp = d3.select('#' + port)
-	    .style("image-rendering","pixelated").append("svg")
+	    .style("image-rendering","pixelated")
+            .style("image-rendering","-moz-crisp-edges")
+            .style("image-rendering","-o-crisp-edges").append("svg")
 	.attr("width",800).attr("height",480).attr("id", port + "_diag")
 	.append("g");
     this.diagZoom = d3.behavior.zoom()
@@ -59,7 +61,8 @@ Layers2D.prototype.addLayer = function (type, state) {
     // now do any one-off processing a new layer requires
     switch (type) {
     case "RectGrid20131119":
-	grpAttr = "translate(0,0)scale("
+	grpAttr = "translate("
+	    +layerSpec.xoff+","+-layerSpec.yoff+")scale("
 	    +layerSpec.xscale+","+-layerSpec.yscale+")";
 	layerSpec.gLayer.attr("transform",grpAttr);
 	layerSpec.image = layerSpec.gLayer.append("svg:image")
@@ -108,6 +111,10 @@ Layers2D.prototype.addLayer = function (type, state) {
 	}
 	break;
     case "Animals20131029":
+	grpAttr = "translate("
+	    +layerSpec.transform.slice(0,2).join(",")+")scale("
+	    +layerSpec.transform.slice(2,4).join(",")+")";
+	layerSpec.gLayer.attr("transform",grpAttr);
 	var tclCmdList = [];
 	useful = layerSpec.cmds.slice(1, layerSpec.cmds.indexOf("set"));
 	while ((brk = useful.indexOf("$c")) > -1) {
@@ -191,15 +198,27 @@ function doStroke(evt, action) {
 } // ok debug that!
 
 function startStroke(evt) {
-    doStroke(evt,1);
+    // console.log("Stroking with " + evt.button);
+    if (evt.button == 0) {
+	var inUse = currentHelpers[evt.target.parentNode.id];
+	var noZoom = d3.behavior.zoom().on("zoom",null);
+	d3.select('#' + inUse.port + '_diag').call(noZoom);
+	doStroke(evt,1);
+    }
 }
   
 function continueStroke(evt) {
-    doStroke(evt,0);
+    if (evt.button == 0) {
+	doStroke(evt,0);
+    }
 }
 
 function finishStroke(evt) {
-    doStroke(evt,-1);
+    if (evt.button == 0) {
+	var inUse = currentHelpers[evt.target.parentNode.id];
+	d3.select('#' + inUse.port + '_diag').call(inUse.diagZoom);
+	doStroke(evt,-1);
+    }
 }
   
 Layers2D.prototype.display = function (time, latest, connect) {
@@ -320,7 +339,7 @@ Layers2D.prototype.resize = function (x,y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-100-ngap;
+      h = y-ngap;
     d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
 
     // problem: getbbox returns 0s if diagram not visible

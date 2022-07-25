@@ -54,7 +54,7 @@ function clickOn(evt) {
     if (lastHelper != null && lastHelper.status != "displaying") {
 	// data table status is displaying even when getting clicks
 	// so must use explorer for that
-	$( "#tabs" ).tabs( "option", "active", lastIndex);
+	$( "#right" ).tabs( "option", "active", lastIndex);
 	lastHelper.acceptClick(prolog[0]);
     }
 }
@@ -169,6 +169,8 @@ function idFromCapt (capt) {
 // now boringly find this by iteration
     for (comp in model_json) {
 	if (model_json[comp].captpath == capt) {
+	    return model_json[comp].id;
+	} else if (model_json[comp].captpath.replace(/\s+/g,' ') == capt) {
 	    return model_json[comp].id;
 	}
     }
@@ -407,7 +409,7 @@ function createInitialHelpers() {
 		}
 	    }
 	    AddHelperHierarchy('right', helperElt);
-	    
+	    ResizeAll();
 //	    tclHelpers = $(hlpDoc).find("container");
 //	    for (var i=0; i<tclHelpers.length; ++i) {
 //		addTabFor(tclHelpers[i].attributes.type.value,
@@ -416,7 +418,6 @@ function createInitialHelpers() {
 // resize in case rows of tabs have squeezed panes
 //	    resize_notebook();
 	}); // GetXMLHelperSetup
-    ResizeAll();
 }
 
 function AddHelperHierarchy(win, xml) {
@@ -536,7 +537,8 @@ function model_reset(ratesOnly) {
 	current = $("#ct").val();
 	var depth = 1;
     }
-
+    var playButton = document.getElementById("button_op").parentNode;
+    playButton.disabled = true;
     note = ofInterest();
     $.ajax({
 	type: "POST",
@@ -581,6 +583,7 @@ function model_reset(ratesOnly) {
 		allResults[resIndx] = initState[i];
 	    }
 	    update_helpers(current, allResults, ratesOnly);
+	    playButton.disabled = false;
 	}); // Reset
 }
 
@@ -744,7 +747,7 @@ function new_tab(tabs, label) {
     id = "tabs-" + tabCounter++,
     li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) ),
     tabs.find( ".ui-tabs-nav" ).append( li );
-    tabs.append( "<div id='" + id + "' style='height:100%'></div>" );
+    tabs.append( "<div id='" + id + "' style='height:calc(100%-46px)'></div>" );
     tabs.tabs( "refresh" );
     return(id);
 }
@@ -802,13 +805,13 @@ function update_helpers(time, latest, connect) {
 }
 
 function notebookPaneHeight() {
-    return $("#tabs").height()-$("#tabs").find("UL").height();
+    return $("#right").height()-$("#right").find("UL").height();
 }
 
 var tooltip_scale;
 function resize_notebook() {
 //    console.log('Window resized');
-    var x = parseInt(d3.select('#tabs').style('width'));
+    var x = parseInt(d3.select('#right').style('width'));
     var y = notebookPaneHeight();
 
     ModDiag.setAttribute("width", x-60);
@@ -852,6 +855,17 @@ function ResizeTree(win) {
 
 //window.onresize = function() {resize_notebook()};
 function ResizeAll() {
+    // work around what appears to be a bug in jquery ui tabs: height of header
+    // is not taken into account
+    var notebooks = document.getElementsByClassName('ui-tabs');
+    for (var n=0; n<notebooks.length; ++n) {
+	tabSp = notebooks[n].getElementsByClassName('ui-widget-header')[0].clientHeight;
+	dispZones = notebooks[n].getElementsByClassName('ui-widget-content');
+	for (var d=0; d<dispZones.length;++d) {
+	    dispZones[d].style.height = 'calc(100% - ' + tabSp + 'px)';
+	}
+    }
+	    
     for (var win in currentHelpers) {
 	holder = $('#' + win);
 	currentHelpers[win].resize(holder.width(), holder.height());
@@ -935,7 +949,7 @@ function mapToScreen(object, eyepiece, w, action) {
 function ModelDiagram (port) {
     this.port = port;
 
-    $('#' + port).html('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="' + port + '_diag" viewBox="0 0 800 800" width="800" height="800">  </svg>');
+    $('#' + port).html('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="' + port + '_diag" viewBox="0 0 800 800" width="800" height="800" style="background-color:white">  </svg>');
     // above previously included <use xlink:href="#mod_diag" transform="rotate(0)" x="0" y="0" width="800" height="800" />
     document.getElementById(port + '_diag').appendChild(document.getElementById('mod_diag'));
     this.diagZoom = d3.behavior.zoom()
@@ -1014,9 +1028,29 @@ DataTable.prototype.display = function(time, latest, connect) {
   }
   for (i=0;i<this.tgts.length;i++) {
     toZap = this.tgts[i];
-    newLine[toZap] = JSON.stringify(latest[toZap])
-  }
-    h = notebookPaneHeight()-275;
+    strForm = JSON.stringify(latest[toZap]);
+      if (strForm == "\"\"") {
+	  delete newLine[toZap];
+      } else {
+	  newLine[toZap] = JSON.stringify(latest[toZap])
+      }
+    }
+
+    // now remove line if there are no values
+    // need to correct other row ids
+    if (Object.keys(newLine).toString() == "time") {
+	var pull = this.timeRowIds[time];
+	this.cumData.splice(pull, 1);
+	delete this.timeRowIds[time];
+	for (var other in this.timeRowIds) {
+	    if (this.timeRowIds[other]>pull) {
+		this.timeRowIds[other] -= 1;
+	    }
+	}
+	return;
+    }
+    
+  h = notebookPaneHeight()-275;
   this.t = $('#' + this.port + "_table").dataTable({"data":this.cumData,
 				       "columns":this.columns,
 				       "destroy":true,
@@ -1239,7 +1273,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	    .append("<button onclick=" + buttonFn
 		    + "><img src='images/add.gif'/></button><div id='instruct'></div>");
     }
-    $('#tabs a[href=#' + this.port + ']').text("Plot of " + model_json[this.tgts[0]].captpath + " against " + xAxisName);
+    $('#right [aria-controls=' + this.port + '] a').text("Plot of " + model_json[this.tgts[0]].captpath + " against " + xAxisName);
     this.svg = d3.select('#' + this.port).append("svg")
       .attr("width",w+ngap).attr("height",h+ngap);
     var xAxisGroup = this.svg.append("g")
@@ -1323,7 +1357,7 @@ PlotXY.prototype.resize = function(x,y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-144;
+      h = y-ngap;
     this.lx.range([ngap, w+ngap]);
     this.ly.range([0, h]);
     this.lxAxis.tickSize(-h);
@@ -1745,7 +1779,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 
 	lookAt = [this.tgts[0],this.xpts,this.ypts];
 	newTitle = model_json[this.tgts[0]].text + ' -- polygon map';
-	$('#tabs a[href=#' + this.port + ']').text(newTitle);
+	$('#right [aria-controls=' + this.port + '] a').text(newTitle);
 	$.post('model_action.php', {"base":fileBase, "act":"Query",
 				    "note":JSON.stringify(lookAt)},
 	   function(resp) {
@@ -1883,14 +1917,16 @@ function makeGifHeader(cols, rows, cMap) {
 	       data += cMap;
 
 	       // now add a graphix control xtn to declare 00 transparent
-	       data += String.fromCharCode(0x21, 0xf9, 0x04, 0x01,
-					   0,0,0,0);
+	       // data += String.fromCharCode(0x21, 0xf9, 0x04, 0x01,
+               //                             0,0,0,0);
+                        
 	       // right that's 789 bits and we have 11 to go making 800 --
 	       // nice and round but we want a multiple of 3 to hit a
 	       // base64 char boundary, so add a comment extn to do it
-	       data += String.fromCharCode(0x21, 0xfe, 9);
-	       data += "SimiLive!";
-	       data += String.fromCharCode(0);
+               // -- Removing transparency extn leaves 792 so not needed
+	       // data += String.fromCharCode(0x21, 0xfe, 9);
+	       // data += "SimiLive!";
+	       // data += String.fromCharCode(0);
 	       
 	       data += String.fromCharCode(0x2c); // image descriptor
 	       data += conv16(0);                 // NW corner position of image
@@ -1942,7 +1978,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
     this.scaleGrp.attr("transform",grpAttr);
     // new version, tries to do GIF
     newTitle = model_json[this.tgts[0].node].text + ' -- spatial grid';
-    $('#tabs a[href=#' + this.port + ']').text(newTitle);
+    $('#right [aria-controls=' + this.port + '] a').text(newTitle);
     note.push(this.tgts[0]);
     $.post('model_action.php', {"base":fileBase, "act":"Query",
 				"note":JSON.stringify(note)},
@@ -2124,7 +2160,7 @@ function populateStructs() {
 
 $.post('model_action.php', { "base":fileBase, "act":"Describe"}, 
       function(data) {
-
+	  handyGlobalForData = data;
 	  try {
 	      model_json = JSON.parse(data);
 	  } catch(err) {
@@ -2234,13 +2270,13 @@ function createNotebook(handle) {
     d3.select('#' + handle).append("div")
 	.attr("id", tabHdl)
 	.attr("class", "ui-layout-center")
-	.style('height','100%')
+	.style('height','calc(100% - 36px)')
 	.html('<ul></ul>');
     tabs = $('#' + tabHdl);
     tabs.tabs({heightstyle:"fill"});
     tabs.tabs({
 	activate: function( event, ui ) {
-	    ResizeTree($(ui.newPanel.selector)[0].id);
+	    ResizeTree(ui.newPanel.attr("id"));
 // 	    if (ui.newPanel.selector != "#tabs-0") { // diagram
 // 		lastHelper = currentHelper =
 // 		    currentHelpers[$(ui.newPanel.selector)[0].id];

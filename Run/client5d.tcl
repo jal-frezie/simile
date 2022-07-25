@@ -94,7 +94,10 @@ proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
 ## End of parameter loading accessories 
 
 # now we need something similar to set the value of a single parameter
-proc SetParameter {accessHandle value} {
+proc SetParameter {path value} {
+    if {[catch {set accessHandle $::aH($path)}]} {
+	return 1 ;# perhaps is per-record
+    }
     set ::param_id(dummy) $accessHandle
     set mHandle $::modelTypes($::modelInstances($accessHandle))
     set path $::componentPaths($accessHandle)
@@ -170,12 +173,14 @@ proc GetJsonValues {iHandle outputNode limit} {
 
 proc GetJsonValuesById {iHandle outputId limit} {
     set hdl [handle_data dummyMHandle $iHandle $outputId]
-    set count [count_values $hdl]
+    set loseZeros [expr {[lsearch {EVENT SQUIRT} \
+			      [GetCCompProperty DUMMY Class $outputId]]+1}]
+    set count [count_values $hdl $loseZeros]
     if {$count<$limit/5} {
-	set result [extract_json $hdl $count]
+	set result [extract_json $hdl $count $loseZeros]
     } else {
 	set tail [expr {$limit/10}]
-	set result [string range [extract_json $hdl $tail] 0 end-1],[string range [extract_json $hdl -$tail] 1 end]
+	set result [string range [extract_json $hdl $tail $loseZeros] 0 end-1],[string range [extract_json $hdl -$tail $loseZeros] 1 end]
     }
     free_data_handle $hdl
     return $result

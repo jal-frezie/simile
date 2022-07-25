@@ -274,6 +274,8 @@ void extend_list(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int dir) {
 }
 
 Tcl_Obj* extend_string(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int dir) {
+  if (!strcmp(Tcl_GetStringFromObj(localSubObj, NULL), "{}"))
+    return localObj;
   Tcl_Obj* localNewObj = Tcl_NewStringObj("\"",1);
   Tcl_AppendObjToObj(localNewObj, Tcl_NewIntObj(index));
   Tcl_AppendToObj(localNewObj, "\":", 2);
@@ -330,10 +332,9 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
 					subBlocks, members, block, loseZeros,
 					toGet, jsonic);
 
-      if (jsonic) {
-	if (Tcl_GetCharLength(localSubObj))
+      if (jsonic)
 	  localObj = extend_string(localObj, indices[depth], localSubObj, dir);
-      } else
+      else
 	extend_list(localObj, indices[depth], localSubObj, dir);
     }
   nomorematching:
@@ -364,10 +365,9 @@ Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks,
     if (!*count) break;
     localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0],
 				 loseZeros, &noinds, count, jsonic);
-    if (jsonic) {
-      if (Tcl_GetCharLength(localSubObj))
-	localObj = extend_string(localObj, offset+1, localSubObj, dir);
-    } else
+    if (jsonic)
+      localObj = extend_string(localObj, offset+1, localSubObj, dir);
+    else
       extend_list(localObj, offset+1, localSubObj, dir);
   }
   if (jsonic) {

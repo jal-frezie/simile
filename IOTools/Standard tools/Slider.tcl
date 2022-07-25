@@ -456,7 +456,8 @@ namespace eval slide139 {
 #	SetArrayIfUsed $node 0 $indices [$scale get]
 #	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
 #	    [RunningInC $myNode]
-	set hold [expr {2+([eval [list WidgetSelnToC $node 0] $indices]>0)}]
+	set resp [eval [list WidgetSelnToC $node 0] $indices]
+	set hold [expr {1+2*($resp>0)}]
 	MarkEvtParamActive $myNode $node [RunningInC $myNode] $hold
 	# if no immediate rate update, wait a step before clearing event
 	# formula for hold determined experimentally

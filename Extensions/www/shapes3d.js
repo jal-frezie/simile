@@ -13,6 +13,7 @@ window.requestAnimFrame = (function(){
 	};
 })();
 
+window.imgEtcLoader = new THREE.TextureLoader();
 function Shapes3D (port) {
   this.port = port;
     this.tgts = [];
@@ -56,7 +57,7 @@ function Shapes3D (port) {
 	///////////
 	
 	// note: 4x4 checkboard pattern scaled so that each square is 25 by 25 pixels.
-	var floorTexture = new THREE.ImageUtils.loadTexture( 'images/checkerboard.jpg' );
+	var floorTexture = window.imgEtcLoader.load( 'images/checkerboard.jpg' );
 	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
 	floorTexture.repeat.set( 10, 10 );
 	// DoubleSide: render texture on both sides of mesh
@@ -89,7 +90,7 @@ function Shapes3D (port) {
 	var circleMat = new THREE.MeshBasicMaterial( {map: floorTexture,
 						      color : baseCirc[i].col, 
 						      transparent: true,
-						      opacity: 0.5});
+						      opacity: 0.2});
 	var circle = new THREE.Mesh(circleGeom, circleMat);
 	circle.rotation.set(baseCirc[i].rot[0], baseCirc[i].rot[1], 0);
 	scene.add(circle);
@@ -125,7 +126,7 @@ function Shapes3D (port) {
 
 window.Shapes3D = Shapes3D;
 
-function ShowMenuButton (that) {
+function OldShowMenuButton (that) {
     var dropHandle = '#' + that.port + '_drop2';
     var launchHandle = that.port + '_launcher2';
     var menuHandle = that.port + '_menu2';
@@ -154,6 +155,12 @@ function ShowMenuButton (that) {
 	  AddItem(that, data.id);
     }
   });
+}
+
+function ShowMenuButton (that) {
+    var dropHandle = '#' + that.port + '_drop2';
+    var launchHandle = that.port + '_launcher2';
+    var menuHandle = that.port + '_menu2';
 }
 
 function AddItem (that, type) {
@@ -323,6 +330,8 @@ function flattenAll(head, objs, depth) {
     return result;
 }
 
+window.flattenAll = flattenAll; // it's needed by layers2d
+
 function addAsApprop(latest, arr) {
     if (latest[arr] != undefined) {
 	return latest[arr];
@@ -330,6 +339,8 @@ function addAsApprop(latest, arr) {
 	return arr;
     }
 }
+
+window.addAsApprop = addAsApprop; // it's needed by layers2d
 
 function MakeColourKey(spec, modVals, legend) {
     if (spec.constructor === Array) { // colour from value
@@ -352,7 +363,7 @@ Shapes3D.prototype.display = function (time, latest, connect) {
     this.updated = 2;
 }
 
-var lolliCount;
+var lolliCount = 0;
 Shapes3D.prototype.displayOne = function(instruct, latest) {
     var lolliCols = [0x00ff00, 0xf1da7e, 0x36b694, 0xec9844, 0x94a646, 0xd9d095];
     switch (instruct[0]) {
@@ -550,7 +561,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	// halfway through draw process -- bad idea to skip, it may be last move
 	    fC = new THREE.Color(parseInt('0x' + instruct[5]));
 	    // "wireframe texture"
-	    var wireTexture = new THREE.ImageUtils.loadTexture( 'images/square.png' );
+	    var wireTexture = window.imageEtcLoader.load( 'images/square.png' );
 	    wireTexture.wrapS = wireTexture.wrapT = THREE.RepeatWrapping; 
 	    wireTexture.repeat.set( 40, 40 );
 	    wireMaterial = new THREE.MeshBasicMaterial( { color: parseInt('0x' + instruct[4]), map: wireTexture, vertexColors: THREE.VertexColors, side:THREE.DoubleSide } );
@@ -602,6 +613,6 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 }
     
 Shapes3D.prototype.resize = function (x,y) {
-    this.renderer.setSize(x-50, y-120);
+    this.renderer.setSize(x-50, y-50);
 }
 

@@ -1306,7 +1306,7 @@ instruction because they will not require individual initialization routines. */
 
         (is_population(SmName), !,
 	    append_atoms(Name, count, Count),
-	    Level = [sm(_,_,_, vm_loop(_,_,_, SetMems))],
+	    Level = [sm(_,_,_, vm_loop(_,_,_, _SetMems))],
 	    GenInters = % some now in special population class
 	    [ %instance(internal, inter(LocalPath, _,_), _, parentId, int-[]),
 	      %instance(internal, inter(LocalPath, _,_), _, channelId, int-[]),
@@ -1333,7 +1333,7 @@ nodes.
 		   CreateRules), !; 
 	    CreateRules = []),
 */
-	    SetMems = Step,
+	    % SetMems = Step,
 	    SmInters = GenInters,
 	    (setof(CreateBox, InitName^X^U^(SmName has_part InitName,
 				member(instance(creation, InitName, X,
@@ -1354,20 +1354,22 @@ nodes.
 			     (SmName has_part InitName,
 			      member(instance(immigration, InitName, X,
 					      elt(_, ImmigBox, _), U),
-				     ParentFns)), Immigrators), !;
-	     Immigrators = []),
+				     ParentFns)), Immigrators), !,
+	    ImConds = [on_step, culled(Name)] ;
+	     Immigrators = [], ImConds = []),
 	    (setof(init(ReproBox), S^X^U^member(instance(reproduction, S,X,
 						   elt(_, ReproBox, _), U),
-					  Functions), ReproInits), !;
-	     ReproInits = []),
-	    all(user, arg, [unify(1), build(ReproInits), build(Reproducers)]),
+						Functions), ReproConds), !,
+	      all(user, arg, [unify(1), build(ReproConds), build(Reproducers)]),
+	      ReproInits = [on_step | ReproConds];
+	     Reproducers = [], ReproInits = []),
 	    CreateRules = [make(culled(Name),
-				[init_list(Name), on_step],
+				[init_list(Name), this_step(enumerate(Name))],
 				Path, Step, [lose(Ptr, Name, Losses)]),
 			   make(created(Name),
 				[culled(Name) | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))]),
-			   make(settled(Name), [culled(Name)], Path, Step,
+			   make(settled(Name), ImConds, Path, Step,
 				[new_member(Ptr, Name, Immigrators)]),
 			   make(bred(Name), [culled(Name) | ReproInits],
 				LocalPath, Step,
@@ -1391,8 +1393,8 @@ nodes.
 			  [created(Name), settled(Name)],
 			  Path, Step, []),
 		     % need culled and created to get in right step
-		    make(enumerate(Name), [/* evt_culled(Name), can_enter(Name), */
-					   on_step], LocalPath, Step, []),
+		    make(enumerate(Name), [/* evt_culled(Name), */ can_enter(Name), bred(Name)
+					   ], LocalPath, Step, []),
 		    make(startable(Name), [init_list(Name)], Path, Step, []),
 		    make(init_list(Name), [], Path, Step,
 			 [assign(arr(Ptr, Name, []), 0)])],
@@ -1513,32 +1515,37 @@ nodes.
 		 % add internal to parent to hold pipe
 		 all(utility, append_atoms,
 		     [unify(Name),
-		      build(['_svr', '_skt', '_ckOff', '_ckRem']),
-		      build([SrvSkt, Skt, CkOff, CkRem])]),
+		      build(['_cmded', '_svr', '_skt', '_ckOff', '_ckRem']),
+		      build([CmdedFlag, SrvSkt, Skt, CkOff, CkRem])]),
 		 XCInters =
-		    [instance(internal, inter([], _,_), _, SrvSkt, 'TSPOUT'-[]),
+		    [instance(internal, inter([], _,_), _, CmdedFlag, boolean-[]),
+		     instance(internal, inter([], _,_), _, SrvSkt, 'TSPOUT'-[]),
 		     instance(internal, inter(LocalPath, _,_), _, Skt, 'TSPOUT'-[]),
 		     instance(internal, inter(LocalPath, _,_), _, CkOff, double-[]),
 		     instance(internal, inter(LocalPath, _,_), _, CkRem, double-[]) | AccumInters],
 		 InitSvr = make(svr_init(Name), [], [], -2, [init_server_skt(GraphId, Inc, this, SrvSkt)]),
+		 FlagLocn = arr(this, CmdedFlag, []),
 		 (Proc = none -> RemActs = [];
-		  RemActs = [start_remote_model(Proc)]),
-		 StartRem = make(rem_start(Name), [svr_init(Name), on_reset],
-				 [], 0, RemActs),
+		  RemActs = [start_remote_model(FlagLocn, Proc)]),
+		 ClrRemChk = make(rem_chk_cleared(Name), [on_reset], [], 0, [assign(FlagLocn, 0)]),
+		 StartRem = make(rem_start(Name), [svr_init(Name), rem_chk_cleared(Name)],
+				 ConLoops, 0, RemActs),
 		 abracadabra(LocalPath, ConLoops, SetPath, SetInds, Len),
 		 AcceptCons = make(con_acpt(Name), [rem_start(Name)], ConLoops, 0, [accept_connects(GraphId, SrvSkt, NewSkt, Len, SetInds)]),
 		 append(SetPath, ConLoops, InitPath),
 		 InitCons = make(con_init(Name), [con_acpt(Name)], InitPath, 0, [init_connects(NewPtr, Skt, NewSkt, CkRem, CkOff, RemDay)]),
 		 ClearInst = make(accums_clrd(Name), [on_reset], LocalPath,
 				   Step, ClearAccums),
+		 append([check_cond('RealPhase'(arr('', ts, [1]))) | IncrAccums], 
+		        [finish_level], AccumPass),
 		 IncrInst = make(accums_incd(Name),
 				 [accums_clrd(Name) | AllConds], LocalPath,
-				 Step, IncrAccums),
+				 Step, AccumPass),
 		 SendInputs = make(input_send(Name), [con_init(Name), accums_incd(Name), time], LocalPath, Step, [access_pipe(GraphId, send, NewPtr, RemDay, CkOff, CkRem, Skt, ParamsSwpd, UnDsIn, ClearAccums)]),
 		 Whistle = made_for(Name, inputs_sent),
 		 InputsSent = make(Whistle, [input_send(Name)], [], Step, []),
 		 RecvOutputs = make(ext_done_for(Name), [Whistle], LocalPath, Step, [access_pipe(GraphId, recv, NewPtr, RemDay, CkOff, CkRem, Skt, DirParamsOut, UnDsOut, [])]),
-		 AssignList2 = [InitSvr, StartRem, AcceptCons, InitCons,
+		 AssignList2 = [InitSvr, ClrRemChk, StartRem, AcceptCons, InitCons,
 				ClearInst, IncrInst, SendInputs, InputsSent,
 				RecvOutputs | AssignList1];
 	    (state><get_model_file(TopModel, Locn) ->
@@ -2361,6 +2368,7 @@ order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign) :
 	    \+ SubPass = [],
 
 	    % Check for incomplete single-loop chains before exiting loop
+	    % (open_separately(SmLevel) -> % this makes some take too long...
 	    \+ (member(make(_, Conds-_, _,_,_), SubPass),
 		nonvar(Conds), % filter dummy instructions from d_c_s
 		member(later(Hanger), Conds),
@@ -2382,7 +2390,7 @@ order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign) :
 		   var(AlDone),
 		   AlP =< Phase),
 	    !, % very red -- commit to submodel order!
-	    
+	      
 	    do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
 			    VFirstStep, LastStep),
 	    (var(SepPass) -> FirstStep = VFirstStep;

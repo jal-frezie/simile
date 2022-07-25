@@ -27,7 +27,7 @@ if {[catch {
     modelWin BuildSVGDiagram $mdl.svg
 
     # try returning the runParams if we have them...as json of course
-    array set runParams {execTime 100.0 timeUnit unit displayInt 1 \
+    array set runParams {execTime 100.0 timeUnit unit displayInt 1 errLimit 0 \
 			     intMethod Euler phaseList 0.1 resetTo 0}
     # defaults
     set node [modelWin cget -modelNode]

@@ -620,7 +620,11 @@ redo with snap object
 
     public method GetValue {path args} {
 	array set opts $args
-	set node [do_for_node $modelNode GetIdFromCaptionPath $path]
+	if {[string first / $path]} { ;# already a node id
+	    set node $path
+	} else {
+	    set node [do_for_node $modelNode GetIdFromCaptionPath $path]
+	}
 	set keepZeros [expr {[info exists opts(-all)] && $opts(-all)}]
         set numerics \
 	    [lindex [do_for_node $modelNode GetModelValue $node $keepZeros] 0]

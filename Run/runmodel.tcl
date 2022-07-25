@@ -44,8 +44,9 @@ proc MakeHelperMenu {} {
 }
 
 proc ListMenuContents {menu} {
-    set mList {}
-    for {set item 0} {$item <= [$menu index last]} {incr item} {
+    set e [$menu index last]
+    if {$e eq "none"} return {}
+    for {set item 0} {$item <= $e} {incr item} {
 	set type [$menu type $item]
 	set entry [list $type [$menu entrycget $item -label]]
 	switch $type {
@@ -662,6 +663,7 @@ proc TellAllHelpers {node payload doAll fun args} {
 	if {[string equal $node [$inst GetNode]] && \
 		 ($doAll || [info exists helperTable($winId,wantEvents)])} {
 	    set helperTable(beingCalled) $inst
+#	    puts [concat $inst $fun $args]
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		puts $::errorInfo
 		Query [list iotool_run_fail [[$inst info class]::Identify] \
@@ -1326,6 +1328,7 @@ proc StartRun {node} {
 	}
 	return 0
     }
+    set phases [GetPhaseCount $node]
     foreach {var defVal} {adapt 0 errLimit 1e-6 splimit 0 speedLimit 50 \
 			      resetTo 0 evtpause 0 lmtpause 0 evtDisp 0} {
 	if {![info exists runState($node,$var)]} {
@@ -1341,7 +1344,7 @@ proc StartRun {node} {
 #        }
 # above is done by reset phase
 	set runState($node,unitLength) [InDays $runState($node,timeUnit)]
-        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
+        for {set phase 1} {$phase <= $phases} {incr phase} {
             if {![info exists runState($node,prev_update$phase)]} {
                 set runState($node,update$phase) 0.1
                 set runState($node,prev_update$phase) 0.1
@@ -1353,7 +1356,7 @@ proc StartRun {node} {
 	set runState($node,currentTime) 0.0
         set runState($node,execTime) 100
         set runState($node,displayInt) 1
-        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
+        for {set phase 1} {$phase <= $phases} {incr phase} {
             set runState($node,update$phase) 0.1
 	    set runState($node,time$phase) 0
             set runState($node,prev_update$phase) 0.1
@@ -1419,6 +1422,7 @@ proc StartRun {node} {
 #    }
 
 #    MakeSlidersForInputs
+    StartNow $node reset ;# do now as helper updates may query values
     
     if {[PrefValue custom(helperManager) helperManager]} {
 	set ::RunEnv::CurrentContainer $RunEnv::variableListFrame($node)
@@ -1480,7 +1484,6 @@ proc StartRun {node} {
 #    }
 #    CheckFixedParamState
 
-    StartNow $node reset
     return 1
 }
 

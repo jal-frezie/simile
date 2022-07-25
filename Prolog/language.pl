@@ -678,10 +678,12 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	     all(language, make_evaluation_routine,
 		 [unify(L), build(Inds), unify(Used), build([CX, RX])]),
 	     CallSpec = make_fixed_nbr_list(Ptr, Shp, CB, RB, CX, RX);
-	SpecialOp = start_remote_model(Cmd), !,
+	SpecialOp = start_remote_model(FlagLocn, Cmd), !,
 	     append_atoms(Cmd, ' &', CmdN),
-	     render><templatify(L, CmdN, '', [_,_,_, CmdQ]), 
-	     CallSpec = run_external(CmdQ)),
+	     render><templatify(L, CmdN, '', [_,_,_, CmdQ]),
+	     make_scalar(L, FlagLocn, Used, Flag),
+	     make_pointer(L, Flag, FlagPtr),
+	     CallSpec = run_external(FlagPtr, CmdQ)),
 	excrete(L, procedure_call, CallSpec, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 % have to render after instantiating CollectId

@@ -74,7 +74,7 @@ namespace eval ::maptools2 {
 		if {$icolour<[llength $defCols]} {
 		    set useNodes($winId,c$icolour) [lindex $defCols $icolour]
 		} else {
-		    set useNodes($winId,c$icolour) gray44
+		    set useNodes($winId,c$icolour) #[format %06X [expr {($icolour*0x3791b3)%0x1000000}]]
 		}
 	    }
 	} elseif {$useNodes($winId,ETCount)} {
@@ -346,6 +346,7 @@ namespace eval ::maptools2 {
     
     proc GetQuadList {inds args} {
         # requires an empty list, quadlist, at the calling stack level
+	# deficiency: first arg not replicated to match later ones
         upvar 1 quadlist quadlist
         
         set pilot [lindex $args 0]

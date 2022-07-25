@@ -3,17 +3,20 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Simile model execution</title>
 <link rel="stylesheet" href="dist/themes/default/style.css" />
-<link href=" jquery-ui.min.css" rel="stylesheet" />
+<!-- link href=" jquery-ui.min.css" rel="stylesheet" /-->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/mint-choc/jquery-ui.css" />
 <!-- link href="css/xcharts.min.css" rel="stylesheet" /-->
-<link href="css/jquery.jui_dropdown.css" rel="stylesheet" />
+<!-- link href="css/jquery.jui_dropdown.css" rel="stylesheet" /-->
 <link href="css/jquery.dataTables.css" rel="stylesheet" />
-<script src="external/jquery/jquery.js"></script>
-<script src="jquery-ui.min.js"></script>
+<!-- script src="external/jquery/jquery.js"></script-->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- script src="jquery-ui.min.js"></script-->
+<script src="https://code.jquery.com/ui/1.13.1/jquery-ui.min.js"></script>
 <!-- script src="js/jquery.scrollTo-min.js?1.4.11"></script -->
 <script src="dist/jstree.min.js"></script>
 <script src="js/d3.v3.min.js" charset="utf-8"></script>
 <!-- script src="js/xcharts.min.js"></script-->
-<script src="js/jquery.jui_dropdown.js"></script>
+<!-- script src="js/jquery.jui_dropdown.js"></script-->
 <script src="js/jquery.dataTables.js"></script>
 <!-- script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script -->
 <!-- script src="js/three.min.js"></script-->

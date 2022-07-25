@@ -500,8 +500,8 @@ make_auto_name(Name, NewExtn, AutoName) :-
 	(UseBase = BaseStr;
 	 use_pref_dir(Writable),
 	   name(Writable, WritableStr),
-	   append([_Dir, "/", Rootname], BaseStr),
-	   \+ append([_, "/", _RealRoot], Rootname),
+	   suffix([47 | Rootname], BaseStr),
+	   \+ suffix([47 | _], Rootname),
 	   append([WritableStr, "/", Rootname], UseBase)),
 	append(UseBase, NewExtn, AutoNameStr),
 	name(AutoName, AutoNameStr),

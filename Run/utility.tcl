@@ -90,7 +90,10 @@ proc ChooseFile { preferred title canbenew context} {
     if {[info exists preSelect]} {
 	set chosenFile $preSelect
 	unset preSelect
-	# return $chosenFile ;# do record path choice as it is one
+	if {$canbenew} {
+	    return $chosenFile ;# do not record path choice as it is
+	    # probably a temp file
+	}
     } else {
 	set switches [list -title $title -defaultextension $fileType \
 			  -filetypes $typeList \
@@ -334,7 +337,7 @@ proc PostScrog { win node format} {
 		    -pagewidth [expr $useWidth/100.0]i \
 		    -pageheight [expr $useHeight/100.0]i
 	    } svg {
-		package require can2svg
+		package require can2svg 1.2
 		set scrogion [$win cget -scrollregion]
 		if {[llength $scrogion]} {
 		    foreach {l t r b} $scrogion break
@@ -1014,7 +1017,6 @@ proc PackItUp {t} {
 	    unset ::concealedMenu($t)
 	}
 # Make menu updates happen before something else does same thing
-# (May cause problems with aborting execution in MacOS)
 	UpdateByOS
     }
 }
@@ -1035,7 +1037,9 @@ proc UnderlineUniquely {mu} {
     set last [$mu index last]
     if {![string is integer $last]} return ;# no entries
     for {set line 0} {$line<=$last} {incr line} {
-	if {[catch {$mu entrycget $line -label} hdr]} continue ;# no text
+	if {[lsearch {tearoff separator} [$mu type $line]]>-1} continue ;# no text
+	set hdr [$mu entrycget $line -label]
+	# if {[catch {$mu entrycget $line -label} hdr]} continue ;# no text
 	# now list positions of the letters in the order we will try them
 	set posns 0 ;# start of label
 	set next 0

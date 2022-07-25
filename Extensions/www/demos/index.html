@@ -118,6 +118,23 @@ clearings.
   <input type="submit" name="submit" value="Shading, agroforestry">
 </form>
 
+<h3>Three-body problem</h3>
+Two bodies in space, under the influence of mutual gravitation, will
+orbit their common centre of mass on a fixed path forever. Three or
+more bodies however will behave chaotically, and the 'problem' is that
+there is no analytical solution to predict their motion as in the
+two-body case. But we can model them numerically, as in this example
+with eight bodies.
+<form action="../create_model.php" method="post"
+      enctype="multipart/form-data">
+  <input type="hidden" name="model_src" value="url">
+  <input type="hidden" name="model_link" value="demos/nbody.sml">
+  <input type="hidden" name="param_src" value="none">
+  <input type="hidden" name="helper_src" value="url">
+  <input type="hidden" name="helper_link" value="demos/nbody.shf">
+  <input type="submit" name="submit" value="Three-body problem">
+</form>
+
 <h2>Grid Views:</h2>
 <h3>Fire spread</h3>
 In this grid model, vegetation grows in each grid square at a regular

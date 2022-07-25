@@ -140,7 +140,7 @@ proc BringRootWindow {winId} {
 proc DoContextMenu {winId X Y} {
     global tcl_platform
 
-    set m [winfo parent $winId]top.edit
+    set m [winfo parent $winId].edit
     # Right-click also passed to Prolog so no need to configure menu
     $m configure -postcommand {}
     # don't waut for menu focus!
@@ -529,8 +529,11 @@ proc DragObj {winId xco yco} {
 #    }
 
     set sloth 5
-    
-    RollBack $winId 1 $xco $yco $xco $yco
+
+    if {[tk windowingsystem] ne "aqua"} {
+	# MacOS has spurious drags after dismissing menus
+	RollBack $winId 1 $xco $yco $xco $yco
+    }
     
     if {$xco < 0} {
         $winId xview scroll [expr $xco/$sloth] units
@@ -995,7 +998,7 @@ proc AcceleratorState {winName menu item state} {
     if {[info exists accelerator($menu,$item)]} {
         if {[string match normal $state]} {
 	    set numItem $menuPosns($menu,$item)
-	    set action [list ${winName}top.$menu invoke $numItem]
+	    set action [list $winName.$menu invoke $numItem]
             bind $winName $accelerator($menu,$item) \
 		[list DoIfApplicable $winName $item $action]
         } else  {
@@ -1008,7 +1011,7 @@ proc AddAccelerator {winName menuName item event} {
 #puts "AddAccelerator {winName menu item event} $winName $menu $item $event"
     global accelerator menuPosns
 # assume the corresponding entry has just been added to the menu
-    set menu ${winName}top.$menuName
+    set menu $winName.$menuName
     set menuPosns($menuName,$item) [$menu index last]
     if {[string equal none $event]} return
     set accelerator($menuName,$item) $event
@@ -1016,7 +1019,7 @@ proc AddAccelerator {winName menuName item event} {
 }
 
 proc AddCmdAndAccel {winId menuName item command {state normal}} {
-    set menu ${winId}top.$menuName
+    set menu $winId.$menuName
     $menu add command -label [tr. $item] -state $state -command $command
 # TRANSLATOR: The following 15 strings can be translated here: $item may be
     # {Save selection as...} Compartment Variable Flow Influence Submodel
@@ -1487,11 +1490,14 @@ proc MenuSelect { window button item } {
 		    # ...and saved IO tool setup
 		    if {[info exists helperTable($node,whichRunEnv)]} {
 			::RunEnv::InMreFor $node
-			set ::preSelect [file join $simtmpdir for_web.shf]
-			::RunEnv::SaveView 1
+			::RunEnv::DoViewSave $helperTable($node,whichRunEnv) \
+			    [file join $simtmpdir for_web.shf]
 		    }
-		    file copy -force [file join $::SIMILE_PATH Extensions www load_tools.html] $simtmpdir
-		    set cmd [list StartWebService $node $simtmpdir]
+		    foreach localAsset {} {
+			file copy -force [file join $::SIMILE_PATH Extensions www $localAsset] $simtmpdir
+		    }
+		    set ::runState($node,modelRunning) 1
+		    set cmd [list StartWebService $node $simtmpdir $::SIMILE_PATH]
 		    catch {lappend cmd $::runState($node,runParams)}
 		    eval $cmd
 		}
@@ -1533,7 +1539,7 @@ proc DoLocalCmd {win item} {
 
 proc ExportSVG {win} {
 #    global window_info
-    package require can2svg
+    package require can2svg 1.2
     set node $::window_info($win,top_node)
     # Direct version works better -- use it? Actually canvas export should work
     # better as some graphics features are altered right after first drawing.
@@ -1557,7 +1563,7 @@ proc ExportSVG {win} {
 
 proc ExportSVGDirect {node} {
     global window_info
-    package require can2svg
+    package require can2svg 1.2
 
 #    set node $window_info($win,top_node)
     set tgt [ChooseFile [GetExecTitle $node].svg \
@@ -1592,44 +1598,6 @@ proc EmptyWindow {c} {
     prolog tk_menu('$c',file,new)
 }
 
-#
-# MacOS X specific procedures for the main window
-# Alastair 31 Jan 2005
-#
-
-if {[string match "Darwin" $tcl_platform(os)]} {
-#
-# The Quit command in the application menu ALWAYS calls exit, so we must quit 
-# by that route however it is invoked (keyboard shortcut or mouse click) -- 
-# although it helpfully calls ::tk::mac::Quit first
-#
-#  rename exit wishExit
-#  bind all <Command-q> exit
-  proc ::tk::mac::Quit {} {
-      global window_info
-      set currentDesk _
-      catch {set currentDesk \
-         $window_info([winfo toplevel [focus]].canvas,top_node)}
-# following is after 100 because funny things happen to the event loop while
-# actually executing the exit procedure in the Cocoa version, and 'after idle'
-# has never quite worked properly on the Mac
-      after 100 prolog tk_kill_everything($currentDesk)
-#...should not be needed now using ::tk::mac::Quit, but ww1t+a...
-      return 0
-  }
-#
-# Enable the Preferences command in the application menu using Carbon extension
-#
-#  package require tclCarbonHICommand
-#  carbon::enableMenuCommand pref 0
-  proc ::tk::mac::ShowPreferences {} {
-    Pref_Dialog
-  }
-#
-# Commands to raise window to front
-#
-}
-
 proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     global custom pushedbutton tcl_platform runState iconImages msgs SIMILE_PATH
     
@@ -1649,7 +1617,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	set accSym Control
     }
     
-    set fm [menu $topm.file -tearoff 0 \
+    set fm [menu $winid.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
     $topm add cascade -label [tr. File] -menu $fm
     if {$isTopLevel} {
@@ -1659,15 +1627,16 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
     $fm add command -label [tr. New] -command $newCmd -accelerator "$accKey+N"
     AddAccelerator $winid file New "<$accSym-n>"
-#    $fm add command -label [tr. "New top-level"] -command "NewTopLevel"
+    #    $fm add command -label [tr. "New top-level"] -command "NewTopLevel"
     $fm add command -label [tr. Open...] -command "MenuSelect $c local open_all" \
-            -accelerator "$accKey+O"
+	-accelerator "$accKey+O"
     AddAccelerator $winid file Open... "<$accSym-o>"
 
-   $fm add cascade -label [tr. "Reopen"] -menu .openrecent
+    $fm add cascade -label [tr. "Reopen"] -menu .openrecent
     if {[string equal .hi $winid]} {
-    return
+	return
     }
+    FillReopen $winid ;# do now to bind accelerators
     $fm add command -label [tr. Save] -command "MenuSelect $c file save" \
             -accelerator "$accKey+S"
     AddAccelerator $winid file Save "<$accSym-s>"
@@ -1733,9 +1702,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
     # for what is available, overridden later if it is popup
-    set fm [menu $topm.edit -tearoff 0 \
+    set fm [menu $winid.edit -tearoff 0 \
 		-postcommand "prolog tk_bar_edit_menu('$c')"]
-    $topm add cascade -label [tr. Edit] -menu $topm.edit
+    $topm add cascade -label [tr. Edit] -menu $fm
 
     $fm add cascade -label [tr. "Add/change component"] -menu $fm.add
     set ::menuPosns(edit,Add/change\ component) [$fm index last]
@@ -1811,8 +1780,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
     UnderlineUniquely $fm
     
-    set fm [menu $topm.view -tearoff 0]
-    $topm add cascade -label [tr. View] -menu $topm.view
+    set fm [menu $winid.view -tearoff 0]
+    $topm add cascade -label [tr. View] -menu $fm
     $fm add check -label " [tr. Toolbar]" -variable custom(shownavbar,$winid) \
             -command "toggleBar $winid"
     $fm add check -command "toggleBar $winid" \
@@ -1912,8 +1881,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	    -command "prolog tk_append_to_log($topNode,pause)"
     }
 
-    set fm [menu $topm.model -tearoff 0 -postcommand "AbleComp $winid"]
-    $topm add cascade -label [tr. Model] -menu $topm.model
+    set fm [menu $winid.model -tearoff 0 -postcommand "AbleComp $winid"]
+    $topm add cascade -label [tr. Model] -menu $fm
     $fm add command -label [tr. "Run"] -state $execEntryState \
 	-command [list FinishExecThen $c "MenuSelect $c code run_c"] \
                     -accelerator "$accKey+R"
@@ -1927,11 +1896,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #                    -command "MenuSelect $c local extra_run" \
 #                    -accelerator "$accKey+E"
 #    AddAccelerator $winid model "Extra run instance" "<$accSym-e>"
-    if {[string range $::userinfo(corp) end-3 end] eq "Devs"} {
-	$fm add command -label [tr. "Run in browser"] -state $execEntryState \
-	    -command [list FinishExecThen $c "MenuSelect $c code run_in_browser"] -accelerator "$accKey+B"
-	AddAccelerator $winid model "Run" "<$accSym-b>"
-    }
+    $fm add command -label [tr. "Run in browser"] -state $execEntryState \
+	-command [list FinishExecThen $c "MenuSelect $c code run_in_browser"] -accelerator "$accKey+B"
+    AddAccelerator $winid model "Run" "<$accSym-b>"
+
 #Model now aborted by closing run control
 #    $fm add command -label [tr. "Abort execution"] -state $execEntryState \
 #	-command [list FinishExecThen $c "ExDestroyHelpers node00000"]
@@ -1987,8 +1955,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c edit set_interface"
     UnderlineUniquely $fm
     
-    set fm [menu $topm.tools -tearoff 0]
-    $topm add cascade -label [tr. Tools] -menu $topm.tools
+    set fm [menu $winid.tools -tearoff 0]
+    $topm add cascade -label [tr. Tools] -menu $fm
     $fm add radio -label [tr. "Label/move elements"] \
             -command "ModeSelect select" -variable MIpushedbutton -value select
     #    $fm add radio -label [tr. "Move elements"] -command "ModeSelect move" \
@@ -2021,7 +1989,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     } else {
 	set helpMenuW help
     }
-        set fm [menu $topm.$helpMenuW -tearoff 0]
+        set fm [menu $winid.$helpMenuW -tearoff 0]
         $topm add cascade -label [tr. Help] -menu $fm
         $fm add command -label [tr. Contents] -command "ContextSensitiveHelp $winid index.htm" \
                 -accelerator "F1"
@@ -2224,7 +2192,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	    set capt [tr. $level]
 # TRANSLATOR: String $level may be "Built-in", "Macros" or
 # the name of any directory under Functions
-	    if {[catch {$box index $capt}]} {
+#	    if {[catch {$box index $capt}]}
+	    if {[lsearch -index 1 [ListMenuContents $box] $capt]==-1} {
 		menu $lname -tearoff 0
 		$box add cascade -menu $lname -label $capt
 		set key [string tolower [join $level _]]
@@ -2238,13 +2207,15 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	}
 	set component [lindex $funk 2]
 	set wParen $component\(\)
-	if {[catch {$box index $wParen}]} {
+#	if {[catch {$box index $wParen}]} {
 	    $box add command -label $wParen \
 		-command [list InsertFunction $eb.equation $component]
 	    lappend fnList $component
-	    catch {set component $msgs($component)} ;# may not exist
+	    if {[info exists msgs($component)]} {
+		set component $msgs($component) ;# may not exist
+	    }
 	    lappend popLists($box) $component
-	}
+#	}
     }
     set lname [menu $m.enumtypes -tearoff 0]
     $m add cascade -menu $lname -label [tr. "Enum. type constants"]
@@ -2338,9 +2309,10 @@ proc autocomplete {win action pt value change valuelist} {
 # perhaps its about case where the whole item is one possibility -- if it is 
 # allowed as a completion, longer item will not show. But this is confusing and
 # contrary to other apps behaviour, so...)
-	    set key ^$trigger.
+	    set key ^$trigger
 # currently allow any completion that adds anything -- have to delete if you
-# want substring
+# want substring...this causes sinh to be added to any use of sin which is
+# perverse, so do NOT insert autocomplete if the current string is complete.
 	    set matches [lsearch -all -inline -regexp $valuelist $key]
 #	    puts "found $matches searching $valuelist for $key"
 	    if {[llength $matches]} {

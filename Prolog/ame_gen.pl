@@ -162,8 +162,8 @@ unjustified. I don't want to process anything in single quotes for
 instance... */
 
 make_legible_for_prolog(String, NewString, CommentsAllowed) :-
-	[NL, BS, Sq, Dq, Sp, Pt, Po, Pc, Xm, Eq, Ct, Fs, Ak] =
-	    "\n\\'\" .()!=%/*",
+	[NL, BS, Sq, Dq, Sp, Pt, Po, Pc, Xm, Eq, Ba, Ct, Fs, Ak] =
+	    "\n\\'\" .()!=|%/*",
 	Nums = "0123456789",
 	append(Prefix, ToTweak, String),
 	/* Do not process anything in single quotes except backslashes
@@ -240,6 +240,8 @@ make_legible_for_prolog(String, NewString, CommentsAllowed) :-
 	interpreted as end-of-file. Gnu doesn't like it either... */
 	ToTweak = [Xm, Eq | Suffix],
 	    Tweaked = " '!=' ";
+	ToTweak = [Ba, Ba | Suffix],
+	    Tweaked = "'||'";
 	ToTweak = [Xm | Suffix],
 	    Tweaked = "not ";
 	ToTweak = [Ct | Suffix],
@@ -532,6 +534,8 @@ Works but buggers up GNU prolog (do after loading?) */
 :- op(700, yfx, ['=', '==', '<', '<=', '>', '>=']).
 
 :- op(700, yfx, ['=\\=', '!=', neq, ne, =:=]).
+
+:- op(720, yfx, ['&']).
 
 :- op(750, yfx, ['&&', and]).
 
