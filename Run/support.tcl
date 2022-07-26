@@ -60,7 +60,7 @@ proc tcl_insert {node newVs} {
     if {[llength $line]} {
 	set tree [lindex $line 8]
 	set type [lindex $line 1]
-	set dims [GetTclCompProperty dummy Dims $node]
+	set dims [GetTclCompProperty Dims $node]
 	return [list [FillValue ::AME_model<> $tree $type $dims {} 0 $newVs]]
     }
     return novalue
