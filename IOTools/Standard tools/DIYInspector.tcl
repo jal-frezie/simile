@@ -177,7 +177,7 @@ itcl::class similescript::$newHelperClass {
 	    param|plist {
 		if {[CaseForExpt $myNode $clickPath] ne ""} {
 		} elseif {$type eq "param"} {
-		    set parmCase [GetCaseName parameter]
+		    set parmCase [GetCaseName {alternative value case}]
 		    if {$parmCase eq {}} return
 		    AddCase $myNode $parmCase
 		    set newLevel [UniqueId $type]
