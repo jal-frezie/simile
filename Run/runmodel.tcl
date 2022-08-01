@@ -624,6 +624,8 @@ proc ShiftDisplays {node payload current display doAll} {
 	    set runState($node,ready) 0
 	    vwait runState($node,ready)
 	    set runState(pacer) [clock clicks -milliseconds]
+	} else {
+	    after 1 {} ;# prevents herkyjerkism
 	}
     }]} {
 	puts $::errorInfo
