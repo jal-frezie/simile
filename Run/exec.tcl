@@ -129,6 +129,97 @@ proc DeleteExptlCase {node caseId} {
     c_deletemodel $exptl_case($caseId)
     unset exptl_case($caseId)
 }
+proc NewExecuteTo {node current pause unitLength display foci \
+		    intMethod maxErr lmtPause evtMsg evtDisp} {
+    set currentMode start
+    set evtPause [expr {$evtMsg || $evtDisp}] ;# event sounds selected
+    set forward [expr {($pause>$current)*2-1}] ;# 1 for forward, -1 for back
+    set scaled_current [expr {$current*$unitLength}]
+    if {$display} {
+	set lastDisp [expr int($current/$display)]
+	set timedDisp 1
+    }
+    set ptClasses {}
+    foreach point $foci {
+	lappend ptClasses [GetCompProperty dummy Class $point]
+    }
+    set first 1
+
+    while {$currentMode eq "start"} {
+	if {($current-$pause)*$forward > -1e-12} {
+	    set currentMode stop
+	}
+
+	if {!$first} {
+	    set howAndWhen [CJoinExecution]
+	    set scaled_current [lindex $howAndWhen 1]
+
+	    set displayNow 0
+	    switch -- [lindex $howAndWhen 0] {
+		-1 {
+		    set currentMode exit
+		} 0 {
+		    set currentMode stop
+		} 2 { ;# event
+		    if {$evtDisp} {
+			set displayNow 1
+		    }
+		    if {$evtMsg} {
+			ExplainError $node [lrange $scaled_current 1 end] unused
+			set currentMode stop
+		    }
+		    # do sounds
+		    # foreach {evt sound} [array get ::eventSounds] {
+		    #     set hdl [GetHandle $node $evt]
+		    #     set evtVals [extract_list $hdl 16777216]
+		    #     ReleaseHandle $node $hdl
+		    #     if {[SumVals $evtVals]} {
+		    # 	exec aplay $sound &
+		    #     }
+		    # }
+		    set scaled_current [lindex $scaled_current 3]
+		}
+	    } ;# default: keep going
+	    set current [expr {$scaled_current/$unitLength}]
+	    set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
+	    set payload {}
+	    foreach point $foci class $ptClasses {
+		if {[catch {GetPayload $node $point $class} dataHand]} {
+# data has gone, so hope it is no longer needed
+		} else {
+		    lappend payload $point $dataHand
+		}
+	    }
+	}
+
+	if {$currentMode eq "start"} {
+	    if {$display} {
+		if {$timedDisp} {
+		    set nextDisp [expr 1.0*$display*[incr lastDisp $forward]]
+# ensure display updated at end of run -- make optional?
+		    if {($nextDisp-$pause)*$forward>0} {
+			set nextDisp $pause
+		    }
+		    set scaled_next [expr {$nextDisp*$unitLength}]
+		}
+	    } else {
+		set nextDisp [expr 2*$pause-$current]
+		set scaled_next [expr {$pause*$unitLength}]
+	    }
+	    ExecuteModel $node $intMethod $scaled_current \
+		$scaled_next $maxErr $lmtPause $evtPause
+	}
+
+	if {!$first} {
+	    ShiftDisplays $::nodeId $payload [format %.8g $current] \
+		$display [expr {$timedDisp || $displayNow}]
+	    MarkUncached $payload
+	    FreeAll $payload
+	}
+	set first 0
+    }
+    return $currentMode
+}
 
 proc ExecuteTo {node current pause unitLength display foci \
 		    intMethod maxErr lmtPause evtMsg evtDisp} {
@@ -294,6 +385,7 @@ proc CResetModel {initTime args} {
     eval [list c_resetmodel $model_id $instance_id] $initTime $args
     after idle WatchModel 0 $initTime
 
+    return [CJoinExecution]
     vwait modelStopped
     if {[llength $modelStopped]>2} { # error -- re-throw
 	error $modelStopped
@@ -368,7 +460,7 @@ proc WatchModel {gui end} {
 	}
 	set going [expr {[lindex $status 0]==2}]
 	if {$going} {
-	    after 1 WatchModel $gui $end
+	    WatchModel $gui $end
 	    return
 	}
     } else { puts $::errorInfo }
@@ -378,17 +470,26 @@ proc WatchModel {gui end} {
     set ::modelStopped $status
 }
 
+proc CJoinExecution {} {
+    global modelStopped
+    
+    if {![info exists modelStopped]} {
+	vwait modelStopped
+    }
+    set result $modelStopped
+    unset modelStopped
+    if {[llength $result]>2 && \
+	    [lindex $result 0] eq "tcl_model_err"} { # error -- re-throw
+	error $result
+    }
+    return $result
+}
+
 proc CExecuteModel {isRK start finish args} {
-    global model_id instance_id modelStopped
+    global model_id instance_id
     eval [list c_executemodel $model_id $instance_id $isRK $start $finish] $args
     after idle WatchModel 0 $finish
-
-    vwait modelStopped
-    if {[llength $modelStopped]>2 && \
-	    [lindex $modelStopped 0] eq "tcl_model_err"} { # error -- re-throw
-	error $modelStopped
-    }
-    return $::modelStopped
+    return [CJoinExecution] ;# comment out if using new ExecuteTo
 }
 
 proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
