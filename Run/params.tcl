@@ -609,7 +609,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	    set suppliedData($compName) $preload
 	    set msgs(param_source_$compName) $msgs(fce)
 	    ColourCaptions $outNames($compName) blue
-	    set dataChanged 1
+	    # set dataChanged 1 ; no need, it is in the model anyway
 	} elseif {![string equal $newData $suppliedData($compName)]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0

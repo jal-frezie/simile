@@ -22,6 +22,7 @@ itcl::class similescript::$newHelperClass {
 
 	set chop [string length $state]
 	set doPops 0
+	set paramEdits 0
 	set incExpts 0
 	switch -glob $winTitle {
 	    "file parameter" {
@@ -36,6 +37,10 @@ itcl::class similescript::$newHelperClass {
 	    } "model output" {
 		set typesToShow {RECALL DERIVED BLOCK POPULATION GRID HONEYCOMB}
 	    } parameters {
+		set paramEdits 1
+		set typesToShow {INPUT TABLE}
+	    } explorer {
+		set paramEdits 1
 		set incExpts 1
 		set typesToShow {INPUT TABLE}
 	    } default {
@@ -53,8 +58,9 @@ itcl::class similescript::$newHelperClass {
 			   clist [tr. "List of cases"] caselist \
 			   compound [tr. "Multi-factor case(s)"] compfact \
 			   perm [tr. "Set of permutations"] permut]
-	    if {![winfo exists .expt_context]} {
-		set cMenu [menu .expt_context -tearoff 0]
+	    set cMenu $winId.expt_context
+	    if {![winfo exists $cMenu]} {
+		menu $cMenu -tearoff 0
 		set iMenu [menu $cMenu.insert -tearoff 0]
 		foreach {key txt img} $decor {
 		    $iMenu add command -label $txt -compound left \
@@ -102,7 +108,7 @@ itcl::class similescript::$newHelperClass {
 			set type [lindex {input file} $notInput]
 		    }
 		}
-		if {$incExpts && $notInput>-1} {
+		if {$paramEdits} {
 		    set e [AddEntry $winId $::myNode $component $::myNode 0 $notInput]
 		}
 		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
@@ -122,7 +128,7 @@ itcl::class similescript::$newHelperClass {
 		    set beeGee [[winfo parent $f].head cget -bg]
 #		    set bStyle [[winfo parent $f].head.vis cget -style]
 		    $f configure -bg $beeGee
-		    if {$incExpts && $notInput>-1} {
+		    if {$paramEdits} {
 		    } else {
 #			pack [ttk::label $f.caption -text $capt \
 #				  -style $bStyle] -side left
@@ -131,7 +137,7 @@ itcl::class similescript::$newHelperClass {
 		    $f.caption configure -image $iconImages([string tolower $type]) -compound left
 		    bindtags $f.caption [linsert [bindtags $f.caption] 0 $f]
 		    if {$doPops} {
-			LabelPopup $f.caption $component $capt
+			InspLabelPopup $f.caption $component $capt
 		    }		    
 		}
 	    }
@@ -162,7 +168,7 @@ itcl::class similescript::$newHelperClass {
 		$cMenu entryconfig Insert -state disabled
 	    }
 	}
-	$cMenu post $X $Y
+	tk_popup $cMenu $X $Y
     }
 
     # can probably improve the logic of this next bit
@@ -233,7 +239,7 @@ itcl::class similescript::$newHelperClass {
 	destroy $f
     }
     
-    proc LabelPopup {widget node capt} {
+    proc InspLabelPopup {widget node capt} {
 	bind $widget <Enter> [::itcl::code AddPopup %W %X %Y $::myNode $node]
 	bind $widget <Leave> RemovePopup
     }

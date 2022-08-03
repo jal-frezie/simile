@@ -1441,7 +1441,7 @@ proc StartRun {node} {
 	    itcl::delete object $oldInsp ;# model components may have changed
 	}
  	set hlp [UniqueId helper $hlp]
-	similescript::$helperId $hlp $runClass parameters
+	similescript::$helperId $hlp $runClass explorer
 
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page
