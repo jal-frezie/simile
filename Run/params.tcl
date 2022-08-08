@@ -421,7 +421,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	    insp {
 		set defBd 0
 	    } default {
-		set defBd 2
+		set defBd 1
 	    }
 	}
 #            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken]
@@ -483,7 +483,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 			      -command [list $nsCmd $clientId $path]] \
 			-side right
 			BindPopup $btn \
-			    [format [tr. "$act values for submodel \"%1\$s\""] \
+			    [format [tr. "$act values for subtree \"%1\$s\""] \
 				 $level]
 			FixDisabledImgBug $btn
 			lower $btn

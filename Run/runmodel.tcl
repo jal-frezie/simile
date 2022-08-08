@@ -281,8 +281,17 @@ proc CreateHelperWindow {helperId helperTitle {state {}}} {
     set helperTable(beingCalled) {}
     if {[PrefValue custom(helperManager) helperManager]} {
 	set winId [$inst cget -winId]
-	::RunEnv::SetCurrentContainer [winfo parent $winId]
+	set holder [winfo parent $winId]
+	::RunEnv::SetCurrentContainer $holder
 	::RunEnv::ChildrenFocusParent $winId
+	set tab [winfo parent [winfo parent $holder]]
+	set notebook [winfo parent $tab]
+	if {[winfo class $notebook] eq "TNotebook"} {
+	    set mapping [list display grid005 grid plotter1_dot_25 graph \
+			    tabular11510 table]
+	    set hlprImg [lindex $mapping [lsearch $mapping $helperId]+1]
+	    $notebook tab $tab -image $::iconImages($hlprImg) -compound left
+	}
     }
     return $inst
 #rest should be done by constructor

@@ -129,13 +129,15 @@ proc GetFromProlog {prologCmd} {
 
 set debounce(down) quiet
 
-proc BringRootWindow {winId} {
-    if {[tk windowingsystem] eq "aqua"} {
-	# popup menus only appear if root window on same screen
-	wm geometry . +[winfo rootx $winId]+[winfo rooty $winId]
-	UpdateByOS
-    }
-}
+# no longer needed as long as I make sure popups have same toplevel
+# as window they are invoked from
+# proc BringRootWindow {winId} {
+#     if {[tk windowingsystem] eq "aqua"} {
+# 	# popup menus only appear if root window on same screen
+# 	wm geometry . +[winfo rootx $winId]+[winfo rooty $winId]
+# 	UpdateByOS
+#     }
+# }
 
 proc DoContextMenu {winId X Y} {
     global tcl_platform
@@ -151,7 +153,7 @@ proc DoContextMenu {winId X Y} {
 	    $Y>[winfo screenheight $winId]/2} {
 	tk_popup $m $X $Y 99
     } else {
-	BringRootWindow $winId
+#	BringRootWindow $winId
 	tk_popup $m $X $Y
     }
     $m configure -postcommand "prolog tk_bar_edit_menu('$winId')"
@@ -2614,7 +2616,7 @@ proc AbleComp {winid} {
 proc EmbraceEqn {winId} {
     global equationbar
     if {[info exists equationbar($winId,node)]} {
-	BringRootWindow $winId
+#	BringRootWindow $winId
 	if {[llength $equationbar($winId,node)]} {
 	    prolog tk_embrace('$winId.canvas',$equationbar($winId,node))
 	}

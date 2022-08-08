@@ -181,6 +181,9 @@ itcl::class similescript::$newHelperClass {
 	
 	switch -regexp $type {
 	    param|plist {
+		set paramEdits 1
+		set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
+			   [namespace current] 0]
 		if {[CaseForExpt $myNode $clickPath] ne ""} {
 		} elseif {$type eq "param"} {
 		    set parmCase [GetCaseName {alternative value case}]
@@ -190,7 +193,7 @@ itcl::class similescript::$newHelperClass {
 		    lappend clickPath $newLevel
 		    set compCases($myNode,$newLevel) $parmCase
 		}
-		pack [label $winId.label -wrap 400 -text [tr. "Select the parameter to vary in this case from the model diagram or explorer"] -fg red]
+		pack [label $f.label -wrap 250 -text [tr. "Select the parameter to vary in this case from the model diagram or explorer"] -fg red]
 		lappend clickPath $type
 		$modelInst GrabClicks $this
 	    } default {
@@ -294,7 +297,6 @@ itcl::class similescript::$newHelperClass {
 	set action [lindex $clickPath end]
 	set clickPath [lrange $clickPath 0 end-1]
 
-	destroy $winId.label
 	$modelInst ReleaseClicks
 	
 	if {$action eq "plist"} {
@@ -324,6 +326,7 @@ itcl::class similescript::$newHelperClass {
 	    $f.caption configure -image $::iconImages($type) \
 		-compound left
 	}
+	destroy [winfo parent $f].label
 	lappend clickPath [$f.caption cget -text]
 	CrossPlatformBind $f.caption \
 	    [namespace code [list OnElementContext  $clickPath %X %Y]]
