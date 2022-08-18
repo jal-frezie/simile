@@ -190,7 +190,7 @@ itcl::class similescript::$newLayerClass {
 	set node $useNodes(nC,color)
 	set bpp $useNodes($winId,bpp)
 	set hex $useNodes($winId,hex)
-	set repts [expr {$hex*$bpp/8}]
+set repts [expr {$hex*$bpp/8}]
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
 			$useNodes($winId,max) $repts} rawBinary]} {
