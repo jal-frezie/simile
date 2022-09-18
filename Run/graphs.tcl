@@ -1413,9 +1413,6 @@ proc DoneTableData {startLine} {
 	     $table_entry(source)<=0} {
         set table_entry(source) 0.5
     }
-    if {[.table.notebook select] eq ".table.notebook.image"} {
-	set table_entry(fileName) $table_entry(currentImage)
-    }
     AcquireTableData $table_entry(source) $startLine
     if {[winfo exists .table.commentt]} {
 	set table_entry(comment) \
@@ -1682,7 +1679,6 @@ proc LoadDataFile {mode query mdl} {
             } image {
                 catch {image delete tableImage}
                 image create photo tableImage -file $table_entry(fileName)
-		set table_entry(currentImage) $table_entry(fileName)
                 set table_entry(col1) 1
                 set table_entry(coln) [image width tableImage]
                 set table_entry(row1) 1

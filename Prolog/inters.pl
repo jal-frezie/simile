@@ -2039,10 +2039,19 @@ merge_contexts([J | K], L, M) :-
 	M = [J | N]).
 
 same_context(C1, C2) :-
-	\+ (C1 = sm(_, P1, _, L),
-	       C2 = sm(_, P2, _, L),
-	       \+ L = vm_loop(_,_,_,_), % pointers meaningless -- syntax check
-	       \+ P1 == P2),
+	\+ (C1 = sm(_, P1, _, L1),
+	    C2 = sm(_, P2, _, L),
+	    % do not allow integer index to unify with free var --
+	    % breaks [arr]+[0,element([arr],1)]
+	    (L1 = fm_loop(S1, _,_,_),
+		L = fm_loop(S, _,_,_),
+		nth(N, S1, I1),
+		nth(N, S, I),
+		permutation([I1, I], [Ia, Ib]),
+		var(Ia), integer(Ib);
+	    L = L1,
+	    \+ L = vm_loop(_,_,_,_), % pointers meaningless -- syntax check
+	    \+ P1 == P2)),
 	C1 = C2.
 
 % slightly different version for args of element()

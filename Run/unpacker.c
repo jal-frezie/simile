@@ -648,6 +648,8 @@ void convert_to_byte(void* values, int offset, convertParms* cbData) {
   valfor255 = *cbData->valfor255;
   if (cbData->baseType == REAL) 
     thisVal = ((double*)values)[offset];
+  else if (cbData->baseType == FLAG) 
+    thisVal = ((BOOLEAN*)values)[offset];
   else 
     thisVal = ((int*)values)[offset];
 
