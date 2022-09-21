@@ -783,6 +783,7 @@ proc ChangeIncFile {incFileTxt isPipe mdl modelLocn} {
 	set newFile [ChooseFile $current [tr. "Pipe/socket location:"] \
 			 1 $mdl]
     } else {
+	if {$current eq "none"} {set current implementation.cpp}
 	set newFile [ChooseFile $current [tr. "External source/header file:"] \
 			 0 $mdl]
     }

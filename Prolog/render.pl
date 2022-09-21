@@ -110,13 +110,19 @@ count_base_ptrs([base(_,_, Ptrs) | More], N) :-
 	count_base_ptrs(More, M),
 	N is M+Here.
 
+dim_to_subscript(N, Scr) :-
+    sicstus_format_to_chars("[~w]", [N], Scr).
+
 refer_type(Data, Ptr) :-
     append_atoms(Data, '*', Ptr).
 
 type_from_arg(U-D, Type, RefAll) :-
     D = [_N | More] ->
-	type_from_arg(U-More, DirType, false),
-	refer_type(DirType, Type);
+        all(render, dim_to_subscript, 
+	    [build(['' | More]), append(ArgsStr, "")]),
+	type_from_arg(U-[], ScalarType, false),
+	name(Args, ArgsStr),
+	append_atoms(ScalarType, Args, Type);
       type_for_unit(U, CU),
         (RefAll -> refer_type(CU, Type);
 	 Type = CU).

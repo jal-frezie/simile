@@ -95,6 +95,7 @@ Layers2D.prototype.addLayer = function (type, state) {
 	photo = layerSpec.gLayer.selectAll("image").data([0]);
         var image = photo.enter()
             .append("svg:image")
+	    .attr("pointer-events", "none")
             .attr("xlink:href", localURL)
             .attr("preserveAspectRatio","none");
 	// cannot get pixel size of svg image so have to make a separate html
@@ -260,6 +261,7 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 		layerSpec.gLayer.append("polygon")
 		    .attr("id", 'poly' + niceInds).attr("points",pts)
 		    .attr("fill",colSpec).attr("stroke","black")
+		    .attr("pointer-events", "none")
 		    .attr("stroke-width",0);
 	    }
 	} else {
@@ -309,6 +311,7 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 	    layerSpec.gLayer.append("circle").attr("cx",defns[bg].x_axis)
 		.attr("cy",-defns[bg].y_axis)
 		.attr("r",defns[bg].radius)
+		.attr("pointer-events", "none")
 		.attr("fill", "#" + "000000".slice(hexColor.length) + hexColor);
 	}
 	break;
@@ -326,6 +329,7 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 		.attr("y1",-defns[bg].starty)
 		.attr("x2",defns[bg].endx)
 		.attr("y2",-defns[bg].endy)
+		.attr("pointer-events", "none")
 		.attr("style", "stroke:#" + "000000".slice(hexColor.length) + hexColor + ";stroke-width:" + defns[bg].width);
 	}
     }

@@ -51,6 +51,8 @@ tk_code(Node, RunCmd, _Dummy) :-
 
 rebuild_code(Lang, Node, ProgFileDir, Action) :-
         compile(Lang, Node, ProgFileDir, Action);
-        output><safe_tcl_eval(['DebugMess', rebuild_code_failed], _),
-	draw><scrub_run(Node, 0),
+output><safe_tcl_eval(['DebugMess', rebuild_code_failed], _),
+% Next line would cause mre setup to be abandoned (unless save dialog
+% cancelled) if a rebuild fails. Doesn't seem necessary.
+	% draw><scrub_run(Node, 0),
 	fail.

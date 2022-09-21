@@ -452,6 +452,10 @@ proc load_dll {topNode lang progDir id node incs} {
 	    # if headless we just get inline text so show it anyway
 	    Query [list new_exec_needed $::errorInfo] info top {} {ok}
 	}
+	set dodgObjs [glob -nocomplain [file join $progDir *.o]]
+	foreach dodgObj $dodgObjs {
+	    file delete -force $dodgObj
+	}
 	return 0
     }
     return $new_model_id
