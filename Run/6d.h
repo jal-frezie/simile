@@ -181,7 +181,6 @@ class ExecutingModel
   unsigned long int last_exit, last_update;
   unsigned long int took[8];
   BOOLEAN paused;
-  struct listen_t {int id; nodeValues* data;} listen = {NULL, NULL};
   
  public: // public attributes
 

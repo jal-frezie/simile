@@ -331,6 +331,7 @@ void play_at_vol(const char* file, double level) {
 
 int latestContext[32];
 EvtCmdData* EvtCmdList = NULL;
+struct wavListen_t {int id; int mic;} wavListen = {.id=0, .mic=0};
 int contextDepth = 0;
 
 void report_events(int dimty, const int inds[], int evts,
@@ -1417,9 +1418,9 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   double xtime, aim_for, recover, evtError, newFreq, minFreq;
   int big_phase, wee_phase, a_phase, keeper, z;
   BOOLEAN made_step, first_pass;
-    // printf("xm %d %lf-%lf at %lf\n", how_int, start, *end, errlim);
-    // showMess(globMess);
-    // temporary arrangement until we move this function into the instance
+  // printf("xm %d %lf-%lf at %lf\n", how_int, start, end, errlim);
+  // showMess(globMess);
+  // temporary arrangement until we move this function into the instance
 
   initTime = start;
   howInt = how_int;
@@ -1594,17 +1595,22 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     } // made progress
     // printf("Moved forward %f units\n", freq);
 
-    if ((xtime-end)/minFreq >= 0 && listen.id) {
-      listen.data = GetRawValues(listen.id);
+    if (wavListen.id) {
+      printf("id %d\n", wavListen.id);
+      // moved a whole time step, do sound 
+      nodeValues* ldata;
+      int16_t buffer[2];
+      
+      ldata = GetRawValues(wavListen.id);
       // send it
-      if (listen.data->dimSpecs[0] == INTEGER)
-	printf("Sample %d at %lf\n", *((int*)listen.data->contents), xtime);
+      if (ldata->dimSpecs[0] == INTEGER)
+	printf("Sample %d at %lf\n", *((int*)ldata->contents), xtime);
       else // it is real
-	printf("Sample %lf at %lf\n", *((double*)listen.data->contents), xtime);
-      delete listen.data;
+	buffer[0] = buffer[1] = 0.1*32768*(*((double*)ldata->contents));
+      write(wavListen.mic, buffer, 4);
+      delete ldata;
     }
 
-      // moved a whole time step, do sound 
     if (userDefStop->excpNo) break; // from outer loop
     SetdT(0, 5+(how_int==RUNGE_KUTTA)); 
     // now limit events will actually affect the model
@@ -1859,9 +1865,37 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
 }
 
 void ExecutingModel::set_wav_cmd(char* nodeId) {
-  int spare;
+  printf("swc %s\n", nodeId);
+  int spare, pipefd[2];
+  pid_t pid;
+  char* argv[] = {"play", "--buffer", "2048", "-t", "raw", "-r", "44100",
+			 "-b", "16", "-e", "signed-integer", "-c", "2",
+			 "-v", "0.1", "-", NULL}; 
+ 
+  // Create a pipe. 
+  pipe(pipefd); 
+ 
+  // Create our second process. 
+  pid = fork(); 
+  if (pid == 0) { 
+    // Hook stdin up to the read end of the pipe and close the write end of 
+    // the pipe which is no longer needed by this process. 
+    dup2(pipefd[0], STDIN_FILENO); 
+    close(pipefd[1]); 
+    
+    // run the command
+    execvp(argv[0], argv); 
+    perror("exec"); 
+    return; 
+  } 
   
-  listen.id = modelSpec->getinfo(nodeId, &spare);
+  // Close read end of the pipe.  The respective read/write ends of the pipe 
+  // persists in the process created above (and happen to be tying stdin 
+  // of the process to the write end here). 
+  close(pipefd[0]);
+  wavListen.mic = pipefd[1];
+  
+  wavListen.id = modelSpec->getinfo(nodeId, &spare);
 }
 
 graph_data_type* ExecutingModel::GetSketchGraphs() {
