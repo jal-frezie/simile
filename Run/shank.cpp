@@ -1593,6 +1593,18 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       } // timestep too short or not
     } // made progress
     // printf("Moved forward %f units\n", freq);
+
+    if ((xtime-end)/minFreq >= 0 && listen.id) {
+      listen.data = GetRawValues(listen.id);
+      // send it
+      if (listen.data->dimSpecs[0] == INTEGER)
+	printf("Sample %d at %lf\n", *((int*)listen.data->contents), xtime);
+      else // it is real
+	printf("Sample %lf at %lf\n", *((double*)listen.data->contents), xtime);
+      delete listen.data;
+    }
+
+      // moved a whole time step, do sound 
     if (userDefStop->excpNo) break; // from outer loop
     SetdT(0, 5+(how_int==RUNGE_KUTTA)); 
     // now limit events will actually affect the model
@@ -1844,6 +1856,12 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
     going->next = NULL;
     *insert = going;
   }
+}
+
+void ExecutingModel::set_wav_cmd(char* nodeId) {
+  int spare;
+  
+  listen.id = modelSpec->getinfo(nodeId, &spare);
 }
 
 graph_data_type* ExecutingModel::GetSketchGraphs() {
@@ -2821,6 +2839,10 @@ node_data_line* nodlin_from_id(void* modelId, int paramId) {
 
 void add_event_command(void* instanceId, char* nodeId, char* cmd) {
   ((ExecutingModel*)instanceId)->set_evt_cmd(nodeId, cmd);
+}
+
+void add_wave_command(void* instanceId, char* nodeId) {
+  ((ExecutingModel*)instanceId)->set_wav_cmd(nodeId);
 }
 
 // dumb it down even further for emscripten clients that do not know how to get

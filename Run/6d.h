@@ -181,7 +181,8 @@ class ExecutingModel
   unsigned long int last_exit, last_update;
   unsigned long int took[8];
   BOOLEAN paused;
-
+  struct listen_t {int id; nodeValues* data;} listen = {NULL, NULL};
+  
  public: // public attributes
 
   //! The model type of which this is an instance
@@ -278,6 +279,7 @@ class ExecutingModel
   // allow model to update client during execution; client should not call
   BOOLEAN do_gui_check(double, int);
   void set_evt_cmd(char*, char*);
+  void set_wav_cmd(char*);
   graph_data_type* GetSketchGraphs();
 }; // End of class ExecutingModel
 

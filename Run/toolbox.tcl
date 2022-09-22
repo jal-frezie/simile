@@ -1172,7 +1172,7 @@ proc InitExecThread {node} {
    foreach stubCmd \
 	{load_c_stub_1 c_setparamarray tcl_setparamarray c_getparamall \
 	     c_gettimepointall PlaceInArray ListToArray RepeatReset \
-	     MarkEvtParamActive AddEventCommand SetWrapTime \
+	     MarkEvtParamActive AddEventCommand AddWaveCommand SetWrapTime \
 	     SetFillMethod SetInterval update_executable \
 	     InsertExptlCase DeleteExptlCase SeedRandoms ReleaseHandle \
 	     ListCases GetHandle RunningInC GetTclCompExecData GetCompProperty \
