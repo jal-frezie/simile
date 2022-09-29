@@ -42,6 +42,14 @@ class CPPEXTDEC FileParamData
 
   //! This contains the current values for the parameter
   nodeValues dataPtr;
+  
+  //! valid for time series events only: 5 means standby
+  //! 4 means ready to be used in next cycle
+  //! 3 means to use in this cycle (needed for RK: 2+ u_f_ps betwen cycles)
+  //! 2 means using, clear after cycle
+  //! 1 means to clear in this cycle (see 3)
+  //! 0 means clearing, standby after cycle
+  int active;
 
  public: // public methods
 
@@ -99,11 +107,6 @@ class CPPEXTDEC VarParamData : public FileParamData {
   BOOLEAN amEvent;
 
   BOOLEAN inheritSeries;
-  
-  //! valid for time series events only: 0 means no activity
-  //! 1 means used and needs resetting
-  //! 2 means set but not yet used
-  int active;
 
  protected: // protected methods
 

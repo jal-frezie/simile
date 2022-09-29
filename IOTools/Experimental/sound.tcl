@@ -28,6 +28,12 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
+    destructor {
+	if {[info exists State]} {
+	    AddWaveCommand [$modelInst cget -modelNode] ""
+	}
+    }
+
     public method Click {path} {
 	set State [list $path [$modelInst GetMinValue $path] \
 		       [$modelInst GetMaxValue $path]]
@@ -42,11 +48,20 @@ itcl::class similescript::$newHelperClass {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
+	set wav [$modelInst GetValue [lindex $State 0]]
 	set min [lindex $State 1]
-	set val [expr {200*([$modelInst GetValue [lindex $State 0]]-$min) / \
-			   ([lindex $State 2]-$min) - 100}]
-	set flash [Gradient green $winId $val]
-	$winId configure -bg $flash
+	if {[llength $wav]==1} {
+	    set val [expr {200*($wav-$min) \
+			       / ([lindex $State 2]-$min) - 100}]
+	    set flash [Gradient green $winId $val]
+	} else {
+	    set flash [format #80%02x%02x \
+			   [expr {128+round(127*[lindex $wav 1])}] \
+			   [expr {128+round(127*[lindex $wav 3])}]]
+	}
+	if {[string length $flash]==7} {
+	    $winId configure -bg $flash
+	}
     }
 
     public method Play {} {

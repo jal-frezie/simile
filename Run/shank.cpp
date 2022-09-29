@@ -39,6 +39,7 @@ return (char*)lpMsgBuf;
     #include <setjmp.h>
     #include <dlfcn.h>
     #include <errno.h>
+    #include <fcntl.h>
 
     #define LOAD_DLL safe_open
 /* 'dummyunload' clause was used with macos because dlcompat didn't include
@@ -701,6 +702,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, HCOMP newNodeId,
   translate_dims(fullDims, sparePath, dataPtr.dimSpecs, 
 		 myModelExec->modelSpec->nodedata[nodeId].datatype, 2);
   dataPtr.contents = init_space(dataPtr.dimSpecs);
+  active = 1; // will never change except if event
   //    dataPtr.contents = new char[sparePath[0]];
   // now insert it into the list (at beginning)
   next = myModelExec->param_array_base;
@@ -727,9 +729,8 @@ int FileParamData::extract_elt(void* tgt, int* indxs) {
   void *insertionPt; 
   node_data_line* nodeLine;
   int dataSize;
-
-  if (!dataPtr.contents) return 0; // no valid param data
-  
+  if (!dataPtr.contents or active>3) return 0; // no valid param data
+  if (active==3 || active==1) --active; // mark it used
     insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
     if (!insertionPt) return -1; // record pointers not yet made
     nodeLine = myModelExec->modelSpec->nodedata + nodeId;
@@ -746,6 +747,7 @@ int FileParamData::extract_elt(void* tgt, int* indxs) {
     // avoid forward copying first
     // memcpy(insertionPt, tgt, size_for_type());
     dataSize = size_for_data_type(nodeLine->datatype);
+    // printf("Copying %lf\n", *(double*)insertionPt);
     memcpy(tgt, insertionPt, dataSize);
     return 1; // parameter loaded successfully
   }
@@ -853,9 +855,11 @@ double VarParamData::update_from_points(double nowInDays, double next,
     }
   }
   if (amEvent) {
-    if (active)
-      if (!--active) // don't trust lazy evaluation
+    if (!active) active=5; // back to standby
+    if (active==4 || active==2) { // ready to write or clear
+      if (--active == 1) // don't trust lazy evaluation
 	zero_bloc_data(destPtr->contents, destPtr->dimSpecs);
+    }
     if (hiBound) { // return time at which event will next happen
       later = (hiBound->when+hiWraps*wrapAroundPoint)*seriesIdxUnits;
       if (later<next)
@@ -876,7 +880,7 @@ double VarParamData::update_from_points(double nowInDays, double next,
       // Actually do, it's better than not doing it!!
       free_bloc_data(destPtr->contents, destPtr->dimSpecs);
       destPtr->contents = copy_bloc_data(loBound->dataPtr, destPtr->dimSpecs);
-      active=1;
+      active=3;
 //     }
   }
   if ((!loBound || !loBound->dataPtr) && !amEvent) {
@@ -886,7 +890,7 @@ double VarParamData::update_from_points(double nowInDays, double next,
     //destPtr->contents = NULL;
   }
 
-  if (amEvent && active) {
+  if (amEvent && active==3) {
     myModelExec->seriesEvtSign = ndRef->graph;
     // Now play sound for event if there is one
     double volume;
@@ -1001,7 +1005,7 @@ void VarParamData::InitTimeSeries(BOOLEAN cancelSliders) {
   if (this) { // WTFN?
     curTimePoint = NULL;
     wraps = 0;
-    active = 1; // this will cause any current event data to be zeroed
+    active = 2; // this will cause any current event data to be zeroed
     if (amEvent) {
       ExecutingModel* host = myModelExec->parent;
       while (host && !timePoints) {
@@ -1463,7 +1467,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       a_phase = wee_phase;
       set_dts(big_phase, xtime); // zero explicit ref to dt() in model
       resetting = big_phase;
-      advance_time(big_phase, 0); // unsets event(nextSeries)
+      // advance_time(big_phase, 0); // unsets event(nextSeries)
       SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
       loadedInst->updatemodel(big_phase); // b_p needed to apply squirt
       SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
@@ -1596,17 +1600,24 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     // printf("Moved forward %f units\n", freq);
 
     if (wavListen.id) {
-      printf("id %d\n", wavListen.id);
       // moved a whole time step, do sound 
       nodeValues* ldata;
       int16_t buffer[2];
       
       ldata = GetRawValues(wavListen.id);
       // send it
-      if (ldata->dimSpecs[0] == INTEGER)
+      int *typeLocn = ldata->dimSpecs;
+      if (*typeLocn>0) //array, treat 1st two vals as L and R
+	typeLocn += 1;
+      if (*typeLocn == INTEGER)
 	printf("Sample %d at %lf\n", *((int*)ldata->contents), xtime);
-      else // it is real
-	buffer[0] = buffer[1] = 0.1*32768*(*((double*)ldata->contents));
+      else { // it is real
+	buffer[0] = 0.1*32768*(*((double*)ldata->contents));
+	if (typeLocn == ldata->dimSpecs)
+	  buffer[1] = buffer[0];
+	else
+	  buffer[1] = 0.1*32768*(*(((double*)ldata->contents)+1));
+      }
       write(wavListen.mic, buffer, 4);
       delete ldata;
     }
@@ -1865,13 +1876,16 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
 }
 
 void ExecutingModel::set_wav_cmd(char* nodeId) {
-  printf("swc %s\n", nodeId);
   int spare, pipefd[2];
   pid_t pid;
   char* argv[] = {"play", "--buffer", "2048", "-t", "raw", "-r", "44100",
 			 "-b", "16", "-e", "signed-integer", "-c", "2",
-			 "-v", "0.1", "-", NULL}; 
- 
+			 "-", NULL}; 
+
+  if (!strlen(nodeId)) {
+    close(wavListen.mic);
+    return;
+  }
   // Create a pipe. 
   pipe(pipefd); 
  
@@ -1894,6 +1908,7 @@ void ExecutingModel::set_wav_cmd(char* nodeId) {
   // of the process to the write end here). 
   close(pipefd[0]);
   wavListen.mic = pipefd[1];
+  fcntl(wavListen.mic, F_SETPIPE_SZ, 2048);
   
   wavListen.id = modelSpec->getinfo(nodeId, &spare);
 }
