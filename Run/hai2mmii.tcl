@@ -66,12 +66,11 @@ proc IsPretty {bride} {
 }
 
 proc PrettifyValList {ugly txtVals} {
-#puts "Trying to tidy up $ugly"
-    if {[llength $ugly]==1 || [lsearch $txtVals $ugly]>-1} {
+#puts "Trying to tidy up $ugly to $txtVals"
+    if {[string is double -strict $ugly] || [lsearch $txtVals $ugly]>-1} {
 	# do mind even length ET mem mangling
 	set result $ugly
-    } elseif {[lsearch $txtVals $ugly]>-1} {
-	# do mind even length ET mem mangling
+    } elseif {[llength $ugly]==1} {
 	set result \"$ugly\"
     } else {
 	set result {}

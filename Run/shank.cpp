@@ -1612,7 +1612,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       if (*typeLocn == INTEGER)
 	printf("Sample %d at %lf\n", *((int*)ldata->contents), xtime);
       else { // it is real
-	buffer[0] = 0.1*32768*(*((double*)ldata->contents));
+	buffer[0] = 32768*(*((double*)ldata->contents));
 	if (typeLocn == ldata->dimSpecs)
 	  buffer[1] = buffer[0];
 	else

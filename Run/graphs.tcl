@@ -961,7 +961,6 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
         pack [::ttk::combobox $wrapf.uc -textvariable table_entry(uftsi) \
 		  -width 10 -values [concat unit $::commonTimes] \
 		  -state normal]
-	set table_entry(uftsi) unit
 	if {$dlgStyle eq "continuous"} {
 	    pack [label $wrapf.bm -text [tr. "Between points:"]]
 	    pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
@@ -1154,6 +1153,7 @@ proc SeparateTimeExtras {} {
 	set table_entry(uftsi) $table_entry(oldUftsi)
 	set table_entry(values) [lrange $table_entry(values) 0 end-2]
     } else {
+	set table_entry(uftsi) unit
 	set table_entry(oldUftsi) {}
     }
 }
