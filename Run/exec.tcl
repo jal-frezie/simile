@@ -496,6 +496,16 @@ proc CExecuteModel {isRK start finish args} {
 }
 
 proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
+    if {[RunningInC $myNode]} {
+	CExecuteModel [expr ![string equal Euler $howInt]] \
+	    $start $finish $errLim $lmtPause $evtPause
+    } else {
+	catch {TclExecuteModel $myNode $howInt $start $finish $errLim \
+		   $lmtPause $evtPause} ::modelStopped
+    }
+}
+
+proc OldExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
     if {[catch {
 	if {[RunningInC $myNode]} {
 #	    set model_id $myNode
