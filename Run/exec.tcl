@@ -129,7 +129,7 @@ proc DeleteExptlCase {node caseId} {
     c_deletemodel $exptl_case($caseId)
     unset exptl_case($caseId)
 }
-proc NewExecuteTo {node current pause unitLength display foci \
+proc ExecuteTo {node current pause unitLength display foci \
 		    intMethod maxErr lmtPause evtMsg evtDisp} {
     set currentMode start
     set evtPause [expr {$evtMsg || $evtDisp}] ;# event sounds selected
@@ -211,8 +211,11 @@ proc NewExecuteTo {node current pause unitLength display foci \
 	}
 
 	if {!$first} {
-	    ShiftDisplays $::nodeId $payload [format %.8g $current] \
-		$display [expr {$timedDisp || $displayNow}]
+	    if {[ShiftDisplays $::nodeId $payload [format %.8g $current] \
+		     $display [expr {$timedDisp || $displayNow}]]} {
+		CJoinExecution
+		set currentMode stop
+	    }
 	    MarkUncached $payload
 	    FreeAll $payload
 	}
@@ -221,7 +224,7 @@ proc NewExecuteTo {node current pause unitLength display foci \
     return $currentMode
 }
 
-proc ExecuteTo {node current pause unitLength display foci \
+proc OldExecuteTo {node current pause unitLength display foci \
 		    intMethod maxErr lmtPause evtMsg evtDisp} {
     global dispDone actDone
 
@@ -489,7 +492,7 @@ proc CExecuteModel {isRK start finish args} {
     global model_id instance_id
     eval [list c_executemodel $model_id $instance_id $isRK $start $finish] $args
     after idle WatchModel 0 $finish
-    return [CJoinExecution] ;# comment out if using new ExecuteTo
+    # return [CJoinExecution] ;# comment out if using new ExecuteTo
 }
 
 proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
@@ -566,7 +569,7 @@ if {[info exists masterId]} { ;# we are in separate interp
     }
  
 # This one needs to wait till previous call finished    
-proc ShiftDisplays {nodeId args} {
+    proc ShiftDisplays {nodeId args} {
 	global dispDone
 	waitForDisps
 	if {$dispDone} { ;# helper has stuffed up

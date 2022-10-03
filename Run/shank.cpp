@@ -1878,11 +1878,12 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
 void ExecutingModel::set_wav_cmd(char* nodeId) {
   int spare, pipefd[2];
   pid_t pid;
-  char* argv[] = {"play", "--buffer", "2048", "-t", "raw", "-r", "44100",
+  const char* argv[] = {"play", "--buffer", "2048", "-t", "raw", "-r", "44100",
 			 "-b", "16", "-e", "signed-integer", "-c", "2",
 			 "-", NULL}; 
 
   if (!strlen(nodeId)) {
+    wavListen.id = 0;
     close(wavListen.mic);
     return;
   }
@@ -1898,7 +1899,7 @@ void ExecutingModel::set_wav_cmd(char* nodeId) {
     close(pipefd[1]); 
     
     // run the command
-    execvp(argv[0], argv); 
+    execvp(argv[0], (char**)argv); 
     perror("exec"); 
     return; 
   } 
