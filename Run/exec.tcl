@@ -151,7 +151,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	}
 
 	if {!$first} {
-	    set howAndWhen [CJoinExecution]
+	    puts [set howAndWhen [CJoinExecution $node]]
 	    set scaled_current [lindex $howAndWhen 1]
 
 	    set displayNow 0
@@ -211,9 +211,9 @@ proc ExecuteTo {node current pause unitLength display foci \
 	}
 
 	if {!$first} {
-	    if {[ShiftDisplays $::nodeId $payload [format %.8g $current] \
+	    if {[ShiftDisplays $node $payload [format %.8g $current] \
 		     $display [expr {$timedDisp || $displayNow}]]} {
-		CJoinExecution
+		CJoinExecution $node
 		set currentMode stop
 	    }
 	    MarkUncached $payload
@@ -383,12 +383,12 @@ proc FreeAll {load} {
     }
 }
 
-proc CResetModel {initTime args} {
+proc CResetModel {node initTime args} {
     global model_id instance_id modelStopped
     eval [list c_resetmodel $model_id $instance_id] $initTime $args
     after idle WatchModel 0 $initTime
 
-    return [CJoinExecution]
+    return [CJoinExecution $node]
     vwait modelStopped
     if {[llength $modelStopped]>2} { # error -- re-throw
 	error $modelStopped
@@ -419,7 +419,7 @@ proc ResetModel {myNode howInt initTime redo} {
     if {[catch {
 	if {[RunningInC $myNode]} {
 #	    set model_id $myNode
-	    CResetModel $initTime $preserveSliders $redo
+	    CResetModel $myNode $initTime $preserveSliders $redo
 	} else {
 	    TclResetModel $myNode $initTime $preserveSliders $redo
 	}
@@ -473,7 +473,7 @@ proc WatchModel {gui end} {
     set ::modelStopped $status
 }
 
-proc CJoinExecution {} {
+proc CJoinExecution {node} {
     global modelStopped
     
     if {![info exists modelStopped]} {
@@ -481,9 +481,14 @@ proc CJoinExecution {} {
     }
     set result $modelStopped
     unset modelStopped
-    if {[llength $result]>2 && \
-	    [lindex $result 0] eq "tcl_model_err"} { # error -- re-throw
-	error $result
+    if {[llength $result]>2} {
+	if {[lindex $result 0] eq "tcl_model_err"} { # error -- re-throw
+	    error $result
+	} elseif {[lindex $result 5] eq "event"} {
+	    return [list 2 $result]
+	} else {
+	    set result [list [ExplainError $node [lrange $result 1 end] unused] [lindex $result 3]]
+	}
     }
     return $result
 }
