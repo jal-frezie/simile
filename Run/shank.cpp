@@ -39,6 +39,7 @@ return (char*)lpMsgBuf;
     #include <setjmp.h>
     #include <dlfcn.h>
     #include <errno.h>
+    #include <unistd.h>
     #include <fcntl.h>
 
     #define LOAD_DLL safe_open
@@ -1725,6 +1726,7 @@ excpData* ExecutingModel::check_thread(int cancel) {
       //ping = pthread_cancel(topList->thredd); does not work on Mac
       // kill(getpid(), SIGINFO);
 #ifdef SIM_OPSYS_Darwin
+      // currently not working as means of detecting MacOS!
       pthread_mutex_unlock(&topList->mtx); // allow it to complete
       pthread_kill(topList->thredd, SIGINFO); // will be caught and cause exit
 #else
@@ -1909,8 +1911,10 @@ void ExecutingModel::set_wav_cmd(char* nodeId) {
   // of the process to the write end here). 
   close(pipefd[0]);
   wavListen.mic = pipefd[1];
-  fcntl(wavListen.mic, F_SETPIPE_SZ, 2048);
-  
+#ifndef __MACH__
+  // option does not exist in Darwin
+  fcntl(wavListen.mic, F_SETPIPE_SZ, 2048)
+#endif
   wavListen.id = modelSpec->getinfo(nodeId, &spare);
 }
 

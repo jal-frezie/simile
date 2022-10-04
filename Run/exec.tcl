@@ -151,7 +151,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	}
 
 	if {!$first} {
-	    puts [set howAndWhen [CJoinExecution $node]]
+	    set howAndWhen [CJoinExecution $node]
 	    set scaled_current [lindex $howAndWhen 1]
 
 	    set displayNow 0
