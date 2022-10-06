@@ -191,3 +191,5 @@ int put_int_in_pipe(TSPOUT, int);
 int put_double_in_pipe(TSPOUT, double);
 int put_array_in_pipe(TSPOUT, void*, int);
 int put_member_in_pipe(TSPOUT, int, const char*, int);
+
+void exit_sighandler(int);

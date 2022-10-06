@@ -59,11 +59,23 @@ int dummyunload(HINSTANCE unused) {
 // #endif
     #define WHAT_WENT_WRONG (char*)dlerror
     #define FIND_FUNCTION dlsym
+#endif
+
+// Definitions used in this code and the model code
+#include <dllcalls.h>
+// for talking to compiled models
+#include <backend.h>
+// class interface for c++ clients
+#include <6d.h>
+
 /* sig handler cos 64bit gcc code sigfpe's on 32bit machine */
 jmp_buf s_env;
 
-static void exit_sighandler(int x){
-  longjmp(s_env, x);
+void exit_sighandler(int whatSig){
+  if (whatSig == SIGFPE)
+    longjmp(s_env, whatSig);
+  else
+    pthread_exit(NULL);
 }
 
 void* safe_open(char* fileName) {
@@ -77,14 +89,6 @@ void* safe_open(char* fileName) {
     return dlopen(fileName, RTLD_NOW | RTLD_LOCAL);
   }
 }
-#endif
-
-// Definitions used in this code and the model code
-#include <dllcalls.h>
-// for talking to compiled models
-#include <backend.h>
-// class interface for c++ clients
-#include <6d.h>
 
 /*
  * Unix or Win64 (or Win32!) version: does not have min & max defined
@@ -1725,15 +1729,15 @@ excpData* ExecutingModel::check_thread(int cancel) {
     if (cancel>2) { // user has lost patience
       //ping = pthread_cancel(topList->thredd); does not work on Mac
       // kill(getpid(), SIGINFO);
-#ifdef SIM_OPSYS_Darwin
-      // currently not working as means of detecting MacOS!
+#ifdef __MACH__
+      // SIM_OPSYS_Darwin currently not working as means of detecting MacOS!
       pthread_mutex_unlock(&topList->mtx); // allow it to complete
       pthread_kill(topList->thredd, SIGINFO); // will be caught and cause exit
 #else
       pthread_cancel(topList->thredd); // does not work on Mac
-      clientResult->completed = TRUE;
 #endif
       pthread_join(topList->thredd, NULL);
+      clientResult->completed = TRUE;
       clientResult->excpNo = -101; // terminated
     } else {
       return clientResult;

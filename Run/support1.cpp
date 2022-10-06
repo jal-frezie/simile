@@ -1,6 +1,5 @@
 #include	<stdarg.h>
 #include        <signal.h>
-#include        <setjmp.h>
 
 #include <dllcalls.h>
 #include <backend.h>

@@ -151,7 +151,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	}
 
 	if {!$first} {
-	    set howAndWhen [CJoinExecution $node]
+	    set howAndWhen [CJoinExecution $node $scaled_next]
 	    set scaled_current [lindex $howAndWhen 1]
 
 	    set displayNow 0
@@ -213,7 +213,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	if {!$first} {
 	    if {[ShiftDisplays $node $payload [format %.8g $current] \
 		     $display [expr {$timedDisp || $displayNow}]]} {
-		CJoinExecution $node
+		CJoinExecution $node $scaled_next
 		set currentMode stop
 	    }
 	    MarkUncached $payload
@@ -384,16 +384,10 @@ proc FreeAll {load} {
 }
 
 proc CResetModel {node initTime args} {
-    global model_id instance_id modelStopped
+    global model_id instance_id
     eval [list c_resetmodel $model_id $instance_id] $initTime $args
-    after idle WatchModel 0 $initTime
 
-    return [CJoinExecution $node]
-    vwait modelStopped
-    if {[llength $modelStopped]>2} { # error -- re-throw
-	error $modelStopped
-    }
-    return $::modelStopped
+    return [CJoinExecution $node $initTime]
 }
 
 proc StartRemoteModels {myNode} {
@@ -450,7 +444,7 @@ proc RepeatReset {myNode time} {
     }
 }
 
-proc WatchModel {gui end} {
+proc OldWatchModel {gui end} {
     global model_id instance_id
     # should work for any model operation
     if {![catch {c_checkmodel $model_id $instance_id $gui} status]} {
@@ -463,28 +457,53 @@ proc WatchModel {gui end} {
 	}
 	set going [expr {[lindex $status 0]==2}]
 	if {$going} {
-	    WatchModel $gui $end
-	    return
+	    update
+	    return [WatchModel $gui $end]
 	}
     } else { puts $::errorInfo }
     if {[lindex $status 0]==1 && $gui==2} { # model step done but paused
 	lset status 0 0
     }
-    set ::modelStopped $status
+    return $status
 }
 
-proc CJoinExecution {node} {
-    global modelStopped
-    
-    if {![info exists modelStopped]} {
-	vwait modelStopped
+proc WatchModel {gui end} {
+    global model_id instance_id
+    while {1} {
+	if {[catch {c_checkmodel $model_id $instance_id $gui} status]} {
+	    puts $::errorInfo
+	    return $status
+	}
+	# puts "Send $gui recv \"$status\""
+	if {$status eq ""} { # has run to display point
+	    set status [list [expr {1-($gui==2)}] $end]
+	}
+	if {[llength $status] == 2} {
+	    # Outeract takes current time and colour (black/green/blue)
+	    # returns selected state (reset/start/stop/exit)
+	    set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
+	}
+	if {[lindex $status 0]!=2} {
+	    if {[lindex $status 0]==1 && $gui==2} { # model step done but paused
+		lset status 0 0
+	    }
+	    return $status
+	}
     }
-    set result $modelStopped
-    unset modelStopped
+}
+
+proc CJoinExecution {node until} {
+    if {[RunningInC $node]} {
+	set result [WatchModel 0 $until]
+    } else {
+	set resut ::modelStopped
+    }
+    update
     if {[llength $result]>2} {
-	if {[lindex $result 0] eq "tcl_model_err"} { # error -- re-throw
-	    error $result
-	} elseif {[lindex $result 5] eq "event"} {
+	#if {[lindex $result 0] eq "tcl_model_err"} { # error -- re-throw
+	#    error $result
+	#} else
+	if {[lindex $result 5] eq "event"} {
 	    return [list 2 $result]
 	} else {
 	    set result [list [ExplainError $node [lrange $result 1 end] unused] [lindex $result 3]]
@@ -496,7 +515,6 @@ proc CJoinExecution {node} {
 proc CExecuteModel {isRK start finish args} {
     global model_id instance_id
     eval [list c_executemodel $model_id $instance_id $isRK $start $finish] $args
-    after idle WatchModel 0 $finish
     # return [CJoinExecution] ;# comment out if using new ExecuteTo
 }
 

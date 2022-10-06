@@ -453,9 +453,9 @@ namespace eval runcontrol33857 {
 	global runState
         set runState($node,currentTime) [format %.8g $now]
 	if {$runState($node,currentTime) ne $runState($node,timeReached)} {
-	    # set ::updateLastDone [clock clicks -milliseconds]
+	    set ::updateLastDone [clock clicks -milliseconds]
+	    set runState($node,timeReached) $runState($node,currentTime)
 	}
-        set runState($node,timeReached) [format %.8g $now]
 	# so I can check if entry edited
 	set runState($node,execTime) [format %.8g [expr {$runState($node,expected_end)-$now}]]
 	if {$runState($node,run_length)} {
@@ -481,12 +481,8 @@ namespace eval runcontrol33857 {
 	set endRun [UpdateBar $myNode \
 			[expr $current/$runState($myNode,unitLength)] $col]
 	if {$col eq "black"} { # execution stopped, cancel stuck dialog
-	    if {[winfo exists $runState($myNode,cnvs).shortDlg]} {
-		SetDlgRes $runState($myNode,cnvs) no ;# closes short dlg
-		set ::dialogues(ack) 1 ;# closes long dlg
-	    } elseif {[info exists runState(abortJob)]} {
-		after cancel $runState(abortJob)
-		unset runState(abortJob)
+	    if {[info exists runState(abortJob)]} {
+		MakeAbortChoice $myNode $::runState($myNode,cnvs) expire
 	    }
 	} else { # still executing, display dialogue if time out
 	    if {$endRun == 2 && \
@@ -495,12 +491,11 @@ namespace eval runcontrol33857 {
 	    # pretend button never pushed
 	    # ShareAction $node 0
 	    # set runState($node,currentMode) start
-
-		set runState(abortJob) \
-		    [after idle [namespace code [list HandleAbortDlg $myNode]]]
+		set runState(abortJob) 1
+		HandleAbortDlg $myNode
 	    }
 	}
-	# UpdateIfFreezy
+	update ;# UpdateIfFreezy $myNode
 	return $endRun
     }
 
@@ -526,11 +521,25 @@ puts "cond: [string equal stop $runState($node,currentMode)] && \
 	return [string equal $runState($node,currentMode) exit]
     }
 
+    proc MakeAbortChoice {node zone action} {
+	global runState
+
+	if {$action eq "ok"} {
+	    set runState($node,currentMode) exit
+	} elseif {$action eq "cancel"} {
+	    set runState($node,currentMode) start
+	}
+	destroy $zone.shortDlg
+	unset runState(abortJob)
+    }
+    
     proc HandleAbortDlg {node} {
-	if {[Query model_stuck info execution {} ok] eq "ok"} {
-	    set ::runState($node,currentMode) exit
-	} ;# if not, it was auto closed by above proc at end of time step
-	unset ::runState(abortJob)
+	TtkLikeDialogue $::runState($node,cnvs).shortDlg \
+	    -parent $::runState($node,cnvs) \
+	    -message "Model is stuck, abort?" \
+	    -buttons {ok cancel} \
+	    -labels {ok OK cancel Cancel} \
+	    -command [namespace code [list MakeAbortChoice $node]]
     }
     
     proc RollSimulation { node } {

@@ -2611,7 +2611,8 @@ proc TtkLikeDialogue {dlg args} {
     foreach button $options(-buttons) {
 	incr column
 	eval [linsert $buttonOptions($button) 0 ttk::button $cmd.$button]
-        $cmd.$button configure -command [list SetDlgRes $options(-parent) $button]
+        $cmd.$button configure \
+	    -command [concat $options(-command) "$options(-parent)" "$button"]
     	grid $cmd.$button -row 0 -column $column \
 	    -padx [list 6 0] -sticky ew
 	grid columnconfigure $cmd $column -uniform buttons
@@ -2684,7 +2685,7 @@ proc Query {specifics icon helpRef parent opts} {
 	default {set moreCapt [tr. "More options..."]}
     }
     set key [lindex $specifics 0]
-    set mBoxCmd [list -icon $icon -command SetDlgRes \
+    set mBoxCmd [list -icon $icon -command [list SetDlgRes $parent] \
 		     -buttons [list $defButton more] \
 		     -default $defButton -cancel $defButton \
 		     -labels [list $defButton $defCapt more $moreCapt]]
