@@ -2685,7 +2685,7 @@ proc Query {specifics icon helpRef parent opts} {
 	default {set moreCapt [tr. "More options..."]}
     }
     set key [lindex $specifics 0]
-    set mBoxCmd [list -icon $icon -command [list SetDlgRes $parent] \
+    set mBoxCmd [list -icon $icon -command SetDlgRes \
 		     -buttons [list $defButton more] \
 		     -default $defButton -cancel $defButton \
 		     -labels [list $defButton $defCapt more $moreCapt]]

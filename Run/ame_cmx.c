@@ -1153,10 +1153,10 @@ FINDABLE int checkmodelCmd(ClientData clientData, Tcl_Interp *interp,
   excpData* errorBlk;
   Tcl_Obj* working;
   void* modelType, * modelHandle;
-  int error, cancel;
+  int error, cancel, max_wait;
 
-  if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id cancel");
+  if (argc != 5) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id cancel max_wait");
     return TCL_ERROR;
   }
   
@@ -1168,7 +1168,12 @@ FINDABLE int checkmodelCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
 
-  errorBlk = check_action(modelType, modelHandle, cancel);
+  error = Tcl_GetIntFromObj(interp, argv[4], &max_wait);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  errorBlk = check_action(modelType, modelHandle, cancel, max_wait);
   error = 1; //i.e., no error
   if (errorBlk) {
     if (errorBlk->excpNo == -100) { // model paused by GUI

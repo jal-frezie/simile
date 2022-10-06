@@ -337,7 +337,7 @@ EXTDEC void reset(void*, void*, double, int, int);
 EXTDEC void repeat_reset(void*, void*, double);
 EXTDEC void execute(void*, void*, int, double, double, double, 
 			 BOOLEAN, BOOLEAN);
-EXTDEC excpData* check_action(void*, void*, int);
+EXTDEC excpData* check_action(void*, void*, int, int);
 EXTDEC int setstep(void*, double, int);
 EXTDEC char* myexit(void*, void*);
 

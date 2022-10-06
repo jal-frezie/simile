@@ -144,7 +144,8 @@ proc ExecuteTo {node current pause unitLength display foci \
 	lappend ptClasses [GetCompProperty dummy Class $point]
     }
     set first 1
-
+    PlanRefresh
+    
     while {$currentMode eq "start"} {
 	if {($current-$pause)*$forward > -1e-12} {
 	    set currentMode stop
@@ -403,6 +404,10 @@ proc StartRemoteModels {myNode} {
     }
 }
 
+proc PlanRefresh {} {
+    set ::refreshDue [expr {[clock clicks -milliseconds]+40}]
+}
+
 proc ResetModel {myNode howInt initTime redo} {
     global model_id instance_id dispDone
 
@@ -410,6 +415,7 @@ proc ResetModel {myNode howInt initTime redo} {
     set preserveSliders [expr {$howInt-1}] ;# -1 selects new slider rollover
     # StartRemoteModels $myNode ; do here rather than in c++ to catch error msg
 
+    PlanRefresh
     if {[catch {
 	if {[RunningInC $myNode]} {
 #	    set model_id $myNode
@@ -470,24 +476,26 @@ proc OldWatchModel {gui end} {
 proc WatchModel {gui end} {
     global model_id instance_id
     while {1} {
-	if {[catch {c_checkmodel $model_id $instance_id $gui} status]} {
+	set maxWait [expr {$::refreshDue-[clock clicks -milliseconds]}]
+	if {[catch {c_checkmodel $model_id $instance_id $gui $maxWait} status]} {
 	    puts $::errorInfo
 	    return $status
 	}
-	# puts "Send $gui recv \"$status\""
+	#puts "Send $gui $maxWait recv \"$status\""
 	if {$status eq ""} { # has run to display point
 	    set status [list [expr {1-($gui==2)}] $end]
-	}
-	if {[llength $status] == 2} {
-	    # Outeract takes current time and colour (black/green/blue)
-	    # returns selected state (reset/start/stop/exit)
-	    set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
 	}
 	if {[lindex $status 0]!=2} {
 	    if {[lindex $status 0]==1 && $gui==2} { # model step done but paused
 		lset status 0 0
 	    }
 	    return $status
+	}
+	if {[llength $status] == 2} { # model still running
+	    # Outeract takes current time and colour (black/green/blue)
+	    # returns selected state (reset/start/stop/exit)
+	    set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
+	    PlanRefresh
 	}
     }
 }
@@ -498,7 +506,6 @@ proc CJoinExecution {node until} {
     } else {
 	set resut ::modelStopped
     }
-    update
     if {[llength $result]>2} {
 	#if {[lindex $result 0] eq "tcl_model_err"} { # error -- re-throw
 	#    error $result

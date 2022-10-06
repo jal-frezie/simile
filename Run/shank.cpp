@@ -1683,8 +1683,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   return NULL;
 }
 
-void incr_time(timespec *ts) {
-  ts->tv_nsec += 40000000; // 40ms
+void incr_time(timespec *ts, int by_ms) {
+  ts->tv_nsec += 1000000*by_ms;
   if (ts->tv_nsec >= 1000000000) {
     ts->tv_nsec -= 1000000000;
     ts->tv_sec += 1;
@@ -1712,7 +1712,7 @@ void ExecutingModel::signal_complete(xmList* args) {
     pthread_cond_signal(&args->cond);
 }
 
-excpData* ExecutingModel::check_thread(int cancel) {
+excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
   xmList *topList = &modelSpec->topArgs; // need to have persisted
   excpData* clientResult = &loadedInst->userStop;
   timespec ts;
@@ -1721,7 +1721,8 @@ excpData* ExecutingModel::check_thread(int cancel) {
   paused = (cancel>1);
   if (!clientResult->completed) { // cannot be as lock is on?
     clock_gettime(CLOCK_REALTIME, &ts);
-    incr_time(&ts);
+    if (max_wait>=0)
+      incr_time(&ts, max_wait);
     ping = pthread_cond_timedwait(&topList->cond, &topList->mtx, &ts);
     clientResult->timeOfCrime = lts[modelSpec->phases];
   }
@@ -3010,8 +3011,9 @@ void execute(void* modelType, void* modelHandle, int how_int,
   convenience->start_in_thread(execute_grp_instance);
 }
 
-excpData* check_action(void* modelType, void* modelHandle, int cancel) {
-  return ((ExecutingModel*)modelHandle)->check_thread(cancel);
+excpData* check_action(void* modelType, void* modelHandle,
+		       int cancel, int max_wait) {
+  return ((ExecutingModel*)modelHandle)->check_thread(cancel, max_wait);
 }
 
 // This deletes a model instance and/or a class -- both when used in Simile

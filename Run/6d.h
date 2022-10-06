@@ -265,7 +265,7 @@ class ExecutingModel
 
   void start_in_thread(void*(void*));
   void signal_complete(xmList*);
-  excpData* check_thread(int);
+  excpData* check_thread(int, int);
   
   //! get results from model by node serial number in general c format
   nodeValues* GetRawValues(HCOMP);
