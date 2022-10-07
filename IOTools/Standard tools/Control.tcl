@@ -480,68 +480,10 @@ namespace eval runcontrol33857 {
 
 	set endRun [UpdateBar $myNode \
 			[expr $current/$runState($myNode,unitLength)] $col]
-	if {$col eq "black"} { # execution stopped, cancel stuck dialog
-	    if {[info exists runState(abortJob)]} {
-		MakeAbortChoice $myNode $::runState($myNode,cnvs) expire
-	    }
-	} else { # still executing, display dialogue if time out
-	    if {$endRun == 2 && \
-		    [clock clicks -milliseconds]-$updateLastDone>3000 && \
-		    ![info exists runState(abortJob)]} {
-	    # pretend button never pushed
-	    # ShareAction $node 0
-	    # set runState($node,currentMode) start
-		set runState(abortJob) 1
-		HandleAbortDlg $myNode
-	    }
-	}
 	update ;# UpdateIfFreezy $myNode
 	return $endRun
     }
 
-# This is similar but is called if a model step is taking a long time, to check
-# if the run has been aborted.
-
-    proc RCAbortCheck {node} {
-	error obsolete
-	global updateLastDone runState
-puts "cond: [string equal stop $runState($node,currentMode)] && \
-		[clock clicks -milliseconds]-$updateLastDone>3000 && \
-	    	![info exists runState(abortJob)]"
-	if {[string equal stop $runState($node,currentMode)] && \
-		[clock clicks -milliseconds]-$updateLastDone>3000 && \
-		![winfo exists $runState($node,cnvs).shortDlg]} {
-	    # pretend button never pushed
-	    # ShareAction $node 0
-	    # set runState($node,currentMode) start
-
-	    set runState(abortJob) \
-		[after idle [namespace code [list HandleAbortDlg $node]]]
-	}
-	return [string equal $runState($node,currentMode) exit]
-    }
-
-    proc MakeAbortChoice {node zone action} {
-	global runState
-
-	if {$action eq "ok"} {
-	    set runState($node,currentMode) exit
-	} elseif {$action eq "cancel"} {
-	    set runState($node,currentMode) start
-	}
-	destroy $zone.shortDlg
-	unset runState(abortJob)
-    }
-    
-    proc HandleAbortDlg {node} {
-	TtkLikeDialogue $::runState($node,cnvs).shortDlg \
-	    -parent $::runState($node,cnvs) \
-	    -message "Model is stuck, abort?" \
-	    -buttons {ok cancel} \
-	    -labels {ok OK cancel Cancel} \
-	    -command [namespace code [list MakeAbortChoice $node]]
-    }
-    
     proc RollSimulation { node } {
         global errorInfo redoPhase runState updateLastDone
 	global pauseImg playImg debugImg hideQuery

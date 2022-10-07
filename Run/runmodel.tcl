@@ -644,6 +644,26 @@ proc ShiftDisplays {node payload current display doAll} {
     }
 }
 
+proc HandleStuck {node act} {
+    global runState
+    
+    switch $act {
+	do {
+	    if {[Query model_stuck info execution $runState($node,cnvs) ok] \
+		    eq "ok"} {
+		# set runState($node,currentMode) exit
+		# (not needed as will be bolted onto OK button cmd below)
+	    }
+	} arm {
+	    # make sure exit button works!
+	    set exitButton $runState($node,cnvs).shortDlg.f.cmd.ok
+	    $exitButton config -command "set runState($node,currentMode) exit; [$exitButton cget -command]"
+	} cancel {
+	    SetDlgRes $runState($node,cnvs) no
+	}
+    }
+}
+
 proc MarkUncached {payload} {
     global subbedPlots
 

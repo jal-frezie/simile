@@ -473,10 +473,16 @@ proc OldWatchModel {gui end} {
     return $status
 }
 
-proc WatchModel {gui end} {
-    global model_id instance_id
+proc WatchRecursive {node gui end} {
+    HandleStuck $node arm
+    set ::recursiveWatchResult [WatchModel $node $gui $end done]
+}
+
+proc WatchModel {node gui end stepStart} {
+    global model_id instance_id refreshDue recursiveWatchResult
+    set reached 0
     while {1} {
-	set maxWait [expr {$::refreshDue-[clock clicks -milliseconds]}]
+	set maxWait [expr {$refreshDue-[clock clicks -milliseconds]}]
 	if {[catch {c_checkmodel $model_id $instance_id $gui $maxWait} status]} {
 	    puts $::errorInfo
 	    return $status
@@ -486,6 +492,9 @@ proc WatchModel {gui end} {
 	    set status [list [expr {1-($gui==2)}] $end]
 	}
 	if {[lindex $status 0]!=2} {
+	    if {$stepStart eq "done"} {
+		HandleStuck $node cancel
+	    }
 	    if {[lindex $status 0]==1 && $gui==2} { # model step done but paused
 		lset status 0 0
 	    }
@@ -496,13 +505,23 @@ proc WatchModel {gui end} {
 	    # returns selected state (reset/start/stop/exit)
 	    set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
 	    PlanRefresh
+	    if {[lindex $status 1] != $reached} {
+		if {$stepStart ne "done"} {set stepStart $refreshDue}
+		set reached [lindex $status 1]
+	    }
+	    if {$gui==2 && $stepStart ne "done" && $refreshDue-$stepStart>2000} {
+		after 40 [list WatchRecursive $node $gui $end]
+		HandleStuck $node do
+		#vwait recursiveWatchResult
+		return $recursiveWatchResult
+	    }
 	}
     }
 }
 
 proc CJoinExecution {node until} {
     if {[RunningInC $node]} {
-	set result [WatchModel 0 $until]
+	set result [WatchModel $node 0 $until [clock clicks -milliseconds]]
     } else {
 	set resut ::modelStopped
     }
