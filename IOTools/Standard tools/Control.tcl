@@ -480,7 +480,8 @@ namespace eval runcontrol33857 {
 
 	set endRun [UpdateBar $myNode \
 			[expr $current/$runState($myNode,unitLength)] $col]
-	update ;# UpdateIfFreezy $myNode
+	after idle [list set backToWork 1]
+	vwait ::backToWork ;# UpdateIfFreezy $myNode
 	return $endRun
     }
 

@@ -618,7 +618,7 @@ proc ShiftDisplays {node payload current display doAll} {
     global helperTable runState
     if {[catch {
 	$helperTable(RunControl)::UpdateBar $node $current blue
-	UpdateIfFreezy $node
+	# UpdateIfFreezy $node
 	set result [TellAllHelpers $node $payload $doAll \
 			Display $current $display 1]
 	

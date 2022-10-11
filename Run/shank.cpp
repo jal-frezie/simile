@@ -1903,7 +1903,8 @@ void ExecutingModel::set_wav_cmd(char* nodeId) {
     // Hook stdin up to the read end of the pipe and close the write end of 
     // the pipe which is no longer needed by this process. 
     dup2(pipefd[0], STDIN_FILENO); 
-    close(pipefd[1]); 
+    close(pipefd[1]);
+    freopen("/dev/null", "w", stderr);
     
     // run the command
     execvp(argv[0], (char**)argv); 
