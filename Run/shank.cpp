@@ -75,7 +75,7 @@ void exit_sighandler(int whatSig){
   if (whatSig == SIGFPE)
     longjmp(s_env, whatSig);
   else
-    pthread_exit(NULL);
+    pthread_exit((void*)-whatSig);
 }
 
 void* safe_open(char* fileName) {
@@ -1719,6 +1719,10 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
   int ping;
 
   paused = (cancel>1);
+  if (pthread_kill(topList->thredd, 0)) { // health check failed
+    clientResult->completed = TRUE;
+    pthread_join(topList->thredd, (void**)&clientResult->excpNo);
+  }
   if (!clientResult->completed) { // cannot be as lock is on?
     clock_gettime(CLOCK_REALTIME, &ts);
     if (max_wait>=0)

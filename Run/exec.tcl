@@ -152,7 +152,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	}
 
 	if {!$first} {
-	    set howAndWhen [CJoinExecution $node $scaled_next]
+	    set howAndWhen [CJoinExecution $node $scaled_next 1]
 	    set scaled_current [lindex $howAndWhen 1]
 
 	    set displayNow 0
@@ -214,7 +214,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	if {!$first} {
 	    if {[ShiftDisplays $node $payload [format %.8g $current] \
 		     $display [expr {$timedDisp || $displayNow}]]} {
-		CJoinExecution $node $scaled_next
+		CJoinExecution $node $scaled_next 1
 		set currentMode stop
 	    }
 	    MarkUncached $payload
@@ -384,11 +384,11 @@ proc FreeAll {load} {
     }
 }
 
-proc CResetModel {node initTime args} {
+proc CResetModel {node initTime pS phase} {
     global model_id instance_id
-    eval [list c_resetmodel $model_id $instance_id] $initTime $args
+    eval [list c_resetmodel $model_id $instance_id] $initTime $pS $phase
 
-    return [CJoinExecution $node $initTime]
+    return [CJoinExecution $node $initTime $phase]
 }
 
 proc StartRemoteModels {myNode} {
@@ -408,7 +408,7 @@ proc PlanRefresh {} {
     set ::refreshDue [expr {[clock clicks -milliseconds]+40}]
 }
 
-proc ResetModel {myNode howInt initTime redo} {
+proc OldResetModel {myNode howInt initTime redo} {
     global model_id instance_id dispDone
 
     set dispDone 0 ;# allow execution to call back
@@ -438,6 +438,18 @@ proc ResetModel {myNode howInt initTime redo} {
 #    InteractGUI $myNode $initTime 0 ;# put somewhere else?
 # make sure time is scaled right if putting this back
     return $done
+}
+
+proc ResetModel {myNode howInt initTime redo} {
+    set preserveSliders [expr {$howInt-1}] ;# -1 selects new slider rollover
+    PlanRefresh
+    if {[RunningInC $myNode]} {
+#	    set model_id $myNode
+	set errList [CResetModel $myNode $initTime $preserveSliders $redo]
+    } else {
+	set errList [TclResetModel $myNode $initTime $preserveSliders $redo]
+    }
+    return [lindex $errList 0]
 }
 
 proc RepeatReset {myNode time} {
@@ -519,7 +531,7 @@ proc WatchModel {node gui end stepStart} {
     }
 }
 
-proc CJoinExecution {node until} {
+proc CJoinExecution {node until phase} {
     if {[RunningInC $node]} {
 	set result [WatchModel $node 0 $until [clock clicks -milliseconds]]
     } else {
@@ -529,6 +541,7 @@ proc CJoinExecution {node until} {
 	#if {[lindex $result 0] eq "tcl_model_err"} { # error -- re-throw
 	#    error $result
 	#} else
+	lset result 4 $phase
 	if {[lindex $result 5] eq "event"} {
 	    return [list 2 $result]
 	} else {
@@ -602,7 +615,7 @@ proc InMaster {cmd result} {
     thread::send -async $::masterId [lreplace $cmd 1 1 $::nodeId] $result
 }
 
-if {[info exists masterId]} { ;# we are in separate interp
+if {[info exists masterId]} { ;# we are in separate thread
     proc PullAction {inst} {
 	return [tsv::get action $inst]
     }

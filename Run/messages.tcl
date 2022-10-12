@@ -1008,6 +1008,10 @@ While %1$s %2$s during %3$s of the model%4$s, %5$s.
 To see information about the error relating to the model itself, use the 'debug' option. Continuing to run it normally may cause Simile to exit unexpectedly.}]
 set msgs(model_crash_full) [tr. {Original error message follows:
 %6$s}]
+set msgs(model_failure_title) [tr. {Model failed to execute}]
+set msgs(model_failure_message) [tr. {While %1$s %2$s during %3$s of the model%4$s, %5$s.}]
+set msgs(model_failure_detail) [tr. {You must redo the operation that failed before continuing to run the model.}]
+
 set msgs(model_pause_title) [tr. {Model execution paused}]
 set msgs(model_pause_message) [tr. {While %1$s %2$s during %3$s of the model%4$s, %5$s.}]
 

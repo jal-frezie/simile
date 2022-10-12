@@ -530,7 +530,7 @@ namespace eval runcontrol33857 {
 	    if {[ResetModel $node \
 		     [PrefValue custom(resetSliders) resetSliders] \
 		     [expr {$current*$runState($node,unitLength)}] \
-		     $redoPhase($node)]} {
+		     $redoPhase($node)]>0} {
 		if {$runState($node,modelRunning)<3} {
 		    set runState($node,modelRunning) 3
 		}
