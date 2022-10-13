@@ -548,7 +548,6 @@ proc CJoinExecution {node until phase} {
 	    set result [list [ExplainError $node [lrange $result 1 end] unused] [lindex $result 3]]
 	}
     }
-    puts "result: $result"
     return $result
 }
 
