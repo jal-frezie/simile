@@ -127,7 +127,7 @@ proc ExplainError {myNode errList origError} {
 	    set severity 0
 	} "abort request from the user" {
 	    set problem "the user chose to abort a long operation"
-	    set severity 0
+	    set severity -1
 	} discontinuity {
 	    set problem "there was a discontinuity which could not be dealt with by adaptive step size control"
 	    set severity 0

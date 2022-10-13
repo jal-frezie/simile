@@ -1923,7 +1923,7 @@ void ExecutingModel::set_wav_cmd(char* nodeId) {
   wavListen.mic = pipefd[1];
 #ifndef __MACH__
   // option does not exist in Darwin
-  fcntl(wavListen.mic, F_SETPIPE_SZ, 2048)
+  fcntl(wavListen.mic, F_SETPIPE_SZ, 2048);
 #endif
   wavListen.id = modelSpec->getinfo(nodeId, &spare);
 }

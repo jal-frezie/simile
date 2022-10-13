@@ -2612,7 +2612,7 @@ proc TtkLikeDialogue {dlg args} {
 	incr column
 	eval [linsert $buttonOptions($button) 0 ttk::button $cmd.$button]
         $cmd.$button configure \
-	    -command [concat $options(-command) "$options(-parent)" "$button"]
+	    -command [list $options(-command) "$options(-parent)" "$button"]
     	grid $cmd.$button -row 0 -column $column \
 	    -padx [list 6 0] -sticky ew
 	grid columnconfigure $cmd $column -uniform buttons
