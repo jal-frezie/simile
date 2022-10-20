@@ -11,6 +11,12 @@ EXPORT double get_version() {
   return(MDL_OBJ_VERS);
 } */
 
+jmp_buf env;
+
+static void err_sighandler(int x){
+  longjmp(env, x);
+}
+
 // old version declared wrapper function for loading by dlfcn
 // FINDABLE EXPORT evalmodel_type do_evalmodel;
 // FINDABLE EXPORT int do_evalmodel(InstanceOfModel* handle, int phase) {
@@ -21,7 +27,7 @@ int AME_model::do_evalmodel(int phase) {
    // handler. This has to be done on reset cos using the handler in some OS
    // causes it to be unset, and a reset can restart a crashed model.
   if (phase <= 0) {
-    signal(SIGSEGV,exit_sighandler);
+    signal(SIGSEGV,err_sighandler);
 #ifdef __MACH__
     signal(SIGINFO,exit_sighandler); // sent by gui thread on user abort
 #endif
@@ -30,7 +36,7 @@ int AME_model::do_evalmodel(int phase) {
   dts[0] = phase; // so external code can access it
   ctxCount = 0;
   activeEvtCount = 0;
-  if ((userStop.excpNo = 0 /* -setjmp(env) */)) {
+  if ((userStop.excpNo = -setjmp(env))) {
     return 1;
   } else {
     // abort request from user will not raise exception

@@ -36,7 +36,6 @@ return (char*)lpMsgBuf;
 #else
 
     #include <signal.h>
-    #include <setjmp.h>
     #include <dlfcn.h>
     #include <errno.h>
     #include <unistd.h>

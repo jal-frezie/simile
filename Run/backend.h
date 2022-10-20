@@ -1,3 +1,4 @@
+#include <setjmp.h>
 // special integers sent between mgr and worker threads
 #define WORKER_QUERY_GUI -1
 
