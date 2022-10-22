@@ -299,7 +299,7 @@ enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, Acts, Animate) :-
 	    enact_list(TransActs, forward),
 	    synchronize_graphics(Reshaped, Redrawn) */ ;
 	  Animate = no,
-	     enact_list(TransActs, forward)).
+	     enact_list(Model, TransActs, forward)).
 
 swap_all_ids(_Model, _Slot, [], IdSwaps, IdSwaps, []).
 swap_all_ids(Model, Slot, [Act | MoreActs], IdSwaps, NewIdSwaps,
@@ -380,10 +380,10 @@ current state over again (removed because no longer needed!) */
 
 enact_changes(Model, Slot, Dir) :-
 	(setof(Act, saved_state(Model, Slot, Act), Acts), !,
-	    enact_list(Acts, Dir);
+	    enact_list(Model, Acts, Dir);
 	true).
 
-enact_list(Acts, Dir) :-
+enact_list(Model, Acts, Dir) :-
 	member(Dir-Template-Action,
 	       [forward-remove(P)-my_retract(P),
 		reverse-add(P)-my_retract(P),
@@ -395,7 +395,7 @@ enact_list(Acts, Dir) :-
 	member(Template, Acts),
 	call(SeqCheck),
 	call(Action),
-	fail; true.
+	fail; output><tk_alter_model(Model).
 	       
 exist_pred(P) :- member(P, [is_node(_), is_arc(_)]).
 
