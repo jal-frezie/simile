@@ -68,7 +68,7 @@ proc tcl_insert {node newVs} {
 proc ExplainError {myNode errList origError} {
     global introspect
     
-    set severity -1
+    set severity -2
     set what [lindex $errList 0]
     set dest [lindex $errList 1]
     set mtime [lindex $errList 2]
@@ -180,8 +180,12 @@ proc ExplainError {myNode errList origError} {
 	}
     }
     switch -- $severity {
-	-1 {
+	-2 {
 	    set specifics [list model_crash $operation $target $action $timing \
+		       $problem $origError]
+	    set icon error
+	} -1 {
+	    set specifics [list model_failure $operation $target $action $timing \
 		       $problem $origError]
 	    set icon warning
 	} 0 {

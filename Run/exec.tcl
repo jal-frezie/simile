@@ -157,7 +157,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 
 	    set displayNow 0
 	    switch -- [lindex $howAndWhen 0] {
-		-1 {
+		-2 - -1 {
 		    set currentMode exit
 		} 0 {
 		    set currentMode stop
