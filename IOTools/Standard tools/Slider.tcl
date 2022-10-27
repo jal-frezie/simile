@@ -671,10 +671,12 @@ namespace eval slide139 {
 		if {[info exists widgetSeln(resetting)]} {
 		    WidgetSelnToC $node 0 
 		} else {
-		    set widgetSeln($node) [GetDefVal $data -1 0]
-		    set widgetSeln(old,$node) $widgetSeln($node)
+		    set new [GetDefVal $data -1 0]
+		    if {$new==$widgetSeln(old,$node)} continue
+		    set widgetSeln($node) $new
+		    set widgetSeln(old,$node) $new
 		    if {[llength $f]} {
-			ShowNthChoice $f.combo $widgetSeln($node)
+			ShowNthChoice $f.combo $new
 		    }
 		}
             } else {
@@ -687,12 +689,12 @@ namespace eval slide139 {
 		    if {[info exists widgetSeln(resetting)]} {
 			WidgetSelnToC $node 0 $index
 		    } else {
-			set widgetSeln($node,$index) \
-                            [GetDefVal $data $useDim $index]
-			set widgetSeln(old,$node,$index) \
-			    $widgetSeln($node,$index)
+			set new [GetDefVal $data $useDim $index]
+			if {$new==$widgetSeln(old,$node,$index)} continue
+			set widgetSeln($node,$index) $new
+			set widgetSeln(old,$node,$index) $new
 			if {[llength $f]} {
-			    ShowNthChoice $f.elt$index.c $widgetSeln($node,$index)
+			    ShowNthChoice $f.elt$index.c $new
 			}
 		    }
                 }

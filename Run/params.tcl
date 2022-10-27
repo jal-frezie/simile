@@ -75,7 +75,7 @@ proc AlignParamsToModel {topNode} {
     
     set ::bermudaTriangle {}
     foreach curVal [array names paramData /$topNode/*] {
-        if {[llength $paramData($curVal)]} {
+        if {![string is space $paramData($curVal)]} {
 	    set shortVal [TrimDTFromPath $curVal]
             set hitsPath [lindex [ExistCheck $topNode $shortVal /$topNode 0 \
 				      "current database"] 0]
