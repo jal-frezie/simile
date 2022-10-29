@@ -254,7 +254,9 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     BindPopup $slot.e param_source_$compName comment_$compName
     bind $slot.e <Return> [list $slot.tick invoke]
     bind $slot.e <FocusOut> [list $slot.tick invoke]
-    $slot.e configure -validate key -validatecommand "focus $slot.e; return 1"
+    $slot.e configure -validate key \
+	-validatecommand "[list focus $slot.e]; return 1"
+    # above makes sure field has focus after paste so leaving accepts data
     KoreanClick $slot.e 1 {}
     bind $slot.e <Double-1> [list EditValueComment $topFrame $compName]
 
