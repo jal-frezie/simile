@@ -1680,7 +1680,7 @@ FINDABLE int addWaveCommandCmd(ClientData clientData, Tcl_Interp *interp,
 
 int respond_to_param_req(void* clientRef, void* modelSlot, double reqTime,
 			  int paramId, int indCount, int* indices) {
-  printf("Unwanted parameter value request at %lf\n", reqTime);
+  printf("Unwanted parameter value request for %d at %lf\n", paramId, reqTime);
   Tcl_BackgroundError((Tcl_Interp*)clientRef);
   return 0; // failed to supply parameter value
 }
