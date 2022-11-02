@@ -239,7 +239,7 @@ itcl::class similescript::$newHelperClass {
 	    DeleteCase $myNode $compCases($myNode,$leaf)
 	    unset compCases($myNode,$leaf)
 	}
-	destroy $f
+	after 40 [list destroy $f]
     }
     
     proc InspLabelPopup {widget node capt} {

@@ -216,6 +216,9 @@ proc ExecuteTo {node current pause unitLength display foci \
 		     $display [expr {$timedDisp || $displayNow}]]} {
 		CJoinExecution $node $scaled_next 1
 		set currentMode stop
+	    } elseif {$::refreshDue-[clock clicks -milliseconds]<25} {
+		OuteractGUI $scaled_next 1
+		PlanRefresh
 	    }
 	    MarkUncached $payload
 	    FreeAll $payload
@@ -405,7 +408,7 @@ proc StartRemoteModels {myNode} {
 }
 
 proc PlanRefresh {} {
-    set ::refreshDue [expr {[clock clicks -milliseconds]+40}]
+    set ::refreshDue [expr {[clock clicks -milliseconds]+50}]
 }
 
 proc OldResetModel {myNode howInt initTime redo} {
