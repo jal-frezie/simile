@@ -11,7 +11,7 @@ EXPORT double get_version() {
   return(MDL_OBJ_VERS);
 } */
 
-jmp_buf env;
+thread_local jmp_buf env;
 
 static void err_sighandler(int x){
   longjmp(env, x);
