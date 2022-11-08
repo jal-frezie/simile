@@ -67,6 +67,8 @@ int dummyunload(HINSTANCE unused) {
 // class interface for c++ clients
 #include <6d.h>
 
+#include <portaudio.h>
+
 /* sig handler cos 64bit gcc code sigfpe's on 32bit machine */
 jmp_buf s_env;
 
@@ -74,7 +76,7 @@ void exit_sighandler(int whatSig){
   if (whatSig == SIGFPE)
     longjmp(s_env, whatSig);
   else
-    pthread_exit((void*)-whatSig);
+    pthread_exit((void*)(long int)-whatSig);
 }
 
 void* safe_open(char* fileName) {
@@ -336,7 +338,7 @@ void play_at_vol(const char* file, double level) {
 
 int latestContext[32];
 EvtCmdData* EvtCmdList = NULL;
-struct wavListen_t {int id; int mic;} wavListen = {.id=0, .mic=0};
+struct wavListen_t {int id; PaStream* mic;} wavListen = {.id=0, .mic=NULL};
 int contextDepth = 0;
 
 void report_events(int dimty, const int inds[], int evts,
@@ -1606,7 +1608,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     if (wavListen.id) {
       // moved a whole time step, do sound 
       nodeValues* ldata;
-      int16_t buffer[2];
+      float buffer[2];
       
       ldata = GetRawValues(wavListen.id);
       // send it
@@ -1616,14 +1618,22 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       if (*typeLocn == INTEGER)
 	printf("Sample %d at %lf\n", *((int*)ldata->contents), xtime);
       else { // it is real
-	buffer[0] = 32768*(*((double*)ldata->contents));
+	buffer[0] = *((double*)ldata->contents);
 	if (typeLocn == ldata->dimSpecs)
 	  buffer[1] = buffer[0];
 	else
-	  buffer[1] = 0.1*32768*(*(((double*)ldata->contents)+1));
+	  buffer[1] = *(((double*)ldata->contents)+1);
       }
-      write(wavListen.mic, buffer, 4);
       delete ldata;
+      // write(wavListen.mic, buffer, 4);
+      // printf("Sounding %f\n", buffer[0]);
+      PaError err = Pa_WriteStream(wavListen.mic, buffer, 1);
+      if (err != paNoError && err != -9980) { // ignore underrun if poss
+          fprintf( stderr, "An error occurred while using the portaudio stream\n" );
+	  fprintf( stderr, "Error number: %d\n", err );
+	  fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( err ) );
+	  userDefStop->excpNo = -89;
+      }
     }
 
     if (userDefStop->excpNo) break; // from outer loop
@@ -1884,8 +1894,8 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
     *insert = going;
   }
 }
-
-void ExecutingModel::set_wav_cmd(char* nodeId) {
+/*
+void ExecutingModel::old_set_wav_cmd(char* nodeId) {
   int spare, pipefd[2];
   pid_t pid;
   const char* argv[] = {"play", "--buffer", "2048", "-t", "raw", "-r", "44100",
@@ -1925,6 +1935,61 @@ void ExecutingModel::set_wav_cmd(char* nodeId) {
   fcntl(wavListen.mic, F_SETPIPE_SZ, 2048);
 #endif
   wavListen.id = modelSpec->getinfo(nodeId, &spare);
+}
+*/
+void ExecutingModel::set_wav_cmd(char* nodeId) {
+  PaStreamParameters outputParameters;
+  PaError err;
+  int spare;
+  
+  if (!strlen(nodeId)) {
+    wavListen.id = 0;
+    Pa_StopStream(wavListen.mic);
+    Pa_CloseStream(wavListen.mic);
+    Pa_Terminate();
+    return;
+  }
+
+  err = Pa_Initialize();
+  if( err != paNoError ) goto error;
+
+  outputParameters.device = Pa_GetDefaultOutputDevice(); /* default output device */
+
+  outputParameters.channelCount = 2;       /* stereo output */
+  outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
+  outputParameters.suggestedLatency = 0.050; // Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
+  outputParameters.hostApiSpecificStreamInfo = NULL;
+
+    
+  err = Pa_OpenStream(&(wavListen.mic),
+              NULL, /* no input */
+              &outputParameters,
+              44100,
+              1,
+	      0,
+              NULL, /* no callback, use blocking API */
+              NULL ); /* no callback, so no callback userData */
+  if( err != paNoError ) goto error;
+
+  err = Pa_StartStream(wavListen.mic);
+  if( err != paNoError ) goto error;
+
+  wavListen.id = modelSpec->getinfo(nodeId, &spare);
+  return;
+
+error:
+    fprintf( stderr, "An error occurred while using the portaudio stream\n" );
+    fprintf( stderr, "Error number: %d\n", err );
+    fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( err ) );
+    // Print more information about the error.
+    if( err == paUnanticipatedHostError )
+    {
+        const PaHostErrorInfo *hostErrorInfo = Pa_GetLastHostErrorInfo();
+        fprintf( stderr, "Host API error = #%ld, hostApiType = %d\n", hostErrorInfo->errorCode, hostErrorInfo->hostApiType );
+        fprintf( stderr, "Host API error = %s\n", hostErrorInfo->errorText );
+    }
+    Pa_Terminate();
+    return;
 }
 
 graph_data_type* ExecutingModel::GetSketchGraphs() {

@@ -1698,7 +1698,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	-accelerator "[tr. Alt]+x"
     AddAccelerator $winid file Close "<Alt-x>"
     if ![string match "Darwin" $tcl_platform(os)] {
-      $fm add command -label [tr. Exit] -command "MenuExit $topNode $c"
+	$fm add command -label [tr. Exit] -command "MenuExit $topNode $c" \
+	    -accelerator "$accKey+Q"
+	AddAccelerator $winid file [tr. Exit] <$accSym-q>
     }
     UnderlineUniquely $fm
     

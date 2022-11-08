@@ -1248,7 +1248,7 @@ proc InitExecThread {node} {
 	if {[string match Linux $::tcl_platform(os)]} {
 # try rebuilding 5d dll if in Linux -- c++ libraries may have changed!
 	    if {!$::headless && [PrefValue custom(hackBreak) hackBreak]} {
-		Query [list new_exec_needed "Updating 5-d library"] \
+		Query [list new_exec_needed $::errorInfo] \
 		    info top {} {ok}
 	    }
 	    set shank $::libDir/lib5d.so

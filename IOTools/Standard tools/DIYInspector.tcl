@@ -225,6 +225,7 @@ itcl::class similescript::$newHelperClass {
 	
 	set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
 		   [namespace current] 0]
+	puts "cp $clickPath f $f"
 	set leaf [lindex $clickPath end]
 	set endNodes [string first {, } $leaf]
 	if {$endNodes>=0} {
