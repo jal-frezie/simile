@@ -58,16 +58,6 @@ int dummyunload(HINSTANCE unused) {
 // #endif
     #define WHAT_WENT_WRONG (char*)dlerror
     #define FIND_FUNCTION dlsym
-#endif
-
-// Definitions used in this code and the model code
-#include <dllcalls.h>
-// for talking to compiled models
-#include <backend.h>
-// class interface for c++ clients
-#include <6d.h>
-
-#include <portaudio.h>
 
 /* sig handler cos 64bit gcc code sigfpe's on 32bit machine */
 jmp_buf s_env;
@@ -76,7 +66,7 @@ void exit_sighandler(int whatSig){
   if (whatSig == SIGFPE)
     longjmp(s_env, whatSig);
   else
-    pthread_exit((void*)(long int)-whatSig);
+    pthread_exit((void*)(intptr_t)-whatSig);
 }
 
 void* safe_open(char* fileName) {
@@ -90,6 +80,16 @@ void* safe_open(char* fileName) {
     return dlopen(fileName, RTLD_NOW | RTLD_LOCAL);
   }
 }
+#endif
+
+// Definitions used in this code and the model code
+#include <dllcalls.h>
+// for talking to compiled models
+#include <backend.h>
+// class interface for c++ clients
+#include <6d.h>
+
+#include <portaudio.h>
 
 /*
  * Unix or Win64 (or Win32!) version: does not have min & max defined
