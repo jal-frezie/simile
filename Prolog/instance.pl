@@ -3,7 +3,7 @@
 **** of a model class that is actually converted into runnable code.        ****
 *******************************************************************************/
 
-sicstus_module(instance, [instantiate_all/2, apply_minmax/3, sum_over_dims/3,
+sicstus_module(instance, [instantiate_all/2, apply_minmax/3, sum_over_dims/4,
 			  is_lookup_cond/2, path_section_for/6] ).
 
 sicstus_use_module([sp_only, m_class, inters, ame_gen, units, utility, m_update,
@@ -315,8 +315,8 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	 all(instance, is_instance, 
 	     [build(_Type), build(EvtNodes), build(_Load),
 	      build(EvtNames), build(_Dims), build(EvtRefs)]),
-	 (build_sum(EvtArgs, EvtTrigger), !;
-	   EvtTrigger = 1),
+	 (build_sum(EvtArgs, EvtTrigger, EvtMag), !;
+	   EvtTrigger = '"true"'),
 	(RType = state -> append(InputPairs, EvtPairs, AllowedInExp);
 	    AllowedInExp = InputPairs),
 	list_fragments_for_use(Node, FragSMs),
@@ -339,7 +339,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 			    top_down, TMHits, _),
 	    (TMHits = [] ->
 		 DoUpdate = UpdateExpr;
-	     DoUpdate = (trigger_magnitude('')=EvtTrigger, UpdateExpr)),
+	     DoUpdate = (trigger_magnitude('')=EvtMag, UpdateExpr)),
 	    FinalExpr = in_update(DoUpdate),
 	    is_instance(init_function, Result, InitExpr,
 			DefExpr, MagBase-Units, Init),
@@ -376,9 +376,9 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	      % of delay_for function in make_intermediates
 	      Pipe = elt(Path, _, PipeUnits),
 	      is_instance(internal, pipe(Node), none, Pipe, PipeUnits, DiffSt),
-	      FinalExpr = event(after(Wait, Eqn, Pipe), EvtTrigger),
+	      FinalExpr = event(after(Wait, Eqn, Pipe), EvtTrigger, EvtMag),
 	      Instances = [DiffSt, Instance];
-	     FinalExpr = event(SubbedExpr, EvtTrigger)),
+	     FinalExpr = event(SubbedExpr, EvtTrigger, EvtMag)),
 	     EndRefs = EvtRefs);
 	  RType = condition,
 	    (is_lookup_cond(SubbedExpr, CondExpr), !,
@@ -388,21 +388,21 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	      CondExpr = SubbedExpr,
 	        Void = '"false"',
 	        FType = function),
-	    (EvtTrigger = 1 ->
+	    (EvtTrigger = '"true"' ->
 	        FinalExpr = CondExpr;
 	      EndRefs = EvtRefs, 
-	        FinalExpr = (trigger_magnitude('')=EvtTrigger,
-			     choose(EvtTrigger '!=' 0, CondExpr, Void)));
+	        FinalExpr = (trigger_magnitude('')=EvtMag,
+			     choose(EvtTrigger, CondExpr, Void)));
 	  (RType = alarm, !,
 	    FType = al_function,
 	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, Later),
 	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Name, Later), _)) | _],
 	    EndRefs = EvtRefs;
 	   member(RType, [immigration, reproduction, loss]),
-	    \+ EvtTrigger = 1, !,
+	    \+ EvtTrigger = '"true"', !,
 	    FType = function,
-	    FinalExpr = (trigger_magnitude('')=EvtTrigger,
-			     choose(EvtTrigger '!=' 0, SubbedExpr, 0)),
+	    FinalExpr = (trigger_magnitude('')=EvtMag,
+			     choose(EvtTrigger, SubbedExpr, 0)),
 	    EndRefs = EvtRefs;
 	  FType = function,
 	    FinalExpr = SubbedExpr)),
@@ -508,23 +508,25 @@ havify(index(N) is Val and Inner, N, choose('"true"', Val, Inners)) :-
 	havify(Inner, M, Inners).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-build_sum([Solo], SoloArr) :-
-    sum_over_dims(Solo, _Units, SoloArr).
+build_sum([Solo], Occ, Mag) :-
+    sum_over_dims(Solo, _Units, Occ, Mag).
     %SoloArr = Solo.
-build_sum([First | Rest], FirstArr+Run) :-
-    sum_over_dims(First, _Units, FirstArr),
+build_sum([First | Rest], Oc1 or Occ, Mg1+Mag) :-
+    sum_over_dims(First, _Units, Oc1, Mg1),
     %FirstArr = First,
-    build_sum(Rest, Run).
+    build_sum(Rest, Occ, Mag).
 
-sum_over_dims(IP, ResDims, SD) :-
+sum_over_dims(IP, ResDims, Occ, Mag) :-
 	(IP = sofar(input(_,_,_, Units)); IP = input(_,_,_, Units)),
 				% in case of dashed influence
 	analyze_array(Units, Base, Dims),
 	(append(SummableDims, ResDims, Dims), \+ member(var, ResDims);
 	 append(Dims, _RepDims, ResDims), SummableDims = [];
 	throw(trigger_vs_event_dims_mismatch)), !,
+	(Base = boolean -> Flag = IP; Flag = (IP '!=' 0)),
+	any_dims(Dims, Flag, Occ),
 	(Base = boolean -> Num = choose(IP,1,0); Num = IP),
-	sum_dims(SummableDims, Num, SD).
+	sum_dims(SummableDims, Num, Mag).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %squirt_names_and_refs(Comp, Names, Refs) :-
@@ -697,6 +699,10 @@ bind_and_build_term(Node, [Arc|Arcs], Base, Dims, NewTerm, Refs) :-
 sum_dims([], Var, Var).
 sum_dims([_ | Rest], Middle, sum(Full)) :-
 	sum_dims(Rest, Middle, Full).
+
+any_dims([], Var, Var).
+any_dims([_ | Rest], Middle, any(Full)) :-
+	any_dims(Rest, Middle, Full).
 
 makearray_dims([], Var, Var).
 makearray_dims([Dim | Rest], Middle, makearray(Full, Dim)) :-

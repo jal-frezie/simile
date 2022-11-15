@@ -324,8 +324,7 @@ void play_at_vol(const char* file, double level) {
 
   // sendCommand("Play theWAV Wait");
 
-  sprintf(cmd, "cmdwavvol.exe \"%s\" %d &", file, (int)(1000*level));
-  printf(cmd);
+  sprintf(cmd, "..\\..\\System\\bin\\sox.exe -v%lf \"%s\" -d -q", level, file);
   WinExec(cmd, SW_HIDE);
 #elif __APPLE__
   sprintf(cmd, "afplay -v %f \"%s\" &", level, file);
@@ -749,6 +748,11 @@ int FileParamData::extract_elt(void* tgt, int* indxs) {
  // 	return 0; // emptied data as no time point reached
     //   }
     
+    if (myModelExec->resetting<1 && nodeLine->eval == INPUT)
+      if (!((VarParamData*)this)->curTimePoint &&
+	  (!myModelExec->keepingSliders || myModelExec->resetting==-2 ||
+	   ((VarParamData*)this)->timePoints))
+ 	return;
     // back copy now done in blocks afterwards to make record spaces, but
     // avoid forward copying first
     // memcpy(insertionPt, tgt, size_for_type());
@@ -1500,9 +1504,9 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       // printf("Freq %f; end %f; series %f; e_p %f xt %f\n", 
       // freq, *end, nextSeriesEvt, loadedInst->event_predict, xtime);
       aim_for = end;
-      if (first_pass && (aim_for-nextSeriesEvt)/freq>0) 
+      if (first_pass && (aim_for-nextSeriesEvt-minFreq/2)/freq>0) 
 	aim_for = nextSeriesEvt;
-      if ((aim_for-loadedInst->event_predict)/freq>0) 
+      if ((aim_for-loadedInst->event_predict-minFreq/2)/freq>0) 
 	aim_for = loadedInst->event_predict;
 
       // stretch interval to hit end if necssary

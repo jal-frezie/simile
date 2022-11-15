@@ -7,10 +7,23 @@
 #include <process.h>
 #define GETPID _getpid()
 #define PIPENEW(ENDS) CreatePipe(ENDS, ENDS+1, NULL, 0)
-#define PIPEREAD(SPOUT,BUF,COUNT) ReadFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
-#define PIPEWRITE(SPOUT,BUF,COUNT) WriteFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
+long unsigned int PIPEREAD(HANDLE spout, char* buf, int count) {
+  long unsigned int spareForCount;
+  int success = ReadFile(spout,buf,count,&spareForCount,NULL);
+  if (success)
+    return spareForCount;
+  return -1;
+}
+//#define PIPEREAD(SPOUT,BUF,COUNT) ReadFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
+long unsigned int PIPEWRITE(HANDLE spout, char* buf, int count) {
+  long unsigned int spareForCount;
+  int success = WriteFile(spout,buf,count,&spareForCount,NULL);
+  if (success)
+    return spareForCount;
+  return -1;
+}
+//#define PIPEWRITE(SPOUT,BUF,COUNT) WriteFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
 #define PIPECLOSE(SPOUT) CloseHandle(SPOUT)
-long unsigned int spareForCount;
 #else
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -22,8 +35,8 @@ long unsigned int spareForCount;
 #define PIPECLOSE(SPOUT) close(SPOUT)
 #endif
 
-#include <dllcalls.h>
-#include <backend.h>
+#include "dllcalls.h"
+#include "backend.h"
 
 // eventually all model support code should go here to avoid user building it
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
@@ -57,7 +70,7 @@ void InstanceOfModel::abort_check () {
       if (stat_check(partner))
 	throw -101;
     } else
-      PIPEWRITE(phoneHome, (char*)&valToSend, sizeof(int));	
+      int ness = PIPEWRITE(phoneHome, (char*)&valToSend, sizeof(int));	
   }
 }
 #ifdef SIM_PAR_EXEC
@@ -358,8 +371,8 @@ int get_array_from_pipe(TSPOUT where, void* what, int count) {
   return count;
 }
 int get_chars_from_pipe(TSPOUT where, char* what) {
-  unsigned char length;
-  get_BOOLEAN_from_pipe(where, &length); // length may be more than 1 byte for longer strs
+  char length;
+  int ness = PIPEREAD(where, &length, 1); // length may be more than 1 byte for longer strs
   get_array_from_pipe(where, what, length);
   what[length] = 0; // terminate the string
   // printf("Recvd %s\n", what);

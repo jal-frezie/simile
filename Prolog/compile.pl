@@ -1867,20 +1867,20 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	    GroundEqn = check_limit(ActEqn, Lower, Upper, Flags),
 	    AllActs = [Expr]; */
 	  Type = magnitude, !, % no derived events yet but same
-	    SourceEqn = event(ActEqn, TestEqn),
+	    SourceEqn = event(ActEqn, EnableEqn, MagEqn),
 	    replace_subexps(ActEqn, compile, find_fn, trigger_magnitude,
 			    top_down, TMHits, _),
 	    (TMHits = [] ->
-		 TriggerEqn = TestEqn,
+		 %TriggerEqn = TestEqn,
 		 LiveEqn = Chooser;
-	     TriggerEqn = trigger_magnitude(''),
-	         LiveEqn = (TriggerEqn=TestEqn, Chooser)),
+	     %TriggerEqn = trigger_magnitude(''),
+	         LiveEqn = (trigger_magnitude('')=MagEqn, Chooser)),
 	    
-	    inters><units_for_trigger_mag(Node, Base-TriggerEqnDims),
+	    %inters><units_for_trigger_mag(Node, _Base-TriggerEqnDims),
 	    
 	    % evolved from sum_over_dims -- get numerical!
-	    (Base = boolean -> Num = choose(TriggerEqn,1,0); Num = TriggerEqn),
-	    instance><sum_dims(TriggerEqnDims, Num, EnableEqn),
+	    % (Base = boolean -> Num = choose(TriggerEqn,1,0); Num = TriggerEqn),
+	    %instance><any_dims(TriggerEqnDims, TriggerEqn, EnableEqn),
 	    
 	    % (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
 	    (ActEqn = after(Wait, Eqn, Pipe) ->
@@ -1891,7 +1891,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	      UseList = RefList,
 	      nth(GraphId, Used, Dest),
 	      GroundEqn = flag_derived_event(GraphId, LiveEqn)),
-	    Chooser = choose(EnableEqn '!=' 0, Eqn, default(Eqn));
+	    Chooser = choose(EnableEqn, Eqn, default(Eqn));
 	    % if using 'happens', make sure it stays out of update phase
 	  (SourceEqn = with_phase(SmStep, _EvtElts, GroundEqn);
 	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),
@@ -1976,7 +1976,7 @@ choosify(Pairs, Default, Choice, Init) :-
 	(Evt = 'reset...', !,
 	    Init = Cons,
 	    Choice = Tail;
-	 sum_over_dims(Evt, [], EvtSum),
+	 sum_over_dims(Evt, [], EvtSum, _TM),
 	  Choice = choose(happens(EvtSum), Cons, Tail)).
 	
 
