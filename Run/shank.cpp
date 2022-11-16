@@ -752,7 +752,7 @@ int FileParamData::extract_elt(void* tgt, int* indxs) {
       if (!((VarParamData*)this)->curTimePoint &&
 	  (!myModelExec->keepingSliders || myModelExec->resetting==-2 ||
 	   ((VarParamData*)this)->timePoints))
- 	return;
+ 	return 1; // good data already there?
     // back copy now done in blocks afterwards to make record spaces, but
     // avoid forward copying first
     // memcpy(insertionPt, tgt, size_for_type());
