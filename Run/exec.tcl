@@ -408,7 +408,7 @@ proc StartRemoteModels {myNode} {
 }
 
 proc PlanRefresh {} {
-    set ::refreshDue [expr {[clock clicks -milliseconds]+40}]
+    set ::refreshDue [expr {[clock clicks -milliseconds]+50}]
 }
 
 proc OldResetModel {myNode howInt initTime redo} {
@@ -504,6 +504,11 @@ proc WatchModel {node gui end stepStart} {
 	}
 	#puts "Send $gui $maxWait recv \"$status\""
 	if {$status eq ""} { # has run to display point
+	    if {$refreshDue-[clock clicks -milliseconds]<25} {
+		# good time to update run control numbers
+		set gui [OuteractGUI $end 3]
+		PlanRefresh
+	    }
 	    set status [list [expr {1-($gui==2)}] $end]
 	}
 	if {[lindex $status 0]!=2} {
