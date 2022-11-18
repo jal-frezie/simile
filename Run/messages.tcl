@@ -407,7 +407,7 @@ set msgs(compile_failed_detail) [tr. {It may help to try the 'Debug' option.}]
 set msgs(compile_failed_full) [tr. {The error was: %1$s.}]
 
 set msgs(link_inconsistency_title) [tr. {Problem with model}]
-set msgs(link_inconsistency_message) [tr. {This model cannot be built because ot contains an inconsistent link equivalence: %1$s.}]
+set msgs(link_inconsistency_message) [tr. {This model cannot be built because submodel "%1$s" contains an inconsistent link equivalence: %2$s.}]
 set msgs(link_inconsistency_detail) [tr. {Please report this problem to your software supplier.}]
 
 set msgs(unspecified_title) [tr. {Model is incomplete}]
@@ -549,6 +549,10 @@ set msgs(missing_boundary_cond_detail) [tr. {This means that they form a loop of
 
 set msgs(bad_instance_lookup_title) [tr. {Problem with model}]
 set msgs(bad_instance_lookup_message) [tr. {This model includes an attempt to use base instance lookup for the association submodel "%1$s". This cannot be done because index(1) in this submodel is the index of a variable-membership submodel other than itself, and therefore not an array subscript.}]
+
+set msgs(has_hanging_influence_title) [tr. {Problem with model}]
+set msgs(has_hanging_influence_message) [tr. {Submodel "%1$s" contains component "%2$s" which has an incoming influence that is left hanging at a submodel boundary, so its equation has no value to use for formal parameter "%3$s".}]
+set msgs(has_hanging_influence_detail) [tr. {Connect a component with a value to the loose end of this influence, or edit the equation in order not to use it.}]
 
 set msgs(offer_restore_title) [tr. {Restore option}]
 set msgs(offer_restore_message) [tr. {Simile left a log file of unsaved changes when this model was last edited.}]

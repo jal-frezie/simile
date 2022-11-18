@@ -1669,13 +1669,12 @@ make_new_end_node(Submodel, DeadLink, Dir, NewInputName, NewUnit) :-
 	image><clear_shape(OldEnd, along),
 	    change_class(OldEnd, border, NodeType),
 	    NewEnd = OldEnd),
-	/* make sure its name is unique to the submodel -- currently not done,
-	if I put it in make sure I don't rename things just because of their
-	own ghosts 
-	setof(OldName, Member^(find_all_comps(Submodel, Member),
-			       caption_for(Member, OldName)), OldNames),
-	ensure_unused(NewInputName, UniqueInputName, OldNames), */
-	add_parameter(NewEnd, 0, name, NewInputName),
+	/* make sure its name is unique to the submodel -- currently done,
+	sure I don't rename things just because of their
+	own ghosts (unlikely for new node?) */
+	event><list_captions(Model, OldNames),
+        ensure_unused(NewInputName, UniqueInputName, OldNames, []),
+	add_parameter(NewEnd, 0, name, UniqueInputName),
 	(var(NewUnit), !;
 	    add_parameter(NewEnd, 0, units, NewUnit)),
 /* Not sure why we transferred val, min and max to floater -- last two

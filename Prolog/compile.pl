@@ -299,13 +299,13 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	     unify(KeepDir), unify(none)]).
 
 check_level_for_reds(TopNode, Submodel, Wrinkle) :-
-	find_all_comps(Submodel, VisEntity),
+	(Submodel = TopNode -> OuterText = '(none)';
+	 abs_path_name(Submodel, TopNode, OuterText)),
+	(find_all_comps(Submodel, VisEntity),
 	appears(VisEntity),
 	\+ VisEntity is_of_sort captionless,
 	\+ is_ghost(VisEntity),
 	\+ image><draws_complete(VisEntity),
-	(Submodel = TopNode -> OuterText = '(none)';
-	 abs_path_name(Submodel, TopNode, OuterText)),
 	caption_for(VisEntity, RedText),
 	menu><select_all_in(Submodel, base), /* make sure the red shows */
 	safe_tcl_eval([set, log, entered_exception], _),
@@ -321,20 +321,17 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	       Submodel has_part S2, find_all_comps(Submodel, F2);
 	    find_all_comps(Parent, F2), S2 = Submodel,
 	       Submodel has_part F1, find_all_comps(Submodel, S1)),
-	Wrinkle = link_inconsistency(Before-After);
+	Wrinkle = link_inconsistency(OuterText, Before-After);
 	by_record(Submodel),
 	\+ defines_membership(Submodel, _Param),
-	caption_for(Submodel, OuterText),
 	Wrinkle = no_defining_param(OuterText);
 	is_population(Submodel),
 	\+ (find_all_comps(Submodel, SmChannel),
 	       SmChannel is_of_sort value_outside),
-	caption_for(Submodel, OuterText),
 	Wrinkle = no_seed_param(OuterText);
 	\+ is_population(Submodel),
 	find_all_comps(Submodel, SmChannel),
 	SmChannel is_of_sort pop_only,
-	caption_for(Submodel, OuterText),
 	caption_for(SmChannel, InnerText),
 	Wrinkle = misplaced_channel(InnerText, OuterText);
 	contains(Submodel, Param),
@@ -361,15 +358,22 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	    find_name_host(Link, HostLink),
 	    HostLink has_attribute can_lookup of 1),
 	caption_for(Link, LinkText),
-	caption_for(Submodel, OuterText),
 	Wrinkle = lookup_not_allowed(OuterText, LinkText);
 	setof(Unitless, (find_all_comps(Submodel, Unitless),
 			 Unitless has_class_refinement units of any), BadBound),
 	all(ame_gen, caption_for, [build(BadBound), build(BadCapt)]),
-	(Submodel = TopNode -> OuterText = '(none)';
-	 abs_path_name(Submodel, TopNode, OuterText)),
 	Wrinkle = missing_boundary_cond(OuterText, BadCapt);
-	fail.
+	find_all_comps(Submodel, Fn),
+	  find_type(Fn, function),
+	  In is_connector from _ to Fn,
+	  initiates(In, Orig),
+	  \+ Orig is_of_sort has_function,
+	  \+ find_type(Orig, function),
+	  caption_for(Fn, HasHanger),
+	  In has_attribute role of Roles,
+	  member(use(_,_, HangerRef, _), Roles),
+	  Wrinkle = has_hanging_influence(OuterText, HasHanger, HangerRef);
+	fail).
 
 /*
 remove_redundant_equivs(Submodel, Equivs) :-
