@@ -526,7 +526,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 %		      (\+ TargetDims = 1; Scale = 1.0;
 %			  query(is_scale_factor(Target_unit, Scale),
 %				warning, top, [ok], ok)), !,
-		      nonvar(Unit_type),
+		      var(Unit_type), !; % e.g, hanging link with units any
 			get_conversion(1, Unit_type, Target_base, Scale),
 			(Severity = 2, !;
 			1 is Scale, !;
