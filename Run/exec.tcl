@@ -444,7 +444,8 @@ proc OldResetModel {myNode howInt initTime redo} {
 }
 
 proc ResetModel {myNode howInt initTime redo} {
-    set preserveSliders [expr {$howInt-1}] ;# -1 selects new slider rollover
+    set preserveSliders -[string is false $howInt]
+    # -1 selects new slider rollover
     PlanRefresh
     if {[RunningInC $myNode]} {
 #	    set model_id $myNode

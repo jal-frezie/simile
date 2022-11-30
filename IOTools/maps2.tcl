@@ -284,9 +284,9 @@ namespace eval ::maptools2 {
 	    if {$byng==$zapped} {
 		$cnv itemconfig $byng -outline black
 		set useNodes($winId,paintColour) $useNodes($winId,c$n)
-		set newVal [expr {int($useNodes($winId,min) + 0.5 + \
+		set newVal [expr {$useNodes($winId,min) + \
 					  $n * $useNodes($winId,range) \
-					  / ($useNodes($winId,nswatches)-1))}]
+					  / ($useNodes($winId,nswatches)-1)}]
 	    } else {
 		$cnv itemconfig $byng  -outline {}
 	    }
