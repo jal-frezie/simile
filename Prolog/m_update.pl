@@ -1517,7 +1517,9 @@ status_affects(Item, Affected) :-
 	    Affected has_class_refinement multiplication_spec of Multi,
 	    member(_Count=DimList, Multi),
 	    member(Ref, DimList),
-	    (Ref = size(Capt); Ref = size(Capt, _Nth)).
+	    (Ref = size(Capt); Ref = size(Capt, _Nth));
+	find_type(Item, influence), % for splicing
+            sequence(Item, Affected).
 
 /* OK, now here's the easy, teenage, New York version...
 

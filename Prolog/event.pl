@@ -1020,7 +1020,7 @@ doubleclick_on(Edit_thing) :-
 	    is_parameter(Control_thing, WasP),
 	    (get_av_pair(Control_thing, 0, units, OldUnits), !; OldUnits = no),
 	    do_equation_dialog(Wid, Control_thing),
-	    /* above fails if cancelled; if dialogue OK, then object is
+	    /* above fails NOT if cancelled; if dialogue OK, then object is
 	    complete. check here that the dims have changed */
 	    find_node_with_data(Edit_thing, Base, NewControlThing),
 	    (is_parameter(NewControlThing, WasP),

@@ -1567,14 +1567,18 @@ units_for_trigger_mag(Fn, MagUnits) :-
 %	 TrigMax = 0),
 %	ResLen is min(EDLen, TrigMax),
 	suffix(TDims, EvtDims), \+ member(var, TDims),
+	all(inters, use_int_for_boolean, [build(EvtBases), build(UseEvtBases)]),
 	length(EvtBases, NEvts),
 	(value(Any),
 	list_of(Any, NEvts, Anies),
-	try_units(Any, Anies, EvtBases, MagBase, _Convs), !;
+	try_units(Any, Anies, UseEvtBases, MagBase, _Convs), !;
 	    caption_for(Fn, Capt),
 	    throw(mixed_trigger_units(Capt, EvtUnits))),
-	(MagBase = boolean -> ReferMagBase = int; ReferMagBase = MagBase),
-	MagUnits = ReferMagBase-TDims). % triggers now summed or howmanytrued
+	% (MagBase = boolean -> ReferMagBase = int; ReferMagBase = MagBase),
+	MagUnits = MagBase-TDims). % triggers now summed or howmanytrued
+
+use_int_for_boolean(B, I) :-
+    member((B,I), [(boolean, int), (U,U)]), !.
 
 units_for_evt_antecedents(Fn, EvtUnit) :-
 	contains(Evt, Fn), % in case input for frag-defined fn,

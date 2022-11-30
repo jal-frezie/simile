@@ -14,7 +14,7 @@ sicstus_module(link, [is_connector/2, is_new_connector/2,
 	has_new_link_equivalences/2, has_link_equivalences/2,
 	has_changed_link_equivalences/2, no_longer_has_link_equivalences/2,
 	connects/3, initiates/2, terminates/2, equivalent_arcs/2,
-	sequence/2, follows/2, no_longer_has_connections/1] ).
+	sequence/2, no_longer_has_connections/1] ).
 
 sicstus_use_module( [database,utility,node,graphics,m_struct,library(lists)] ).
 
