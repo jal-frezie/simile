@@ -1618,7 +1618,10 @@ sever_links(Kill_obj, End) :-
 	initiates(Kill_obj, Start),
 	(continues_in(Kill_obj, End), NewEnd = start;
 	    continues_from(Kill_obj, End), NewEnd = finish),
-	caption_for(Start, NewCapt),
+	((Kill_obj = LastSect; sequence(Kill_obj, LastSect)),
+	    LastSect has_attribute role of DestData,
+	    member(use(_R, _S, NewCapt, _U), DestData) -> true;
+	 caption_for(Start, NewCapt)),
 	% min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
 	get_link_source_data(Kill_obj, End, _, SUnit, none, _,_),
 	(make_new_end_node(End, Kill_obj, NewEnd,
