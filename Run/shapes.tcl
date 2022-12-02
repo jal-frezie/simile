@@ -69,14 +69,18 @@ proc ShiftAll {shift args} {
 
 # generate appropriate stippling switches
 proc FuzzFor {w density} {
-    if {$density eq "gray50"} {
+    switch $density {
+      gray50 {
 	if {$w eq "ToSVG" || [tk windowingsystem] eq "aqua"} {
 	    set fuzz {-dash {1 1}}
 	} else {
 	    set fuzz {-stipple gray50}
 	}
-    } else {
+      } dashed {
+	  set fuzz {-dash -}
+      } default {
 	set fuzz {}
+      }
     }
     return $fuzz
 }
@@ -635,7 +639,7 @@ proc PutThinArrow { w ptz extras fatness density colourScheme tagSet} {
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
     set mptz [ScaleList $w $ptz]
-    eval {$w create line} $mptz {-arrow last \
+    eval {$w create line} $mptz [FuzzFor $w $density] {-arrow last \
                 -arrowshape [list [expr $features/6] [expr $features/5] \
                 [expr $features/16]] -smooth true -splinesteps $::splinePts \
 		-width $width -tags "$tagSet realwidth($width) has_info"}

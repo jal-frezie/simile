@@ -16,8 +16,8 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	enable_text_editing_in/1, disable_text_editing_in/1, select_text/2,
 	start_drawing_group/1, finish_drawing_group/1,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
-	image/7, submodel/13, bowtie/6, flow/6, influence/6,
-			ghost_link/6, relation/6, text/8,
+	image/7, submodel/13, bowtie/6, flow/7, influence/7,
+			ghost_link/7, relation/7, text/8,
 	shift_text/3, shift_obj/3, mark_obj/2, unmark_objs/1,
 			zap_route/3, zap_bowtie/3,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
@@ -254,22 +254,22 @@ bowtie(Wid, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutBowTie', Wid, L, T, R, B, Fatness, Density,
 		 Colour_scheme, br(Features)], _).
 
-flow(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
+flow(Wid, Coords, Stack, Fatness, _D, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutFatArrow', Wid, br(Singleton_list), Stack,
 		      Fatness, Colour_scheme, br(Features)], _).
 
-influence(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
+influence(Wid, Coords, Stack, Fatness, Density, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list), Stack,
-		       Fatness, {}, Colour_scheme, br(Features)], _).
+		       Fatness, Density, Colour_scheme, br(Features)], _).
 
-ghost_link(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
+ghost_link(Wid, Coords, Stack, Fatness, Density, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list), Stack,
-		       Fatness, gray50, Colour_scheme, br(Features)], _).
+		       Fatness, Density, Colour_scheme, br(Features)], _).
 
-relation(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
+relation(Wid, Coords, _Stack, Fatness, _D, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutRelation', Wid, br(Singleton_list),
 		       Fatness, Colour_scheme, br(Features)], _).

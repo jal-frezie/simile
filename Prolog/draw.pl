@@ -542,6 +542,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	get_link_route(Link, Coord_list),
 	untranslate(Coord_list, Trans, Screen_coords),
 	find_fatness(Trans, RelFatness),
+	density_for(Link, Density),
 	get_flash(Link, Colour_scheme),
         (Type = flow,
 	    find_base(Link, Base),
@@ -568,10 +569,9 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	     Num = Reps);
 	  Num = 1), !,
 	Draw_command =.. [Type, Wid, Screen_coords, Num,
-			RelFatness, Colour_scheme, [Link]],
+			RelFatness, Density, Colour_scheme, [Link]],
 	call(Draw_command),
 	((get_drawing_form(Link, LType, Bowtie),
-	  density_for(Link, Density),
 	  Density = {}, % prevent ghost controls on non-master sections
 	        untranslate(Bowtie, Trans, Screen_bowtie),
 		(LType = flow, !,
@@ -603,7 +603,7 @@ draw_incomplete(Line_type) :-
 	find_fatness(Trans, Fatness),
 	use_style_for(Line_type, Draw_type),
 	Draw_command =.. [Draw_type, Window_id, ScreenCoords, 1,
-			  Fatness, incomplete, [unfinished_line]],
+			  Fatness, {}, incomplete, [unfinished_line]],
 	call(Draw_command),
 	fail;
 	true.
