@@ -912,7 +912,8 @@ proc DrawBlob {w startX startY size switches} {
     set rad [expr {$size/4.0}]
     eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
 	      [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
-	      -width $width -extent 359.999} $switches
+	      -width $width -extent 359.999} \
+	      [string map {-stipple -outlinestipple} $switches]
 # works but will need to improve can2svg to cope with real extent
 #    $w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
 #	[expr {$startX+$rad}] [expr {$startY+$rad}] \
