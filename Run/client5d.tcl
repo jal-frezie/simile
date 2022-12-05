@@ -200,10 +200,10 @@ proc CountDistinctValuesById {iHandle outputId} {
 # Also rounds values to centre of nearest legend swatch so there are fewer
 # symbols and LZW works better
 
-proc GetBinaryValuesById  {iHandle outputNode minVal maxVal nswat} {
+proc GetBinaryValuesById  {iHandle outputNode minVal maxVal nswat isHex} {
     set ::model_id $::modelTypes([set ::instance_id $iHandle])
     set raw [GetHandle dummy $outputNode] ;# blob of 8-bit colours
-    set stac [extract_gif_tail $raw $minVal $maxVal]
+    set stac [extract_gif_tail $raw $minVal $maxVal [string is true $isHex]]
     ReleaseHandle dummy $raw
 
     append stac [binary format cc 0 0x3b]

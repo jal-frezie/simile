@@ -233,6 +233,17 @@ function setupHelperIn(win, species, textContent) {
 
 	case "slide139":
 	insert_helper(win, "sliders");
+	// this adds sliders for all the var params...delete them all
+	// and add back the ones we want
+	while (rangeTable.rows.length) {
+	    rangeTable.deleteRow(0);
+	}
+	for (var i=0; i<specArray.length; ++i) {
+	    var capt = tclListOfDimty(specArray[i],1).join(" ");
+	    var id = idFromCapt(capt);
+	    input = AddParamLineTo(rangeTable, id, capt, "slider");
+	    input.setAttribute("id", 'rng_' + id);
+	}
 	break;
 
 	case "plotterXY1_dot_0":
@@ -1941,12 +1952,12 @@ function makeGifHeader(cols, rows, cMap) {
 Grid5.prototype.acceptClick = function (nodeId) {
     var that = this; // no chance..
     if (this.status == "initializing") {
+	this.hex = (model_json[model_json[nodeId].parent].eval == "HONEYCOMB");
 	this.tgts[0] = {"format":"binary","node":nodeId,
 			"bottom":this.minVal,"top":this.maxVal,
-			"nswat":this.nswat};
+			"nswat":this.nswat,"hex":this.hex};
 	dims = model_json[nodeId].dims;
 	this.height = dims[0];
-	this.hex = (model_json[model_json[nodeId].parent].eval == "HONEYCOMB");
 	
 	if ((dims.length == 3 || (dims.length == 4 && parseInt(dims[2])==3)) &&
 	    !isNaN(parseInt(dims[0])) &&
@@ -1991,7 +2002,11 @@ Grid5.prototype.acceptClick = function (nodeId) {
 	       } else {
 		   arrInd = 0;
 	       }
-	       that.headerGIF = makeGifHeader(that.width, that.height, that.cMap);
+	       var gifWid = that.width;
+	       if (that.hex) {
+		   gifWid = 2*gifWid;
+	       }
+	       that.headerGIF = makeGifHeader(gifWid, that.height, that.cMap);
 
 	       that.status = "displaying";
 	       d3.select('#' + that.port + '_img')
@@ -2001,7 +2016,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
 	       if (that.hex) {
 		   d3.select('#' + that.port + '_img')
 		       .attr("transform","translate(0," + 1.5*that.height +
-		       ")scale(1.732,-1.5)"); 
+		       ")scale(0.866,-1.5)"); 
 	       }
 	   }); // Query
 

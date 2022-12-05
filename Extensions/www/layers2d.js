@@ -61,9 +61,18 @@ Layers2D.prototype.addLayer = function (type, state) {
     // now do any one-off processing a new layer requires
     switch (type) {
     case "RectGrid20131119":
+	this.hex = (model_json[model_json[layerSpec.color].parent].eval ==
+		    "HONEYCOMB");
 	grpAttr = "translate("
 	    +layerSpec.xoff+","+-layerSpec.yoff+")scale("
 	    +layerSpec.xscale+","+-layerSpec.yscale+")";
+	gifWid = layerSpec.ncol;
+	if (this.hex) {
+	    grpAttr = "translate("
+	    +layerSpec.xoff+","+(0.75*layerSpec.nrow-layerSpec.yoff)+")scale("
+		+layerSpec.xscale+","+(-2.0*layerSpec.yscale)+")";
+	    gifWid *= 2;
+	}
 	layerSpec.gLayer.attr("transform",grpAttr);
 	layerSpec.image = layerSpec.gLayer.append("svg:image")
 	    .attr("width",layerSpec.ncol + "px")
@@ -74,14 +83,14 @@ Layers2D.prototype.addLayer = function (type, state) {
 	colourIdx = this.tgts.indexOf(layerSpec.color);
 	layerSpec.gifReq = {"format":"binary","node":this.tgts[colourIdx],
 			    "bottom":layerSpec.min,"top":layerSpec.max,
-			    "nswat":layerSpec.nswatches};
+			    "nswat":layerSpec.nswatches,"hex":this.hex};
 	this.tgts[colourIdx] = layerSpec.gifReq;
 	// then make legend for display
 	swatArr = [];
 	for (var i=0; i<=layerSpec.nswatches; ++i)
 	    swatArr.push(layerSpec["c" + i]);
 	layerSpec.cMap = ColorMapFromSwatches(swatArr);
-	layerSpec.gifHeader = makeGifHeader(layerSpec.ncol, layerSpec.nrow,
+	layerSpec.gifHeader = makeGifHeader(gifWid, layerSpec.nrow,
 					    layerSpec.cMap);
 	break;
     case "Polygon20131026": // and maybe others
@@ -129,8 +138,8 @@ Layers2D.prototype.addLayer = function (type, state) {
 	}
 	break;
     case "InputPointer20210609":
-    layerSpec.domElt = d3.select('#' + this.port + '_diag').node();
-    layerSpec.actCount = 0;
+	layerSpec.domElt = d3.select('#' + this.port + '_diag').node();
+	layerSpec.actCount = 0;
 	layerSpec.domElt.addEventListener("mousedown",startStroke);
 	layerSpec.domElt.addEventListener("mousemove",continueStroke);
 	layerSpec.domElt.addEventListener("mouseup",finishStroke);
@@ -351,9 +360,10 @@ Layers2D.prototype.resize = function (x,y) {
     // in, or do this inline -- works fine if done here!
     if (this.scaleGrp.attr("transform") == null) {
 	bbox = this.scaleGrp[0][0].getBBox();
-	// console.log(JSON.stringify(bbox));
+	//console.log("x " + bbox.x + " y " + bbox.y + " w " + bbox.width +
+	//	   " h " + bbox.height + " spc " + w + "," + h);
 	if (bbox.width==0) return;
-	initScale = w/bbox.width;
+	initScale = Math.min(w/bbox.width,h/bbox.height);
 	this.diagZoom.translate([-initScale*bbox.x,-initScale*bbox.y])
 	    .scale(initScale);
 	grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+

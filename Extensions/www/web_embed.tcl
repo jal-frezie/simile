@@ -75,7 +75,8 @@ proc AnyValue {iH itm max} {
 	set hdl [handle_data dummyMHandle $iH $bits(node)]
 	switch $bits(format) {
 	    binary {
-		set stac [extract_gif_tail $hdl $bits(bottom) $bits(top)]
+		set stac [extract_gif_tail $hdl $bits(bottom) $bits(top) \
+			      [string is true $bits(hex)]]
 		append stac [binary format cc 0 0x3b]
 		set resp [base64 -mode encode -- $stac]
 	    } distinct {

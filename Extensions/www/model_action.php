@@ -38,7 +38,8 @@ function do_query($req) {
 
          case "binary":
          $val = doTcl("GetBinaryValuesById [set iH] " . $req->node
-   	           . " " . $req->bottom . " " . $req->top . " " . $req->nswat);
+   	           . " " . $req->bottom . " " . $req->top . " " . $req->nswat
+		   . " " . $req->hex);
          break;
 
          case "distinct":

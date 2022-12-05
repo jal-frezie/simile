@@ -893,8 +893,9 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     if (rpt_seq) {
       tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
       for (count=size/2-rpt_seq;count>=0;count-=rpt_seq) {
-	memcpy(tgt + (2*count+rpt_seq), tgt + count, rpt_seq); 
-	memcpy(tgt + 2*count, tgt + count, rpt_seq);
+	memset(tgt + 2*count, tgt[count], 2*rpt_seq);
+	//memcpy(tgt + (2*count+rpt_seq), tgt + count, rpt_seq); 
+	//memcpy(tgt + 2*count, tgt + count, rpt_seq);
       }
     }
     break;
@@ -918,6 +919,36 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     break;
 
   case 2:
+    unsigned char *newContents;
+    int pxSize;
+    if (rpt_seq) {
+      switch (baseType) {
+      case FLAG:
+	pxSize = 1;
+	break;
+      case REAL:
+	pxSize = sizeof(double);
+	break;
+      default:
+	pxSize = sizeof(int);
+      }
+      int rows = accessTool->dimSpecs[0];
+      int cols = accessTool->dimSpecs[1];
+      newContents = malloc(pxSize*(size+1));
+      int row,col,on,off;
+      for (row = 0; row < rows; ++row) {
+	for (col = 0; col < cols; ++col) {
+	  off = pxSize*(cols*row+col);
+	  on = 2*off + pxSize*((1+row)%2);
+	  memcpy(newContents+on, accessTool->contents+off, pxSize);
+	  memcpy(newContents+(on+pxSize), accessTool->contents+off, pxSize);
+	  //memset(newContents+off, *(accessTool->contents+off), 1);
+	}
+	//printf("Row end at %d\n", on+pxSize);
+      }
+      accessTool->dimSpecs[1] = 2*cols;
+    } else
+      newContents = accessTool->contents;
     encState = (lzwParms*)malloc(sizeof(lzwParms));
     encState->cbData.baseType = baseType; 
     encState->cbData.valfor0 = &valfor0;
@@ -928,10 +959,12 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     encState->code = 256; // next char will be 1st, this starts output
     encState->next_code = 257; // resulting code never used
     encState->tail = encState->tbits = encState->inBloc = 0;
-    call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+    call_for_each_val(accessTool->dimSpecs, newContents, 0,
 		      (valCallback*)growLZW, encState);
     write_bits(encState, encState->code);
     write_bits(encState, 257);
+    if (rpt_seq)
+      free(newContents);
     free(encState);
     break;
   }
