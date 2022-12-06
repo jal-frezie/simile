@@ -63,21 +63,19 @@ Layers2D.prototype.addLayer = function (type, state) {
     case "RectGrid20131119":
 	this.hex = (model_json[model_json[layerSpec.color].parent].eval ==
 		    "HONEYCOMB");
+	spread=1;
+	if (this.hex) {
+	    spread *= 2;
+	}
+	gifWid=spread*layerSpec.ncol;
 	grpAttr = "translate("
 	    +layerSpec.xoff+","+-layerSpec.yoff+")scale("
-	    +layerSpec.xscale+","+-layerSpec.yscale+")";
-	gifWid = layerSpec.ncol;
-	if (this.hex) {
-	    grpAttr = "translate("
-	    +layerSpec.xoff+","+(0.75*layerSpec.nrow-layerSpec.yoff)+")scale("
-		+layerSpec.xscale+","+(-2.0*layerSpec.yscale)+")";
-	    gifWid *= 2;
-	}
-	layerSpec.gLayer.attr("transform",grpAttr);
+	    +layerSpec.xscale/spread+","+-layerSpec.yscale+")";
 	layerSpec.image = layerSpec.gLayer.append("svg:image")
-	    .attr("width",layerSpec.ncol + "px")
-	    .attr("height",layerSpec.nrow + "px")
+	    .attr("width",gifWid)
+	    .attr("height",layerSpec.nrow)
 	    .attr("pointer-events", "none")
+	    .attr("transform",grpAttr)
 	    .attr("xlink:href", "images/bigsimile.gif");
 	// find tgts entry for colour and sub it with gif data request
 	colourIdx = this.tgts.indexOf(layerSpec.color);
