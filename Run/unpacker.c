@@ -815,6 +815,8 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   char* nodeId;
   char* myClientData[32];
 
+  unsigned char *newContents;
+  int pxSize;
   double *dDiscList;
   int discCount;
   lzwParms *encState;
@@ -919,8 +921,6 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     break;
 
   case 2:
-    unsigned char *newContents;
-    int pxSize;
     if (rpt_seq) {
       switch (baseType) {
       case FLAG:

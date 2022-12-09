@@ -274,7 +274,8 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	        $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10] $generic]
 	set stackSide \
 	    [eval {$w create arc} [ShiftAll $stackDistance $ml $mt $mr $mb] \
-		 {-style arc -start 225 -extent 180} $generic]
+		 {-style arc -start 225 -extent 180} \
+		 [string map {-stipple -outlinestipple} $generic]]
 	if {$stackDepth} {
             $w lower $stackSide $p1
             set p1 $stackSide
