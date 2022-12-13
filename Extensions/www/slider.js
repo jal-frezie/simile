@@ -34,9 +34,22 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
     cell.appendChild(label);
     label.innerHTML = ParmTree.slice(1);
     cell = row.insertCell(-1);
+      if (tool == "slider") {
+	  if (model_json[id].type.startsWith("ENUM")) {
+	      input = document.createElement("SELECT");
+	      cell.appendChild(input);
+	      var eMembers = model_json[id].trans.slice(-1)[0];
+	      for (var entry=1; entry < eMembers.length; ++entry) {
+		  opt = document.createElement("OPTION");
+		  opt.innerHTML = opt.value = eMembers[entry];
+		  input.appendChild(opt);
+	      }
+	      SetSliderValue(input, id, values_json[id].slice(1,-1));
+	      cb = new Function("zap", "toModel(zap.target, '" + id + "');");
+	      input.addEventListener("change", cb);
+	  } else {
     input = document.createElement("INPUT");
     cell.appendChild(input);
-    if (tool == "slider") {
 	min = model_json[id].min;
 	max = model_json[id].max;
 	input.insertAdjacentHTML('beforebegin', min);
@@ -74,17 +87,20 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
         cb = new Function("zap", "transfer(zap.target, '" + id + "');");
 	input.addEventListener("input", cb);
 	cb = new Function("zap", "toModel(zap.target, '" + id + "');");
-	input.addEventListener("change", cb);
+	      input.addEventListener("change", cb);
+	  }
     } else {
+    input = document.createElement("INPUT");
+    cell.appendChild(input);
 	input.setAttribute("type", "text");
     }
     return input;
   }
 }      
 
-function GetSliderValue(widget) {
+function GetSliderValue(widget,id) {
     //    widget = document.getElementById("rng_" + id);
-    id = widget.id.substr(4);
+    // id = widget.id.substr(4);
     if (model_json[id].type == "REAL") {
 	return ((1000-widget.value)*model_json[id].min +
 		widget.value*model_json[id].max)/1000;
@@ -104,8 +120,15 @@ function SetSliderValue(widget, id, value) {
 
 function transfer(zapTgt, id) {
 //    alert("zap " + zapTgt + " entry " + id);
-    document.getElementById('mtr_' + id).value = GetSliderValue(zapTgt);
+    document.getElementById('mtr_' + id).value = GetSliderValue(zapTgt,id);
     toModel(zapTgt, id);
+}
+
+function toModel(zapTgt, id) {
+    parmBlock = {};
+    parmBlock[model_json[id].captpath] = 'NOW ' + GetSliderValue(zapTgt,id);
+    sendValues(parmBlock);
+//    model_reset(1);
 }
 
 function Sliders (port) {

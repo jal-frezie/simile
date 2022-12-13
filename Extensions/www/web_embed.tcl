@@ -179,12 +179,17 @@ proc ResponseTo {paramList} {
 		    # include path too
 		    foreach {prop key} \
 			{equation Spec comment Comment eval Eval min MinVal \
-			     max MaxVal trans Trans type Type units Units} {
+			     max MaxVal type Type units Units} {
 			set jBit [GetCCompProperty $key $id]
 			lappend dict $prop \"[Sanitize $jBit]\"
 		    }
 		    lappend dict dims \
 			[JsonifyArray [GetCCompProperty Dims $id]]
+		    set transList {}
+		    foreach level [GetCCompProperty DUMMY Trans $id] {
+			lappend transList [JsonifyArray $level]
+		    }
+		    lappend dict trans [JsonifyArray $transList]
 		    lappend ency $id [JsonifyDict $dict]
 		} else { ;# Report
 		    set goodJSON [AnyValue $service($params(base)) $id 1024]

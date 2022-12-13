@@ -904,13 +904,6 @@ function HtmlEncode(s)
   return s;
 }
 
-function toModel(zapTgt, id) {
-    parmBlock = {};
-    parmBlock[model_json[id].captpath] = 'NOW ' + GetSliderValue(zapTgt);
-    sendValues(parmBlock);
-//    model_reset(1);
-}
-
 function FileParams (port) {
 // Call the parent constructor
 //   DisplayTool.call(this);
