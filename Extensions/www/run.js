@@ -69,7 +69,7 @@ function prettify (data, sub) {
 	    return "{" + res.join(" ") + "}";
 	else
 	    return res.join(" ");
-    } else if (isFinite(data)) {
+    } else if (typeof(data) == "number") {
 	return squeezeDigits(data, 10);
     } else {
 	return data;

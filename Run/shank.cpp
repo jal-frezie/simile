@@ -2008,10 +2008,9 @@ void ExecutingModel::ExitInstance () {
 nodeValues* ExecutingModel::GetRawValues(HCOMP nodeId) {
   int sparePath[32], fullDims[32], indices[32];
   char spareCapt[255], *insertionPt;
-  enum_type_data *spareTypes[32]; // might need for reading files
   nodeValues* newBlk;
 
-  modelSpec->SearchInfo(nodeId, spareCapt, fullDims, spareTypes);
+  modelSpec->SearchInfo(nodeId, spareCapt, fullDims, newBlk->enumKey);
   newBlk = new nodeValues;
   // find first dimension not a positive integer
   translate_dims(fullDims, indices, newBlk->dimSpecs, 

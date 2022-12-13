@@ -353,6 +353,7 @@ EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, interact_gui_type*,
 
 typedef struct nodeValues_t {
   int dimSpecs[32];
+  enum_type_data* enumKey[32];
   char* contents;
 } nodeValues;
 

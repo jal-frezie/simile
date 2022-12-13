@@ -175,12 +175,13 @@ proc GetJsonValuesById {iHandle outputId limit} {
     set hdl [handle_data dummyMHandle $iHandle $outputId]
     set loseZeros [expr {[lsearch {EVENT SQUIRT} \
 			      [GetCCompProperty DUMMY Class $outputId]]+1}]
+    set showEnums 1
     set count [count_values $hdl $loseZeros]
     if {$count<$limit/5} {
-	set result [extract_json $hdl $count $loseZeros]
+	set result [extract_json $hdl $count $loseZeros $showEnums]
     } else {
 	set tail [expr {$limit/10}]
-	set result [string range [extract_json $hdl $tail $loseZeros] 0 end-1],[string range [extract_json $hdl -$tail $loseZeros] 1 end]
+	set result [string range [extract_json $hdl $tail $loseZeros $showEnums] 0 end-1],[string range [extract_json $hdl -$tail $loseZeros $showEnums] 1 end]
     }
     free_data_handle $hdl
     return $result

@@ -87,7 +87,7 @@ proc AnyValue {iH itm max} {
 	set hdl [handle_data dummyMHandle $iH $itm]
 	set loseZeros [expr {[lsearch {EVENT SQUIRT} \
 				  [GetCCompProperty Class $itm]]+1}]
-	set resp [extract_json $hdl $max $loseZeros]
+	set resp [extract_json $hdl $max $loseZeros 1]
 	# set resp [JsonifyAny [thread::send $::masterId [list extract_list $hdl $max $loseZeros]]]
 	
     }
@@ -179,7 +179,7 @@ proc ResponseTo {paramList} {
 		    # include path too
 		    foreach {prop key} \
 			{equation Spec comment Comment eval Eval min MinVal \
-			     max MaxVal type Type units Units} {
+			     max MaxVal trans Trans type Type units Units} {
 			set jBit [GetCCompProperty $key $id]
 			lappend dict $prop \"[Sanitize $jBit]\"
 		    }
