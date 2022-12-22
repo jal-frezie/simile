@@ -230,12 +230,12 @@ proc ResponseTo {paramList} {
 	    set result [ParamsFromGUI $service($params(base))]
 	} GetParamVals {
 	    # get strings from GUI side as we have no functions to get from c++
-	    set prmStrs [thread::send $::masterId [list array get ::paramData]]
+	    set prmStrs [array get ::paramData]
 	    set result [JsonifyDict $prmStrs]
 	} Reset {
 	    set iH $service($params(base))
 	    set i 0
-	    foreach dt [split $params(step) +] {
+	    foreach dt [split $params(step) " "] {
 		c_setstepmodel $iH $dt [incr i]
 	    }
 	    set isRK [expr {$params(method) ne "Euler"}]
@@ -339,7 +339,7 @@ proc relay {from to in} {
 		    append paramLine [read $from]
 		}
 		set paramList {}
-		foreach paramVal [split $paramLine &] {
+		foreach paramVal [split [urlDecode $paramLine] &] {
 		     eval lappend paramList [split $paramVal =]
 		}
 		set result [ResponseTo $paramList]

@@ -8,28 +8,29 @@ set env(HOME) $sHome
 lappend auto_path [file join $sPath System lib] ;# ce qui compte...
 lappend auto_path [file join $sPath System lib Stubs] ;# ce qui compte...
 source [file join $sPath Run client5d.tcl]
+source [file join $sPath Extensions www web_embed.tcl]
 # we also want to convert tk canvas graphics to svg for the layer helper
 package require can2svg
 
 proc InstallModelExec {mdl} {
 #catch {
- global mH iH aH catalog
+    global mH iH aH
     set mH [loadmodel ${mdl}.so SimiLive]
- set iH [CreateModel $mH]
- set hook {}
- set catalog [ListObjPaths $mH]
- foreach obj $catalog {
-    if {[lsearch {INPUT TABLE} [GetModelProperty $mH $obj Eval]]>-1} {
-	lappend hook $obj
-	# Not needed if loading from .spf, and can mess up per-record
-	# -- but needed for sliders so add for solo time series
-	if {[lsearch [GetModelProperty $mH $obj Dims] RECORDS]==-1} { ;# [0]
-	    set aH($obj) [CreateParamArray $iH $obj]
+    set iH [CreateModel $mH]
+    set hook {}
+    set catalog [listobjects $mH]
+    foreach obj $catalog {
+	if {[lsearch {INPUT TABLE} [GetCCompProperty DUMMY Eval $obj]]>-1} {
+	    lappend hook $obj
+	    # Not needed if loading from .spf, and can mess up per-record
+	    # -- but needed for sliders so add for solo time series
+	    if {[lsearch [GetCCompProperty DUMMY Dims $obj] RECORDS]==-1} { ;# [0]
+		set aH($obj) [c_createparamarray $iH $obj]
+	    }
 	}
     }
- }
- #llength $catalog} res
- #return $res
+    #llength $catalog} res
+    #return $res
 }
 
 InstallModelExec $mdl

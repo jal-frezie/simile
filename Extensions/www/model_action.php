@@ -28,33 +28,6 @@ function doTcl($cmd) {
    return substr($resp,0,-1);
 }
 
-function do_query($req) {
-   if (is_object($req)) {
-      switch ($req->format) {
-         case "list":
-         $val = json_decode(doTcl("GetJsonValuesById [set iH] "
-   	           . $req->node . " " . 1048576));
-         break;
-
-         case "binary":
-         $val = doTcl("GetBinaryValuesById [set iH] " . $req->node
-   	           . " " . $req->bottom . " " . $req->top . " " . $req->nswat
-		   . " " . $req->hex);
-         break;
-
-         case "distinct":
-         $val = doTcl("CountDistinctValuesById [set iH] " . $req->node);
-         break;
-// more later
-      }
-   } else {
-      $val = json_decode(doTcl("GetJsonValuesById [set iH] "
-	        . $req . " " . 1048576));
-   }
-   if ($val === null) $val = ""; // work round weirdness of php
-   return $val;
-}
-
 header('Content-Type: text/html; charset=utf-8');
 include 'config.php';
 if ($_POST['act'] != "BuildShareLibInLine") {
@@ -225,54 +198,6 @@ break;
       }
       break;
 
-   case "Describe":
-   case "Report":
-      $line1 = doTcl("join [set catalog] ..");
-// use two dots as single dot separates caption from included model fragments
-      $paths = explode("..", $line1);
-      $arrLength=count($paths);
-
-      for($x=0;$x<$arrLength;$x++) {
-        $path = $paths[$x];
-        $nicePath = escapeNasties($path);
-        $id = doTcl("getnodeid [set mH] $nicePath");
-        if ($_POST['act'] == "Describe") {
-          $tailDiv = strrpos($path, '/');
-          $parentPath = substr($path, 0, $tailDiv);
-          if (strlen($parentPath)) {
-	     $niceParent = escapeNasties($parentPath);
-             $mdlLine["parent"] = doTcl("getnodeid [set mH] $niceParent");
-          } else {
-             $mdlLine["parent"] = "#";
-          }
-          $mdlLine["icon"] = "images/" 
-	      . doTcl("GetModelProperty [set mH] $nicePath Class") . ".gif";
-          $mdlLine["text"] = substr($path, $tailDiv+1);
-          $mdlLine["captpath"] = $path;
-          $mdlLine["equation"] = 
-	      doTcl("GetModelProperty [set mH] $nicePath Spec");
-          $mdlLine["comment"] = 
-	      doTcl("GetModelProperty [set mH] $nicePath Comment");
-          $mdlLine["eval"] = 
-	      doTcl("GetModelProperty [set mH] $nicePath Eval");
-          $mdlLine["min"] = 
-	      doTcl("GetModelProperty [set mH] $nicePath MinVal");
-          $mdlLine["max"] = 
-	      doTcl("GetModelProperty [set mH] $nicePath MaxVal");
-          $mdlLine["type"] = 
-	      doTcl("GetModelProperty [set mH] $nicePath Type");
-          $mdlLine["units"] =
-	      doTcl("GetModelProperty [set mH] $nicePath Units");
-          $mdlLine["dims"] = 
-	      explode(" ", doTcl("GetModelProperty [set mH] $nicePath Dims"));
-          $mdlArr[$id] = $mdlLine;
-        } else {
-          $mdlArr[$id] = doTcl("GetJsonValues [set iH] $nicePath 1024");
-        }
-      }
-      echo json_encode($mdlArr);
-      break;
-
    case "LoadSPF":
       if (file_exists($_POST['base'] . '.spf')) {
          doTcl("ConsultParameterMetafile [set iH] " . $_POST['base'] . '.spf');
@@ -295,128 +220,21 @@ break;
       }
       break;
       
-   case "GetParamVals":
-   	$fullSet = doTcl("join [array names paramData] .");
-	$notMissing = explode(".", $fullSet);
-	$resArr = [];
-      	for($x=0;$x<count($notMissing);$x++) {
-	   $retrieved = doTcl("set paramData("
-	   			    . escapeNasties($notMissing[$x]) . ")");
-	   if (strncmp($retrieved, "scenario", 8)==0) {
-	      $retrieved = "Byte-coded data supplied";
-	   }
-	   $resArr[$notMissing[$x]] = $retrieved;  
-	}
-	echo json_encode($resArr);
-	break;
-
-   case "Parameterize":
-//      $goer = '{"/fixie":"56.7","/freeweel":"0 40 50 80"}';
-      $sample =  str_replace(array('\\"'), array('"'), $_POST['data']);
-//      echo $goer . '<===>' . $sample;
-//      break;
-      $spew = [];
-      $updates = json_decode($sample);
-      foreach ($updates as $idx => $pv) {
-         if ($idx == 'seqNo') continue; // used to sort requests
-         $nicePath = escapeNasties($idx);
-         $result = doTcl("SetParameter $nicePath [list $pv]");
-         if ($result== '-1' || $result == '0' || $result == '1') {
-         } else {
-            $spew[] = $nicePath . "-->" . $result;
-         }
-      }
-      echo json_encode($spew);
-      break;
-
-   case "Reset":
-      $current = $_POST['current'];
-      $resArr = [];
-      $pop = doTcl("DoResetModel [set iH] $current " . $_POST['method'] . " "
-                   . $_POST['depth']);
-      $note = json_decode($_POST['note']);
-      for($x=0;$x<count($note);$x++) {
-	 $resArr[$x] = do_query($note[$x]);
-      }
-      echo json_encode($resArr);
-      break;
-
-   case "Execute":
-   case "ExecuteMulti":
-      $runlength = $_POST['runlength'];
-      $current = $_POST['current'];
-      $step = $_POST['step'];
-      $log = $_POST['log'];
-      $method = $_POST['method'];
-      $errLimit = $_POST['errLimit'];
-
-      $steps = explode(" ",$step);
-      for($x=0;$x<count($steps);$x++) {
-         doTcl("c_setstepmodel [set iH] $steps[$x] [expr $x+1]");
-      }
-      $note = json_decode($_POST['note']);
-      $endPt = $current + $runlength;
-
-      $pt = 0;
-      for($t=$current;$t<$endPt;$t+=$log) {
-         $endInt = $t + $log;
-	 if ($endInt > $endPt) {
-	     $endInt = $endPt;
-	 }
-	 $stop = doTcl("DoExecuteModel [set iH] $method $t $endInt $errLimit 0");
-//	 if ($stop != $endInt) {
-//	     exit("Model stopped at " . $stop . " running to " . $endInt);
-// probably want to make another call to get error message
-//	 }
-	 for($x=0;$x<count($note);$x++) {
-	    $val = do_query($note[$x]);
-// if ExecuteMulti the time points are outer indices
-            if ($_POST['act'] == "Execute") {
-               $hlpArr[$note[$x]][$pt] = $val;
-	    } else {
-               $hlpArr[$pt][$x] = $val;
-	    }
-      	 }
-         if ($_POST['act'] == "Execute") {
-            $hlpArr['time'][$pt] = $endInt; // make separate array of times
-	 } else {
-            $hlpArr[$pt][$x] = $endInt; // time at end of each value array
-	 }
-	 $pt++;
-      }
-     if ($_POST['act'] == "Execute") {
-	 } else { // put execution status at end of array
-         $hlpArr[$pt] = $stop[0];
-	 }
-     
-      echo json_encode($hlpArr);
-      break;
-
-   case "Query":
-// Get values from a component, can be list, binary or distinct
-      $base = $_POST['base'];
-      $req = json_decode($_POST['note']);
-      for($x=0;$x<count($req);$x++) {
-      	 $respArr[$x] = do_query($req[$x]);
-      }
-      echo json_encode($respArr);
-      break;
-		   
-   case "Can2SVG":
-      $svgCmds = "";
-      $tclCmds = json_decode($_POST['cnvdraw']);
-      for($x=0;$x<count($tclCmds);$x++) {
-      	 $svgCmds .= doTcl("can2svg::can2svg {" . $tclCmds[$x] . "}");
-      }
-      
-      echo $svgCmds;
-      break;
-
    case "Exit":
       $base = $_POST['base'];
       doTcl("file delete -force $base");
       doTcl("file delete -force $base" . ".smx");
       doTcl("file delete -force $base" . ".svg");
       doTcl("exit");
+      break;
+
+   default:
+// general-purpose web_embed call, should do everything
+      $origReq = json_encode($_POST);
+      $respCmd = "ResponseTo [::json::json2dict [list $origReq]]";
+      doTcl("set model_id [set mH]");
+      $baseLoc = $_POST['base'];
+      doTcl("set service($baseLoc) [set iH]");
+      echo doTcl($respCmd);
 }
 ?>
