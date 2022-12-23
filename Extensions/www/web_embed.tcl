@@ -239,7 +239,7 @@ proc ResponseTo {paramList} {
 		c_setstepmodel $iH $dt [incr i]
 	    }
 	    set isRK [expr {$params(method) ne "Euler"}]
-	    CResetModel $params(current) $isRK $params(depth)
+	    ResetModel $params(current) 1 0.0 $params(depth)
 	    set reqs [::json::json2dict [urlDecode $params(note)]]
 	    set result [JsonifyArray [ValuesOfInterest $iH $reqs]]
 	} Query {
@@ -248,7 +248,7 @@ proc ResponseTo {paramList} {
 	} ExecuteMulti {
 	    set iH $service($params(base))
 	    set i 0
-	    foreach dt [split $params(step) +] {
+	    foreach dt [split $params(step) " "] {
 		c_setstepmodel $iH $dt [incr i]
 	    }
 	    set reqs [::json::json2dict [urlDecode $params(note)]]
@@ -259,8 +259,9 @@ proc ResponseTo {paramList} {
 	    for {set t $params(current)} {$t<$endPt} {set t $endInt} {
 		set endInt [expr {$t+$params(log)}]
 		if {$endInt>$endPt} {set endInt $endPt}
-		set stat [ExecuteModel DUMMY $params(method) $t $endInt \
-			      $params(errLimit) 0 0]
+		ExecuteModel DUMMY $params(method) $t $endInt \
+			      $params(errLimit) 0 0
+		set stat [CJoinExecution DUMMY $endInt 1]
 		set resp [ValuesOfInterest $iH $reqs]
 
 		lappend resp [lindex $stat 1] ;# actual finish time
