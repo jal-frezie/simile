@@ -2010,8 +2010,8 @@ nodeValues* ExecutingModel::GetRawValues(HCOMP nodeId) {
   char spareCapt[255], *insertionPt;
   nodeValues* newBlk;
 
-  modelSpec->SearchInfo(nodeId, spareCapt, fullDims, newBlk->enumKey);
   newBlk = new nodeValues;
+  modelSpec->SearchInfo(nodeId, spareCapt, fullDims, newBlk->enumKey);
   // find first dimension not a positive integer
   translate_dims(fullDims, indices, newBlk->dimSpecs, 
 		 modelSpec->nodedata[nodeId].datatype, 
