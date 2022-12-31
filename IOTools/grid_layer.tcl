@@ -429,6 +429,7 @@ set repts [expr {$hex*$bpp/8}]
 		set useNodes($winId,c$prog) [lindex $map $prog]
 	    }
 	    array unset useNodes $winId,c$prog ;# leave gap to stop loading
+	    set ::helperTable(beingCalled) $this
 	    Display 0 0 0	    
 	}
 	PackItUp $subDlg
@@ -526,7 +527,8 @@ set repts [expr {$hex*$bpp/8}]
         set useNodes($winId,min) $min
         set useNodes($winId,max) $max
         set useNodes($winId,range) [expr {$max-$min}]
-#	SetColours useNodes $winId
+	#	SetColours useNodes $winId
+	set ::helperTable(beingCalled) $this
 	Display 0 0 0
 	switch -regexp $useNodes($winId,legendSide) {
 	    l|r {

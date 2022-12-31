@@ -186,7 +186,7 @@ proc ResponseTo {paramList} {
 		    lappend dict dims \
 			[JsonifyArray [GetCCompProperty Dims $id]]
 		    set transList {}
-		    foreach level [GetCCompProperty DUMMY Trans $id] {
+		    foreach level [GetCCompProperty Trans $id] {
 			lappend transList [JsonifyArray $level]
 		    }
 		    lappend dict trans [JsonifyArray $transList]
