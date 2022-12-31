@@ -918,9 +918,8 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     if (rpt_seq) {
       tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
       for (count=size/2-rpt_seq;count>=0;count-=rpt_seq) {
-	memset(tgt + 2*count, tgt[count], 2*rpt_seq);
-	//memcpy(tgt + (2*count+rpt_seq), tgt + count, rpt_seq); 
-	//memcpy(tgt + 2*count, tgt + count, rpt_seq);
+	memcpy(tgt + (2*count+rpt_seq), tgt + count, rpt_seq); 
+	memcpy(tgt + 2*count, tgt + count, rpt_seq);
       }
     }
     break;
