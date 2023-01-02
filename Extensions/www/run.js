@@ -2008,8 +2008,8 @@ Grid5.prototype.acceptClick = function (nodeId) {
 		   .attr("xlink:href", that.headerGIF + responses[arrInd]);
 	       if (that.hex) {
 		   d3.select('#' + that.port + '_img')
-		       .attr("transform","translate(0," + 1.5*that.height +
-		       ")scale(0.866,-1.5)"); 
+		       .attr("transform","translate(0," + that.height +
+		       ")scale(0.5,-1)"); 
 	       }
 	   }); // Query
 
