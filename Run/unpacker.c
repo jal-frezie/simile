@@ -328,7 +328,7 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
       indices[depth] = ((int*)*block)[depth];
       localSubObj = append_list_members(dimty, depth+1, dims, indices,
 					subBlocks, members, block, loseZeros,
-					enums, translateEnums, toGet, jsonic);
+					enums+1, translateEnums, toGet, jsonic);
       if (translateEnums && (*enums)->count)
 	IndObj = Tcl_NewStringObj((*enums)->members[indices[depth]-1], -1);
       else
@@ -417,7 +417,7 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
 	block = block+(membership-1)*(dims[1]*sizeof(int)+subBlocks[1]);
       }
       localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
-				     &membership, &block, loseZeros, enums+dims[1], translateEnums, count, jsonic);
+				     &membership, &block, loseZeros, enums, translateEnums, count, jsonic);
       free(indices);
       break;
     case VALUELESS:
