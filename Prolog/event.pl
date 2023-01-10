@@ -27,7 +27,7 @@ units_for(Comp, UnitStr) :-
 	    (get_av_pair(Comp, 0, multiplication_spec, Spec),
 		member(count=Dims, Spec), !;
 		Dims = []),
-	    Base = submodel),
+	    (is_toplevel(Comp) -> Base = 'simile model'; Base = submodel)),
 	to_text_prefix(Dims, Pref),
 	(member(Base, [1, 1/1]), !, append(Pref, "real", UnitStr);
 	 Base = 1/day, applies_in(Comp, eqn_units, 'No'), !,

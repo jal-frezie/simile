@@ -780,6 +780,9 @@ get_middle(Node, Pt) :-
 /* make_header: generates the text to put in a window's title bar */
 
 make_header(Model, Header) :-
+    event><get_info(Model, context, Header).
+ 
+oldmake_header(Model, Header) :-
     quick_file(Model, FileNameChars),
 /* Do not put whole path up this makes confusing taskbar icons
     abs_path_for(Model, Path), */
