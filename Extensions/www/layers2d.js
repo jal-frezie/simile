@@ -39,6 +39,13 @@ Layers2D.prototype.addLayer = function (type, state) {
 	    }
 	    layerSpec.setup.push(entry);
 	}
+	trans = tclListOfDimty(state[1],1);
+	if (trans[0] == "layer_transform") {
+	    layerSpec.trans = "translate("
+	    +trans[1]+","+-trans[2]+")scale("
+		+trans[3]+","+-trans[4]+")";
+	} else
+	    console.log("Unknown shape layer property " + trans[0]);
     } else 
 	for (var i=0; i<state.length-1;i+=2) {
 	    if (type == "Polygon20131026") // indices start /WIN/,
@@ -141,6 +148,13 @@ Layers2D.prototype.addLayer = function (type, state) {
 	layerSpec.domElt.addEventListener("mousedown",startStroke);
 	layerSpec.domElt.addEventListener("mousemove",continueStroke);
 	layerSpec.domElt.addEventListener("mouseup",finishStroke);
+	layerSpec.domElt.addEventListener("touchstart",startStroke);
+	layerSpec.domElt.addEventListener("touchmove",continueStroke);
+	layerSpec.domElt.addEventListener("touchend",finishStroke);
+	break;
+    case "Circles20171122":
+    case "Lines20171122":
+	layerSpec.gLayer.attr("transform",layerSpec.trans);
     }
     // are the two local copies for posts tripping each other up??
     $.post('model_action.php', {"base":fileBase, "act":"Query",
@@ -171,13 +185,21 @@ Layers2D.prototype.addLayer = function (type, state) {
 }
 
 function doStroke(evt, action) {
+    if (evt.button != undefined && evt.button != 0) return;
+    var tgt = evt.target;
     // OK, how do I get the context back?
-    var myTab = evt.target.parentNode.id;
+    var inUse = currentHelpers[tgt.parentNode.id];
     // console.log("retrieved " + myTab);
-    if (currentHelpers[myTab] == undefined) return;
+    if (inUse == undefined) return;
+    if (action == 1) {
+	var noZoom = d3.behavior.zoom().on("zoom",null);
+	d3.select('#' + inUse.port + '_diag').call(noZoom);
+    } else if (action == -1) {
+	d3.select('#' + inUse.port + '_diag').call(inUse.diagZoom);
+    }
     var found = false;
- 	for (var n in currentHelpers[myTab].State) {
- 	    layerSpec = currentHelpers[myTab].State[n];
+ 	for (var n in inUse.State) {
+ 	    layerSpec = inUse.State[n];
 	//console.log("Trying " + layerSpec.type);
 	    // hope is OK if none!
 	    if (layerSpec.domElt == evt.target) {
@@ -192,11 +214,14 @@ function doStroke(evt, action) {
     layerSpec.actCount += 1;
     
     // Now map the coords back to model space
-    const pt = evt.target.createSVGPoint();
+    const pt = tgt.createSVGPoint();
+    if (evt.type == "touchstart" || evt.type == "touchmove" || evt.type == "touchend") {
+	evt = evt.changedTouches[0];
+    }
     pt.x = evt.clientX;
     pt.y = evt.clientY;
-    const modelP = pt.matrixTransform(evt.target.lastElementChild.getScreenCTM().inverse());
-    // console.log("Translated " + pt.x + ", " + pt.y + " to " + modelP.x + ", " + modelP.y);
+    const modelP = pt.matrixTransform(tgt.lastElementChild.getScreenCTM().inverse());
+    console.log("Translated " + pt.x + ", " + pt.y + " to " + modelP.x + ", " + modelP.y);
     parmBlock = {};
     parmBlock[model_json[layerSpec.xcoord].captpath] = 'NOW ' + (1+modelP.x);
     parmBlock[model_json[layerSpec.ycoord].captpath] = 'NOW ' + (1-modelP.y);
@@ -206,27 +231,15 @@ function doStroke(evt, action) {
 } // ok debug that!
 
 function startStroke(evt) {
-    // console.log("Stroking with " + evt.button);
-    if (evt.button == 0) {
-	var inUse = currentHelpers[evt.target.parentNode.id];
-	var noZoom = d3.behavior.zoom().on("zoom",null);
-	d3.select('#' + inUse.port + '_diag').call(noZoom);
 	doStroke(evt,1);
-    }
 }
   
 function continueStroke(evt) {
-    if (evt.button == 0) {
 	doStroke(evt,0);
-    }
 }
 
 function finishStroke(evt) {
-    if (evt.button == 0) {
-	var inUse = currentHelpers[evt.target.parentNode.id];
-	d3.select('#' + inUse.port + '_diag').call(inUse.diagZoom);
 	doStroke(evt,-1);
-    }
 }
   
 Layers2D.prototype.display = function (time, latest, connect) {
@@ -316,7 +329,7 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 	for (var bg in defns) {
 	    var hexColor = defns[bg].color.toString(16);
 	    layerSpec.gLayer.append("circle").attr("cx",defns[bg].x_axis)
-		.attr("cy",-defns[bg].y_axis)
+		.attr("cy",defns[bg].y_axis)
 		.attr("r",defns[bg].radius)
 		.attr("pointer-events", "none")
 		.attr("fill", "#" + "000000".slice(hexColor.length) + hexColor);
@@ -333,7 +346,7 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 	for (var bg in defns) {
 	    var hexColor = defns[bg].color.toString(16);
 	    layerSpec.gLayer.append("line").attr("x1",defns[bg].startx)
-		.attr("y1",-defns[bg].starty)
+		.attr("y1",defns[bg].starty)
 		.attr("x2",defns[bg].endx)
 		.attr("y2",-defns[bg].endy)
 		.attr("pointer-events", "none")
