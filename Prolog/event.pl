@@ -25,8 +25,9 @@ units_for(Comp, UnitStr) :-
 	    analyze_array(Units, Base, Dims);
 	 find_type(Comp, submodel),
 	    (get_av_pair(Comp, 0, multiplication_spec, Spec),
-		member(count=Dims, Spec), !;
-		Dims = []),
+	     (member(count=Dims, Spec);
+	      member(type=What, Spec), Dims = [What]), !;
+	     Dims = []),
 	    (is_toplevel(Comp) -> Base = 'simile model'; Base = submodel)),
 	to_text_prefix(Dims, Pref),
 	(member(Base, [1, 1/1]), !, append(Pref, "real", UnitStr);
