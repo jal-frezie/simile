@@ -83,8 +83,8 @@ itcl::class similescript::$newHelperClass {
 		-image $iconImages(globe) -compound left
 	    pack $f.head.label -side left -expand 0
 	}
-	set f [MakeSubFrames insp $topFrame [list $::myNode {}] \
-		   [namespace current] 0]
+	#set f [MakeSubFrames insp $topFrame [list $::myNode {}] \
+	#	   [namespace current] 0]
 
         foreach component [GetObjectList] {
 	    set fullCapt [GetCaptionPathFromId $component]
@@ -110,6 +110,7 @@ itcl::class similescript::$newHelperClass {
 		}
 		if {$paramEdits} {
 		    set e [AddEntry $winId $::myNode $component $::myNode 0 $notInput]
+		    if {![winfo exists $e]} continue
 		}
 		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
 			   [namespace current] 0]
