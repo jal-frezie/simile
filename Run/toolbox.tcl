@@ -5,7 +5,31 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
-package require mime
+set mimeVers [package require mime]
+if {![package vcompare $mimeVers 1.7.0]} {
+    # work around bug that causes saved files to be broken
+proc ::mime::copymessage {token channel} {
+    # FRINK: nocheck
+    variable $token
+    upvar 0 $token state
+
+    set openP [info exists state(fd)]
+
+    lappend state(params) boundary already_done ;# fixes bug
+    set code [catch {mime::copymessageaux $token $channel} result]
+
+    if {!$openP && [info exists state(fd)]} {
+        if {![info exists state(root)]} {
+            catch {close $state(fd)}
+        }
+        unset state(fd)
+    }
+
+    return -code $code $result
+}
+    
+}
+
 set itclVers [package require Itcl]
 if {!$headless} {
 if {![info exists simplify]} {
@@ -1240,7 +1264,7 @@ proc InitExecThread {node} {
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
 	# callback cmds will need adjusting to include global nodeid
-	foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached AddLogEntry ExecQuery TransEnums InDays VisitUrl FileParamDialogue extract_list extract_json extract_gif_tail} {
+	foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached AddLogEntry ExecQuery TransEnums InDays VisitUrl FileParamDialogue ListFoci extract_list extract_json extract_gif_tail} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }
