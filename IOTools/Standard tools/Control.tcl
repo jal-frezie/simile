@@ -563,7 +563,7 @@ namespace eval runcontrol33857 {
 	if {[string equal start $runState($node,currentMode)]} {
 	    set modelAct \
 		[ExecuteTo $node $current $pause $runState($node,unitLength) \
-		     $display [ListFoci $node] $runState($node,intMethod) \
+		     $display $runState($node,intMethod) \
 		     $maxErr $runState($node,lmtpause) \
 		     $runState($node,evtpause) $runState($node,evtDisp)]
 	    if {[string equal start $runState($node,currentMode)]} {
@@ -624,39 +624,6 @@ namespace eval runcontrol33857 {
 #	return $success
 #    }
 #
-    proc ListFoci {node} {
-	global helperTable runState
-
-	set allFoci {}
-	foreach {name inst} [array get helperTable *,whichInstance] {
-	    if {[string equal $node [$inst GetNode]]} {
-		foreach focus $helperTable($inst,foci) {
-		    if {[lsearch $allFoci $focus]==-1} {
-			lappend allFoci $focus
-		    }
-		}
-	    }
-	}
-# now add nodes being logged by snapshot tools
-	foreach logger [array names runState log*] {
-	    if {[string equal $node [lindex $runState($logger) 0]]} {
-		set focus [string range $logger 3 end]
-		if {[lsearch $allFoci $focus]==-1} {
-		    lappend allFoci $focus
-		}
-	    }
-	}
-# and those for scripted callback requests
-	foreach {callback nodes} [array get runState *,scriptReqs] {
-	    foreach focus $nodes {
-		if {[lsearch $allFoci $focus]==-1} {
-		    lappend allFoci $focus
-		}
-	    }
-	}
-	return $allFoci
-    }
-
 # This now only used in debug mode; c++ has its own interaction regulator
     proc CondUpdate {node thisOp} {
         global runState

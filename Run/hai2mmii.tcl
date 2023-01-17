@@ -19,7 +19,8 @@ proc TransEnums {transList vals} {
 #puts "Translating $vals with $transList"
     set curLevel [lindex $transList 0]
     if {[llength $vals]==1} {
-	return [EnquoteIfNonNumeric [TransValue $curLevel $vals]]
+#	return [EnquoteIfNonNumeric [TransValue $curLevel $vals]]
+	return [TransValue $curLevel $vals]
     } else {
 # speed: if no defns, just return arg
 	if {[lsearch -regexp $transList .] == -1} {return $vals}
@@ -66,11 +67,11 @@ proc IsPretty {bride} {
 }
 
 proc PrettifyValList {ugly txtVals} {
-#puts "Trying to tidy up $ugly to $txtVals"
-    if {[string is double -strict $ugly] || [lsearch $txtVals $ugly]>-1} {
-	# do mind even length ET mem mangling
+    #puts [info level 0]
+    if {[string is double -strict $ugly] || $ugly eq "sm"} {
 	set result $ugly
-    } elseif {[llength $ugly]==1} {
+    } elseif {[llength $ugly]==1 || [lsearch $txtVals $ugly]>-1} {
+	# do mind even length ET mem mangling
 	set result \"$ugly\"
     } else {
 	set result {}
@@ -174,6 +175,32 @@ proc AddToWatched {node} {
 #    $helperTable(VariableList)::AddHelperLeaf $::runState($::myNode,inspId) \
 	#	$node $helperTable(beingCalled)
     $::runState($::myNode,inspId) HelperLeaf $node $helperTable(beingCalled) 1
+}
+
+proc ListFoci {node} {
+	global helperTable runState
+
+	foreach {name inst} [array get helperTable *,whichInstance] {
+	    if {[string equal $node [$inst GetNode]]} {
+		foreach focus $helperTable($inst,foci) {
+		    set allFoci($focus) 1
+		}
+	    }
+	}
+# now add nodes being logged by snapshot tools
+	foreach logger [array names runState log*] {
+	    if {[string equal $node [lindex $runState($logger) 0]]} {
+		set focus [string range $logger 3 end]
+		set allFoci($focus) 1
+	    }
+	}
+# and those for scripted callback requests
+	foreach {callback nodes} [array get runState *,scriptReqs] {
+	    foreach focus $nodes {
+		set allFoci($focus) 1
+	    }
+	}
+	return [array names allFoci]
 }
 
 proc ExtractCList {dH count loseZeros} {

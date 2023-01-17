@@ -129,7 +129,7 @@ proc DeleteExptlCase {node caseId} {
     c_deletemodel $exptl_case($caseId)
     unset exptl_case($caseId)
 }
-proc ExecuteTo {node current pause unitLength display foci \
+proc ExecuteTo {node current pause unitLength display \
 		    intMethod maxErr lmtPause evtMsg evtDisp} {
     set currentMode start
     set evtPause [expr {$evtMsg || $evtDisp}] ;# event sounds selected
@@ -138,10 +138,6 @@ proc ExecuteTo {node current pause unitLength display foci \
     if {$display} {
 	set lastDisp [expr int($current/$display)]
 	set timedDisp 1
-    }
-    set ptClasses {}
-    foreach point $foci {
-	lappend ptClasses [GetCompProperty dummy Class $point]
     }
     set first 1
     PlanRefresh
@@ -184,6 +180,11 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    set current [expr {$scaled_current/$unitLength}]
 	    set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
 	    set payload {}
+	    set ptClasses {}
+	    set foci [ListFoci $node]
+	    foreach point $foci {
+		lappend ptClasses [GetCompProperty dummy Class $point]
+	    }
 	    foreach point $foci class $ptClasses {
 		if {[catch {GetPayload $node $point $class} dataHand]} {
 # data has gone, so hope it is no longer needed
