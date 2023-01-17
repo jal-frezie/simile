@@ -14,7 +14,7 @@ function Layers2D (port) {
 		.attr("transform", "translate(" + d3.event.translate +
 		      ")scale(" + d3.event.scale + ")");
 	});
-    // d3.select('#' + port + '_diag').attr("class","pane").call(this.diagZoom);
+    d3.select('#' + port + '_diag').attr("class","pane").call(this.diagZoom);
   this.status = "displaying";
 }
 
@@ -348,7 +348,7 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 	    layerSpec.gLayer.append("line").attr("x1",defns[bg].startx)
 		.attr("y1",defns[bg].starty)
 		.attr("x2",defns[bg].endx)
-		.attr("y2",-defns[bg].endy)
+		.attr("y2",defns[bg].endy)
 		.attr("pointer-events", "none")
 		.attr("style", "stroke:#" + "000000".slice(hexColor.length) + hexColor + ";stroke-width:" + defns[bg].width);
 	}
