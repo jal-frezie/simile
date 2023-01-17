@@ -194,7 +194,6 @@ set repts [expr {$hex*$bpp/8}]
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
 			$useNodes($winId,max) $repts} rawBinary]} {
-	    puts "Rawbin fail: $rawBinary"
 	    DrawGrid7
 	    return
 	}
@@ -249,7 +248,8 @@ set repts [expr {$hex*$bpp/8}]
 	set ncol $useNodes($winId,ncol)
 	set nrow $useNodes($winId,nrow)
 	set curValues [$modelInst GetValue $useNodes(nC,color) -numeric 1]
-	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
+        if {$curValues eq "unstable"} return
+        if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set colShift -1
 	    if {$useNodes($winId,hex)} {
 		incr colShift $ncol
