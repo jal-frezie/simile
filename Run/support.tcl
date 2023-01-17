@@ -1649,7 +1649,7 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
 	    set subVals [FillListValues nextRef $newTree $type $innerDims \
 				[concat $listDims $newIndex] $newDimPlace]
 	    if {[llength $subVals]} {
-		lappend result $newIndex $subVals
+		lappend result [incr newIndex] $subVals
 	    }
 	}
 	if {[string compare $nextRef 0]} {

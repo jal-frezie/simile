@@ -545,7 +545,7 @@ proc CJoinExecution {node until phase} {
     if {[RunningInC $node]} {
 	set result [WatchModel $node 0 $until [clock clicks -milliseconds]]
     } else {
-	set resut ::modelStopped
+	set result $::modelStopped
     }
     if {[llength $result]>2} {
 	#if {[lindex $result 0] eq "tcl_model_err"} { # error -- re-throw
