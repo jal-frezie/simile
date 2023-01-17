@@ -103,7 +103,7 @@
 #define USEGRAPH       23
 
 // Identifier
-#define MDL_OBJ_VERS 6.992
+#define MDL_OBJ_VERS 6.993
 
 #define SIMILE_VERSION	"7.0"
 #define NEST 32

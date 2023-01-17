@@ -1544,7 +1544,7 @@ nodes.
 		 InitCons = make(con_init(Name), [con_acpt(Name)], InitPath, 0, [init_connects(NewPtr, Skt, NewSkt, CkRem, CkOff, RemDay)]),
 		 ClearInst = make(accums_clrd(Name), [on_reset], LocalPath,
 				   Step, ClearAccums),
-		 append([check_cond('RealPhase'(arr('', ts, [1]))) | IncrAccums], 
+		 append([check_cond('RealPhase'(arr('', ts, [0]))) | IncrAccums], 
 		        [finish_level], AccumPass),
 		 IncrInst = make(accums_incd(Name),
 				 [accums_clrd(Name) | AllConds], LocalPath,
