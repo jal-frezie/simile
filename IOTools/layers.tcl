@@ -219,6 +219,7 @@ itcl::class similescript::$newHelperClass {
 	    $winId.viewport.c lower $layerObj.main $aboveNew.main
 	}
 	set planes [linsert $planes $putBelow $layerObj]
+	set ::helperTable(${winId}.$id,whichInstance) [namespace current]::$layerObj
 	GrowMenuList $lvl $layerObj
     }
 
@@ -286,6 +287,7 @@ itcl::class similescript::$newHelperClass {
 # dispInt is time to next display call
 # step is a spare parameter
 	foreach plane $planes {
+	    set ::helperTable(beingCalled) [namespace current]::$plane
 	    $plane Display $time $dispInt $step
 	}
 	foreach plane $planes {
