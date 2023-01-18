@@ -263,7 +263,9 @@ itcl::class similescript::$newHelperClass {
 		$winId.add entryconfig [expr {$serialActive+2}] \
 		    -label [$layerObj GetTitle]
 	    } DeleteCurrent {
-		itcl::delete object [lindex $planes $oldIdx]
+		set id [lindex $planes $oldIdx]
+		unset ::helperTable(${winId}.$id,whichInstance)
+		itcl::delete object $id
 		set planes [lreplace $planes $oldIdx $oldIdx]
 		$winId.add delete $serialActive [incr serialActive]
 	    } EditCurrent {
