@@ -159,13 +159,13 @@ UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBE
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 INSTLIB = $(SHAREDLIBPREFX)install$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
-SUPP = $(RESDIR)/support$(ARCHEXTN).o
+# SUPP = $(RESDIR)/support$(ARCHEXTN).o
 
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
 simile: $(PROLOGSTATE) $(RELAY) \
-	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN) $(SCRIPT) $(SUPP)
+	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN) $(SCRIPT)
 
 vpath %.pl Prolog
 
@@ -320,10 +320,10 @@ $(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 		$(MAKEPIC) $(MAKESL) \
 		-o ../$(SLDIR)/$(INSTLIB) install_adv.c $(CRYPTOBJ); cd ..
 
-$(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
-	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
-		-o ../${SUPP} support.cpp; cd ..
-
+#$(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
+#	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
+#		-o ../${SUPP} support.cpp; cd ..
+#
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
 #Run/install.dll: Run/install.c Makefile
@@ -485,10 +485,12 @@ install:
 		Images/Toolbar/3d_objects.png \
 		Images/Toolbar/add.gif \
 		Images/Toolbar/alarm.gif \
+		Images/Toolbar/caselist.png \
 		Images/Toolbar/clear.gif \
 		Images/Toolbar/colourrcontr.gif \
 		Images/Toolbar/colourrexp.gif \
 		Images/Toolbar/compartment.gif \
+		Images/Toolbar/compfact.png \
 		Images/Toolbar/condition.gif \
 		Images/Toolbar/copy.gif \
 		Images/Toolbar/copyc.gif \
@@ -499,18 +501,24 @@ install:
 		Images/Toolbar/drop.gif \
 		Images/Toolbar/edit.gif \
 		Images/Toolbar/event.gif \
+		Images/Toolbar/file.gif \
 		Images/Toolbar/find.gif \
 		Images/Toolbar/findmore.gif \
+		Images/Toolbar/flask.png \
 		Images/Toolbar/flip_h.gif \
 		Images/Toolbar/flip_v.gif \
 		Images/Toolbar/flow.gif \
 		Images/Toolbar/ghost.gif \
+		Images/Toolbar/globe.png \
 		Images/Toolbar/graph.gif \
 		Images/Toolbar/greater.gif \
+		Images/Toolbar/grid.gif \
 		Images/Toolbar/image.gif \
 		Images/Toolbar/immigration.gif \
 		Images/Toolbar/influence.gif \
+		Images/Toolbar/input.gif \
 		Images/Toolbar/less.gif \
+		Images/Toolbar/list.gif \
 		Images/Toolbar/loss.gif \
 		Images/Toolbar/lprec.gif \
 		Images/Toolbar/mainwin.gif \
@@ -524,7 +532,10 @@ install:
 		Images/Toolbar/open.gif \
 		Images/Toolbar/paste.gif \
 		Images/Toolbar/pause.gif \
+		Images/Toolbar/permut.png \
+		Images/Toolbar/polys.png \
 		Images/Toolbar/print.gif \
+		Images/Toolbar/plotxy.gif \
 		Images/Toolbar/property.gif \
 		Images/Toolbar/redo.gif \
 		Images/Toolbar/reel.gif \
@@ -589,7 +600,7 @@ install:
 		IOTools/Standard\ tools/Control.tcl \
 		IOTools/Standard\ tools/Sketch.tcl \
 		IOTools/Standard\ tools/Slider.tcl \
-		IOTools/Standard\ tools/TileInspector.tcl \
+		IOTools/Standard\ tools/DIYInspector.tcl \
 		IOTools/Standard\ tools/pestlink.tcl \
 		IOTools/two_table.tcl \
 		README \
@@ -602,6 +613,7 @@ install:
 		Run/forms.tcl \
 		Run/graphs.tcl \
 		Run/hai2mmii.tcl \
+		Run/jsonplus.tcl \
 		Run/language.tcl \
 		Run/toolbox.tcl \
 		Run/$(UINFO_TPL) \
@@ -619,6 +631,7 @@ install:
 		Run/simile16.ico \
 		Run/simile32.ico \
 		Run/simile64.ico \
+		Run/support.cpp \
 		Run/support.tcl \
 		Run/support1.cpp \
 		Run/support2.cpp \
@@ -657,7 +670,6 @@ install:
 		$(SYSDIR)/bin/simile \
 		$(PROLOGSTATE) \
 		$(PROLOG_DB) \
-		$(SUPP) \
 		$(SYSDIR)/lib/SimileAutoObj/SimileAutoObj.itcl \
 		$(SYSDIR)/lib/SimileAutoObj/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg1.2/can2svg.tcl \
@@ -689,5 +701,5 @@ endif
 
 # call clean after changing license info in this file
 clean: clean_prolog
-	rm -f $(RELAY) $(SUPP) Run/$(CRYPTOBJ) \
+	rm -f $(RELAY) Run/$(CRYPTOBJ) \
 		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN) $(SCRIPT)

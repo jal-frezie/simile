@@ -573,7 +573,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    puts $spout "export PATH=\"[file nativename [file join $env(SYSDIR) bin]]\""
 		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $env(SYSDIR) include MacOS]]\""
 		}
-		set objs \"[file join $env(SYSDIR) lib support_mac.o]\"
+		set objs \"[file join $TOOLDIR support.cpp]\"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine)_mac.o
@@ -606,7 +606,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		if {![info exists env(PATH)]} { ;# as for SimiLive on hotwheels
 		    array set env {PATH /usr/bin}
 		}
-		set objs \"[file join $env(SYSDIR) lib support.o]\"
+		set objs \"[file join $TOOLDIR support.cpp]\"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine).o
@@ -619,7 +619,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		}
 		set switchForLib -shared
 		eval {exec g++} $gppFlags \
-		    [list $switchForLib -o $TARGET] $objs \
+		    [list $switchForLib -fPIC -I$TOOLDIR -o $TARGET] $objs \
 		    $lDirs $lFiles -l5d
 	    }
         }
