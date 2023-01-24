@@ -36,9 +36,10 @@ endif
 # Default case: Linux
 TCLDIR = /usr
 TCLREF = $(TCLDIR)
+
 SYSDIR = System
 CFLAGS += $(OPT)
-CPPFLAGS = -static-libstdc++ -static-libgcc
+#CPPFLAGS = -static-libstdc++ -static-libgcc
 
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC

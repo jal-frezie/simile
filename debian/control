@@ -12,7 +12,7 @@ Source: simile
 Section: science
 Priority: extra
 Maintainer: Jasper Taylor <jasper@simulistics.com>
-Build-Depends: debhelper (>= 9.0.0), gprolog (>= 1.4.0), tcl-dev (>= 8.5) | tcl8.5-dev, tk-dev (>= 8.5) | tk8.5-dev, libxcursor-dev, libgdal-dev (>= 1.5)
+Build-Depends: debhelper (>= 9.0.0), gprolog (>= 1.4.0), tcl-dev (>= 8.5) | tcl8.5-dev, tk-dev (>= 8.5) | tk8.5-dev, libxcursor-dev, libgdal-dev (>= 1.5), portaudio19-dev
 # removed  gprolog (>= 1.4.0), from above as hard to find for Debians
 # build from src before building binary .deb!
 # tk needed for building tkdnd
