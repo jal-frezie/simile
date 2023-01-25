@@ -1012,30 +1012,30 @@ void VarParamData::ClearTimePtElements() {
 }
 
 void VarParamData::InitTimeSeries(BOOLEAN cancelSliders) {
-  if (this) { // WTFN?
-    curTimePoint = NULL;
-    wraps = 0;
-    active = 2; // this will cause any current event data to be zeroed
-    if (amEvent) {
-      ExecutingModel* host = myModelExec->parent;
-      while (host && !timePoints) {
-	VarParamData* srcWotsit = host->varParamArrayBase;
-	while (srcWotsit) {
-	  if (srcWotsit->nodeId == nodeId) {
-	    CopySeries(srcWotsit);
-	    if (timePoints) inheritSeries = TRUE;
-	    break;
-	  }
-	  srcWotsit = srcWotsit->nextVP;
+  //  if (!this) return // WTFN? Cos it makes release version crash!
+  curTimePoint = NULL;
+  wraps = 0;
+  active = 2; // this will cause any current event data to be zeroed
+  if (amEvent) {
+    ExecutingModel* host = myModelExec->parent;
+    while (host && !timePoints) {
+      VarParamData* srcWotsit = host->varParamArrayBase;
+      while (srcWotsit) {
+	if (srcWotsit->nodeId == nodeId) {
+	  CopySeries(srcWotsit);
+	  if (timePoints) inheritSeries = TRUE;
+	  break;
 	}
-	host = host->parent;
+	srcWotsit = srcWotsit->nextVP;
       }
-    } else if (dataPtr.contents && (timePoints || cancelSliders)) {
-      free_bloc_data(dataPtr.contents,dataPtr.dimSpecs);
-      dataPtr.contents = NULL;
+      host = host->parent;
     }
-    nextVP->InitTimeSeries(cancelSliders);
+  } else if (dataPtr.contents && (timePoints || cancelSliders)) {
+    free_bloc_data(dataPtr.contents,dataPtr.dimSpecs);
+    dataPtr.contents = NULL;
   }
+  if (nextVP) // does not crash
+    nextVP->InitTimeSeries(cancelSliders);
 }
 /*
 double VarParamData::UpdateTimeSeries(double now, double horizon) {
@@ -1361,7 +1361,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     unsigned int rnd=(1000000007*(intptr_t)pthread_self()+now.tv_nsec);
     setup_randoms(rnd);
   }
-  if (top_phase<=0) {
+  if (top_phase<=0 && varParamArrayBase) {
     varParamArrayBase->InitTimeSeries(how_int!=-1 || top_phase==-2);
   }
 
@@ -1957,22 +1957,22 @@ void ExecutingModel::set_wav_cmd(char* nodeId) {
   err = Pa_Initialize();
   if( err != paNoError ) goto error;
 
-  outputParameters.device = Pa_GetDefaultOutputDevice(); /* default output device */
+  outputParameters.device = Pa_GetDefaultOutputDevice(); // default output device
 
-  outputParameters.channelCount = 2;       /* stereo output */
-  outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
+  outputParameters.channelCount = 2;       // stereo output
+  outputParameters.sampleFormat = paFloat32; // 32 bit floating point output
   outputParameters.suggestedLatency = 0.050; // Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
   outputParameters.hostApiSpecificStreamInfo = NULL;
 
     
   err = Pa_OpenStream(&(wavListen.mic),
-              NULL, /* no input */
+              NULL, // no input
               &outputParameters,
               44100,
               1,
 	      0,
-              NULL, /* no callback, use blocking API */
-              NULL ); /* no callback, so no callback userData */
+              NULL, // no callback, use blocking API
+              NULL ); // no callback, so no callback userData
   if( err != paNoError ) goto error;
 
   err = Pa_StartStream(wavListen.mic);
