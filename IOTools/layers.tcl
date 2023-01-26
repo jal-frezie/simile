@@ -219,7 +219,6 @@ itcl::class similescript::$newHelperClass {
 	    $winId.viewport.c lower $layerObj.main $aboveNew.main
 	}
 	set planes [linsert $planes $putBelow $layerObj]
-	set ::helperTable(${winId}.$id,whichInstance) [namespace current]::$layerObj
 	GrowMenuList $lvl $layerObj
     }
 
