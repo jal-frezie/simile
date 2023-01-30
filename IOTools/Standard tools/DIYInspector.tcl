@@ -344,7 +344,6 @@ itcl::class similescript::$newHelperClass {
 	variable listStrings
 
 	set oldCases $compCases($myNode,$path)
-	set compCases($myNode,$path) {}
 	set name [string range [winfo name $box] 5 end-3]
 	set listExpr [$box.e get]
 	if {$listExpr eq $listStrings($path)} return
@@ -372,7 +371,8 @@ itcl::class similescript::$newHelperClass {
 	    }
 	}
 
-	foreach {name val} $compound {
+    	set compCases($myNode,$path) {}
+        foreach {name val} $compound {
 	    set found [lsearch $oldCases $name]
 	    if {$found>=0} {
 		set oldCases [lreplace $oldCases $found $found]
@@ -389,7 +389,6 @@ itcl::class similescript::$newHelperClass {
 	}
 	$box.e delete 0 end
 	$box.e insert 0 $listExpr
-	
 	foreach case $oldCases {
 	    DeleteCase $myNode $case
 	}
