@@ -308,6 +308,7 @@ itcl::class similescript::$newHelperClass {
 	    $f.caption configure -image $::iconImages(list) -compound left
 	    $f.tick configure -command [list $this DecodeListSpec \
 					    $f $path $clickPath]
+	    $f.cross configure -command [list $this RevertListSpec $f $path]
 	} else {
 	    set caseName ""
 	    if {[string match param* [lindex $clickPath end]]} {
@@ -339,10 +340,21 @@ itcl::class similescript::$newHelperClass {
 # step is a spare parameter
     }
 
+
+    public method RevertListSpec {box path} {
+	variable listStrings
+
+	$box.e delete 0 end
+	$box.e insert 0 $listStrings($path)
+    }
+	
     public method DecodeListSpec {box path clickPath} {
 	global myNode compCases
 	variable listStrings
 
+	if {[focus] eq "$box.cross"} {return 0}
+	# tick invoked by clicking on cross, not what user wanted
+	bind $box.e <FocusOut> {} ;# in case of error message
 	set oldCases $compCases($myNode,$path)
 	set name [string range [winfo name $box] 5 end-3]
 	set listExpr [$box.e get]
@@ -370,7 +382,7 @@ itcl::class similescript::$newHelperClass {
 		set compound $alt
 	    }
 	}
-
+	
     	set compCases($myNode,$path) {}
         foreach {name val} $compound {
 	    set found [lsearch $oldCases $name]
@@ -394,6 +406,7 @@ itcl::class similescript::$newHelperClass {
 	}
 	
 	set listStrings($path) $listExpr
+	bind $box.e <FocusOut> [list $box.tick invoke]
     }
 		
     public method HelperLeaf {node hlpr add} {

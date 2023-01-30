@@ -20,15 +20,15 @@ sicstus_use_module([sp_only, forms, m_update, image, draw,
 		    library(lists), library(ordsets)]).
 
 units_for(Comp, UnitStr) :-
-	(find_node_with_data(Comp, _, Func),
-	    get_av_pair(Func, 0, units, Units),
-	    analyze_array(Units, Base, Dims);
-	 find_type(Comp, submodel),
+	(find_type(Comp, submodel),
 	    (get_av_pair(Comp, 0, multiplication_spec, Spec),
 	     (member(count=Dims, Spec);
 	      member(type=What, Spec), Dims = [What]), !;
 	     Dims = []),
-	    (is_toplevel(Comp) -> Base = 'simile model'; Base = submodel)),
+	    (is_toplevel(Comp) -> Base = 'simile model'; Base = submodel);
+	find_node_with_data(Comp, _, Func),
+	    get_av_pair(Func, 0, units, Units),
+	    analyze_array(Units, Base, Dims)),
 	to_text_prefix(Dims, Pref),
 	(member(Base, [1, 1/1]), !, append(Pref, "real", UnitStr);
 	 Base = 1/day, applies_in(Comp, eqn_units, 'No'), !,
