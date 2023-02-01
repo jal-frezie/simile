@@ -71,7 +71,7 @@ itcl::class similescript::$newHelperClass {
 		    -command "$this delete"
 	    }
 	    
-	    set f [MakeSubFrames insp $topFrame {expt {}} [namespace current] 0]
+	    set f [MakeSubFrames $::myNode $topFrame {expt {}} expt_setup 0]
 	    $f.head.label configure -text [tr. {Experimental conditions}] \
 		-image $iconImages(flask) -compound left
 	    pack $f.head.label -side left -expand 0
@@ -156,7 +156,7 @@ itcl::class similescript::$newHelperClass {
     destructor {
 	destroy .expt_context
     }
-        
+
     proc OnElementContext {path X Y} {
 	variable cMenu
 	variable clickPath

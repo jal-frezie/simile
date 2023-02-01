@@ -259,6 +259,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     # above makes sure field has focus after paste so leaving accepts data
     KoreanClick $slot.e 1 {}
     bind $slot.e <Double-1> [list EditValueComment $topFrame $compName]
+    focus $slot.e
 
     ::ttk::button $slot.tick -style $colStyle \
 	-image $iconImages(tick) \
@@ -483,7 +484,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 			set btn $nextLevel.head.$img
 			pack [::ttk::button $btn -style $bStyle \
 			      -image $iconImages($img) \
-			      -command [list $nsCmd $clientId $path]] \
+			      -command [list $nsCmd $clientId $path $nextLevel]] \
 			-side right
 			BindPopup $btn \
 			    [format [tr. "$act values for subtree \"%1\$s\""] \
@@ -873,6 +874,18 @@ proc CancelParams {} {
     set paramData(done) $paramData(complete)
 }
 
+proc WriteLiteralParam {pStr data indent} {
+    foreach {idx val} $data {
+	if {fmod([llength $val],2)==1} {
+	    puts $pStr "$indent<value index=[Entitize $idx] value=[Entitize $val]/>"
+	} else {
+	    puts $pStr "$indent<values index=[Entitize $idx]>"
+	    WriteLiteralParam $pStr $val "  $indent"
+	    puts $pStr "$indent</values>"
+	}
+    }
+}
+
 namespace eval fileparams {
     
     proc Clear {spare smPath} {
@@ -1146,18 +1159,6 @@ namespace eval fileparams {
  	puts $pStr $indent</submodels>
     }
 
-    proc WriteLiteralParam {pStr data indent} {
-	foreach {idx val} $data {
-	    if {fmod([llength $val],2)==1} {
-		puts $pStr "$indent<value index=[Entitize $idx] value=[Entitize $val]/>"
-	    } else {
-		puts $pStr "$indent<values index=[Entitize $idx]>"
-		WriteLiteralParam $pStr $val "  $indent"
-		puts $pStr "$indent</values>"
-	    }
-	}
-    }
-
     # merge a parameter metafile. These are saved with the pathnames of the .csv files
     # relative to the location of the metafile, so in order to reload the .csvs we need to
     # reconnect them with this pathname...trouble is, if I save in a new directory I'll need
@@ -1195,6 +1196,61 @@ namespace eval fileparams {
 	}
 	BindPopup $label $desc $comment
 	#    BindPopup $slot.l2 "$comment"
+    }
+
+}
+
+namespace eval expt_setup {
+    proc Clear {topNode path topF} {
+    }
+
+    proc Open {args} {
+    }
+
+    proc Save {topNode path topF} {
+	set title [tr. {Save experiment setup as:}]
+        set metaFile [ChooseFile model.sxf $title 1 $topNode]
+	if {[llength $metaFile]} {
+	    set SimileProject(expt_setup,$topNode/) $metaFile
+            set pStr [NetOpen $metaFile w]
+            
+	    puts $pStr {<?xml version="1.0"?>}
+	    puts $pStr {<?xml-stylesheet type="text/xsl" href="sxf1.xsl"?>}
+	    puts $pStr "<sxf simile_version=\"$::env(SIMILE_VERSION)\">"
+	    puts $pStr {<clist label="top">}
+	    SaveLevel $topF $pStr "  "
+	    puts $pStr {</clist>}
+	    puts $pStr {</sxf>}
+	    close $pStr
+	}
+    }
+
+proc SaveLevel {topF pStr indent} {
+	foreach subF [winfo children $topF] {
+	    set lvl [string range $subF [string length ${topF}.] end]
+	    puts $lvl
+	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} continue
+	    if {[regexp {frame([a-z]+)[0-9]+} $lvl spare type] && \
+		    [lsearch {clist compound perm} $type]>-1} {
+		if {$type eq "compound"} {
+		    set compCase [$subF.head.label cget -text]
+		    set trim [string length xx[tr. "Multi-factor case(s)"]
+		    set compCase " case=\"[string range $compCase 0 end-$trim]\""
+		} else {
+		    set compCase ""
+		}
+		puts $pStr "$indent<$type label=\"[string range $lvl 5 end]\"$compCase>"
+		SaveLevel $subF $pStr "  $indent"
+		puts $pStr "$indent</$type>"
+	    } elseif {[string range $lvl end-2 end] eq ", s"} {
+		puts $pStr "$indent<plist tgt=\"[string range $lvl 5 end-3]\">"
+		WriteLiteralParam $pStr [$subF.e get] "  $indent"
+	        puts $pStr $indent</plist>
+	    } else {
+		set npt [string first ", " $lvl]
+		puts $pStr "$indent<param tgt=\"[string range $lvl 5 $npt-1]\" case=\"[string range $lvl $npt+2 end]\" val=\"[$subF.e get]\"/>"
+	    }
+	}
     }
 
 }
