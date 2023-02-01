@@ -1234,7 +1234,7 @@ proc SaveLevel {topF pStr indent} {
 		    [lsearch {clist compound perm} $type]>-1} {
 		if {$type eq "compound"} {
 		    set compCase [$subF.head.label cget -text]
-		    set trim [string length xx[tr. "Multi-factor case(s)"]
+		    set trim [string length xx[tr. "Multi-factor case(s)"]]
 		    set compCase " case=\"[string range $compCase 0 end-$trim]\""
 		} else {
 		    set compCase ""
