@@ -71,7 +71,8 @@ itcl::class similescript::$newHelperClass {
 		    -command "$this delete"
 	    }
 	    
-	    set f [MakeSubFrames $::myNode $topFrame {expt {}} expt_setup 0]
+	    set f [MakeSubFrames $::myNode $topFrame {expt {}} \
+		       [namespace current] 0]
 	    $f.head.label configure -text [tr. {Experimental conditions}] \
 		-image $iconImages(flask) -compound left
 	    pack $f.head.label -side left -expand 0
@@ -223,7 +224,7 @@ itcl::class similescript::$newHelperClass {
 	# needs to handle case lists
 	global myNode compCases
 	variable clickPath
-	
+
 	set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
 		   [namespace current] 0]
 	set leaf [lindex $clickPath end]
@@ -239,6 +240,15 @@ itcl::class similescript::$newHelperClass {
 	} elseif {[info exists compCases($myNode,$leaf)]} {
 	    DeleteCase $myNode $compCases($myNode,$leaf)
 	    unset compCases($myNode,$leaf)
+	} else {
+	    set safePath $clickPath
+	    foreach subF [winfo children $f] {
+		set lvl [string range $subF [string length ${f}.] end]
+		if {[lsearch {head body tree caption tick cross} $lvl]>-1} \
+		    continue
+		set clickPath [concat $safePath [list [string range $lvl 5 end]]]
+		$this delete ;# does child
+	    }
 	}
 	after 40 [list destroy $f] ;# destroying inline inexplicably fails
     }
@@ -252,7 +262,72 @@ itcl::class similescript::$newHelperClass {
 	PostPopup $wid $X $Y
 	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt
     }
-    
+
+    proc Clear {topNode path topF} {
+	variable clickPath
+	variable cMenu
+	
+	foreach subF [winfo children $topF] {
+	    set lvl [string range $subF [string length ${topF}.] end]
+	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} \
+		continue
+	    set clickPath [concat expt [list [string range $lvl 5 end]]]
+	    $cMenu invoke Delete ;# does child
+	}
+    }
+
+    proc Open {args} {
+    }
+
+    proc Save {topNode path topF} {
+	set title [tr. {Save experiment setup as:}]
+        set metaFile [ChooseFile model.sxf $title 1 $topNode]
+	if {[llength $metaFile]} {
+	    set SimileProject(expt_setup,$topNode/) $metaFile
+            set pStr [NetOpen $metaFile w]
+            
+	    puts $pStr {<?xml version="1.0"?>}
+	    puts $pStr {<?xml-stylesheet type="text/xsl" href="sxf1.xsl"?>}
+	    puts $pStr "<sxf simile_version=\"$::env(SIMILE_VERSION)\">"
+	    puts $pStr {<clist label="top">}
+	    SaveLevel $topF $pStr "  "
+	    puts $pStr {</clist>}
+	    puts $pStr {</sxf>}
+	    close $pStr
+	}
+    }
+
+    proc SaveLevel {topF pStr indent} {
+	foreach subF [winfo children $topF] {
+	    set lvl [string range $subF [string length ${topF}.] end]
+	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} continue
+	    if {[regexp {frame([a-z]+)[0-9]+} $lvl spare type] && \
+		    [lsearch {clist compound perm} $type]>-1} {
+		if {$type eq "compound"} {
+		    set compCase [$subF.head.label cget -text]
+		    set trim [string length xx[tr. "Multi-factor case(s)"]]
+		    set compCase " case=\"[string range $compCase 0 end-$trim]\""
+		} else {
+		    set compCase ""
+		}
+		puts $pStr "$indent<$type label=\"[string range $lvl 5 end]\"$compCase>"
+		SaveLevel $subF $pStr "  $indent"
+		puts $pStr "$indent</$type>"
+	    } elseif {[string range $lvl end-2 end] eq ", s"} {
+		puts $pStr "$indent<plist tgt=\"[string range $lvl 5 end-3]\">"
+		WriteLiteralParam $pStr [$subF.e get] "  $indent"
+	        puts $pStr $indent</plist>
+	    } else {
+		set npt [string first ", " $lvl]
+		if {$npt>-1} {
+		    puts $pStr "$indent<param tgt=\"[string range $lvl 5 $npt-1]\" case=\"[string range $lvl $npt+2 end]\" val=\"[$subF.e get]\"/>"
+		} else { ;# inside a compound case so no case name here
+		    puts $pStr "$indent<param tgt=\"[string range $lvl 5 end]\" val=\"[$subF.e get]\"/>"
+		}
+	    }
+	}
+    }
+
     public method GetCaseName {path} {	
 	set t [PutItThere .caseentry $winId]
 	wm protocol $t WM_DELETE_WINDOW {set case(done) 0}
@@ -394,7 +469,7 @@ itcl::class similescript::$newHelperClass {
 	    # set the actual parameter in the case!
 	    $box.e delete 0 end
 	    $box.e insert 0 $val
-	    set fullPath "[join [concat {{}} $clickPath] /]$path, s"
+	    set fullPath "[join [concat {{}} [lrange $clickPath end end]] /]$path, s"
 	    AcceptData $myNode $fullPath 0 1 $name
 	    
 	    lappend compCases($myNode,$path) $name

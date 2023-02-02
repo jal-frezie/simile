@@ -594,7 +594,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
-
+    
     if {[focus] eq "$outNames($compName).cross"} {return 0}
     # tick invoked by clicking on cross, not what user wanted
     set node [IdFromTail $topNode $compLocal -1]
@@ -1201,58 +1201,6 @@ namespace eval fileparams {
 }
 
 namespace eval expt_setup {
-    proc Clear {topNode path topF} {
-    }
-
-    proc Open {args} {
-    }
-
-    proc Save {topNode path topF} {
-	set title [tr. {Save experiment setup as:}]
-        set metaFile [ChooseFile model.sxf $title 1 $topNode]
-	if {[llength $metaFile]} {
-	    set SimileProject(expt_setup,$topNode/) $metaFile
-            set pStr [NetOpen $metaFile w]
-            
-	    puts $pStr {<?xml version="1.0"?>}
-	    puts $pStr {<?xml-stylesheet type="text/xsl" href="sxf1.xsl"?>}
-	    puts $pStr "<sxf simile_version=\"$::env(SIMILE_VERSION)\">"
-	    puts $pStr {<clist label="top">}
-	    SaveLevel $topF $pStr "  "
-	    puts $pStr {</clist>}
-	    puts $pStr {</sxf>}
-	    close $pStr
-	}
-    }
-
-proc SaveLevel {topF pStr indent} {
-	foreach subF [winfo children $topF] {
-	    set lvl [string range $subF [string length ${topF}.] end]
-	    puts $lvl
-	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} continue
-	    if {[regexp {frame([a-z]+)[0-9]+} $lvl spare type] && \
-		    [lsearch {clist compound perm} $type]>-1} {
-		if {$type eq "compound"} {
-		    set compCase [$subF.head.label cget -text]
-		    set trim [string length xx[tr. "Multi-factor case(s)"]]
-		    set compCase " case=\"[string range $compCase 0 end-$trim]\""
-		} else {
-		    set compCase ""
-		}
-		puts $pStr "$indent<$type label=\"[string range $lvl 5 end]\"$compCase>"
-		SaveLevel $subF $pStr "  $indent"
-		puts $pStr "$indent</$type>"
-	    } elseif {[string range $lvl end-2 end] eq ", s"} {
-		puts $pStr "$indent<plist tgt=\"[string range $lvl 5 end-3]\">"
-		WriteLiteralParam $pStr [$subF.e get] "  $indent"
-	        puts $pStr $indent</plist>
-	    } else {
-		set npt [string first ", " $lvl]
-		puts $pStr "$indent<param tgt=\"[string range $lvl 5 $npt-1]\" case=\"[string range $lvl $npt+2 end]\" val=\"[$subF.e get]\"/>"
-	    }
-	}
-    }
-
 }
 
 proc Entitize {str} {
