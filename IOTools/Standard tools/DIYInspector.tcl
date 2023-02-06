@@ -5,7 +5,7 @@ set newHelperClass DIYInspector20210125
 itcl::class similescript::$newHelperClass {
     inherit Helper
 
-    variable topFrame
+    public variable topFrame
 
     proc Identify {} {
 	return "Explorer (DIY version)"
@@ -71,7 +71,7 @@ itcl::class similescript::$newHelperClass {
 		    -command "$this delete"
 	    }
 	    
-	    set f [MakeSubFrames $::myNode $topFrame {expt {}} \
+	    set f [MakeSubFrames $this $topFrame {expt {}} \
 		       [namespace current] 0]
 	    $f.head.label configure -text [tr. {Experimental conditions}] \
 		-image $iconImages(flask) -compound left
@@ -114,7 +114,7 @@ itcl::class similescript::$newHelperClass {
 		    if {![winfo exists $e]} continue
 		}
 		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
-			   [namespace current] 0]
+			   {} 0]
 		bind $f <Button-1> [list ProdFromHelper $winId $component \
 					[string range $fullCapt $chop end]]
 		bind $f <Button-2> {puts "Behold the %W"}
@@ -174,7 +174,7 @@ itcl::class similescript::$newHelperClass {
     }
 
     # can probably improve the logic of this next bit
-    public method InsertLevel {type} {
+    method InsertLevel {type} {
 	global myNode compCases
 	variable clickPath
 	variable decor
@@ -184,7 +184,7 @@ itcl::class similescript::$newHelperClass {
 	switch -regexp $type {
 	    param|plist {
 		set paramEdits 1
-		set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
+		set f [MakeSubFrames $this $topFrame [concat $clickPath {{}}] \
 			   [namespace current] 0]
 		if {[CaseForExpt $myNode $clickPath] ne ""} {
 		} elseif {$type eq "param"} {
@@ -201,7 +201,7 @@ itcl::class similescript::$newHelperClass {
 	    } default {
 		set newLevel [UniqueId $type]
 		lappend clickPath $newLevel
-		set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
+		set f [MakeSubFrames $this $topFrame [concat $clickPath {{}}] \
 			   [namespace current] 0]
 		set lab $f.head.label
 		set leafName [lindex $decor $anchor+1]
@@ -215,7 +215,7 @@ itcl::class similescript::$newHelperClass {
 		    -image $::iconImages([lindex $decor $anchor+2])
 		pack $lab -side left
 		CrossPlatformBind $f \
-		    [namespace code [list OnElementContext  $clickPath %X %Y]]
+		    [namespace code [list OnElementContext $clickPath %X %Y]]
 	    }
 	}
     }
@@ -263,24 +263,88 @@ itcl::class similescript::$newHelperClass {
 	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt
     }
 
-    proc Clear {topNode path topF} {
+    proc Clear {topNode topF} {
 	variable clickPath
 	variable cMenu
-	
+
+	set safePath [lindex [CrossPlatformBind $topF] 0 3 1]
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]
 	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} \
 		continue
-	    set clickPath [concat expt [list [string range $lvl 5 end]]]
+	    set clickPath [concat $safePath [list [string range $lvl 5 end]]]
 	    $cMenu invoke Delete ;# does child
 	}
     }
 
-    proc Open {args} {
+    public method StartElement {type avPairs} {
+	variable clickPath
+	variable preSelected
+	variable filling
+	
+	array set attrs $avPairs
+	if {[info exists attrs(case)]} {
+	    set preSelected $attrs(case)
+	} elseif {[info exists preSelected]} {
+	    unset preSelected
+	}
+	
+	switch $type {
+	    sxf {
+		set clickPath expt
+	    } value {
+		$filling.e insert end " [list $attrs(index) $attrs(value)]"
+	    } default {
+		InsertLevel $type
+		if {[info exists attrs(tgt)]} {
+		    # will be awaiting a click, so supply one
+		    Click /$attrs(tgt)
+		}
+		if {$type eq "plist" || [info exists attrs(val)]} {
+		    set f [MakeSubFrames $this $topFrame $clickPath \
+			       [namespace current] 0]
+		    if {$type eq "plist"} {
+			set filling $f
+		    } else {
+			$f.e insert 0 $attrs(val)
+			$f.tick invoke
+		    }
+		}
+	    }
+	}
     }
 
-    proc Save {topNode path topF} {
+    public method FinishElement {type} {
+	variable clickPath
+	variable filling
+	
+	if {$type eq "plist"} {
+	    $filling.e delete 0 1 ;# trim initial space
+	    $filling.tick invoke
+	    unset filling
+	}
+	set clickPath [lrange $clickPath 0 end-1]
+    }
+
+    proc Open {inst path} {
+	variable sxfParser
+	set sxfParser [::xml::parser -ignorewhitespace true \
+			   -elementstartcommand [list $inst StartElement] \
+			   -elementendcommand [list $inst FinishElement]]
+	set title [tr. {Load experiment setup from:}]
+	set topNode [$inst GetNode]
+        set exptFile [ChooseFile model.sxf $title 0 $topNode]
+	if {[llength $exptFile]} {
+	    set pStr [open $exptFile r]
+	    set dada [DefuseXmlBombs [read $pStr]]
+	    close $pStr
+	    $sxfParser parse $dada
+	}
+    }
+
+    proc Save {inst path} {
 	set title [tr. {Save experiment setup as:}]
+	set topNode [$inst GetNode]
         set metaFile [ChooseFile model.sxf $title 1 $topNode]
 	if {[llength $metaFile]} {
 	    set SimileProject(expt_setup,$topNode/) $metaFile
@@ -290,6 +354,7 @@ itcl::class similescript::$newHelperClass {
 	    puts $pStr {<?xml-stylesheet type="text/xsl" href="sxf1.xsl"?>}
 	    puts $pStr "<sxf simile_version=\"$::env(SIMILE_VERSION)\">"
 	    puts $pStr {<clist label="top">}
+	    set topF [MakeSubFrames $inst [$inst cget -topFrame] $path {} 0]
 	    SaveLevel $topF $pStr "  "
 	    puts $pStr {</clist>}
 	    puts $pStr {</sxf>}
@@ -328,7 +393,11 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method GetCaseName {path} {	
+    public method GetCaseName {path} {
+	variable preSelected
+	if {[info exists preSelected]} {
+	    return $preSelected
+	}
 	set t [PutItThere .caseentry $winId]
 	wm protocol $t WM_DELETE_WINDOW {set case(done) 0}
 	wm title $t "Case name"
@@ -503,7 +572,7 @@ itcl::class similescript::$newHelperClass {
 	set fullCapt [GetCaptionPathFromId $node]
 	set levels [split $fullCapt /]
 	set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 [GetNode]] \
-		   [namespace current] 0]
+		   {} 0]
 	set cmd [list ::RunEnv::FocusTool $hlpr]
 	foreach prev [winfo children $f] {
 	    if {[string match *Button [winfo class $prev]] && \

@@ -484,7 +484,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 			set btn $nextLevel.head.$img
 			pack [::ttk::button $btn -style $bStyle \
 			      -image $iconImages($img) \
-			      -command [list $nsCmd $clientId $path $nextLevel]] \
+			      -command [list $nsCmd $clientId $path]] \
 			-side right
 			BindPopup $btn \
 			    [format [tr. "$act values for subtree \"%1\$s\""] \
@@ -909,10 +909,12 @@ namespace eval fileparams {
 	    set dataLocn targetData
 	    set widgetLocn targetNames
 	    set defExtn .smf
+	    set whatToSave measurements
 	} else {
 	    set dataLocn paramData
 	    set widgetLocn widgetNames
 	    set defExtn .spf
+	    set whatToSave parameters
 	}
 	upvar \#0 $dataLocn suppliedData
 	upvar \#0 $widgetLocn outNames
@@ -927,7 +929,7 @@ namespace eval fileparams {
 	    }
 	}
 	set defBase [LevelForTitle $smPath]
-	set title [format [tr. {Save "%1$s" parameters as:}] $defBase]
+	set title [format [tr. {Save %1$s for "%2$s" as:}] $whatToSave $defBase]
         set metaFile [ChooseFile $defBase$defExtn $title 1 $topNode]
 	ClearSubParamRefs $smPath ;# old spfs below this are superseded
         if {[llength $metaFile]} {
@@ -1170,18 +1172,21 @@ namespace eval fileparams {
 	if {$notInput} {
 	    set titlePath [file normalize /$topNode$smPath]
 	    set extn .smf
+	    set whatToLoad measurements
 	} else {
 	    set titlePath $smPath
 	    set extn .spf
+	    set whatToLoad parameters
 	}
 	set defBase [LevelForTitle $titlePath]
-	set title [format [tr. {Load "%1$s" measurements from:}] $defBase]
+	set title [format [tr. {Load %1$s for "%2$s" from:}] $whatToLoad $defBase]
 	set metaFile [ChooseFile $defBase$extn $title 0 $topNode]
         if {[llength $metaFile]} {
-            MergeParams $topNode /$smPath $metaFile $notInput 1            
+            MergeParams $topNode $smPath $metaFile $notInput 1
+            
         }
     }
-    
+
     proc LabelPopup {label node capt} {
 	# Look at the code that gets the information for the variable's
 	# popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
