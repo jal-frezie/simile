@@ -594,7 +594,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
-    
+
     if {[focus] eq "$outNames($compName).cross"} {return 0}
     # tick invoked by clicking on cross, not what user wanted
     set node [IdFromTail $topNode $compLocal -1]
@@ -607,13 +607,15 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	    return 0
 	}
 	set preload [GetCompProperty $topNode Spec $node]
-	if {$newData eq "" && $caseId eq "" && $preload ne "" && \
+	if {$newData eq "" && $suppliedData($compName) ne "" && \
 		[GetCompProperty $topNode Class $node] ne "EVENT"} {
-	    $outNames($compName).e insert 0 $preload
+	    if {$caseId eq ""} {
+		$outNames($compName).e insert 0 $preload
+		ColourCaptions $outNames($compName) blue
+	    }
 	    set suppliedData($compName) $preload
 	    set msgs(param_source_$compName) $msgs(fce)
-	    ColourCaptions $outNames($compName) blue
-	    # set dataChanged 1 ; no need, it is in the model anyway
+	    set dataChanged 1 ;# still need to clear old param
 	} elseif {![string equal $newData $suppliedData($compName)]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0

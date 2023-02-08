@@ -211,11 +211,45 @@ itcl::class similescript::$newHelperClass {
 		    set compCases($myNode,$newLevel) $compCase
 		    set leafName "$compCase: $leafName"
 		}
+		if {$type eq "perm"} {
+		    bind $f <FocusOut> [list $this RecalcPerms $clickPath]
+		}
 		$lab configure -compound left -text $leafName \
 		    -image $::iconImages([lindex $decor $anchor+2])
 		pack $lab -side left
 		CrossPlatformBind $f \
 		    [namespace code [list OnElementContext $clickPath %X %Y]]
+	    }
+	}
+    }
+
+    public method ListCasesFor {path} {
+	global compCases
+
+	set leaf [lindex $path end]
+	set endNodes [string first {, } $leaf]
+	if {$endNodes>=0} {
+	    set vPath [string range $leaf 0 $endNodes-1]
+	    set id [string range $leaf $endNodes+2 end]
+	    set f [MakeSubFrames $winId $topFrame [concat $path {{}}] \
+		       [namespace current] 0]
+	    if {$id eq "s"} {
+		return [list $vPath [InterpList [$f.e get]]]
+	    } else {
+		return [list $id [list $vPath [$f.e get]]]
+	    }
+	} else {
+	    return [list $compCases([GetNode],$leaf) {x 1 y 2 z 3 etc etc}]
+	}
+    }
+
+    public method RecalcPerms {path} {
+	set f [MakeSubFrames $this $topFrame [concat $path {{}}] \
+		   [namespace current] 0]
+	foreach subF [winfo children $f] {
+	    set lvl [string range $subF [string length $f.] end]
+	    if {![string first frame $lvl]} {
+		puts [ListCasesFor [concat $path [list [string range $lvl 5 end]]]]
 	    }
 	}
     }
@@ -228,10 +262,10 @@ itcl::class similescript::$newHelperClass {
 	set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
 		   [namespace current] 0]
 	set leaf [lindex $clickPath end]
+	puts "cC [array get compCases] leaf $leaf"
 	set endNodes [string first {, } $leaf]
 	if {$endNodes>=0} {
 	    if {[string range $leaf $endNodes end] eq ", s"} {
-	    # parameter value in compound case, case will survive so clear it 
 		$f.e delete 0 end
 		$f.tick invoke
 	    } else {
@@ -240,12 +274,16 @@ itcl::class similescript::$newHelperClass {
 	} elseif {[info exists compCases($myNode,$leaf)]} {
 	    DeleteCase $myNode $compCases($myNode,$leaf)
 	    unset compCases($myNode,$leaf)
+	} elseif {[winfo exists $f.e]} {
+	    # parameter value in compound case, case will survive so clear it
+	    $f.e delete 0 end
+	    AcceptData $myNode /[join [lrange $clickPath end-1 end] /] 0 1 \
+		[CaseForExpt $myNode $clickPath]
 	} else {
 	    set safePath $clickPath
 	    foreach subF [winfo children $f] {
 		set lvl [string range $subF [string length ${f}.] end]
-		if {[lsearch {head body tree caption tick cross} $lvl]>-1} \
-		    continue
+		if {[string first frame $lvl]} continue
 		set clickPath [concat $safePath [list [string range $lvl 5 end]]]
 		$this delete ;# does child
 	    }
@@ -263,10 +301,11 @@ itcl::class similescript::$newHelperClass {
 	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt
     }
 
-    proc Clear {topNode topF} {
+    proc Clear {inst path} {
 	variable clickPath
 	variable cMenu
 
+	set topF [MakeSubFrames $inst [$inst cget -topFrame] $path {} 0]
 	set safePath [lindex [CrossPlatformBind $topF] 0 3 1]
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]
@@ -491,19 +530,8 @@ itcl::class similescript::$newHelperClass {
 	$box.e delete 0 end
 	$box.e insert 0 $listStrings($path)
     }
-	
-    public method DecodeListSpec {box path clickPath} {
-	global myNode compCases
-	variable listStrings
 
-	if {[focus] eq "$box.cross"} {return 0}
-	# tick invoked by clicking on cross, not what user wanted
-	bind $box.e <FocusOut> {} ;# in case of error message
-	set oldCases $compCases($myNode,$path)
-	set name [string range [winfo name $box] 5 end-3]
-	set listExpr [$box.e get]
-	if {$listExpr eq $listStrings($path)} return
-	
+    public method InterpList {listExpr} {
 	set range [scan $listExpr "%f to %f step %f" start end step]
 	if {$range>1} {
 	    if {$range==2} {
@@ -526,9 +554,24 @@ itcl::class similescript::$newHelperClass {
 		set compound $alt
 	    }
 	}
+	return $compound
+    }
+
+    public method DecodeListSpec {box path clickPath} {
+	global myNode compCases
+	variable listStrings
+
+	if {[focus] eq "$box.cross"} {return 0}
+	# tick invoked by clicking on cross, not what user wanted
+	bind $box.e <FocusOut> {} ;# in case of error message
+	set oldCases $compCases($myNode,$path)
+	set name [string range [winfo name $box] 5 end-3]
+	set listExpr [$box.e get]
+	if {$listExpr eq $listStrings($path)} return
 	
-    	set compCases($myNode,$path) {}
-        foreach {name val} $compound {
+   	set compCases($myNode,$path) {}
+	set fullPath "/[lindex $clickPath end]$path, s"
+        foreach {name val} [InterpList $listExpr] {
 	    set found [lsearch $oldCases $name]
 	    if {$found>=0} {
 		set oldCases [lreplace $oldCases $found $found]
@@ -538,7 +581,6 @@ itcl::class similescript::$newHelperClass {
 	    # set the actual parameter in the case!
 	    $box.e delete 0 end
 	    $box.e insert 0 $val
-	    set fullPath "[join [concat {{}} [lrange $clickPath end end]] /]$path, s"
 	    AcceptData $myNode $fullPath 0 1 $name
 	    
 	    lappend compCases($myNode,$path) $name
