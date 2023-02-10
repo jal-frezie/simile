@@ -744,6 +744,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	} else {
 	    set result [ListToArray $topNode $caseId $node {} {} $trans $recordDims \
 			    $newData $readMany($compName) $useCppArray]
+	    # now add to all permutations containing this case
 	    if {![string is integer -strict $result]} { # list of errors
 		set action [lindex {none load check} $complain]
 		foreach errorSpec $result {
@@ -775,6 +776,15 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 					   [lrange $errorSpec 2 end]]
 			set boredom [Query $fullError warning spf {} abort]
 			if {[string equal abort $boredom]} break
+		    }
+		}
+	    } elseif {$caseId ne {}} {
+		foreach {compoundCase hdl} [ListCases $topNode] {
+		    if {[lsearch [split $compoundCase +] $caseId]>-1 && \
+			    $compoundCase ne $caseId} {
+			c_setparamarray $topNode $node $compoundCase 1
+			ListToArray $topNode $compoundCase $node {} {} $trans \
+			    $recordDims $newData $readMany($compName) $useCppArray
 		    }
 		}
 	    }

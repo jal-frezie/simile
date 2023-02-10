@@ -117,10 +117,15 @@ proc update_executable {node lang} {
     }
 }
 
-proc InsertExptlCase {node caseId} {
+proc InsertExptlCase {node caseId parent} {
     global instance_id exptl_case
-
-    return [set exptl_case($caseId) [c_addmodeltogroup $instance_id]]
+    
+    if {$parent eq {}} {
+	set host $instance_id
+    } else {
+	set host $exptl_case($parent)
+    }
+    return [set exptl_case($caseId) [c_addmodeltogroup $host]]
 }
 
 proc DeleteExptlCase {node caseId} {

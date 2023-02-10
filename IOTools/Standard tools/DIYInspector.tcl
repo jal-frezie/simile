@@ -6,7 +6,8 @@ itcl::class similescript::$newHelperClass {
     inherit Helper
 
     public variable topFrame
-
+    public variable permMembers
+    
     proc Identify {} {
 	return "Explorer (DIY version)"
     }
@@ -173,6 +174,46 @@ itcl::class similescript::$newHelperClass {
 	tk_popup $cMenu $X $Y
     }
 
+    proc Combinations {sets} {
+        if {$sets eq {}} return
+	set result [Combinations [lrange $sets 1 end]]
+	set additions [lindex $sets 0]
+	foreach part $result {
+	    foreach extn $additions {
+		lappend result [concat $part [list $extn]]
+	    }
+	}
+	return [concat $result $additions]
+    }
+
+    public method ExtendPerms {src case levels} {
+	#puts [info level 0]..onto..[array get permMembers]
+	if {$levels eq {}} return
+	set lvl [lindex $levels end]
+	if {[TypeFromLevel frame$lvl] eq "perm"} {
+	    set oldMembers {}
+	    set added 0
+	    foreach {locn oldCases} [array get permMembers $lvl,*] {
+		if {$locn eq "$lvl,$src"} {
+		    # is addition to list of alternatives
+		    lappend permMembers($locn) $case
+		    set added 1
+		} else {
+		    lappend oldMembers $oldCases
+		}
+	    }
+	    foreach oldCombo [Combinations $oldMembers] { ;# only add new ones
+		set oldCase [join [lsort $oldCombo] +]
+		AddCase [GetNode] [join [lsort [linsert $oldCombo end $case]] +] $oldCase
+	    }
+	    if {!$added} {
+		array set permMembers [list $lvl,$src [list $case]]
+	    }
+	} else {
+	    ExtendPerms $src $case [lrange $levels 0 end-1]
+	}
+    }
+
     # can probably improve the logic of this next bit
     method InsertLevel {type} {
 	global myNode compCases
@@ -194,6 +235,7 @@ itcl::class similescript::$newHelperClass {
 		    set newLevel [UniqueId $type]
 		    lappend clickPath $newLevel
 		    set compCases($myNode,$newLevel) $parmCase
+		    ExtendPerms $newLevel $parmCase $clickPath
 		}
 		pack [label $f.label -wrap 250 -text [tr. "Select the parameter to vary in this case from the model diagram or explorer"] -fg red]
 		lappend clickPath $type
@@ -212,7 +254,7 @@ itcl::class similescript::$newHelperClass {
 		    set leafName "$compCase: $leafName"
 		}
 		if {$type eq "perm"} {
-		    bind $f <FocusOut> [list $this RecalcPerms $clickPath]
+		    # bind $f <FocusOut> [list $this RecalcPerms $clickPath]
 		}
 		$lab configure -compound left -text $leafName \
 		    -image $::iconImages([lindex $decor $anchor+2])
@@ -248,8 +290,25 @@ itcl::class similescript::$newHelperClass {
 		   [namespace current] 0]
 	foreach subF [winfo children $f] {
 	    set lvl [string range $subF [string length $f.] end]
-	    if {![string first frame $lvl]} {
-		puts [ListCasesFor [concat $path [list [string range $lvl 5 end]]]]
+	    set npt [string first ", " $lvl]
+	    set case [string range $lvl $npt+2 end]
+	    if {$npt>-1 && $case ne "s"} {
+		set oldMembers {}
+		set qualCmd [$subF.tick cget -command]
+		foreach {locn oldCases} [array get permMembers [lindex $path end],*] {
+		    puts "found $locn"
+		    if {$oldCases ne $case} {
+			lappend oldMembers $oldCases
+		    }
+		}
+		puts "Adding $case to $oldMembers"
+		foreach oldCombo [Combinations $oldMembers] {
+		    set toUpdate [join [lsort [linsert $oldCombo 0 $case]] +]
+		    puts [lreplace $qualCmd 3 3 \
+			      [lreplace [lindex $qualCmd 3] 5 5 $toUpdate]]
+		    eval [lreplace $qualCmd 3 3 \
+			      [lreplace [lindex $qualCmd 3] 5 5 $toUpdate]]
+		}
 	    }
 	}
     }
@@ -362,7 +421,9 @@ itcl::class similescript::$newHelperClass {
 	    $filling.tick invoke
 	    unset filling
 	}
-	set clickPath [lrange $clickPath 0 end-1]
+	if {$type ne "value"} {
+	    set clickPath [lrange $clickPath 0 end-1]
+	}
     }
 
     proc Open {inst path} {
@@ -401,12 +462,20 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
+    proc TypeFromLevel {lvl} {
+	if {[regexp {frame([a-z]+)[0-9]+} $lvl spare type]} {
+	    return $type
+	} else {
+	    return leaf
+	}
+    }
+
     proc SaveLevel {topF pStr indent} {
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]
 	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} continue
-	    if {[regexp {frame([a-z]+)[0-9]+} $lvl spare type] && \
-		    [lsearch {clist compound perm} $type]>-1} {
+	    set type [TypeFromLevel $lvl]
+	    if {[lsearch {clist compound perm} $type]>-1} {
 		if {$type eq "compound"} {
 		    set compCase [$subF.head.label cget -text]
 		    set trim [string length xx[tr. "Multi-factor case(s)"]]
@@ -557,9 +626,10 @@ itcl::class similescript::$newHelperClass {
 	return $compound
     }
 
-    public method DecodeListSpec {box path clickPath} {
+    public method DecodeListSpec {box path fullPath} {
 	global myNode compCases
 	variable listStrings
+	variable clickPath
 
 	if {[focus] eq "$box.cross"} {return 0}
 	# tick invoked by clicking on cross, not what user wanted
@@ -570,13 +640,14 @@ itcl::class similescript::$newHelperClass {
 	if {$listExpr eq $listStrings($path)} return
 	
    	set compCases($myNode,$path) {}
-	set fullPath "/[lindex $clickPath end]$path, s"
+	set fullPath "/[lindex $fullPath end]$path, s"
         foreach {name val} [InterpList $listExpr] {
 	    set found [lsearch $oldCases $name]
 	    if {$found>=0} {
 		set oldCases [lreplace $oldCases $found $found]
 	    } else {
 		AddCase $myNode $name
+		ExtendPerms [lindex $clickPath end] $name $clickPath
 	    }
 	    # set the actual parameter in the case!
 	    $box.e delete 0 end

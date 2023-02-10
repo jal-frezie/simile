@@ -783,10 +783,10 @@ proc LoadProgram {node lang} {
     }
 }
 
-proc AddCase {node caseId} {
+proc AddCase {node caseId {parent {}}} {
     global runState
     
-    set runState($node,case$caseId) [InsertExptlCase $node $caseId]
+    set runState($node,case$caseId) [InsertExptlCase $node $caseId $parent]
     set runState($node,reloadParams) -2
 }
 
