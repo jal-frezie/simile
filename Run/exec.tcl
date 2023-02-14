@@ -129,8 +129,9 @@ proc InsertExptlCase {node caseId parent} {
 }
 
 proc DeleteExptlCase {node caseId} {
-    global exptl_case
+    global exptl_case exptl_params
 
+    array unset exptl_params *,$caseId
     c_deletemodel $exptl_case($caseId)
     unset exptl_case($caseId)
 }

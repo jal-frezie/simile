@@ -176,18 +176,18 @@ itcl::class similescript::$newHelperClass {
 
     proc Combinations {sets} {
         if {$sets eq {}} return
-	set result [Combinations [lrange $sets 1 end]]
+	set result {}
+	set bases [Combinations [lrange $sets 1 end]]
 	set additions [lindex $sets 0]
-	foreach part $result {
+	foreach part $bases {
 	    foreach extn $additions {
 		lappend result [concat $part [list $extn]]
 	    }
 	}
-	return [concat $result $additions]
+	return [concat $result $bases $additions]
     }
 
     public method ExtendPerms {src case levels} {
-	#puts [info level 0]..onto..[array get permMembers]
 	if {$levels eq {}} return
 	set lvl [lindex $levels end]
 	if {[TypeFromLevel frame$lvl] eq "perm"} {
@@ -211,6 +211,34 @@ itcl::class similescript::$newHelperClass {
 	    }
 	} else {
 	    ExtendPerms $src $case [lrange $levels 0 end-1]
+	}
+    }
+
+    public method ReducePerms {src case levels} {
+	if {$levels eq {}} return
+	set lvl [lindex $levels end]
+	if {[TypeFromLevel frame$lvl] eq "perm"} {
+	    set oldMembers {}
+	    set added 0
+	    foreach {locn oldCases} [array get permMembers $lvl,*] {
+		if {$locn eq "$lvl,$src"} {
+		    # is addition to list of alternatives
+		    set place [lsearch $oldCases $case]
+		    set remain [lreplace $oldCases $place $place]
+		    if {$remain eq {}} {
+			unset permMembers($locn)
+		    } else {
+			set permMembers($locn) $remain
+		    }
+		} else {
+		    lappend oldMembers $oldCases
+		}
+	    }
+	    foreach oldCombo [Combinations $oldMembers] { ;# only add new ones
+		DeleteCase [GetNode] [join [lsort [linsert $oldCombo end $case]] +]
+	    }
+	} else {
+	    ReducePerms $src $case [lrange $levels 0 end-1]
 	}
     }
 
@@ -321,14 +349,19 @@ itcl::class similescript::$newHelperClass {
 	set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
 		   [namespace current] 0]
 	set leaf [lindex $clickPath end]
-	puts "cC [array get compCases] leaf $leaf"
+	#puts "cC [array get compCases] leaf $leaf"
 	set endNodes [string first {, } $leaf]
 	if {$endNodes>=0} {
 	    if {[string range $leaf $endNodes end] eq ", s"} {
 		$f.e delete 0 end
 		$f.tick invoke
 	    } else {
-		DeleteCase $myNode [string range $leaf $endNodes+2 end]
+		set case [string range $leaf $endNodes+2 end]
+		set byLevel [array get compCases $myNode,*]
+		set oldLevel [string range [lindex $byLevel [lsearch $byLevel $case]-1] 10 end]
+		ReducePerms $oldLevel $case $clickPath
+		DeleteCase $myNode $case
+		unset compCases($myNode,$oldLevel)
 	    }
 	} elseif {[info exists compCases($myNode,$leaf)]} {
 	    DeleteCase $myNode $compCases($myNode,$leaf)
@@ -453,10 +486,8 @@ itcl::class similescript::$newHelperClass {
 	    puts $pStr {<?xml version="1.0"?>}
 	    puts $pStr {<?xml-stylesheet type="text/xsl" href="sxf1.xsl"?>}
 	    puts $pStr "<sxf simile_version=\"$::env(SIMILE_VERSION)\">"
-	    puts $pStr {<clist label="top">}
 	    set topF [MakeSubFrames $inst [$inst cget -topFrame] $path {} 0]
 	    SaveLevel $topF $pStr "  "
-	    puts $pStr {</clist>}
 	    puts $pStr {</sxf>}
 	    close $pStr
 	}
@@ -626,28 +657,28 @@ itcl::class similescript::$newHelperClass {
 	return $compound
     }
 
-    public method DecodeListSpec {box path fullPath} {
+    public method DecodeListSpec {box path hitPath} {
 	global myNode compCases
 	variable listStrings
 	variable clickPath
 
 	if {[focus] eq "$box.cross"} {return 0}
 	# tick invoked by clicking on cross, not what user wanted
-	bind $box.e <FocusOut> {} ;# in case of error message
+	#bind $box.e <FocusOut> {} ;# in case of error message
 	set oldCases $compCases($myNode,$path)
-	set name [string range [winfo name $box] 5 end-3]
+	set lvl [string range [winfo name $box] 5 end]
 	set listExpr [$box.e get]
 	if {$listExpr eq $listStrings($path)} return
 	
    	set compCases($myNode,$path) {}
-	set fullPath "/[lindex $fullPath end]$path, s"
+	set fullPath "/[lindex $hitPath end]$path, s"
         foreach {name val} [InterpList $listExpr] {
 	    set found [lsearch $oldCases $name]
 	    if {$found>=0} {
 		set oldCases [lreplace $oldCases $found $found]
 	    } else {
 		AddCase $myNode $name
-		ExtendPerms [lindex $clickPath end] $name $clickPath
+		ExtendPerms $lvl $name $hitPath
 	    }
 	    # set the actual parameter in the case!
 	    $box.e delete 0 end
@@ -659,11 +690,12 @@ itcl::class similescript::$newHelperClass {
 	$box.e delete 0 end
 	$box.e insert 0 $listExpr
 	foreach case $oldCases {
+	    ReducePerms $lvl $case $hitPath
 	    DeleteCase $myNode $case
 	}
 	
 	set listStrings($path) $listExpr
-	bind $box.e <FocusOut> [list $box.tick invoke]
+	#bind $box.e <FocusOut> [list $box.tick invoke]
     }
 		
     public method HelperLeaf {node hlpr add} {
