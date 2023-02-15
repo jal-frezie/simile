@@ -607,15 +607,16 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	    return 0
 	}
 	set preload [GetCompProperty $topNode Spec $node]
-	if {$newData eq "" && $suppliedData($compName) ne "" && \
+	if {$newData eq "" && \
 		[GetCompProperty $topNode Class $node] ne "EVENT"} {
-	    if {$caseId eq ""} {
+	    if {$caseId eq "" && $preload ne ""} {
 		$outNames($compName).e insert 0 $preload
+		set msgs(param_source_$compName) $msgs(fce)
 		ColourCaptions $outNames($compName) blue
+	    } elseif {$suppliedData($compName) ne ""} {
+		set dataChanged 1 ;# still need to clear old param
 	    }
 	    set suppliedData($compName) $preload
-	    set msgs(param_source_$compName) $msgs(fce)
-	    set dataChanged 1 ;# still need to clear old param
 	} elseif {![string equal $newData $suppliedData($compName)]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
