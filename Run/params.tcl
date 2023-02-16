@@ -614,6 +614,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		set msgs(param_source_$compName) $msgs(fce)
 		ColourCaptions $outNames($compName) blue
 	    } elseif {$suppliedData($compName) ne ""} {
+		set msgs(param_source_$compName) $msgs(fce)
 		set dataChanged 1 ;# still need to clear old param
 	    }
 	    set suppliedData($compName) $preload

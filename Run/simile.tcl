@@ -467,6 +467,7 @@ pack .hidden_e
 # fonts do depend on this, so put up a box sized in characters and see
 # how many pixels it takes, and use the ratio to set the scaling.
 
+    set niceSize [expr {round($defScaling*$niceSize)}]
 set textBigness [expr {$defScaling*[winfo reqwidth .hidden_e]/288}]
 set scalRat [ChooseIntegerRatio $textBigness 0.9]
 set defScaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]

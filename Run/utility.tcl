@@ -456,6 +456,7 @@ proc PostPopup {w X Y} {
     global tcl_platform popper
 
     RemovePopup
+    if {![winfo exists $w]} return ;# deleted since command queued
     set popper(cur) [winfo toplevel $w]
     set popup $popper(cur).popup
     if {![PrefValue custom(tlPopups) tlPopups]} {
@@ -806,8 +807,6 @@ proc SquirtMime {args} {
 proc LoadIconImages {} {
     global iconImages
 
-    set rawImg [image create photo]
-    set growth [expr {max(1,int($::defScaling))}]
     foreach icon {info question warning error} {
 	set iconImages($icon) \
 	    [image create photo -file "../Images/Icons/dialog-$icon.png"]
@@ -838,15 +837,13 @@ proc LoadIconImages {} {
     # }
     foreach fn {submodel compartment flow variable input file list condition \
 		    creation reproduction immigration loss alarm} {
-	$rawImg read "../Images/Toolbar/${fn}.gif" -shrink
-        set iconImages($fn) [image create photo]
-	$iconImages($fn) copy $rawImg -zoom $growth
+        set iconImages($fn) \
+	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
     if {[info exists ::do_events]} {
 	foreach fn {event state squirt} {
-	    $rawImg read "../Images/Toolbar/${fn}.gif" -shrink
-	    set iconImages($fn) [image create photo]
-	    $iconImages($fn) copy $rawImg -zoom $growth
+	    set iconImages($fn) \
+		[image create photo -file "../Images/Toolbar/${fn}.gif"]
 	}
     }
 }

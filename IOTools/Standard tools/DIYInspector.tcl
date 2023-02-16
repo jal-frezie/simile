@@ -56,8 +56,7 @@ itcl::class similescript::$newHelperClass {
 	if {$incExpts} {
 	    set decor [list param [tr. "Parameter value"] file \
 			   plist [tr. "List for parameter"] list \
-			   clist [tr. "List of cases"] caselist \
-			   compound [tr. "Multi-factor case(s)"] compfact \
+			   compound [tr. "Multi-factor case"] compfact \
 			   perm [tr. "Set of permutations"] permut]
 	    set cMenu $winId.expt_context
 	    if {![winfo exists $cMenu]} {
@@ -280,63 +279,13 @@ itcl::class similescript::$newHelperClass {
 		    AddCase $myNode $compCase
 		    set compCases($myNode,$newLevel) $compCase
 		    set leafName "$compCase: $leafName"
-		}
-		if {$type eq "perm"} {
-		    # bind $f <FocusOut> [list $this RecalcPerms $clickPath]
+		    ExtendPerms $newLevel $compCase $clickPath
 		}
 		$lab configure -compound left -text $leafName \
 		    -image $::iconImages([lindex $decor $anchor+2])
 		pack $lab -side left
 		CrossPlatformBind $f \
 		    [namespace code [list OnElementContext $clickPath %X %Y]]
-	    }
-	}
-    }
-
-    public method ListCasesFor {path} {
-	global compCases
-
-	set leaf [lindex $path end]
-	set endNodes [string first {, } $leaf]
-	if {$endNodes>=0} {
-	    set vPath [string range $leaf 0 $endNodes-1]
-	    set id [string range $leaf $endNodes+2 end]
-	    set f [MakeSubFrames $winId $topFrame [concat $path {{}}] \
-		       [namespace current] 0]
-	    if {$id eq "s"} {
-		return [list $vPath [InterpList [$f.e get]]]
-	    } else {
-		return [list $id [list $vPath [$f.e get]]]
-	    }
-	} else {
-	    return [list $compCases([GetNode],$leaf) {x 1 y 2 z 3 etc etc}]
-	}
-    }
-
-    public method RecalcPerms {path} {
-	set f [MakeSubFrames $this $topFrame [concat $path {{}}] \
-		   [namespace current] 0]
-	foreach subF [winfo children $f] {
-	    set lvl [string range $subF [string length $f.] end]
-	    set npt [string first ", " $lvl]
-	    set case [string range $lvl $npt+2 end]
-	    if {$npt>-1 && $case ne "s"} {
-		set oldMembers {}
-		set qualCmd [$subF.tick cget -command]
-		foreach {locn oldCases} [array get permMembers [lindex $path end],*] {
-		    puts "found $locn"
-		    if {$oldCases ne $case} {
-			lappend oldMembers $oldCases
-		    }
-		}
-		puts "Adding $case to $oldMembers"
-		foreach oldCombo [Combinations $oldMembers] {
-		    set toUpdate [join [lsort [linsert $oldCombo 0 $case]] +]
-		    puts [lreplace $qualCmd 3 3 \
-			      [lreplace [lindex $qualCmd 3] 5 5 $toUpdate]]
-		    eval [lreplace $qualCmd 3 3 \
-			      [lreplace [lindex $qualCmd 3] 5 5 $toUpdate]]
-		}
 	    }
 	}
     }
@@ -364,6 +313,8 @@ itcl::class similescript::$newHelperClass {
 		unset compCases($myNode,$oldLevel)
 	    }
 	} elseif {[info exists compCases($myNode,$leaf)]} {
+	    set lvl [string range [winfo name $f] 5 end]
+	    ReducePerms $lvl $compCases($myNode,$leaf) $clickPath
 	    DeleteCase $myNode $compCases($myNode,$leaf)
 	    unset compCases($myNode,$leaf)
 	} elseif {[winfo exists $f.e]} {
@@ -506,10 +457,10 @@ itcl::class similescript::$newHelperClass {
 	    set lvl [string range $subF [string length ${topF}.] end]
 	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} continue
 	    set type [TypeFromLevel $lvl]
-	    if {[lsearch {clist compound perm} $type]>-1} {
+	    if {[lsearch {compound perm} $type]>-1} {
 		if {$type eq "compound"} {
 		    set compCase [$subF.head.label cget -text]
-		    set trim [string length xx[tr. "Multi-factor case(s)"]]
+		    set trim [string length xx[tr. "Multi-factor case"]]
 		    set compCase " case=\"[string range $compCase 0 end-$trim]\""
 		} else {
 		    set compCase ""
@@ -535,7 +486,9 @@ itcl::class similescript::$newHelperClass {
     public method GetCaseName {path} {
 	variable preSelected
 	if {[info exists preSelected]} {
-	    return $preSelected
+	    set result $preSelected
+	    unset preSelected
+	    return $result
 	}
 	set t [PutItThere .caseentry $winId]
 	wm protocol $t WM_DELETE_WINDOW {set case(done) 0}

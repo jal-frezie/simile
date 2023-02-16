@@ -94,6 +94,7 @@ if {[string equal x11 [tk windowingsystem]] && \
 }
 font configure TkTextFont -size $niceSize
 font configure TkCaptionFont -size $niceSize
+font configure TkIconFont -size $niceSize ;# for file selector dialogue
 # Now here's one of my own...
 eval font create EquationFont [font actual TkTextFont]
 set eqnSize [expr {[font configure EquationFont -size]*5/4}]
