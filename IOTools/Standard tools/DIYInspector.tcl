@@ -344,7 +344,7 @@ itcl::class similescript::$newHelperClass {
 	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt
     }
 
-    proc Clear {inst path} {
+    proc Empty {inst path} {
 	variable clickPath
 	variable cMenu
 

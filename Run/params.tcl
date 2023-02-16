@@ -478,7 +478,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		-expand 1
 	    if {[llength $ns]} {
 		foreach {cmd act img} {Save Save save Open Load open \
-					   Clear Clear new} {
+					   Clear Empty new} {
 		    set nsCmd ${ns}::$cmd
 		    if {[llength [info commands $nsCmd]]} {
 			set btn $nextLevel.head.$img
@@ -902,7 +902,7 @@ proc WriteLiteralParam {pStr data indent} {
 
 namespace eval fileparams {
     
-    proc Clear {spare smPath} {
+    proc Empty {spare smPath} {
         global widgetNames msgs paramState paramMetadata
 	ClearSubParamRefs /$smPath
         foreach compName [array names widgetNames /$smPath*] {
