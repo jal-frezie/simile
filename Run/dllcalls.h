@@ -17,7 +17,7 @@
 #define	TRUE		1
 
 #ifndef BOOLEAN
-#define BOOLEAN         unsigned char
+typedef unsigned char BOOLEAN;
 #endif
 /* possibly needed for Unix */
 
