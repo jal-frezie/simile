@@ -1141,12 +1141,13 @@ proc OpenProgressBox {winId} {
 	wm title .progress [tr. "Progress with current operation"]
 	wm protocol .progress WM_DELETE_WINDOW {set done 1}
 	# do not allow delete
-	pack [frame .progress.filler -width 400 -height 100]
+	pack [frame .progress.filler -width 400p -height 100p]
 	if {[LetItShow .progress]} {
 	    grab .progress
 	}
 	destroy .progress.filler
-	wm geometry .progress 400x100
+	set width [expr {int($::defScaling*400)}]
+	wm geometry .progress ${width}x[expr {$width/4}]
 	message .progress.message -aspect 400 -text [tr. "Please wait"]
 	pack .progress.message -fill both -expand true
 #	::ttk::progressbar .progress.bar -maximum 100

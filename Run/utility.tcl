@@ -807,6 +807,8 @@ proc SquirtMime {args} {
 proc LoadIconImages {} {
     global iconImages
 
+    set rawImg [image create photo]
+    set growth [expr {max(1,int($::defScaling))}]
     foreach icon {info question warning error} {
 	set iconImages($icon) \
 	    [image create photo -file "../Images/Icons/dialog-$icon.png"]
@@ -837,13 +839,15 @@ proc LoadIconImages {} {
     # }
     foreach fn {submodel compartment flow variable input file list condition \
 		    creation reproduction immigration loss alarm} {
-        set iconImages($fn) \
-	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+	$rawImg read "../Images/Toolbar/${fn}.gif" -shrink
+        set iconImages($fn) [image create photo]
+	$iconImages($fn) copy $rawImg -zoom $growth
     }
     if {[info exists ::do_events]} {
 	foreach fn {event state squirt} {
-	    set iconImages($fn) \
-		[image create photo -file "../Images/Toolbar/${fn}.gif"]
+	    $rawImg read "../Images/Toolbar/${fn}.gif" -shrink
+	    set iconImages($fn) [image create photo]
+	    $iconImages($fn) copy $rawImg -zoom $growth
 	}
     }
 }
