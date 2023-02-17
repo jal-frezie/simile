@@ -2,7 +2,16 @@
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
     #undef WIN32_LEAN_AND_MEAN
+#endif
 
+// Definitions used in this code and the model code
+#include <dllcalls.h>
+// for talking to compiled models
+#include <backend.h>
+// class interface for c++ clients
+#include <6d.h>
+
+#ifdef _WIN32
     #define LOAD_DLL LoadLibrary
     #define UNLOAD_DLL FreeLibrary
     #define WHAT_WENT_WRONG GetErrorText
@@ -34,12 +43,8 @@ return (char*)lpMsgBuf;
 }
 
 #else
-
     #include <signal.h>
     #include <dlfcn.h>
-    #include <errno.h>
-    #include <unistd.h>
-    #include <fcntl.h>
 
     #define LOAD_DLL safe_open
 /* 'dummyunload' clause was used with macos because dlcompat didn't include
@@ -81,13 +86,6 @@ void* safe_open(char* fileName) {
   }
 }
 #endif
-
-// Definitions used in this code and the model code
-#include <dllcalls.h>
-// for talking to compiled models
-#include <backend.h>
-// class interface for c++ clients
-#include <6d.h>
 
 #include <portaudio.h>
 /*
