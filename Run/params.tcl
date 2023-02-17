@@ -478,7 +478,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		-expand 1
 	    if {[llength $ns]} {
 		foreach {cmd act img} {Save Save save Open Load open \
-					   Clear Empty new} {
+					   Empty Clear new} {
 		    set nsCmd ${ns}::$cmd
 		    if {[llength [info commands $nsCmd]]} {
 			set btn $nextLevel.head.$img

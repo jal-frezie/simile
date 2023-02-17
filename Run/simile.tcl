@@ -451,15 +451,15 @@ source $SIMILE_PATH/Run/language.tcl
 LoadTrans
 
 if {!$headless} {
-    if {$tcl_platform(platform) eq "windows"} {
+#    if {$tcl_platform(platform) eq "windows"} {
 	set niceSize 12
-    } else {
-	set niceSize [font actual {-size -12} -size]
-    }
-    if {$niceSize<=0} {
-	set niceSize 12 ;# otherwise is -12 on Buckaroo
-    }
-entry .hidden_e -font TkEntryFont -width 25
+#    } else {
+#	set niceSize [font actual {-size -12} -size]
+#    }
+#    if {$niceSize<=0} {
+#	set niceSize 12 ;# otherwise is -12 on Buckaroo
+#    }
+entry .hidden_e -font [list -size $niceSize] -width 25
 pack .hidden_e
 
 # Scaling affects all metrics expressed in points, but its initial
