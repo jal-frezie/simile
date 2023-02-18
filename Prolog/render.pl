@@ -863,7 +863,7 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	 member(Field-Attr, [spec-spec, spec-value, units-units]),
 	  Node has_class_refinement Attr of Repn,
 	  (Attr = spec, catch((tcltk><all_utf8_to_ttfn(Repn, TtfnRepn),
-			       name(Term, TtfnRepn)),
+			       sicstus_atom_chars(Term, TtfnRepn)),
 			      _Er, fail); % old style spec
 	   Term = Repn)), !,
              sicstus_format_to_chars("~w", [Term], FullStrStr),
@@ -877,7 +877,7 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 templatify(L, Elt, Ptr, [char, Ptr, void, QElt]) :-
 	name(Elt, TtfnStr),
 	user><all_ttfn_to_utf8(TtfnStr, Utf8Str),
-	name(Utf8Atom, Utf8Str),
+	sicstus_atom_chars(Utf8Atom, Utf8Str),
 	make_constant_string(L, Utf8Atom, QElt).
 				     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
