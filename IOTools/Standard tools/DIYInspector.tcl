@@ -426,7 +426,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-proc Save {inst path} {
+    proc Save {inst path} {
 	set title [tr. {Save experiment setup as:}]
 	set topNode [$inst GetNode]
         set metaFile [ChooseFile model.sxf $title 1 $topNode]
