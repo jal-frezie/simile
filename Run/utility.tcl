@@ -76,7 +76,10 @@ proc ChooseFile { preferred title canbenew context} {
 	} .smf {
 	    set typeList [list .spf .smf]
 	    set desc [tr. "Parameter or measurement metafiles" ]
-	} .txt {
+	} .sxf {
+	    set typeList [list .sxf]
+	    set desc [tr. "Experiment setup files" ]
+	} .bgx {
 	    set typeList [list .bgx]
 	    set desc [tr. "Idiosyncratic polygon vertices"]
 	} default {
@@ -90,9 +93,9 @@ proc ChooseFile { preferred title canbenew context} {
     if {[info exists preSelect]} {
 	set chosenFile $preSelect
 	unset preSelect
-	if {$canbenew} {
-	    return $chosenFile ;# do not record path choice as it is
-	    # probably a temp file
+	if {[string first $::simtmpdir $chosenFile]==0} {
+	    return $chosenFile ;# do not record path choice or worry about
+	    # overwriting if it is a temp file
 	}
     } else {
 	set switches [list -title $title -defaultextension $fileType \

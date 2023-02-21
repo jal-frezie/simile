@@ -1117,6 +1117,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(dispMatrix) dispMatrix OFF [tr. "Show 2-D values as matrices"]] \
 		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
 		  [list custom(widgetTheme) widgetTheme [concat CHOICE $themes] [tr. "Widget theme:"]] \
+		  [list custom(textSize) textSize {12 4 36} [tr. "Text size (pts):"]] \
 		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
 		  [list custom(recentCount) recentCount {10 0 200} [tr. "Entries on recently used file list"]] \
 		  [list custom(quickExit) quickExit [list CHOICE [tr. "Full dialogue"] [tr. "Short dialogue"]] [tr. "Closing model..."]] \

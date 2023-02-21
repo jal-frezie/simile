@@ -459,6 +459,9 @@ if {!$headless} {
 #    if {$niceSize<=0} {
 #	set niceSize 12 ;# otherwise is -12 on Buckaroo
 #    }
+if {[info exists custom(layout,text)] && $custom(layout,text) ne ""} {
+    set niceSize $custom(layout,text)
+}
 entry .hidden_e -font [list -size $niceSize] -width 25
 pack .hidden_e
 

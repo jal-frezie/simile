@@ -246,6 +246,7 @@ proc Pref_Dialog {} {
                 popupHelp {set frame $barF}
                 tlPopups {set frame $barF}
                 widgetTheme {set frame $barF.line2}
+                textSize {set frame $barF.line2}
                 quickDrag {set frame $genericF}
                 myButton {set frame $genericF}
                 deleteEndToEnd {set frame $linkF}

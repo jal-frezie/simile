@@ -121,3 +121,12 @@ if {$use_system_tcltk} {
 	    [file join $libDir tk[info tclversion]]
     }
 }
+
+# read layout data now so scaling can be set before GUI started
+if {[file exists $custom(prefDir)/.layout]} {
+    set stm [open $custom(prefDir)/.layout r]
+    foreach item {full geom text} {
+	gets $stm custom(layout,$item)
+    }
+    close $stm
+}

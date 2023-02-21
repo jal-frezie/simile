@@ -617,7 +617,9 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		set msgs(param_source_$compName) $msgs(fce)
 	    }
 	    set suppliedData($compName) $preload
-	    set dataChanged 1 ;# still need to clear old param
+	    if {$caseId ne "s"} {
+		set dataChanged 1 ;# still need to clear old param
+	    }
 	} elseif {![string equal $newData $suppliedData($compName)]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0

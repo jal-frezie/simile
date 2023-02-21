@@ -1471,7 +1471,14 @@ proc StartRun {node} {
 	}
  	set hlp [UniqueId helper $hlp]
 	similescript::$helperId $hlp $runClass explorer
+	set runState($node,parmsId) $hlp
 
+	set savedExpt [file join $::simtmpdir temp.sxf]
+	if {[file exists $savedExpt]} {
+	    set ::preSelect $savedExpt
+	    similescript::$helperId::Open $hlp expt
+	    file delete $savedExpt
+	}
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page
 #	    $sliderBook delete InputSliders

@@ -1467,6 +1467,10 @@ proc MenuSelect { window button item } {
 		set helperTable($node,whereRunEnv) \
 		    [wm geometry $helperTable($node,whichRunEnv)]
 		wm withdraw $helperTable($node,whichRunEnv)
+
+		set ::preSelect [file join $::simtmpdir temp.sxf]
+		similescript::$helperTable(VariableList)::Save \
+		    $::runState($node,parmsId) expt
 	    }
 	    switch $item {
 		build_c {
@@ -2832,7 +2836,8 @@ proc ZapWindow { fullName } {
         puts $cacheStream [string match zoomed [wm state $target]]
         puts $cacheStream [wm geometry $target]
 # under Linux this will be the geom of the client window not the frame -- fix
-        close $cacheStream
+        puts $cacheStream [PrefValue custom(textSize) textSize]
+	close $cacheStream
     if {[string equal windows $tcl_platform(platform)]} {
         file attributes $custom(prefDir)/.layout -hidden true
     }
