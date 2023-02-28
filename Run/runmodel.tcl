@@ -796,13 +796,19 @@ proc CountCValues {dH loseZeros} {
 }
 
 proc GetShortVals {topNode plName limit} {
+    set dataDimty [llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM]]
     set showMatrix [expr {[PrefValue custom(dispMatrix) dispMatrix] && \
-			      [llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM]]==3}] ;# 2 non-special non-end values
+			      $dataDimty==3}]
     if {[RunningInC $topNode]} {
 	if {[catch {GetHandle $topNode $plName} hdl]} {
 	    set text novalue
 	    set count 0
 	} else {
+	    if {[llength $hdl]>1} {
+		incr dataDimty
+		set showMatrix [expr {[PrefValue custom(dispMatrix) dispMatrix] && \
+			      $dataDimty==3}]
+	    }
 	    set loseZeros [expr {[lsearch {EVENT SQUIRT} \
 			     [GetCompProperty $topNode Class $plName]]>-1}]
 	    set count [CountCValues $hdl $loseZeros]
@@ -810,8 +816,8 @@ proc GetShortVals {topNode plName limit} {
 		set text [ExtractCList $hdl 16777216 $loseZeros]
 	    } else {
 		set tail [expr {$limit/10}]
-		set text [concat [ExtractCList $hdl $tail $loseZeros] \
-			      [ExtractCList $hdl -$tail $loseZeros]]
+		set text [concat [ExtractCList [lrange $hdl 0 1] $tail $loseZeros] \
+			      [ExtractCList [lrange $hdl end-1 end] -$tail $loseZeros]]
 	    }
 	    ReleaseHandle $topNode $hdl
 	}
@@ -829,7 +835,10 @@ proc GetShortVals {topNode plName limit} {
 	}
 	set transData [GetCompProperty $topNode Trans $plName]
 	if {[info exists hdl] && [llength $hdl]>1} {
-	    set transData [linsert $transData 0 {}]
+	    foreach {case mH} $hdl {
+		lappend caseNames $case
+	    }
+	    set transData [linsert $transData 0 $caseNames]
 	}
 	if {$showMatrix} {
 	    set transData [list {} {} [lindex $transData end]]
@@ -1344,6 +1353,13 @@ proc StartRun {node} {
 	unset projectParams($smPath)
 	if {[file exists $spFile]} {
 	    MergeParams $node /$node$smPath $spFile 0 0
+	    if {$smPath eq "{}"} {
+		set sxFile [file rootname $spFile].sxf
+		if {[file exists $sxFile]} {
+		    file rename $sxFile [file join $::simtmpdir temp.sxf]
+		    # put experiment setup where it will be loaded later
+		}
+	    }
 	} else {
 	    if {[string equal abort [Query [list no_spf_for_project $spFile] \
 					 warning top {} abort]]} {
@@ -1460,9 +1476,9 @@ proc StartRun {node} {
 	if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
 	    itcl::delete object $oldInsp ;# model components may have changed
 	}
-	set helperId $helperTable(VariableList)
+	set helperId similescript::$helperTable(VariableList)
  	set hlp [UniqueId helper]
-	similescript::$helperId $hlp $runClass outputs
+	$helperId $hlp $runClass outputs
 	set runState($node,inspId) $hlp
 
 	set ::RunEnv::CurrentContainer $RunEnv::paramFrame($node)
@@ -1470,14 +1486,15 @@ proc StartRun {node} {
 	    itcl::delete object $oldInsp ;# model components may have changed
 	}
  	set hlp [UniqueId helper $hlp]
-	similescript::$helperId $hlp $runClass explorer
+	$helperId $hlp $runClass explorer
 	set runState($node,parmsId) $hlp
 
 	set savedExpt [file join $::simtmpdir temp.sxf]
 	if {[file exists $savedExpt]} {
 	    set ::preSelect $savedExpt
-	    similescript::$helperId::Open $hlp expt
+	    ${helperId}::Open $hlp expt
 	    file delete $savedExpt
+	    StartNow $node reset ;# do again so exptl values loaded
 	}
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page

@@ -959,6 +959,10 @@ namespace eval fileparams {
 	    puts $pStr {<?xml-stylesheet type="text/xsl" href="spf1.xsl"?>}
 	    puts $pStr "<spf simile_version=\"$env(SIMILE_VERSION)\">"
 	    puts $pStr {<submodel label="top">}
+	    if {[string first $::simtmpdir $metaFile]==0} {
+		# data will actually be in model file
+		set metaFile [InModelDir $topNode]
+	    }
 	    WriteSubmodelParams suppliedData outNames $topNode $metaFile \
 		$pStr /$smPath {}
 	    puts $pStr {</submodel>}
@@ -1499,6 +1503,15 @@ proc StripNewCrs {txt} {
     return [StripCrs $txt]
 }
 
+proc InModelDir {node} {
+    global chosenPaths
+    set tail [GetExecTitle $node].sml
+    if {[info exists chosenPaths(.sml,$node)]} {
+	return [file join $chosenPaths(.sml,$node) $tail]
+    }
+    return [file join $chosenPaths(.sml,) $tail]
+}
+
 proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
     global readMany paramState mimeSquirter simtmpdir whichParamsAffected msgs \
 	paramMetadata
@@ -1549,6 +1562,11 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 	}
     }
     # If neither of the above, XML file successfully converted
+
+    # if loaded from temp dir, references relative to saved model
+    if {[string first $simtmpdir $oldPath]==0} {
+	set oldPath [InModelDir $topNode]
+    }
     set pStr [NetOpen $metaFile r]
     if {$paramState(origVersion)>=5.0} { ;# converted from xml so will be...
 	fconfigure $pStr -encoding utf-8

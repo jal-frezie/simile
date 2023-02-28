@@ -15,7 +15,11 @@ proc ::mime::copymessage {token channel} {
 
     set openP [info exists state(fd)]
 
-    lappend state(params) boundary already_done ;# fixes bug
+    set snip [getContentType $token]
+    if {[string first multipart/ $snip]==0} {
+	set bound [string range $snip [string first boundary=\" $snip]+10 end-1]
+	lappend state(params) boundary $bound ;# fixes bug
+    }
     set code [catch {mime::copymessageaux $token $channel} result]
 
     if {!$openP && [info exists state(fd)]} {
@@ -1404,7 +1408,7 @@ proc IsRunnableModel {fileName} {
 proc SaveFile {topNode tree tgt {noPkg 0}} {
     #ShowMess debug info "SaveFile $tree $tgt" ok
     global errorInfo runState projectInfo
-    
+
     if {!$noPkg} {
 	set projectInfo {}
 	SaveProjectFile $topNode $tree $tgt
@@ -1559,7 +1563,7 @@ proc GetParts {top tree noPkg} {
     global projectInfo
 
     set mimes {}
-    set mdlExts pl,cnv,svg,spj,shf,spf,cpp,so,dylib,dll,tcl
+    set mdlExts pl,cnv,svg,spj,shf,spf,sxf,cpp,so,dylib,dll,tcl
     foreach subtree [glob -nocomplain \
 			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
         #ShowMess debug info "GetParts subtree $subtree" ok
@@ -1609,6 +1613,11 @@ proc GetParts {top tree noPkg} {
 # will have to somehow make them relative to saved model
                     set PartType "application/x-simile"
                     set Description "Simile parameter file"
+                    set style attachment
+                }
+                *.sxf {
+                    set PartType "application/x-simile"
+                    set Description "Simile experiment setup file"
                     set style attachment
                 }
                 *.shf {
@@ -2000,9 +2009,13 @@ proc SaveProjectFile {topNode path tgt} {
 #    }
 
 # start by always writing it, later add check if version in tmp has been updated
-    if {[HaveValues $topNode]} {
+    if {[HaveValues $topNode] && [[winfo parent $RunEnv::paramFrame($topNode)] tab $RunEnv::paramFrame($topNode) -state] eq "normal"} { ;# will be hidden if no params
 	set ::preSelect [file join $path model.spf]
 	fileparams::Save $topNode $topNode
+
+	set ::preSelect [file join $path model.sxf]
+	similescript::$::helperTable(VariableList)::Save \
+	    $runState($topNode,parmsId) expt
     }
 
     set projectF [NetOpen $ProjectFile w]

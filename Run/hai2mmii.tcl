@@ -208,9 +208,11 @@ proc ExtractCList {dH count loseZeros} {
 	return [extract_list $dH $count $loseZeros]
     } ;# else
     set runTot {}
+    set ortho -1
     set snip [expr {2*$count/[llength $dH]}]
     foreach {case hdl} $dH {
-	lappend runTot $case [extract_list $hdl $snip $loseZeros]
+	set sector [extract_list $hdl $snip $loseZeros]
+	lappend runTot [incr ortho] $sector ;# 1st is 0
     }
     return $runTot
 }
@@ -256,11 +258,19 @@ proc SetModelValue { node newVals } {
     return [GetCompExecData $myNode Value $node $newVals]
 }
 
+proc DefFrom {hdlList} {
+    if {[llength $hdlList]==1} {
+	return $hdlList
+    } else {
+        return [lindex $hdlList [lsearch $hdlList default]+1]
+    }
+}
+
 proc GetBinaryModelValue { node args } {
     global myNode subbedPlots
     if {[info exists subbedPlots($node)]} {
 	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
-	    return [eval extract_binary [lrange $subbedPlots($node) 2 2] \
+	    return [eval extract_binary [DefFrom [lindex $subbedPlots($node) 2]] \
 		       $args]
 	} else { # from tcl model or measured value from pest interface
 	    error "binary values not available"
@@ -380,7 +390,11 @@ proc GetTransTable { node } {
     global myNode
     set result [GetCompProperty $myNode Trans $node]
     if {[llength [ListCases $myNode]]} {
-	set result [linsert $result 0 {}]
+	set caseNames default
+	foreach {case mH} [ListCases $myNode] {
+	    lappend caseNames $case
+	}
+	set result [linsert $result 0 $caseNames]
     }
     return $result
 #    return [do_in_editor GetTransTable $node]
@@ -416,7 +430,7 @@ proc GetCompExecData {topNode prop args} {
 	    Value {
 		set result [list [ExtractCList $hdl 16777216 0]]
 	    } Binary {
-		set result [eval extract_binary [list $hdl] \
+		set result [eval extract_binary [DefFrom $hdl] \
 				[lrange $args 1 end]]
 	    } Distinct {
 		set result [distinct_values $hdl]
