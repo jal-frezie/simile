@@ -327,7 +327,7 @@ void play_at_vol(const char* file, double level) {
   sprintf(cmd, "afplay -v %f \"%s\" &", level, file);
   system(cmd);
 #else
-  sprintf(cmd, "play -q -v %f \"%s\" &", level, file);
+  sprintf(cmd, "AUDIODRIVER=alsa play -q -v %f \"%s\" &", level, file);
   system(cmd);
 #endif
 }

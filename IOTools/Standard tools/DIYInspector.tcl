@@ -71,6 +71,12 @@ itcl::class similescript::$newHelperClass {
 		    -command "$this delete"
 	    }
 	    
+	    set f [MakeSubFrames $::myNode $topFrame [list $::myNode {}] \
+		       fileparams 0]
+	    $f.head.label configure -text [tr. {Default case}] \
+		-image $iconImages(globe) -compound left
+	    pack $f.head.label -side left -expand 0
+
 	    set f [MakeSubFrames $this $topFrame {expt {}} \
 		       [namespace current] 0]
 	    $f.head.label configure -text [tr. {Experimental conditions}] \
@@ -78,11 +84,6 @@ itcl::class similescript::$newHelperClass {
 	    pack $f.head.label -side left -expand 0
 	    CrossPlatformBind $f \
 		[namespace code [list OnElementContext {expt} %X %Y]]
-	    set f [MakeSubFrames $::myNode $topFrame [list $::myNode {}] \
-		       fileparams 0]
-	    $f.head.label configure -text [tr. {Default case}] \
-		-image $iconImages(globe) -compound left
-	    pack $f.head.label -side left -expand 0
 	}
 	#set f [MakeSubFrames insp $topFrame [list $::myNode {}] \
 	#	   [namespace current] 0]
