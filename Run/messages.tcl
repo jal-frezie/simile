@@ -44,13 +44,6 @@ set msgs(border_abbrev) [tr. {bdr}]
 set msgs(desktop_abbrev) [tr. {Desktop}]
 set msgs(fragment_abbrev) [tr. {frag}]
 
-# simile basics -- actions
-set msgs(reroute) [tr. {Reroute}]
-set msgs(delete) [tr. {Delete}]
-set msgs(cut) [tr. {Cut}]
-set msgs(copy) [tr. {Copy}]
-set msgs() [tr. {}]
-
 # simile basics -- for eqn dialogue
 set msgs(equation_for) [tr. {Equation for %1$s}]
 set msgs(init_val_for) [tr. {Initial value for %1$s}]
@@ -79,7 +72,9 @@ set msgs(add_immigration) [tr. {Add immigration processes to population submodel
 set msgs(add_reproduction) [tr. {Add reproduction processes to population submodels}]
 set msgs(add_loss) [tr. {Add destruction processes to population submodels}]
 set msgs(move) [tr. {Move diagram}]
-set msgs(copy) [tr. {Make copies of submodels}]
+set msgs(cut) [tr. {Cut selected components to clipboard}]
+set msgs(copy) [tr. {Copy selected components to clipboar}]
+set msgs(paste) [tr. {Paste clipboard contents to desktop}]
 set msgs(ghost) [tr. {Create 'ghosts' of components}]
 set msgs(select) [tr. {Select components}]
 set msgs(delete) [tr. {Delete components}]

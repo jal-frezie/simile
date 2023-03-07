@@ -1527,9 +1527,10 @@ proc MenuSelect { window button item } {
 
 proc DoLocalCmd {win item} {
     global pushedbutton
-    switch $item {
+    switch -regexp $item {
         undo {UnOrReDo $win 0}
         redo {UnOrReDo $win 1}
+	cut|copy|paste  {MenuSelect $win edit $item}
         print {PrintNow $win}
         rerun {FinishExecThen $win "Rerun $win 1"}
 	tog_grid {ToggleGrid $win}
@@ -2027,8 +2028,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
     foreach navCmd {{new {local empty}} {open {local open_all}} \
                 {save {file save}}  {print {local print}} {separator1}\
-                {undo {local undo}} {redo {local redo}} {separator2}\
-                {flip_h {edit flip_h}} {flip_v {edit flip_v}} {separator3}\
+		{undo {local undo}} {redo {local redo}} {separator2}\
+			{cut {local cut}} {copy {local copy}}\
+			{paste {local paste}} {separator3}\
+                {flip_h {edit flip_h}} {flip_v {edit flip_v}} {separator4}\
                 {zoomin {local zoomin}} {zoomsel {local tosel}} \
                 {zoomfit {local tofit}} {zoomout {local zoomout}} \
                 {separator5}   } {
