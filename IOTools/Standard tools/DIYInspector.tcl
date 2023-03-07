@@ -131,17 +131,18 @@ itcl::class similescript::$newHelperClass {
 		    set beeGee [[winfo parent $f].head cget -bg]
 #		    set bStyle [[winfo parent $f].head.vis cget -style]
 		    $f configure -bg $beeGee
+		    set label $f.caption
 		    if {$paramEdits} {
 		    } else {
 #			pack [ttk::label $f.caption -text $capt \
 #				  -style $bStyle] -side left
-			pack [label $f.caption -text $capt -bg $beeGee] -side left
+			pack [label $label -text $capt -bg $beeGee] -side left
 		    }
-		    $f.caption configure -image $iconImages([string tolower $type]) -compound left
-		    bindtags $f.caption [linsert [bindtags $f.caption] 0 $f]
-		    if {$doPops} {
-			InspLabelPopup $f.caption $component $capt
+		    $label configure -image $iconImages([string tolower $type]) -compound left
+		    bindtags $label [linsert [bindtags $label] 0 $f]
 		    }		    
+		    if {$doPops} {
+			InspLabelPopup $label $component $capt
 		}
 	    }
 	}
