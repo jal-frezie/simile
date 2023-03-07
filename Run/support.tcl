@@ -687,7 +687,7 @@ proc RaiseTclExecError {mproc mstep} {
     if {[regexp {set ([^ ]*\([^\)]*\)) .*} $mLine spare targetName] || \
 	    [regexp {set ([^ ]*) .*} $mLine spare targetName]} {
 	# 1st case is if setting an array element
-	set dest [namespace eval AME_model<> "set spare $targetName"]
+	set dest [namespace eval AME_model<> [list set spare $targetName]]
     } else {
 	set dest none
     }
@@ -1319,7 +1319,6 @@ proc init_pop {metaTxt crNode ptCount channelId maker name} {
     upvar 1 $metaTxt meta
     set lastIndx [expr $ptCount+int(max(0, $crNode))]
     while {$ptCount<$lastIndx} {
-	incr ptCount
 	if {[prune $ptCount meta 1]} {
 	    set submodelptr [set $meta]
 	    set ${submodelptr}::new_instance 0
@@ -1338,6 +1337,7 @@ proc init_pop {metaTxt crNode ptCount channelId maker name} {
 	set ${submodelptr}::next [set $meta]
 	set $meta $submodelptr
 	set meta ${submodelptr}::next
+	incr ptCount
     }
     return $lastIndx
 }
@@ -1346,7 +1346,7 @@ proc compare_instance_status {testInstName refInst num} {
     upvar 1 $testInstName testInst
     # puts [info level 0]--$testInst
     #    ShowMess debug info "testInst $testInst refInst $refInst" ok
-    if {[string match 0 $testInst]} {return 1}
+    if {[string match -1 $testInst]} {return 1} ;# was 0 but that now a valid id
     for {set ptr 0} {$ptr < $num} {incr ptr} {
         if [lindex $testInst $ptr]<[lindex $refInst $ptr] {return -1}
         if [lindex $testInst $ptr]>[lindex $refInst $ptr] {return 1}

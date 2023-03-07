@@ -561,7 +561,7 @@ proc CJoinExecution {node until phase} {
 	if {[lindex $result 5] eq "event"} {
 	    return [list 2 $result]
 	} else {
-	    set result [list [ExplainError $node [lrange $result 1 end] unused] [lindex $result 3]]
+	    set result [list [ExplainError $node [lrange $result 1 end] $::errorInfo] [lindex $result 3]]
 	}
     }
     return $result
