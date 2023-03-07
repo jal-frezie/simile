@@ -43,15 +43,6 @@ itcl::class similescript::ModelWindow {
         wm deiconify [GetModelWindow]
     }
     
-    public method UseMRE {bool} {
-        # IS THIS GOING TO HAVE A TYPE PROBLEM???
-	# JAT: er, no
-	if {$::headless} {
-	    return "Tk not loaded -- no graphics"
-	}
-	PrefValueSet helperManager $bool
-    }
-    
     # File Menu
     public method New {} {
         MenuSelect $modelCanvas file new
@@ -303,28 +294,13 @@ itcl::class similescript::Helper {
 	# ShowMessage debug info "Making $helperId $helperTitle" ok
 	if {[string match *_3dinst $this]} {
 	    set winId placeholder
-	} elseif {[PrefValue custom(helperManager) helperManager]} {
+	    return
+	} else {
 	    set winId ${::RunEnv::CurrentContainer}.container
 	    pack [frame $winId] -fill both -expand true
 	    bind $winId <Destroy>  "itcl::delete object $this"
 # needed because gui can remove parent widget
-	} else {
-	    set winId .helper[newInt]
-	    toplevel $winId
-	    if {[info exists SimileAutoObjLoaded]} {
-		wm state $winId withdrawn
-	    }
-	    if {[string length $helperTitle]} {
-		wm title $winId [BlankCrs $helperTitle]
-	    } else {
-		wm title $winId [Identify]
-	    }
-	    if {![string match windows $tcl_platform(platform)]} {
-		wm iconbitmap $winId @$::SIMILE_PATH/Images/weegraph.xbm
-	    }
-	    wm protocol $winId WM_DELETE_WINDOW "itcl::delete object $this"
 	}
-	if {[string match *_3dinst $this]} return
 	set helperTable($this,foci) {}
 	set helperTable($winId,whichInstance) $this
         #puts "Helper constr $this winId $winId"
@@ -448,9 +424,7 @@ redo with helper object
         set winId [do_for_node $modelNode NewHelperWindow $modelNode \
 		       $helperId $helperTitle]
         do_for_node $modelNode ${helperId}::initialize $winId
-        if {[PrefValue custom(helperManager) helperManager]} {
-            ::RunEnv::ChildrenFocusParent $winId
-        }
+	::RunEnv::ChildrenFocusParent $winId
         return $winId
     }
     

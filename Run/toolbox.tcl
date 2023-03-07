@@ -1135,7 +1135,6 @@ proc ControlDraw {prologVersion} {
 		  [list custom(infRouting) infRouting {20 -100 100} [tr. "Curve influences"]] \
 		  [list custom(roleRouting) roleRouting {20 -100 100} [tr. "Curve role arrows"]] \
 		  [list custom(deleteEndToEnd) deleteEndToEnd ON [tr. "Select links end-to-end"]] \
-		  [list custom(helperManager) helperManager ON [tr. "Use single window manager"]] \
 		  [list custom(resetSliders) resetSliders ON [tr. "Reset sliders on model reset"]] \
 		  [list custom(popupPrecision) popupPrecision {0 0 16} [tr. "Value popups"]] \
 		  [list custom(snapPrecision) snapPrecision {0 0 16} [tr. "Snapshots"]] \
@@ -1925,11 +1924,8 @@ proc OpenProjectFile {path} {
 	UpdateByOS
         if {$runState($topNode,modelRunning)<3} return
 	set defaultSHF [file join $path model.shf]
-	set command [ChooseText \
-			 [PrefValue custom(helperManager) helperManager] \
-			 ::RunEnv::LoadSHF CreateView]
 	if {[file exists $defaultSHF]} {
-	    $command $topNode $defaultSHF
+	    ::RunEnv::LoadSHF $topNode $defaultSHF
 	    ::RunEnv::PreserveSetup 0 ;# is already saved
 	    return ;# model saved by v7 ignore legacy stuff
 	}
@@ -2327,23 +2323,7 @@ proc ToggleIOToolMenu {node} {
             $winData.toolSlot.navbar.runenv configure -state disabled
             if {[HaveValues $node]} {
                 set newState normal
-                if {[PrefValue custom(helperManager) helperManager]} {
-                    $winData.toolSlot.navbar.runenv configure -state normal
-                } else {
-                    if {![winfo exists $winData.helpers]} {
-                        set menuSpec [ListMenuContents .helpers]
-                        ReconstituteMenu $winData.helpers $menuSpec
-                    }
-# Add menu at end if using MacOS, since Help menu is not defined by application
-# (oh yes it is)
-#                    if [string match Darwin $tcl_platform(os)] {
-#                        $topMenu insert end cascade -label "I/O tools" \
-#                                -underline 0 -menu $topMenu.helpers
-#                    } else {
-                        $topMenu insert "Window" cascade -label "I/O tools" \
-                                -underline 0 -menu $winData.helpers
-#                    }
-                }
+		$winData.toolSlot.navbar.runenv configure -state normal
             } else {
                 set newState disabled
             }

@@ -240,7 +240,6 @@ set msgs(defBackground) [tr. {Choose whether the background of a new submodel hi
 set msgs(hackBreak) [tr. {Display a dialogue when the model code is about to be compiled, allowing it to be inspected or modified first. Selecting this option also causes some other dialogues with status information to be displayed.}]
 set msgs(popupPrecision) [tr. {Number of significant figures displayed when real values are shown in popups, or 0 for default.}]
 set msgs(snapPrecision) [tr. {Number of significant figures displayed when real values are shown in snapshot windows, or 0 for default.}]
-set msgs(helperManager) [tr. {Use single window to manange run time displays and controls.}]
 
 # for equation listings
 set msgs(list_assoc_sm) [tr. {Submodel "%1$s" an association submodel between "%2$s" (in role "%3$s") and "%4$s" (in role "%5$s").}]

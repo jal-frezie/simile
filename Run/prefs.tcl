@@ -257,7 +257,6 @@ proc Pref_Dialog {} {
 		quickExit {set frame $abandonF}
 		leaveEqnBar {set frame $abandonF.line2}
 		columnSeparator {set frame $csvF}
-                helperManager {set frame $oneWinF}
                 resetSliders {set frame $oneWinF}
                 popupPrecision {set frame $precisF}
                 snapPrecision {set frame $precisF}

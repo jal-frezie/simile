@@ -279,31 +279,27 @@ proc CreateHelperWindow {helperId helperTitle {state {}}} {
     set helperTable(beingCalled) ::$inst
     similescript::$helperId $inst $modelObj $helperTitle $state
     set helperTable(beingCalled) {}
-    if {[PrefValue custom(helperManager) helperManager]} {
-	set winId [$inst cget -winId]
-	set holder [winfo parent $winId]
-	::RunEnv::SetCurrentContainer $holder
-	::RunEnv::ChildrenFocusParent $winId
-	set tab [winfo parent [winfo parent $holder]]
-	set notebook [winfo parent $tab]
-	if {[winfo class $notebook] eq "TNotebook"} {
-	    set mapping [list display grid005 grid plotter1_dot_25 graph \
-			    tabular11510 table]
-	    set hlprImg [lindex $mapping [lsearch $mapping $helperId]+1]
-	    $notebook tab $tab -image $::iconImages($hlprImg) -compound left
-	}
+
+    set winId [$inst cget -winId]
+    set holder [winfo parent $winId]
+    ::RunEnv::SetCurrentContainer $holder
+    ::RunEnv::ChildrenFocusParent $winId
+    set tab [winfo parent [winfo parent $holder]]
+    set notebook [winfo parent $tab]
+    if {[winfo class $notebook] eq "TNotebook"} {
+	set mapping [list display grid005 grid plotter1_dot_25 graph \
+			 tabular11510 table]
+	set hlprImg [lindex $mapping [lsearch $mapping $helperId]+1]
+	$notebook tab $tab -image $::iconImages($hlprImg) -compound left
     }
+
     return $inst
 #rest should be done by constructor
 }
 
 proc CreateHelperLayer {layerId layerTitle usedMenu} {
 # this should be passed to the currently focussed layer tool
-    if {[PrefValue custom(helperManager) helperManager]} {
-	::RunEnv::AddToLayerTool $layerId $usedMenu
-    } else {
-# something
-    }
+    ::RunEnv::AddToLayerTool $layerId $usedMenu
 }
 
 # This is only called by old-style helpers now
@@ -342,9 +338,7 @@ proc SetState {winId newState} {
     global helperTable custom
 
     $helperTable($winId,whichInstance) configure -State $newState
-    if {[PrefValue custom(helperManager) helperManager]} {
-	::RunEnv::PreserveSetup 1
-    }
+    ::RunEnv::PreserveSetup 1
 }
 
 proc ProdObj {topNode nodeId caption} {
@@ -1414,10 +1408,7 @@ proc StartRun {node} {
 
     set runState($node,timeAtEval) 0.0
 
-    if {[PrefValue custom(helperManager) helperManager]} {
-        #    ShowMess debug info "About to make MRE [array name window_info *,parent]" ok
-        raise [set topWin [Makemre $node]]
-    }
+    raise [set topWin [Makemre $node]]
 #    Now have to do this in Prolog so only running windows change
 #    foreach winData [array name window_info *,parent] {
 #        set toolBar $window_info($winData).toolSlot.toolbar
@@ -1446,9 +1437,7 @@ proc StartRun {node} {
 #	set helperId [NewHelperWindow $node $defHelper \
 #			  "Run control for [GetExecTitle $node]"]
 #	${defHelper}::initialize $helperId
-	if {[PrefValue custom(helperManager) helperManager]} {
-	    set ::RunEnv::CurrentContainer $RunEnv::runControlFrame($node)
-	}
+	set ::RunEnv::CurrentContainer $RunEnv::runControlFrame($node)
 	set hlp [UniqueId helper]
 	similescript::$defHelper $hlp $runClass "Run control for $topCapt"
 	set runState($node,helperId) [$hlp cget -winId]
@@ -1471,52 +1460,48 @@ proc StartRun {node} {
 #    MakeSlidersForInputs
     StartNow $node reset ;# do now as helper updates may query values
     
-    if {[PrefValue custom(helperManager) helperManager]} {
-	set ::RunEnv::CurrentContainer $RunEnv::variableListFrame($node)
-	if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
-	    itcl::delete object $oldInsp ;# model components may have changed
-	}
-	set helperId similescript::$helperTable(VariableList)
- 	set hlp [UniqueId helper]
-	$helperId $hlp $runClass outputs
-	set runState($node,inspId) $hlp
-
-	set ::RunEnv::CurrentContainer $RunEnv::paramFrame($node)
-	if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
-	    itcl::delete object $oldInsp ;# model components may have changed
-	}
- 	set hlp [UniqueId helper $hlp]
-	$helperId $hlp $runClass explorer
-	set runState($node,parmsId) $hlp
-
-	set savedExpt [file join $::simtmpdir temp.sxf]
-	if {[file exists $savedExpt]} {
-	    set ::preSelect $savedExpt
-	    ${helperId}::Open $hlp expt
-	    file delete $savedExpt
-	    StartNow $node reset ;# do again so exptl values loaded
-	}
-#	if {![winfo exists $helperTable(autosliders)]} {
-# No sliders in model, so delete notebook page
-#	    $sliderBook delete InputSliders
-#	    $sliderBook raise Explorer
-#	    unset ::RunEnv::sliderControlFrame
-#	}
-	set ::RunEnv::CurrentContainer $RunEnv::dp0 ;# back to default
-	set ctrlPane [winfo parent [winfo parent $::RunEnv::runControlFrame($node)]]
-	UpdateByOS ;# so reqheight works next
-#	tkwait visibility $runState($node,helperId)
-	set aimPane [expr {[winfo reqheight $ctrlPane.runcontrolPane]+10}]
-# this sometimes fails to work, so keep trying till it does!
-	while {[lindex [$ctrlPane sash coord 0] 1]!=$aimPane} {
-	    $ctrlPane sash place 0 10 $aimPane
-	    UpdateByOS
-	}
-	::RunEnv::InMreFor $node ;# in case it has been focussed since creation
-    } else {
-	wm protocol $runState($node,helperId) WM_DELETE_WINDOW \
-	    [list ${defHelper}::AbortFromMenu $node "ExDestroyHelpers $node"]
+    set ::RunEnv::CurrentContainer $RunEnv::variableListFrame($node)
+    if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
+	itcl::delete object $oldInsp ;# model components may have changed
     }
+    set helperId similescript::$helperTable(VariableList)
+    set hlp [UniqueId helper]
+    $helperId $hlp $runClass outputs
+    set runState($node,inspId) $hlp
+    
+    set ::RunEnv::CurrentContainer $RunEnv::paramFrame($node)
+    if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
+	itcl::delete object $oldInsp ;# model components may have changed
+    }
+    set hlp [UniqueId helper $hlp]
+    $helperId $hlp $runClass explorer
+    set runState($node,parmsId) $hlp
+    
+    set savedExpt [file join $::simtmpdir temp.sxf]
+    if {[file exists $savedExpt]} {
+	set ::preSelect $savedExpt
+	${helperId}::Open $hlp expt
+	file delete $savedExpt
+	StartNow $node reset ;# do again so exptl values loaded
+    }
+    #	if {![winfo exists $helperTable(autosliders)]} {
+    # No sliders in model, so delete notebook page
+    #	    $sliderBook delete InputSliders
+    #	    $sliderBook raise Explorer
+    #	    unset ::RunEnv::sliderControlFrame
+    #	}
+    set ::RunEnv::CurrentContainer $RunEnv::dp0 ;# back to default
+    set ctrlPane [winfo parent [winfo parent $::RunEnv::runControlFrame($node)]]
+    UpdateByOS ;# so reqheight works next
+    #	tkwait visibility $runState($node,helperId)
+    set aimPane [expr {[winfo reqheight $ctrlPane.runcontrolPane]+10}]
+    # this sometimes fails to work, so keep trying till it does!
+    while {[lindex [$ctrlPane sash coord 0] 1]!=$aimPane} {
+	$ctrlPane sash place 0 10 $aimPane
+	UpdateByOS
+    }
+    ::RunEnv::InMreFor $node ;# in case it has been focussed since creation
+
 # Now list all the inputs in the model, so we can avoid running it until
 # all have tools attached to provide their values
 #    if {[info exists inputHelper]} {
