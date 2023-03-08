@@ -224,11 +224,11 @@ proc create_equation {parent purpose comp indices enum_types} {
 	}
     }
 # TRANSLATOR: Quoted strings above need translations in next block
-    $mainF add [frame $mainF.main]
+    $mainF add [ttk::frame $mainF.main]
     TitleFrame $mainF.main.main -text "[tr. $eqnFrameTitle]: "
     BindPopup $mainF.main.main [NameToTag $eqnFrameTitle]
     set mainf [GetFrame $mainF.main.main]
-    frame $mainf.slider
+    ttk::frame $mainf.slider
     ttk::radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
 	-variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
@@ -238,37 +238,37 @@ proc create_equation {parent purpose comp indices enum_types} {
     } else {
 	BindPopup $mainf.slider.radio1 [NameToTag $topType]
     }
-    pack [set minmax [frame $mainf.slider.minmax]] -side left
-    pack [label $minmax.minlabel -text [tr. Minimum]] -side left -padx 4 -pady 4
+    pack [set minmax [ttk::frame $mainf.slider.minmax]] -side left
+    pack [ttk::label $minmax.minlabel -text [tr. Minimum]] -side left -padx 4 -pady 4
     pack [::ttk::entry $minmax.minval -width 8 \
 	      -textvariable equation(min)] -side left -padx 4 -pady 4
-    pack [label $minmax.maxlabel -text [tr. Maximum]] -side left -padx 4 -pady 4
+    pack [ttk::label $minmax.maxlabel -text [tr. Maximum]] -side left -padx 4 -pady 4
     pack [::ttk::entry $minmax.maxval -width 8 \
 	      -textvariable equation(max)] -side left -padx 4 -pady 4
     BindPopup $minmax range_of_allowed_values
     
-    pack [set unitsanddims [frame $mainf.slider.unitsanddims]] -side right
-    pack [label $unitsanddims.cur_dims] -side right -padx 4
-    pack [label $unitsanddims.dims_txt -text [tr. "Current dimensions"]: \
+    pack [set unitsanddims [ttk::frame $mainf.slider.unitsanddims]] -side right
+    pack [ttk::label $unitsanddims.cur_dims] -side right -padx 4
+    pack [ttk::label $unitsanddims.dims_txt -text [tr. "Current dimensions"]: \
 	     -wraplength 100p] -side right -padx 4
     pack [set eu [::ttk::entry $unitsanddims.entry -width 8 \
 		      -textvariable equation(units)]] -side right \
 	-padx 4 -pady 4
-    pack [label $unitsanddims.unitslabel -text "[tr. Units]:"] -side right \
+    pack [ttk::label $unitsanddims.unitslabel -text "[tr. Units]:"] -side right \
 	-padx 4 -pady 4
     BindPopup $unitsanddims unitsanddims
     
     pack $mainf.slider -anchor nw -fill x
-    frame $mainf.file
+    ttk::frame $mainf.file
     ttk::radiobutton $mainf.file.radio2 -text [tr. $midType] \
 	-variable equation(isparam) -value 2
     pack $mainf.file.radio2 -side left
     BindPopup $mainf.file.radio2 [NameToTag $midType]
     pack $mainf.file -anchor nw -fill x
-    frame $mainf.equation
+    ttk::frame $mainf.equation
     
     set equation(actzone) $mainf.equation.textbox
-    frame $equation(actzone)
+    ttk::frame $equation(actzone)
     ttk::radiobutton $equation(actzone).radio0 -variable equation(isparam) \
 	-text "$bottomType: $comp = " -value 0
     BindPopup $equation(actzone).radio0 [NameToTag $bottomType]
@@ -294,7 +294,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack $equation(actzone) -expand true -fill both -side left
     focus $en
     
-    frame $equation(actzone).buttons
+    ttk::frame $equation(actzone).buttons
     #$notebook itemconfigure Main -raisecmd "focus $en"
     
     set graph [button $equation(actzone).buttons.graph \
