@@ -1935,7 +1935,7 @@ proc OpenProjectFile {path} {
 		[file normalize [file join $baseDir \
 				     $SimileProject(nameOfHelperStateFile)]]
 	    RecordPathChoice .shf $helperTable($topNode,stateName) $topNode
-            $command $topNode $helperTable($topNode,stateName)
+            ::RunEnv::LoadSHF $topNode $helperTable($topNode,stateName)
         }
     }
 }
