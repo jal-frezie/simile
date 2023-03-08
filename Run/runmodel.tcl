@@ -1461,8 +1461,9 @@ proc StartRun {node} {
     StartNow $node reset ;# do now as helper updates may query values
     
     set ::RunEnv::CurrentContainer $RunEnv::variableListFrame($node)
-    if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
-	itcl::delete object $oldInsp ;# model components may have changed
+    set oldInsp helperTable($::RunEnv::CurrentContainer.container,whichInstance)
+    if {[info exists $oldInsp]} {
+	itcl::delete object [set $oldInsp] ;# model components may have changed
     }
     set helperId similescript::$helperTable(VariableList)
     set hlp [UniqueId helper]
@@ -1470,8 +1471,9 @@ proc StartRun {node} {
     set runState($node,inspId) $hlp
     
     set ::RunEnv::CurrentContainer $RunEnv::paramFrame($node)
-    if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
-	itcl::delete object $oldInsp ;# model components may have changed
+    set oldInsp helperTable($::RunEnv::CurrentContainer.container,whichInstance)
+    if {[info exists $oldInsp]} {
+	itcl::delete object [set $oldInsp] ;# model components may have changed
     }
     set hlp [UniqueId helper $hlp]
     $helperId $hlp $runClass explorer

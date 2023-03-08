@@ -831,8 +831,9 @@ namespace eval RunEnv {
 	$tb1.b14 configure -state $printAbility; # print button
 	$tb1.b31 configure -state $useSpaceAbility; # Add Notebook button
 	foreach toolAdder [winfo children $tb1] {
-	    if {![catch {$toolAdder cget -command} cmd]} {
-		if {![string first ::RunEnv::Insert $cmd]} {
+	    if {[winfo class $toolAdder] eq "TButton"} {
+		if {![string first ::RunEnv::Insert \
+			  [$toolAdder cget -command]]} {
 		    # button adds a helper
 		    $toolAdder configure -state $useSpaceAbility;
 		}
