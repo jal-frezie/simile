@@ -586,7 +586,7 @@ itcl::class similescript::$newHelperClass {
 	$box.e insert 0 $listStrings($path)
     }
 
-    public method InterpList {listExpr} {
+    public method InterpList {name listExpr} {
 	set range [scan $listExpr "%f to %f step %f" start end step]
 	if {$range>1} {
 	    if {$range==2} {
@@ -597,7 +597,7 @@ itcl::class similescript::$newHelperClass {
 	    }
 	    for {set val $start} {$val/$step<=$end/$step} \
 		{set val [expr $val+$step]} {
-		    lappend compound $name=$val $val
+		    lappend compound $name=[format %g $val] $val
 		}
 	} else {
 	    set alt [UglifyValList $listExpr 0]
@@ -627,7 +627,7 @@ itcl::class similescript::$newHelperClass {
 	
    	set compCases($myNode,$path) {}
 	set fullPath "/[lindex $hitPath end]$path, s"
-        foreach {name val} [InterpList $listExpr] {
+        foreach {name val} [InterpList [string range $lvl 0 end-3] $listExpr] {
 	    set found [lsearch $oldCases $name]
 	    if {$found>=0} {
 		set oldCases [lreplace $oldCases $found $found]
