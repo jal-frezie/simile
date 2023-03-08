@@ -136,7 +136,7 @@ namespace eval runcontrol33857 {
                     current {Current time:} currentTime \
                     disp {Display each} displayInt} {
             ttk::frame $rcf.editBoxes.$name
-            label $rcf.editBoxes.$name.capt -text [tr. $capt] \
+            ttk::label $rcf.editBoxes.$name.capt -text [tr. $capt] \
 		-width $captWidth -anchor w
 # TRANSLATOR: $capt is one of doubly bracketed strings after foreach above
             pack $rcf.editBoxes.$name.capt -side left -anchor nw
@@ -165,9 +165,9 @@ namespace eval runcontrol33857 {
 #        }
         $rcf.edit.capt configure -menu $timeStepMenu -width 18
         pack $rcf.edit.capt -side left -anchor nw
-        pack [label $rcf.edit.colon -text " "] -side left
+        # pack [label $rcf.edit.colon -text " "] -side left
 	set stepField [::ttk::entry $rcf.edit.num -width 8]
-        pack $stepField -side left -expand on -fill x -anchor nw
+        pack $stepField -side left -expand on -fill x -anchor nw -padx 4
 	bind $stepField <Return> $tCd
         SwapDistVar $node [GetPhaseCount $node]
         
@@ -175,7 +175,7 @@ namespace eval runcontrol33857 {
         set rsf $t.nb.rsf
         set frames($node,rsf) $rsf
         pack [ttk::frame $rsf.unitselection] -pady 2 -fill x
-        pack [label $rsf.unitselection.caption -text [tr. "Time units:"] \
+        pack [ttk::label $rsf.unitselection.caption -text [tr. "Time units:"] \
 		  -width $captWidth -anchor w] -side left -anchor nw
 #        ::ttk::menubutton $rsf.unitselection.pulldown
 #        set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
@@ -194,7 +194,7 @@ namespace eval runcontrol33857 {
         pack $rsf.unitselection.pulldown -side left -anchor nw
         
         pack [ttk::frame $rsf.integration] -pady 2 -fill x
-        pack [label $rsf.integration.caption -text [tr. "Integration method:"] \
+        pack [ttk::label $rsf.integration.caption -text [tr. "Integration method:"] \
 		  -width $captWidth -anchor w] -side left -anchor nw
 #        ::ttk::menubutton $rsf.integration.pulldown
 #        set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0]
@@ -239,7 +239,7 @@ namespace eval runcontrol33857 {
 	bind $rsf.speedlim.val <Key> "set runState($node,tweaked) 1"
 
 	pack [ttk::frame $rsf.resetTo] -anchor nw -pady 2 -fill x
-	label $rsf.resetTo.capt -text [tr. {Time at reset:}] \
+	ttk::label $rsf.resetTo.capt -text [tr. {Time at reset:}] \
 	    -width $captWidth -anchor w
 	pack $rsf.resetTo.capt -side left -anchor nw
 	::ttk::entry $rsf.resetTo.num \
@@ -247,7 +247,7 @@ namespace eval runcontrol33857 {
 	pack $rsf.resetTo.num -side left -expand on -fill x -anchor nw
 
 	ttk::frame $rsf.pauses
-	pack [label $rsf.pauses.capt -text [tr. "Pause on:"] -anchor w] \
+	pack [ttk::label $rsf.pauses.capt -text [tr. "Pause on:"] -anchor w] \
 	    -side left -padx 4 -anchor w
 	pack [ttk::checkbutton $rsf.pauses.event \
 		  -variable runState($node,evtpause) \
