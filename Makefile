@@ -445,6 +445,7 @@ install:
 		Images/Toolbar/Large/condition.gif \
 		Images/Toolbar/Large/copy.gif \
 		Images/Toolbar/Large/creation.gif \
+		Images/Toolbar/Large/cut.gif \
 		Images/Toolbar/Large/delete.gif \
 		Images/Toolbar/Large/event.gif \
 		Images/Toolbar/Large/find.gif \
@@ -461,6 +462,7 @@ install:
 		Images/Toolbar/Large/move.gif \
 		Images/Toolbar/Large/new.gif \
 		Images/Toolbar/Large/open.gif \
+		Images/Toolbar/Large/paste.gif \
 		Images/Toolbar/Large/print.gif \
 		Images/Toolbar/Large/redo.gif \
 		Images/Toolbar/Large/reel.gif \
