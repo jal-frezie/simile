@@ -569,7 +569,7 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
 	pack forget $widget.file.radio2
     }
     if {[catch {pack info $widget.slider.radio1}]} {
-	pack [label $widget.slider.l1 -text [tr. "Range of expected values:"]] \
+	pack [ttk::label $widget.slider.l1 -text [tr. "Range of expected values:"]] \
 	    -before $widget.slider.minmax -side left
     }
     set equation(min) $min
