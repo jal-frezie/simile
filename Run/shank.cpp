@@ -1252,21 +1252,24 @@ ExecutingModel* ExecutingModel::AddGroupMember(void* usersRef) {
 void* reset_grp_instance(void* clientData) {
   void* retVal;
   xmList* args = (xmList*)clientData;
-  ExecutingModel *payload = ((xmList*)clientData)->now;
+  ExecutingModel *payload = args->now;
   ExecutingModel *parmSrc = payload->parent;
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-  if (!parmSrc)
+  if (parmSrc)
+    payload->set_completion(FALSE); // get no data from vms
+  else 
     parmSrc = payload; // doing top level instance, parms from self
-  memcpy(rand_states, ((xmList*)clientData)->randKeeper, 3*sizeof(unsigned short));
+  memcpy(rand_states, args->randKeeper, 3*sizeof(unsigned short));
   retVal = payload->ResetInstance(parmSrc->initTime,
 				  parmSrc->howInt,
 				  parmSrc->topPhase);
-  memcpy(((xmList*)clientData)->randKeeper, rand_states, 3*sizeof(unsigned short));
+  memcpy(args->randKeeper, rand_states, 3*sizeof(unsigned short));
   // If this is the top level we will be doing a timed wait so we need to send
   // a signal
-  if (!payload->parent) {
+  if (payload->parent)
+    payload->set_completion(TRUE); // get data from vms
+  else 
     payload->signal_complete(args); // does the following
-  }
   return retVal;
 }
 
@@ -1276,7 +1279,9 @@ void* execute_grp_instance(void* clientData) {
   ExecutingModel *payload = args->now;
   ExecutingModel *parmSrc = payload->parent;
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-  if (!parmSrc)
+  if (parmSrc)
+    payload->set_completion(FALSE); // get no data from vms
+  else 
     parmSrc = payload; // doing top level instance, parms from self
   memcpy(rand_states, args->randKeeper, 3*sizeof(unsigned short));
   retVal = payload->ExecuteInstance(parmSrc->howInt,
@@ -1288,9 +1293,10 @@ void* execute_grp_instance(void* clientData) {
   memcpy(args->randKeeper, rand_states, 3*sizeof(unsigned short));
   // If this is the top level we will be doing a timed wait so we need to send
   // a signal
-  if (!payload->parent) {
+  if (payload->parent)
+    payload->set_completion(TRUE); // get no data from vms
+  else 
     payload->signal_complete(args); // does the following
-  }
   return retVal;
 }
 
@@ -1701,14 +1707,17 @@ void incr_time(timespec *ts, int by_ms) {
   }
 }
 
+void ExecutingModel::set_completion(BOOLEAN status) {
+  loadedInst->userStop.completed = status;
+}
+
 void ExecutingModel::start_in_thread(void *action(void *)) {
   xmList *topList = &modelSpec->topArgs; // need to persist
-  excpData* clientResult = &loadedInst->userStop;
 
   topList->now = this;
   topList->next = NULL;
 
-  clientResult->completed = FALSE;
+  set_completion(FALSE);
   pthread_mutex_init(&topList->mtx, 0);
   pthread_cond_init(&topList->cond, 0);
   pthread_mutex_lock(&topList->mtx);
@@ -1717,7 +1726,7 @@ void ExecutingModel::start_in_thread(void *action(void *)) {
 
 void ExecutingModel::signal_complete(xmList* args) {
     pthread_mutex_lock(&args->mtx);
-    loadedInst->userStop.completed = TRUE;
+    set_completion(TRUE);
     pthread_mutex_unlock(&args->mtx);
     pthread_cond_signal(&args->cond);
 }

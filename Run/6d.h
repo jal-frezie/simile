@@ -264,6 +264,7 @@ class ExecutingModel
   void ExitInstance();
 
   void start_in_thread(void*(void*));
+  void set_completion(BOOLEAN);
   void signal_complete(xmList*);
   excpData* check_thread(int, int);
   
