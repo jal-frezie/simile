@@ -112,16 +112,17 @@ namespace eval ::$keyValue {
         if [string match Darwin $tcl_platform(os)] {
             set plot($w,y_Ylabels) 5
         } else {
-            set plot($w,y_Ylabels) 0
+            set plot($w,y_Ylabels) 5
         }
         if [string match Darwin $tcl_platform(os)] {
             set plot($w,fontValues) [list Helvetica 12 normal]
             set plot($w,fontLabels) [list Helvetica 12 normal]
             set plot($w,fontTitle) [list Helvetica 12 normal]
         } else {
-            set plot($w,fontValues) [list Helvetica 8 normal]
-            set plot($w,fontLabels) [list Helvetica 8 normal]
-            set plot($w,fontTitle) [list Helvetica 8 normal]
+	    set fontSize [expr 5*$::niceSize/6]
+	    foreach subFont {Values Labels Title} {
+		set plot($w,font$subFont) [list Helvetica $fontSize normal]
+	    }
         }
     }
     
@@ -600,6 +601,7 @@ namespace eval ::$keyValue {
 	set node [string range $ident 0 $mid-1]
         set caption $plot(caption,$node)
 	set trTab [GetTransTable $node]
+	puts $trTab
 	if {[llength [lindex $trTab end]]} {
 	    set nearestval [expr {int($nearestval)}]
 	}
@@ -845,11 +847,15 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         variable runCount
 
-	#puts [info level 0]
+	puts [info level 0]
 	set identList [split $ident ,]
 	set capt $plot(caption,$node)
 	if {$plot($w,KeyArrays) && [llength $identList]>1} {
-	    append capt \[[join [lrange $identList 1 end] ,]\]
+	    set trTab [GetTransTable $node]
+	    foreach num [lrange $identList 1 end] key $trTab {
+		lappend trVals [TransValue $key $num]
+	    }
+	    append capt \[[join $trVals ,]\]
 	}
         if {$plot($w,KeyRuns)} {
             append capt ", run $runCount($w)"

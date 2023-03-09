@@ -128,6 +128,7 @@ namespace eval ::$keyValue {
         #    global ::graphtools::Xvalues
         global ::graphtools::YYold
         global ::graphtools::YYnew
+        global ::graphtools::YTrans
         global ::graphtools::Told
         global ::graphtools::Tnew
         variable ynodes
@@ -151,7 +152,8 @@ namespace eval ::$keyValue {
             if {[string equal nomatch $node]} {
                 set node $path
             }
-            lappend ynodes($winId) $node
+	    lappend ynodes($winId) $node
+	    set ::graphtools::YTrans [GetTransTable $node]
 #        }
         set path $plot($winId,Xvars) ;# {
             set node [GetIdFromCaptionPath $path]
@@ -825,6 +827,7 @@ namespace eval ::$keyValue {
 	
 	proc TracePopup {w X Y} {
 	    global ::graphtools::plot
+	    global ::graphtools::YTrans
 	    variable times
 
 	    set tags [$w.canvas gettags current]
@@ -833,7 +836,10 @@ namespace eval ::$keyValue {
 	    set runId [lindex $tags 4]
 	    set msg "Plot for value "
 	    if {[llength $idxPt]>1} {
-		append msg "with indices [join [lrange $idxPt 1 end] ,] "
+		foreach num [lrange $idxPt 1 end] key $::graphtools::YTrans {
+		    lappend trVals [TransValue $key $num]
+		}
+		append msg "with indices [join $trVals ,] "
 	    }
 	    append msg "in run $runId at time $times($w,$timePt)"
 	    eval QueuePopup [namespace code [list ActionPopup $w $X $Y $msg]]
