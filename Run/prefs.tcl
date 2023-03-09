@@ -143,11 +143,13 @@ proc Pref_Dialog {} {
     if [winfo exists .pref] {
         raise .pref
     } else  {
-        set dlg [toplevel .pref]
+        toplevel .pref
         wm title .pref [tr. "Preferences"]
+	set dlg [::ttk::frame .pref.dlg]
+	pack $dlg -fill both -expand 1
         wm resizable .pref 0 0 
         set notebook [::ttk::notebook $dlg.notebook]
-        set vf [frame $notebook.layout]
+        set vf [::ttk::frame $notebook.layout]
         $notebook add $vf -text [tr. Layout]
             set initWinTF [TitleFrame $vf.initWinTF -text [tr. "Initial window position:"]]
             set initWinF $initWinTF
@@ -155,17 +157,17 @@ proc Pref_Dialog {} {
             set displayF $displayTF
             set barTF [TitleFrame $vf.barTF -text [tr. "Tool bars and dialogues:"]]
 	    set barF $barTF
-	    pack [frame $barF.line2] -side bottom -fill x -expand 1
+	    pack [::ttk::frame $barF.line2] -side bottom -fill x -expand 1
             set gridTF [TitleFrame $vf.gridTF -text [tr. "Placement grid:"]]
             set gridF $gridTF
-        set cf [frame $notebook.content]
+        set cf [::ttk::frame $notebook.content]
         $notebook add $cf -text [tr. Content]
             set popupTF [TitleFrame $cf.popuptTF -text [tr. "Popups over model components:"]]
             set popupF $popupTF
-	    pack [frame $popupF.line2] -side bottom -fill x -expand 1
+	    pack [::ttk::frame $popupF.line2] -side bottom -fill x -expand 1
 	    set eqListTF [TitleFrame $cf.eqListTF -text [tr. "Equation listings show:"]]
 	    set eqListF $eqListTF
-        set ef [frame $notebook.edit]
+        set ef [::ttk::frame $notebook.edit]
         $notebook add $ef -text [tr. Edit]
             set genericTF [TitleFrame $ef.genericTF -text [tr. "All components:"]]
             set genericF $genericTF
@@ -175,13 +177,13 @@ proc Pref_Dialog {} {
             set flowF $flowTF
             set submodelTF [TitleFrame $ef.submodelTF -text [tr. "Submodels:"]]
             set submodelF $submodelTF
-        set bf [frame $notebook.build]
+        set bf [::ttk::frame $notebook.build]
         $notebook add $bf -text [tr. Build]
             set compTF [TitleFrame $bf.compTF -text [tr. "C++ compiler:"]]
             set compF $compTF
-	    pack [frame $compF.line3] -side bottom -fill x -expand 1
-	    pack [frame $compF.line2] -side bottom -fill x -expand 1
-        set sf [frame $notebook.save]
+	    pack [::ttk::frame $compF.line3] -side bottom -fill x -expand 1
+	    pack [::ttk::frame $compF.line2] -side bottom -fill x -expand 1
+        set sf [::ttk::frame $notebook.save]
         $notebook add $sf -text [tr. Save]
             set canvasTF [TitleFrame $sf.canvasTF -text [tr. "Save optimised canvas data:"]]
             set canvasF $canvasTF
@@ -189,10 +191,10 @@ proc Pref_Dialog {} {
             set recentF $recentTF
             set abandonTF [TitleFrame $sf.abandonTF -text [tr. "For unsaved changes:"]]
             set abandonF $abandonTF
-	    pack [frame $abandonF.line2] -side bottom -fill x -expand 1
+	    pack [::ttk::frame $abandonF.line2] -side bottom -fill x -expand 1
             set csvTF [TitleFrame $sf.csvTF -text [tr. "Saving .csv files:"]]
             set csvF $csvTF
-        set rf [frame $notebook.run]
+        set rf [::ttk::frame $notebook.run]
         $notebook add $rf -text [tr. Run]
             set oneWinTF [TitleFrame $rf.oneWinTF -text [tr. "Run time environment:"]]
             set oneWinF $oneWinTF
@@ -207,7 +209,7 @@ proc Pref_Dialog {} {
 	    $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF \
 	    $precisTF $occurrenceTF $compTF $canvasTF $recentTF $abandonTF \
 	    $csvTF $notebook -fill x -padx 4 -pady 4
-        set bbox [frame $dlg.bbox] 
+        set bbox [::ttk::frame $dlg.bbox] 
         pack [::ttk::button $bbox.bok -text [tr. OK] -underline 0 -width 8  \
                 -command {PrefSave}] -padx 2 -pady 2 -side left -anchor e
         pack [::ttk::button $bbox.bccl -text [tr. Cancel] -underline 0 -width 8 \
@@ -283,7 +285,7 @@ proc Pref_Dialog {} {
 proc PrefDialogItem { frame item width } {
     global pref
     incr pref(uid)
-    set f [frame $frame.p$pref(uid) -borderwidth 2]
+    set f [::ttk::frame $frame.p$pref(uid) -borderwidth 2]
     pack $f -fill x -anchor w -side left -expand on
 # No longer use consistent width -- each label is allowed its own
 #    label $f.label -text [PrefComment $item] -width $width
