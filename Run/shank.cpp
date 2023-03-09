@@ -243,19 +243,27 @@ uint64_t seed_rand(int seed) {
   return shuttle.set;
 }
 
+unsigned short init_rand_states[3];
+BOOLEAN rand_inits_updated;
 thread_local unsigned short rand_states[3];
 
 void setup_randoms(unsigned int seed) {
-  setup_thread_randoms(seed, 0);
+  init_rand_states[0] = seed/65536;
+  init_rand_states[1] = (unsigned short)fmod(seed,65536);
+  init_rand_states[2] = 10000;
+  setup_thread_randoms(seed, 0); // for tcl models
+  rand_inits_updated = TRUE; // for c models
 }
 
 void setup_thread_randoms(unsigned int seed, int tNum) {
-  rand_states[0] = seed/65536;
-  rand_states[1] = (unsigned short)fmod(seed,65536);
-  rand_states[2] = 10000+tNum;
+  rand_states[0] = init_rand_states[0];
+  rand_states[1] = init_rand_states[1];
+  rand_states[2] = init_rand_states[2] + tNum;
 }
 
 double rand_fract() {
+  short unsigned int* xseed = rand_states;
+
   return erand48(rand_states);
 }
 /*
@@ -265,7 +273,7 @@ double ame_rand(double lo, double hi) {
     return  lo + (hi-lo)*rand_fract();
 }
 
-double erand48_by_val(void* seed) {
+double brand48_by_val(void* seed) {
   return erand48((unsigned short int*)seed);
 }
 
@@ -1358,11 +1366,8 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   excpData* retVal = NULL;
   void *clientResult;
 
-  if (top_phase==-2) { // initializing, so do randoms in the thread
-    timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    unsigned int rnd=(1000000007*(intptr_t)pthread_self()+now.tv_nsec);
-    setup_randoms(rnd);
+  if (rand_inits_updated) {
+    setup_thread_randoms(0, 0);
   }
   if (top_phase<=0 && varParamArrayBase) {
     varParamArrayBase->InitTimeSeries(how_int!=-1 || top_phase==-2);
@@ -1447,6 +1452,9 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   pauseEvt = pause_on_events;
   paused = 0;
   
+  if (rand_inits_updated) {
+    setup_thread_randoms(0, 0);
+  }
   LaunchThreads(execute_grp_instance);
   
   excpData* userDefStop = &(loadedInst->userStop);
@@ -1770,6 +1778,7 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
     pthread_join(topList->thredd, (void **)&clientResult);
   pthread_cond_destroy(&topList->cond);
   pthread_mutex_destroy(&topList->mtx);
+  rand_inits_updated = FALSE;
   return clientResult;
 }
 
@@ -3064,6 +3073,13 @@ void reset(void* modelType, void* modelHandle, double t0, int how_int,
   convenience->initTime = t0;
   convenience->howInt = how_int;
   convenience->topPhase = top_phase;
+  // if tp is -2, initialize pseudos
+  if (top_phase == -2) {
+    timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    unsigned int rnd=(1000000007*(intptr_t)pthread_self()+now.tv_nsec);
+    setup_randoms(rnd);
+  }
   //return ((ExecutingModel*)modelHandle)->ResetInstance(t0, how_int, top_phase);
   convenience->start_in_thread(reset_grp_instance);
 }
