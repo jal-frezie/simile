@@ -601,7 +601,6 @@ namespace eval ::$keyValue {
 	set node [string range $ident 0 $mid-1]
         set caption $plot(caption,$node)
 	set trTab [GetTransTable $node]
-	puts $trTab
 	if {[llength [lindex $trTab end]]} {
 	    set nearestval [expr {int($nearestval)}]
 	}
@@ -847,7 +846,7 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         variable runCount
 
-	puts [info level 0]
+	#puts [info level 0]
 	set identList [split $ident ,]
 	set capt $plot(caption,$node)
 	if {$plot($w,KeyArrays) && [llength $identList]>1} {
