@@ -475,11 +475,12 @@ itcl::class similescript::$newHelperClass {
 		WriteLiteralParam $pStr [$subF.e get] "  $indent"
 	        puts $pStr $indent</plist>
 	    } else {
+		set v4throwback [UglifyValList [$subF.e get] 0]
 		set npt [string first ", " $lvl]
 		if {$npt>-1} {
-		    puts $pStr "$indent<param tgt=\"[string range $lvl 5 $npt-1]\" case=\"[string range $lvl $npt+2 end]\" val=\"[$subF.e get]\"/>"
+		    puts $pStr "$indent<param tgt=\"[string range $lvl 5 $npt-1]\" case=\"[string range $lvl $npt+2 end]\" val=\"$v4throwback\"/>"
 		} else { ;# inside a compound case so no case name here
-		    puts $pStr "$indent<param tgt=\"[string range $lvl 5 end]\" val=\"[$subF.e get]\"/>"
+		    puts $pStr "$indent<param tgt=\"[string range $lvl 5 end]\" val=\"$v4throwback\"/>"
 		}
 	    }
 	}
