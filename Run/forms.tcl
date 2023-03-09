@@ -86,7 +86,7 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 	      -textvariable disaggregate(cbxv) -values $disaggregate(labels)] \
 	    -anchor w -side left -padx 4 -pady 4
 	
-	set exFrame [frame $disaggregate(countf).detail]
+	set exFrame [ttk::frame $disaggregate(countf).detail]
 	pack $exFrame -side left -anchor s -pady 4 -fill both -expand 1
 	pack [ttk::label $exFrame.l -wraplength 300p]
 	ShowDisagSetup ;# Set current type
@@ -114,7 +114,7 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 
     pack $t.simple.count -padx 4 -pady 4 -fill both -expand true
 
-    pack [frame $t.simple.middle] -fill both -expand 1
+    pack [ttk::frame $t.simple.middle] -fill both -expand 1
     TitleFrame $t.simple.middle.colour -text [tr. "Background shade:"]
     set colourf [GetFrame $t.simple.middle.colour]
     set posRBs [frame $colourf.imageposns]
@@ -143,16 +143,18 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     ttk::checkbutton $appearancef.hide -text [tr. "Hide contents"] \
             -variable disaggregate(hide)
     pack $appearancef.hide -anchor w
-    ttk::frame $appearancef.scale
-    scale $appearancef.scale.value -from .01 -to 1 -length 150 -orient horizontal \
-            -resolution 0.01 -variable disaggregate(fatness)
-    pack $appearancef.scale.value
-    ttk::label $appearancef.scale.caption -text [tr. "Relative scale"]
-    pack $appearancef.scale.caption
-    pack $appearancef.scale -anchor w
+    set scf [ttk::frame $appearancef.scale]
+    scale $scf.value -from .01 -to 1 -orient horizontal \
+	-resolution 0.01 -variable disaggregate(fatness)
+    $scf.value configure -background \
+	[lindex [$scf.value configure -background] 3] ;# no idea why this needed
+    pack $scf.value -fill x -expand 1
+    ttk::label $scf.caption -text [tr. "Relative scale"]
+    pack $scf.caption
+    pack $scf -fill x -expand 1
     pack $t.simple.middle.appearance -side left -padx 4 -pady 4 -fill both -expand true
 
-    $t add [frame $t.complex] -text [tr. Advanced]
+    $t add [ttk::frame $t.complex] -text [tr. Advanced]
     TitleFrame $t.complex.enumtypes -text [tr. "Enumerated types"]
     set enumtypef [GetFrame $t.complex.enumtypes]
     pack [set canId [frame $enumtypef.listpair]] -side left -fill both \
@@ -1307,14 +1309,16 @@ proc GetDimOrTimePtList {parent title msg} {
 proc RelationCheck {parent title type entries state init_comment} {
     global msgs relation tcl_platform
     
-    set t [PutItThere .relcheck $parent]
-    wm resizable $t 0 0
-    wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
-    wm title $t [format $msgs(props_title) [BlankCrs $title]]
-    frame .relcheck.top
-    TitleFrame .relcheck.top.left \
+    PutItThere .relcheck $parent
+    wm resizable .relcheck 0 0
+    wm protocol .relcheck WM_DELETE_WINDOW {set relation(done) 0}
+    wm title .relcheck [format $msgs(props_title) [BlankCrs $title]]
+    set t [ttk::frame .relcheck.t]
+    pack $t -fill both -expand 1
+    ttk::frame $t.top
+    TitleFrame $t.top.left \
 	-text [format [tr. {%1$s options:}] [string toupper $type]]
-    set f [GetFrame .relcheck.top.left]
+    set f [GetFrame $t.top.left]
     
     switch $type {
         influence {
@@ -1334,23 +1338,23 @@ proc RelationCheck {parent title type entries state init_comment} {
             $f.$attr configure -state disabled
         }
     }
-    pack .relcheck.top.left -side left -padx 4 -pady 4 -expand on -fill both -anchor nw
-    frame .relcheck.top.right
-    pack [button .relcheck.top.right.bdone -text [tr. OK] -width 10 \
+    pack $t.top.left -side left -padx 4 -pady 4 -expand on -fill both -anchor nw
+    ttk::frame $t.top.right
+    pack [button $t.top.right.bdone -text [tr. OK] -width 10 \
 	      -command {set relation(done) 1}] -padx 4 -pady 4
-    pack [button .relcheck.top.right.bc -text [tr. Cancel] -width 10 \
+    pack [button $t.top.right.bc -text [tr. Cancel] -width 10 \
 	      -command {set relation(done) 0}] -padx 4 -pady 4
-    pack [button .relcheck.top.right.help -text [tr. Help] -width 10 \
-	  -command "ContextSensitiveHelp .relcheck $helpPage"] -padx 4 -pady 4
-    pack .relcheck.top.right -side left
-    pack .relcheck.top -expand on -fill both
-    TitleFrame .relcheck.bottom -text [tr. Comments:]
-    set f [GetFrame .relcheck.bottom]
+    pack [button $t.top.right.help -text [tr. Help] -width 10 \
+	  -command "ContextSensitiveHelp $t $helpPage"] -padx 4 -pady 4
+    pack $t.top.right -side left
+    pack $t.top -expand on -fill both
+    TitleFrame $t.bottom -text [tr. Comments:]
+    set f [GetFrame $t.bottom]
     pack [text $f.comment -width 40 -height 4 -relief sunken -bd 2 -highlightthickness 0 -wrap word] \
             -anchor w -expand on -fill both -padx 2 -pady 2
     $f.comment delete 1.0 end
     $f.comment insert 1.0 $init_comment
-    pack .relcheck.bottom
+    pack $t.bottom
     
     LetItShow .relcheck relation(done)
     set newComment [string trimright [$f.comment get 1.0 end]]
