@@ -1885,19 +1885,19 @@ proc Customize {winId mode} {
     if {[string compare $object influence]} {
 	TitleFrame $t.text -text "Text: "
 	set text [GetFrame $t.text]
-	label $text.tell \
+	ttk::label $text.tell \
 	    -text "Drag text by chosen anchor to set default position"
 	pack $text.tell
         set ts [frame $text.size]
-        label $ts.what -text "Text size: "
+        ttk::label $ts.what -text "Text size: "
         pack $ts.what -side left
         scale $ts.scale -from 1 -to 25 -orient horizontal -showvalue false -resolution 1 \
 	    -command "ZotObjectSize $t $n $object"
         pack $ts.scale -side left -fill x -expand 1
         pack $ts -fill x -expand 1
         
-        set tf [frame $text.font]
-        label $tf.what -text "Font: "
+        set tf [ttk::frame $text.font]
+        ttk::label $tf.what -text "Font: "
         pack $tf.what -side left
 	set cbWid [expr {round(108/$::niceSize)}]
         ttk::combobox $tf.family -width $cbWid -textvariable looks(family) \
@@ -1916,13 +1916,13 @@ proc Customize {winId mode} {
 	pack $tf.all -side left
         pack $tf
 
-	set tb [frame $text.backbox]
-	label $tb.bdwhat -text "Show border"
+	set tb [ttk::frame $text.backbox]
+	ttk::label $tb.bdwhat -text "Show border"
 	pack $tb.bdwhat -side left
 	ttk::checkbutton $tb.bd -variable looks(txtbd) \
 	    -command "ZotObjectSize $t $n $object 0"
 	pack $tb.bd -side left
-	label $tb.bgwhat -text "Show background"
+	ttk::label $tb.bgwhat -text "Show background"
 	pack $tb.bgwhat -side left
 	ttk::checkbutton $tb.bg -variable looks(txtbg) \
 	    -command "ZotObjectSize $t $n $object 0"
@@ -1937,18 +1937,18 @@ proc Customize {winId mode} {
     if {[string compare $object text]} {
 	TitleFrame $t.graphics -text "Graphics: "
 	set graphics [GetFrame $t.graphics]
-	frame $graphics.setcolours
+	ttk::frame $graphics.setcolours
 	foreach flashType {outline fill incomplete} {
 	    button $graphics.setcolours.$flashType -text "Set $flashType" \
                 -command "ZotColor $t $n $graphics.setcolours.$flashType $object"
 	    pack $graphics.setcolours.$flashType -side left
 	}
 	pack $graphics.setcolours
-	pack [frame $graphics.trwhite]
+	pack [ttk::frame $graphics.trwhite]
 	pack [ttk::checkbutton $graphics.trwhite.chk -variable looks(trwhite)] -side left
-	pack [label $graphics.trwhite.lbl -text "Show white as transparent"] -side left
+	pack [ttk::label $graphics.trwhite.lbl -text "Show white as transparent"] -side left
 	
-	frame $graphics.flashcolours
+	ttk::frame $graphics.flashcolours
 	foreach flashType {select highlight target} {
 	    button $graphics.flashcolours.$flashType -text "Set $flashType" \
                 -command "ZotColor $t $n $graphics.flashcolours.$flashType $object"
@@ -1956,8 +1956,8 @@ proc Customize {winId mode} {
 	}
 	pack $graphics.flashcolours
     
-	frame $graphics.objectsize
-	label $graphics.objectsize.what -text "Relative size: "
+	ttk::frame $graphics.objectsize
+	ttk::label $graphics.objectsize.what -text "Relative size: "
 	pack $graphics.objectsize.what -side left
 	scale $graphics.objectsize.scale -from 0 -to $looks(width) \
             -orient horizontal -showvalue false \
@@ -1965,8 +1965,8 @@ proc Customize {winId mode} {
 	pack $graphics.objectsize.scale -side left -fill x -expand 1
 	pack $graphics.objectsize -fill x -expand 1
     
-	frame $graphics.lines
-	label $graphics.lines.what -text "Line thickness: "
+	ttk::frame $graphics.lines
+	ttk::label $graphics.lines.what -text "Line thickness: "
 	pack $graphics.lines.what -side left
 	scale $graphics.lines.scale -from 0 -to 10 \
             -orient horizontal -showvalue false -resolution 0.05 \
@@ -1976,7 +1976,7 @@ proc Customize {winId mode} {
 	pack $t.graphics -fill x
     }
     
-    frame $t.actions
+    ttk::frame $t.actions
 #    button $t.actions.load -text "Load" \
 #	-command "ReadLooks $t $n $object"
 #    pack $t.actions.load -side left
