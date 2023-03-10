@@ -470,17 +470,23 @@ itcl::class similescript::$newHelperClass {
 		puts $pStr "$indent<$type label=\"[string range $lvl 5 end]\"$compCase>"
 		SaveLevel $subF $pStr "  $indent"
 		puts $pStr "$indent</$type>"
-	    } elseif {[string range $lvl end-2 end] eq ", s"} {
-		puts $pStr "$indent<plist tgt=\"[string range $lvl 5 end-3]\">"
-		WriteLiteralParam $pStr [$subF.e get] "  $indent"
+		return
+	    }
+	    # stuff for leaf cases
+	    set value [$subF.e get]
+	    set lvl [string range [lindex [bind $subF.e <Enter>] end] 14 end]
+	    # reverse engineer popup cmd to get full path?!
+	    if {[string range $lvl end-2 end] eq ", s"} {
+		puts $pStr "$indent<plist tgt=\"[string range $lvl 0 end-3]\">"
+		WriteLiteralParam $pStr $value "  $indent"
 	        puts $pStr $indent</plist>
 	    } else {
-		set v4throwback [UglifyValList [$subF.e get] 0]
+		set v4throwback [UglifyValList $value 0]
 		set npt [string first ", " $lvl]
 		if {$npt>-1} {
-		    puts $pStr "$indent<param tgt=\"[string range $lvl 5 $npt-1]\" case=\"[string range $lvl $npt+2 end]\" val=\"$v4throwback\"/>"
+		    puts $pStr "$indent<param tgt=\"[string range $lvl 0 $npt-1]\" case=\"[string range $lvl $npt+2 end]\" val=\"$v4throwback\"/>"
 		} else { ;# inside a compound case so no case name here
-		    puts $pStr "$indent<param tgt=\"[string range $lvl 5 end]\" val=\"$v4throwback\"/>"
+		    puts $pStr "$indent<param tgt=\"[string range $lvl 0 end]\" val=\"$v4throwback\"/>"
 		}
 	    }
 	}
