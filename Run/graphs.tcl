@@ -628,10 +628,12 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     if {![info exists table_entry(separator)]} {
 	set table_entry(separator) ,
     }
-    set t [::ttk::notebook .table.notebook]
-    $t add [set fc [frame $t.columns]] -text [tr. "Data in column"]
+    set tf [::ttk::frame .table.frame]
+    pack $tf -fill both -expand 1
+    set t [::ttk::notebook $tf.notebook]
+    $t add [set fc [::ttk::frame $t.columns]] -text [tr. "Data in column"]
     # Data file and data column heading
-    label $fc.instructions -wrap 400 \
+    ::ttk::label $fc.instructions -wrap 400 \
 	-text [tr. "Choose a data file, select a worksheet if necessary, then create table from file by dragging column headings to act either as indices or as data."]
     pack $fc.instructions -side top -padx 2 -pady 2
     TitleFrame $fc.fdata -text [tr. "Data file "]
@@ -646,7 +648,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
             -command "LoadDataFile columns 1 $mdl"
     pack $fdata.new -side left -padx 4 -pady 4
-    label $fdata.sepCapt -text Separator:
+    ::ttk::label $fdata.sepCapt -text Separator:
     pack $fdata.sepCapt -side left -padx 4 -pady 4
     ttk::entry $fdata.sepVal -textvariable table_entry(separator) -width 4
     pack $fdata.sepVal -side left -padx 4 -pady 4
@@ -661,7 +663,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     set tablecb [ttk::combobox $ftable.tablecb -state readonly  -width 50 -textvariable table_entry(dbtable)]
     pack $tablecb -side left
     pack [ttk::button $ftable.mysql -text [tr. {MySQL connection}] \
-	      -command "GetMySQLConnect .table $mdl"] -padx 4 -pady 4
+	      -command "GetMySQLConnect $tf $mdl"] -padx 4 -pady 4
     # end new frame December 2008 for the choice of data table in a database JMM
     TitleFrame $fc.fheads -text [tr. "Table column headings"]
     set fheads [GetFrame $fc.fheads]
@@ -703,7 +705,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     TitleFrame $fc.select.data -text [tr. "Use as data"]
     set didx [GetFrame $fc.select.data]
     if {$haveDND} {
-	set dhead [ttk::entry $didx.dhead \
+	set dhead [::ttk::entry $didx.dhead \
 		   -textvariable table_entry(dataField)]
 	tkdnd::drop_target register $dhead DND_Text
 	bind $dhead <<DropPosition>> {TrackDropCoords %X %Y move}
@@ -721,8 +723,8 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
             -padx 2 -pady 2
     pack $fc.select -side left -expand true -fill both
     
-    $t add [set fg [frame $t.grid]] -text [tr. "Data in grid"]
-    label $fg.instructions -wrap 400 -text [tr. "Choose a data file, then select row and column at which to start and finish loading data."]
+    $t add [set fg [::ttk::frame $t.grid]] -text [tr. "Data in grid"]
+    ::ttk::label $fg.instructions -wrap 400 -text [tr. "Choose a data file, then select row and column at which to start and finish loading data."]
     pack $fg.instructions -side top -padx 2 -pady 2
     TitleFrame $fg.fdata -text [tr. "Data file "]
     set fdata [GetFrame $fg.fdata]
@@ -735,9 +737,9 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
             -command "LoadDataFile grid 1 $mdl"
     pack $fdata.new -side left -padx 4 -pady 4
-    label $fdata.sepCapt -text Separator:
+    ::ttk::label $fdata.sepCapt -text Separator:
     pack $fdata.sepCapt -side left -padx 4 -pady 4
-    ttk::entry $fdata.sepVal -textvariable table_entry(separator) -width 4
+    ::ttk::entry $fdata.sepVal -textvariable table_entry(separator) -width 4
     pack $fdata.sepVal -side left -padx 4 -pady 4
     pack $fdata -fill x
     pack $fg.fdata -fill x
@@ -745,22 +747,22 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     set flim [GetFrame $fg.limits]
     pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
 	      -text [tr. "Transpose (so columns are outer dimension)"]] -side bottom
-    pack [frame $flim.ycapt] -side left -fill both -expand true
-    pack [frame $flim.yval] -side left -fill both -expand true
-    pack [frame $flim.xcapt] -side left -fill both -expand true
-    pack [frame $flim.xval] -side left -fill both -expand true
+    pack [::ttk::frame $flim.ycapt] -side left -fill both -expand true
+    pack [::ttk::frame $flim.yval] -side left -fill both -expand true
+    pack [::ttk::frame $flim.xcapt] -side left -fill both -expand true
+    pack [::ttk::frame $flim.xval] -side left -fill both -expand true
     
-    pack [label $flim.ycapt.lo -text [tr. "Start at row:"]] \
+    pack [::ttk::label $flim.ycapt.lo -text [tr. "Start at row:"]] \
             -expand true -fill x
-    pack [label $flim.ycapt.hi -text [tr. "Finish at row:"]] \
+    pack [::ttk::label $flim.ycapt.hi -text [tr. "Finish at row:"]] \
             -expand true -fill x
-    pack [label $flim.ycapt.idx -text [tr. "Row index from:"]] \
+    pack [::ttk::label $flim.ycapt.idx -text [tr. "Row index from:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.lo -text [tr. "Start at column:"]] \
+    pack [::ttk::label $flim.xcapt.lo -text [tr. "Start at column:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.hi -text [tr. "Finish at column:"]] \
+    pack [::ttk::label $flim.xcapt.hi -text [tr. "Finish at column:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.idx -text [tr. "Column index from:"]] \
+    pack [::ttk::label $flim.xcapt.idx -text [tr. "Column index from:"]] \
             -expand true -fill x
     
     pack [ttk::entry $flim.yval.lo -textvariable table_entry(row1)] \
@@ -783,8 +785,8 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 # in case not used before
     pack $fg.limits -fill both -expand true
     
-    $t add [set fi [frame $t.image]] -text [tr. "Data from image"]
-    label $fi.instructions -wrap 400 -text [tr. "Choose an image file, then select row and column at which to start and finish loading data, and method for interpreting colours."]
+    $t add [set fi [::ttk::frame $t.image]] -text [tr. "Data from image"]
+    ::ttk::label $fi.instructions -wrap 400 -text [tr. "Choose an image file, then select row and column at which to start and finish loading data, and method for interpreting colours."]
     pack $fi.instructions -side top -padx 2 -pady 2
     TitleFrame $fi.fdata -text [tr. "Image file "]
     set fdata [GetFrame $fi.fdata]
@@ -804,18 +806,18 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
 	      -text [tr. "Transpose (so X positions are outer dimension)"]] \
 	-side bottom
-    pack [frame $flim.ycapt] -side left -fill both -expand true
-    pack [frame $flim.yval] -side left -fill both -expand true
-    pack [frame $flim.xcapt] -side left -fill both -expand true
-    pack [frame $flim.xval] -side left -fill both -expand true
+    pack [::ttk::frame $flim.ycapt] -side left -fill both -expand true
+    pack [::ttk::frame $flim.yval] -side left -fill both -expand true
+    pack [::ttk::frame $flim.xcapt] -side left -fill both -expand true
+    pack [::ttk::frame $flim.xval] -side left -fill both -expand true
     
-    pack [label $flim.ycapt.lo -text [tr. "Start at Y position:"]] \
+    pack [::ttk::label $flim.ycapt.lo -text [tr. "Start at Y position:"]] \
             -expand true -fill x
-    pack [label $flim.ycapt.hi -text [tr. "Finish at Y position:"]] \
+    pack [::ttk::label $flim.ycapt.hi -text [tr. "Finish at Y position:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.lo -text [tr. "Start at X position:"]] \
+    pack [::ttk::label $flim.xcapt.lo -text [tr. "Start at X position:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.hi -text [tr. "Finish at X position:"]] \
+    pack [::ttk::label $flim.xcapt.hi -text [tr. "Finish at X position:"]] \
             -expand true -fill x
     
     pack [ttk::entry $flim.yval.lo -textvariable table_entry(row1)] \
@@ -831,22 +833,22 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     TitleFrame $fi.interp -text [tr. "Values for colours: "]
     set fterp [GetFrame $fi.interp]
     set fbounds [frame $fterp.bounds]
-    pack [label $fbounds.bklabel -text [tr. "Value for black:"]] \
+    pack [::ttk::label $fbounds.bklabel -text [tr. "Value for black:"]] \
             -side left -expand true -fill x
     pack [ttk::entry $fbounds.bkentry -textvariable table_entry(blkval)] \
             -side left -expand true -fill x
-    pack [label $fbounds.wtlabel -text [tr. "Value for white:"]] \
+    pack [::ttk::label $fbounds.wtlabel -text [tr. "Value for white:"]] \
             -side left -expand true -fill x
     pack [ttk::entry $fbounds.wtentry -textvariable table_entry(whtval)] \
             -side left -expand true -fill x
     pack $fbounds
     
     set fcols [frame $fterp.cols]
-    pack [label $fcols.trlabel -text [tr. "Value for clear:"]] \
+    pack [::ttk::label $fcols.trlabel -text [tr. "Value for clear:"]] \
             -side left -expand true -fill x
     pack [ttk::entry $fcols.trentry -textvariable table_entry(trnval)] \
             -side left -expand true -fill x
-    pack [label $fcols.clabel -text [tr. "For other colours:"]] \
+    pack [::ttk::label $fcols.clabel -text [tr. "For other colours:"]] \
             -side left -expand true -fill x
     pack [::ttk::combobox $fcols.c -textvariable table_entry(othval) \
 	      -values $table_entry(oth_txts) -width 16 -state readonly]
@@ -854,8 +856,8 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack $fcols
     pack $fi.interp -fill both -expand true
     
-    $t add [set ft [frame $t.gdal]] -text [tr. "Data from GeoTIFF etc."]
-    label $ft.instructions -wrap 400 -text [tr. "Choose a georeferenced data file, then select row and column at which to start and finish loading data."]
+    $t add [set ft [::ttk::frame $t.gdal]] -text [tr. "Data from GeoTIFF etc."]
+    ::ttk::label $ft.instructions -wrap 400 -text [tr. "Choose a georeferenced data file, then select row and column at which to start and finish loading data."]
     pack $ft.instructions -side top -padx 2 -pady 2
     TitleFrame $ft.fdata -text [tr. "Data file "]
     set fdata [GetFrame $ft.fdata]
@@ -884,18 +886,18 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
 	      -text [tr. "Transpose (so columns are outer dimension)"] \
 	      -state disabled] -side bottom ;# not working yet
-    pack [frame $flim.ycapt] -side left -fill both -expand true
-    pack [frame $flim.yval] -side left -fill both -expand true
-    pack [frame $flim.xcapt] -side left -fill both -expand true
-    pack [frame $flim.xval] -side left -fill both -expand true
+    pack [::ttk::frame $flim.ycapt] -side left -fill both -expand true
+    pack [::ttk::frame $flim.yval] -side left -fill both -expand true
+    pack [::ttk::frame $flim.xcapt] -side left -fill both -expand true
+    pack [::ttk::frame $flim.xval] -side left -fill both -expand true
     
-    pack [label $flim.ycapt.lo -text [tr. "Start at row:"]] \
+    pack [::ttk::label $flim.ycapt.lo -text [tr. "Start at row:"]] \
             -expand true -fill x
-    pack [label $flim.ycapt.hi -text [tr. "Finish at row:"]] \
+    pack [::ttk::label $flim.ycapt.hi -text [tr. "Finish at row:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.lo -text [tr. "Start at column:"]] \
+    pack [::ttk::label $flim.xcapt.lo -text [tr. "Start at column:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.hi -text [tr. "Finish at column:"]] \
+    pack [::ttk::label $flim.xcapt.hi -text [tr. "Finish at column:"]] \
             -expand true -fill x
     
     pack [ttk::entry $flim.yval.lo -textvariable table_entry(row1)] \
@@ -949,20 +951,20 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     
     #
     # OK, Cancel and Help buttons
-    frame .table.fbuttons
+    set bf [::ttk::frame $tf.fbuttons]
     set startLine [expr {[lsearch {fixed result} $dlgStyle]>-1}]
 # 0 for times, 1 for array indices
     if {!$startLine} {
 	SeparateTimeExtras
-        pack [TitleFrame .table.fbuttons.wrapf -text [tr. "Time options: "]] \
+        pack [TitleFrame $bf.wrapf -text [tr. "Time options: "]] \
                 -padx 4 -pady 4 -expand true -fill x
-        set wrapf [GetFrame .table.fbuttons.wrapf]
-        pack [label $wrapf.um -text [tr. "Units for indices:"]]
+        set wrapf [GetFrame $bf.wrapf]
+        pack [::ttk::label $wrapf.um -text [tr. "Units for indices:"]]
         pack [::ttk::combobox $wrapf.uc -textvariable table_entry(uftsi) \
 		  -width 10 -values [concat unit $::commonTimes] \
 		  -state normal]
 	if {$dlgStyle eq "continuous"} {
-	    pack [label $wrapf.bm -text [tr. "Between points:"]]
+	    pack [::ttk::label $wrapf.bm -text [tr. "Between points:"]]
 	    pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
 		      -width 10 -values $table_entry(between_txts) \
 		      -state readonly]
@@ -971,7 +973,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 	    array unset table_entry others
 	}
 	if {!($dlgStyle eq "measure")} {
-	    pack [label $wrapf.wm -text [tr. "Wraparound at:"]]
+	    pack [::ttk::label $wrapf.wm -text [tr. "Wraparound at:"]]
 	    pack [entry $wrapf.we -width 1 -textvariable table_entry(wrapPt)] \
                 -expand true -fill x
         }
@@ -981,7 +983,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 	array unset table_entry uftsi
     }
     if {![string equal .equation $parent]} {
-        pack [ttk::checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
+        pack [ttk::checkbutton $bf.keepvals -var table_entry(bytes) \
                 -text [tr. "Include values in scenario files"] \
                 -command "set table_entry(source) 1"] -padx 4 -pady 4
 # comments section : new for 5.6 : should be scrollable!
@@ -991,44 +993,43 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 	}
 	AllowTextDrags .table.commentt
 	
-	label .table.commentl -text [tr. "Comments regarding values:"]
-	pack .table.commentl -side bottom
+	::ttk::label $tf.commentl -text [tr. "Comments regarding values:"]
+	pack $tf.commentl -side bottom -padx 4 -pady 4
     }
     
-    button .table.fbuttons.clear -text [tr. Clear] -width 10 \
+    button $bf.clear -text [tr. Clear] -width 10 \
             -command [list ClearTableData]
-    button .table.fbuttons.load -text [tr. Reload] -width 10 \
+    button $bf.load -text [tr. Reload] -width 10 \
             -command [list AcquireTableData 2 $startLine]
-    button .table.fbuttons.edit -text [tr. View/Edit] -width 10 \
+    button $bf.edit -text [tr. View/Edit] -width 10 \
             -command [list EditTableData $startLine $tgt $arrayDims $trans]
-    button .table.fbuttons.ok -text [tr. OK] -width 10 \
+    button $bf.ok -text [tr. OK] -width 10 \
             -command [list DoneTableData $startLine]
-    button .table.fbuttons.cancel -text [tr. Cancel] -width 10 \
+    button $bf.cancel -text [tr. Cancel] -width 10 \
             -command "set table_entry(done) 0"
-    button .table.fbuttons.help -text [tr. Help] -width 10 \
+    button $bf.help -text [tr. Help] -width 10 \
             -command {ContextSensitiveHelp .table data/table.htm}
-    pack .table.fbuttons.clear -side top -padx 4 -pady 4
-    pack .table.fbuttons.load -side top -padx 4 -pady 4
-    pack .table.fbuttons.edit -side top -padx 4 -pady 4
-    pack .table.fbuttons.ok -side top -padx 4 -pady 4
-    pack .table.fbuttons.cancel -side top -padx 4 -pady 4
-    pack .table.fbuttons.help -side top -padx 4 -pady 4
-    pack .table.fbuttons -side right  -anchor e
+    pack $bf.clear -side top -padx 4 -pady 4
+    pack $bf.load -side top -padx 4 -pady 4
+    pack $bf.edit -side top -padx 4 -pady 4
+    pack $bf.ok -side top -padx 4 -pady 4
+    pack $bf.cancel -side top -padx 4 -pady 4
+    pack $bf.help -side top -padx 4 -pady 4
+    pack $bf -side right  -anchor e
     pack $t -side left -expand true -fill both
     if {[lindex $table_entry(values) 1] eq ",bytes"} {
 	# No object data available, do not display
-	.table.fbuttons.edit configure -state disabled
-	.table.fbuttons.keepvals configure -state disabled
+	$bf.edit configure -state disabled
+	$bf.keepvals configure -state disabled
 	if {!$startLine} {
 	    set table_entry(uftsi) [lindex $table_entry(values) 4]*day
 	}
     }
-    set t .table
     if {[llength $table_entry(data)]} {
         set table_entry(fileName) [lindex $table_entry(data) 0]
         switch [lindex $table_entry(data) 1] {
             ,grid {
-                .table.notebook select .table.notebook.grid
+                $t select $t.grid
                 set table_entry(row1) [lindex $table_entry(data) 2]
                 set table_entry(rown) [lindex $table_entry(data) 3]
                 set table_entry(col1) [lindex $table_entry(data) 4]
@@ -1044,7 +1045,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 			      [lindex $table_entry(data) 8]]]
 		set table_entry(separator) [lindex $table_entry(data) 9]
             } ,image {
-                .table.notebook select .table.notebook.image
+                $t select $t.image
                 set table_entry(row1) [lindex $table_entry(data) 2]
                 set table_entry(rown) [lindex $table_entry(data) 3]
                 set table_entry(col1) [lindex $table_entry(data) 4]
@@ -1058,7 +1059,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 			      [lindex $table_entry(data) 9]]]
 		set table_entry(xpose) [lindex $table_entry(data) 10]
             } ,gdal {
-                .table.notebook select .table.notebook.gdal
+                $t select $t.gdal
                 set table_entry(row1) [lindex $table_entry(data) 2]
                 set table_entry(rown) [lindex $table_entry(data) 3]
                 set table_entry(col1) [lindex $table_entry(data) 4]
@@ -1066,7 +1067,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 		set table_entry(vrtable) [lindex $table_entry(data) 6]
 		set table_entry(xpose) [lindex $table_entry(data) 7]
             } default {
-                .table.notebook select .table.notebook.columns
+                $t select $t.columns
                 set table_entry(dataField) [lindex $table_entry(data) 1]
                 set table_entry(separator) [lindex $table_entry(data) 2]
                 set table_entry(indices) [lrange $table_entry(data) 3 end]
@@ -1120,7 +1121,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 
     set table_entry(source) -1
     LetItShow .table table_entry(done)
-    PackItUp $t
+    PackItUp .table
     CombineTimeExtras
     return $table_entry(done)
 }
@@ -1183,7 +1184,7 @@ proc CombineTimeExtras {} {
 proc ChooseDatabase {parent title} {
     global sqlEntry
     
-    PutItThere .sqlentry $parent
+    PutItThere .sqlentry [winfo toplevel $parent]
     wm title .sqlentry $title
     pack [set form [GetFrame [TitleFrame .sqlentry.form \
 				  -text [tr. "Specifics:"]]]]
@@ -1217,7 +1218,7 @@ proc GetMySQLConnect {parent $mdl} {
 
     set table_entry(fileName) [ChooseDatabase $parent "MySQL data source"]
     if {$table_entry(fileName) ne {}} {
-	set fc .table.notebook.columns
+	set fc $parent.notebook.columns
 	set fheads [GetFrame $fc.fheads]
 	# insert something in the data file field
 
@@ -1433,9 +1434,9 @@ proc ClearTableData {} {
 
 proc AcquireTableData {redo startLine} {
     global table_entry
-    
-    switch [set pane [.table.notebook select]] {
-        .table.notebook.columns {
+
+    switch [winfo name [set pane [.table.frame.notebook select]]] {
+        columns {
             if {![llength $table_entry(dataField)]} {
                 return
             }
@@ -1477,7 +1478,7 @@ proc AcquireTableData {redo startLine} {
                 set tableSpec [linsert $tableSpec 3 \
 				   ,dbtable:$table_entry(dbtable)]
             }
-        } .table.notebook.grid {
+        } grid {
             set tableSpec \
 		[list $table_entry(fileName) ,grid \
 		     $table_entry(row1) $table_entry(rown) \
@@ -1490,7 +1491,7 @@ proc AcquireTableData {redo startLine} {
 			       $table_entry(icol)]] \
 		     $table_entry(separator)]
 		
-        } .table.notebook.image {
+        } image {
             set tableSpec [list $table_entry(fileName) ,image \
 			       $table_entry(row1) $table_entry(rown) \
 			       $table_entry(col1) $table_entry(coln) \
@@ -1500,7 +1501,7 @@ proc AcquireTableData {redo startLine} {
 				    [lsearch $table_entry(oth_txts) \
 					 $table_entry(othval)]] \
 			       $table_entry(xpose)]
-        } .table.notebook.gdal {
+        } gdal {
             set tableSpec [list $table_entry(fileName) ,gdal \
 			       $table_entry(row1) $table_entry(rown) \
 			       $table_entry(col1) $table_entry(coln) \
@@ -1512,8 +1513,9 @@ proc AcquireTableData {redo startLine} {
         set table_entry(values) [LoadTableData tableSpec $startLine 0]
         set table_entry(source) 2
         set table_entry(data) $tableSpec
-	.table.fbuttons.edit configure -state normal
-	catch {.table.fbuttons.keepvals configure -state normal}
+	set bf .table.frame.fbuttons
+	$bf.edit configure -state normal
+	catch {$bf.keepvals configure -state normal}
 	# (checkbutton not created if it's an equation table)
     }
 }
@@ -1574,7 +1576,8 @@ proc LoadDataFile {mode query mdl} {
     #    wm title .table "Create table from file $table_entry(fileName)"
 
     set haveDND [llength [package provide tkdnd]]
-    set fc .table.notebook.columns
+    set tn .table.frame.notebook
+    set fc $tn.columns
     set fheads [GetFrame $fc.fheads]
     if {$haveDND} {
 	$fheads.lheads delete 0 end
@@ -1617,7 +1620,7 @@ proc LoadDataFile {mode query mdl} {
             return 0
         }
     }
-    [GetFrame .table.notebook.$mode.fdata].dfile xview moveto 1
+    [GetFrame $tn.$mode.fdata].dfile xview moveto 1
     
     if {[string equal gdal $mode]} {
         close $stream
@@ -1628,7 +1631,7 @@ proc LoadDataFile {mode query mdl} {
         set table_entry(row1) 1
         set table_entry(rown) [gdal_get_y_size $hdl]
 	set tablenames [gdal_get_var_names $hdl]
-	set tablecb [GetFrame .table.notebook.gdal.ftable].tablecb
+	set tablecb [GetFrame $tn.gdal.ftable].tablecb
 	$tablecb configure -values $tablenames
 	$tablecb set [lindex $tablenames 0]
         gdal_close $hdl
