@@ -44,6 +44,10 @@ set msgs(border_abbrev) [tr. {bdr}]
 set msgs(desktop_abbrev) [tr. {Desktop}]
 set msgs(fragment_abbrev) [tr. {frag}]
 
+# simile basics -- actions
+set msgs(align) [tr. {Align}]
+set msgs(reroute) [tr. {Reroute}]
+
 # simile basics -- for eqn dialogue
 set msgs(equation_for) [tr. {Equation for %1$s}]
 set msgs(init_val_for) [tr. {Initial value for %1$s}]

@@ -1538,7 +1538,7 @@ proc DoLocalCmd {win item} {
         tosel {DisplayArea $win}
         tofit {DisplayAll $win}
         zoomout {DoZoom $win .707107}
-	find {prolog tk_bar_edit_menu('$win'); FindCaption $win} \
+	newfind {prolog tk_bar_edit_menu('$win'); FindCaption $win} \
 	    ;# removing tk_bar_edit_menu('$win') searches only last sm clicked
         findnext {NextCaption $win}
         raiseMRE {RaiseWinMRE $win}
@@ -2058,7 +2058,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     BindPopup $nb.tog_grid tog_grid
     
     foreach navCmd {{rerun {local rerun}} {separator6} \
-                {find {local find}} {findmore {local findnext}} {separator7}} {
+                {find {local newfind}} {findmore {local findnext}} {separator7}} {
         set handle [lindex $navCmd 0]
         if {[string match separator* $handle]} {
             pack [ttk::separator $nb.$handle -orient vertical] \

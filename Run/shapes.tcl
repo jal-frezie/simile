@@ -1747,6 +1747,7 @@ set adds none
 
 proc FindCaption {canvas} {
     global find
+
     set findable [GetFindText $canvas]
     if {!$find(done)} return
     set find(List,$canvas) {}

@@ -1374,8 +1374,10 @@ proc GetFindText {canvas} {
     wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
     wm title $t "Find"
     wm resizable $t 0 0
-    TitleFrame .findentry.follow -text "Follow influences "
-    set follow [GetFrame .findentry.follow]
+    set t [::ttk::frame $t.f]
+    pack $t -fill both -expand 1
+    TitleFrame $t.follow -text "Follow influences "
+    set follow [GetFrame $t.follow]
     pack [ttk::label $follow.to -text [tr. Components...]] -anchor w
     pack [ttk::label $follow.from -text [tr. ...selection]] \
 	-side bottom -anchor e
@@ -1388,18 +1390,18 @@ proc GetFindText {canvas} {
     pack [ttk::button $follow.here -text [tr. "equivalent to"] \
 	      -command "set find(done) 11"] \
 	-padx 2 -pady 4
-    pack .findentry.follow -anchor nw -fill both
+    pack $t.follow -anchor nw -fill both
 
-    set ft [frame .findentry.ft]
-    pack [message $ft.m -text "Find text:" -width 300] \
+    set ft [ttk::frame $t.ft]
+    pack [ttk::label $ft.m -text "Find text:"] \
 	-padx 4 -pady 6 -anchor nw -side left
     pack [ttk::combobox $ft.e -width 40 -values $find(prevs)] \
         -padx 4 -pady 6 -anchor nw -side left
 
     bind $ft.e <Return> "set find(done) 1"
-    pack .findentry.ft -anchor nw -fill both
-    TitleFrame .findentry.rbs -text "Search for text in "
-    set rbs [GetFrame .findentry.rbs]
+    pack $ft -anchor nw -fill both
+    TitleFrame $t.rbs -text "Search for text in "
+    set rbs [GetFrame $t.rbs]
     set find(where) caption
     ttk::radiobutton $rbs.r1 -text "Captions" -variable find(where) \
 	-value caption
@@ -1411,9 +1413,9 @@ proc GetFindText {canvas} {
     pack $rbs.r2 -anchor nw
     pack $rbs.r3 -anchor nw
     pack $rbs -anchor nw -fill both -padx 4 -pady 4
-    pack .findentry.rbs -anchor nw -fill both
-    pack [set bs [frame .findentry.buttframe]]
-    #pack [button $bs.clear -text Clear -width 10 -command ".findentry.e delete 0 end"] -padx 2 -pady 2 -side left
+    pack $t.rbs -anchor nw -fill both
+    pack [set bs [ttk::frame $t.buttframe]]
+    #pack [button $bs.clear -text Clear -width 10 -command "$t.e delete 0 end"] -padx 2 -pady 2 -side left
     pack [button $bs.ok -text [tr. OK] -default active -width 10 \
 	      -command "set find(done) 1"] -padx 2 -pady 4 -side left
     pack [button $bs.cancel -text [tr. Cancel] -width 10 \
