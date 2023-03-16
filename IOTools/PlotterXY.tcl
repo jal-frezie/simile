@@ -227,6 +227,7 @@ namespace eval ::$keyValue {
                         return
                     }
                     set ynodes($w) $node
+		    set ::graphtools::YTrans [GetTransTable $node]
                     lappend plot($w,Ylabels) $caption; # allow more than one pair of var
                     set useNodes($w,state) display
                     drawGraphpad $w
