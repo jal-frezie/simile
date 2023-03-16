@@ -459,6 +459,9 @@ if {!$headless} {
 #    if {$niceSize<=0} {
 #	set niceSize 12 ;# otherwise is -12 on Buckaroo
 #    }
+if {[info exists custom(layout,theme)] && $custom(layout,theme) ne ""} {
+    ttk::style theme use $custom(layout,theme)
+}
 if {[info exists custom(layout,text)] && $custom(layout,text) ne ""} {
     set niceSize $custom(layout,text)
 }

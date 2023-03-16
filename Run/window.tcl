@@ -2839,6 +2839,7 @@ proc ZapWindow { fullName } {
         puts $cacheStream [string match zoomed [wm state $target]]
         puts $cacheStream [wm geometry $target]
 # under Linux this will be the geom of the client window not the frame -- fix
+        puts $cacheStream [PrefValue custom(widgetTheme) widgetTheme]
         puts $cacheStream [PrefValue custom(textSize) textSize]
 	close $cacheStream
     if {[string equal windows $tcl_platform(platform)]} {

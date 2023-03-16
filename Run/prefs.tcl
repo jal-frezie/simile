@@ -395,8 +395,10 @@ proc PrefSaveFile {new oldValues} {
 		if [info exists pref(entry,$varName)] {
 			PrefEntrySet $varName $resName
 		}
-		set value [PrefValue $varName $resName]
+	    set value [PrefValue $varName $resName]
+	    if {$value ne ""} { ;# obsolete item
 		puts $out [format "%s\t%s" *${resName}: $value]
+	    }
 	}
     close $out
 }

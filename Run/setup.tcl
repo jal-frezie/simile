@@ -125,7 +125,7 @@ if {$use_system_tcltk} {
 # read layout data now so scaling can be set before GUI started
 if {[file exists $custom(prefDir)/.layout]} {
     set stm [open $custom(prefDir)/.layout r]
-    foreach item {full geom text} {
+    foreach item {full geom theme text} {
 	gets $stm custom(layout,$item)
     }
     close $stm
