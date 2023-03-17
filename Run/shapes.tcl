@@ -1322,6 +1322,7 @@ proc InjectGraphics {c canvasFile} {
 #    set w [expr $window_info($c,width)+4]
 #    set h [expr $window_info($c,height)+4]
     source $canvasFile
+    tk_messageBox
     $c dtag current
 # following does same thing but allows encoding to happen
 # not needed now cos we set system encoding, which source uses
@@ -2073,7 +2074,7 @@ proc ExtractFontData {font} {
     }
     # already a new style one, do not pass Tk in case headless
     return [list $fontAttrs(-family) $fontAttrs(-weight) \
-		$fontAttrs(-slant) $fontAttrs(-size)]
+		$fontAttrs(-slant) [expr {$::defScaling*$fontAttrs(-size)}]]
 }
 
 proc CopyLooks {t n object nta} {
@@ -2336,7 +2337,7 @@ proc ResetFont { top } {
 
 proc AssembleFont {family weight style textsize} {
     set newFont [list -family $family -weight $weight -slant $style \
-		     -size [expr {round($textsize)}]]
+		     -size [expr {round($textsize/$::defScaling)}]]
 
     return $newFont
 }

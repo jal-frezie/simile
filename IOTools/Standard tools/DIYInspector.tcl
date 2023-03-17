@@ -382,7 +382,7 @@ itcl::class similescript::$newHelperClass {
 		InsertLevel $type
 		if {[info exists attrs(tgt)]} {
 		    # will be awaiting a click, so supply one
-		    Click /$attrs(tgt)
+		    Click $attrs(tgt)
 		}
 		if {$type eq "plist" || [info exists attrs(val)]} {
 		    set f [MakeSubFrames $this $topFrame $clickPath \
