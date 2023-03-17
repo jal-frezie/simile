@@ -1070,8 +1070,6 @@ set msgs(keep_shf_button) [tr. {Keep old setup}]
 set msgs(lose_shf_button) [tr. {Save without helper setup}]
 
 set geometryXYexplanation [tr. {Set position of the run control window, in the form xy, where x and y specify the desired location of window on the screen, in pixels.}]
-set msgs(runControlPosition) $geometryXYexplanation
-set msgs(slidersPosition) $geometryXYexplanation
 set msgs(new) [tr. {New empty model}]
 set msgs(open) [tr. {Open}]
 set msgs(print) [tr. {Print}]

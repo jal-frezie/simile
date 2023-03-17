@@ -70,11 +70,6 @@ namespace eval runcontrol33857 {
 	}
         set runState($node,oldUnit) $runState($node,timeUnit)
         set runState($node,newUnit) $runState($node,timeUnit)
-        if {[string match $t [winfo toplevel $t]]} {
-#            wm title $t "Run control"; # $t isn't a toplevel under MRE
-            set geom [PrefValue custom(runControlPosition) runControlPosition]
-            catch {wm geometry $t $geom}
-        }
         
         ::ttk::notebook $t.nb
         

@@ -32,8 +32,6 @@ namespace eval slide139 {
         
         set ::topSFrame($winId) [DIYMakeFrames $winId]
         SetState $winId {}
-        set geom [PrefValue custom(slidersPosition) slidersPosition]
-        catch {wm geometry $winId $geom}
     }
     
     # Do not remove sliders when clearing data from displays
