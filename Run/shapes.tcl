@@ -939,7 +939,6 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     } else {
         set textColor $looks($n,$type,text)
     }
-    
     set fontData [ExtractFontData $looks($n,$type,font)]
     set realFont [Scale $w [lindex $fontData 3]*$fatness/100]
 #    if {$realFont<10} {
@@ -1322,7 +1321,6 @@ proc InjectGraphics {c canvasFile} {
 #    set w [expr $window_info($c,width)+4]
 #    set h [expr $window_info($c,height)+4]
     source $canvasFile
-    tk_messageBox
     $c dtag current
 # following does same thing but allows encoding to happen
 # not needed now cos we set system encoding, which source uses
@@ -2434,7 +2432,7 @@ proc GetTextAnchor {t} {
 
 proc ResetLooks {c type} {
     global looks
-    
+
     set looks($c,$type,font) [AssembleFont Helvetica bold roman 12.0]
     set looks($c,$type,txtbd) 0
     set looks($c,$type,txtbg) 0
