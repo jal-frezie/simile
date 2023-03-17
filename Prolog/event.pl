@@ -1167,7 +1167,7 @@ Current version creates a new window showing contents at the default size. If
 they have not yet been scaled, the window is the same size as the submodel
 in the parent. */
 
-window_size_for(Submodel, Size, 1) :-
+window_size_for(Submodel, Size, 1.0) :-
 	get_shape(Submodel, internal_extent, Size).
 
 /*
