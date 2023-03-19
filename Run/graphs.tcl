@@ -82,22 +82,23 @@ proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
     
     catch {wm title $t [tr. "Sketch graph"]}
     
-    TitleFrame $t.gph -text [tr. "Graph pad for [BlankCrs $name]"]
-    set gph [GetFrame $t.gph]
-    frame $gph.yentry
+    pack [set tf [::ttk::frame $t.wrapper]] -fill both -expand 1
+    TitleFrame $tf.gph -text [tr. "Graph pad for [BlankCrs $name]"]
+    set gph [GetFrame $tf.gph]
+    ::ttk::frame $gph.yentry
     ::ttk::entry $gph.yentry.topentry -textvar graph($t,lowy) -width 8
     pack $gph.yentry.topentry -side top -pady 2
-    label $gph.yentry.toplabel -text [tr. "Y max"]
+    ::ttk::label $gph.yentry.toplabel -text [tr. "Y max"]
     pack $gph.yentry.toplabel -side top -pady 2
-    label $gph.yentry.label -text [tr. "Value"]
+    ::ttk::label $gph.yentry.label -text [tr. "Value"]
     pack $gph.yentry.label -side top -fill y -expand true
-    label $gph.yentry.bottomlabel -text [tr. "Y min"]
+    ::ttk::label $gph.yentry.bottomlabel -text [tr. "Y min"]
     pack $gph.yentry.bottomlabel -side top -pady 2
     ::ttk::entry $gph.yentry.bottomentry -textvar graph($t,highy) -width 8
     pack $gph.yentry.bottomentry -side top -pady 2
     grid $gph.yentry -column 0 -row 0 -sticky ns -padx 2 -pady 2
     
-    frame $gph.gridf
+    ::ttk::frame $gph.gridf
     set grid [canvas $gph.gridf.canvas -width [expr $graph($t,width)+1] \
             -height [expr $graph($t,height)+1] -bd $graph(bd) -relief groove]
     set graph($t,increment) [expr $graph($t,width)/([llength $graph($t,points)] - 1.0)]
@@ -106,22 +107,22 @@ proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
     bind $grid <B1-Motion> "GDrag %W %x %y"
     bind $grid <Configure> "AttackShape %W %w %h"
     
-    frame $gph.xentry
+    ::ttk::frame $gph.xentry
     ::ttk::entry $gph.xentry.leftentry -textvar graph($t,lowx) -width 8
     pack $gph.xentry.leftentry -side left -padx 2
-    label $gph.xentry.xmin -text [tr. "X min"]
+    ::ttk::label $gph.xentry.xmin -text [tr. "X min"]
     pack $gph.xentry.xmin -side left -padx 2
-    label $gph.xentry.arg -text [tr. "Argument"]
+    ::ttk::label $gph.xentry.arg -text [tr. "Argument"]
     pack $gph.xentry.arg  -side left -fill x -expand true
-    label $gph.xentry.rightlabel -text [tr. "X max"]
+    ::ttk::label $gph.xentry.rightlabel -text [tr. "X max"]
     pack $gph.xentry.rightlabel -side left -padx 2
     ::ttk::entry $gph.xentry.rightentry -textvar graph($t,highx) -width 8
     pack $gph.xentry.rightentry -side left -padx 2
     grid $gph.xentry -column 1 -row 1 -sticky we -padx 2 -pady 2
     
-    frame $t.right
+    set rgt [::ttk::frame $tf.right]
     
-    set buttons [frame $t.right.buttons]
+    set buttons [::ttk::frame $rgt.buttons]
     button $buttons.enter -text [tr. OK] -width 10
     pack $buttons.enter -padx 4 -pady 4 -anchor e
     button $buttons.cancel -text [tr. Cancel] -width 10
@@ -147,31 +148,31 @@ proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
         bind $t <Destroy> "set graph($t,done) -1"
     }
     
-    TitleFrame $t.right.current -text [tr. "Current Position: "]
-    set current [GetFrame $t.right.current]
+    TitleFrame $rgt.current -text [tr. "Current Position: "]
+    set current [GetFrame $rgt.current]
     
-    frame $current.y
-    label $current.y.yvalue -text [tr. "Y:"]
+    ::ttk::frame $current.y
+    ::ttk::label $current.y.yvalue -text [tr. "Y:"]
     pack $current.y.yvalue -side left -padx 2 -pady 4
     ::ttk::entry $current.y.yvaluebox -textvar yvalue -width 8
     bind $current.y.yvaluebox <Return> [list YEntry $grid]
     pack $current.y.yvaluebox -side left -padx 2 -pady 4
     pack $current.y -pady 4
-    frame $current.x
-    label $current.x.xvalue -text [tr. "X:"]
+    ::ttk::frame $current.x
+    ::ttk::label $current.x.xvalue -text [tr. "X:"]
     pack $current.x.xvalue -side left -padx 2 -pady 4
     ::ttk::entry $current.x.xvaluebox -textvar xvalue -width 8
     pack $current.x.xvaluebox -side left  -padx 2 -pady 4
     pack $current.x -pady 4
     pack $current -pady 8 -padx 4 -fill x
-    pack $t.right.current -pady 2 -padx 2 -fill x
-    pack $t.right -side right -fill y
+    pack $rgt.current -pady 2 -padx 2 -fill x
+    pack $rgt -side right -fill y
     
-    TitleFrame $t.right.options -text [tr. "Options: "]
-    set right [GetFrame $t.right.options]
+    TitleFrame $rgt.options -text [tr. "Options: "]
+    set right [GetFrame $rgt.options]
     
-    set between [frame $right.between]
-    label $between.outrange -text [tr. "Between points:"]
+    set between [::ttk::frame $right.between]
+    ::ttk::label $between.outrange -text [tr. "Between points:"]
     pack $between.outrange
     # Code fragment to switch to using menubutton from ComboBox
     # Work in progress / Alastair 9 Feb 2005
@@ -200,8 +201,8 @@ proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
     pack $between.rangeopts -side left -anchor nw
     
     pack $between -pady 8 -padx 4
-    set out [frame $right.out]
-    label $out.outrange -text [tr. "Out of range:"]
+    set out [::ttk::frame $right.out]
+    ::ttk::label $out.outrange -text [tr. "Out of range:"]
     pack $out.outrange
     #    pack [ComboBox $out.rangeopts -values "Truncate Extrapolate Wraparound" \
     #	      -editable 0 -width 12]
@@ -223,10 +224,10 @@ proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
     pack $out -pady 8 -padx 4
     SetCombos $t $range
     
-    set resolution [frame $right.resolution]
-    label $resolution.detail -text [tr. "X axis resolution:"]
+    set resolution [::ttk::frame $right.resolution]
+    ::ttk::label $resolution.detail -text [tr. "X axis resolution:"]
     pack $resolution.detail
-    set db [frame $resolution.detailbox]
+    set db [::ttk::frame $resolution.detailbox]
 # ArrowButtons reverted as they are BWidgets
     ::ttk::button $resolution.detailbox.less -text [tr. Less] -width 0 \
 	-command "CoarseX $db $grid"
@@ -241,16 +242,16 @@ proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
     pack $resolution.detailbox
     pack $resolution -pady 8 -padx 4 -fill both
     pack $right -fill both
-    pack $t.right.options -fill both -padx 2 -pady 2 -expand true
+    pack $rgt.options -fill both -padx 2 -pady 2 -expand true
     AbleArrows $db $t
     
     pack $gph -expand on -fill both -side left
-    pack $t.gph -side left -expand on -fill both -padx 2 -pady 2
+    pack $tf.gph -side left -expand on -fill both -padx 2 -pady 2
     grid rowconfigure $gph 0 -weight 1
     grid columnconfigure $gph 1 -weight 1
     
     grid $gph.gridf -column 1 -row 0 -sticky nesw  -padx 2 -pady 2
-    frame $gph.dummy
+    ::ttk::frame $gph.dummy
     grid $gph.dummy -column 0 -row 1 -padx 2 -pady 2 -sticky nesw
     pack $grid -fill both -expand true
     
@@ -320,7 +321,7 @@ proc RestoreSketch {t node} {
 
 proc SetCombos {t args} {
     global graph
-    set right [GetFrame $t.right.options]
+    set right [GetFrame $t.wrapper.right.options]
     set bCombo $right.between.rangeopts
     set rCombo $right.out.rangeopts
     if {[llength $args]} {
@@ -382,7 +383,8 @@ proc CheckFloaty {args} {
 }
 
 proc GetWidFromCanvas {c} {
-    return [winfo parent [GetFrame [winfo parent [winfo parent $c]]]]
+    return [winfo parent [winfo parent [GetFrame [winfo parent \
+						      [winfo parent $c]]]]]
 }
 
 proc AddLine {c section} {
@@ -526,7 +528,7 @@ proc RedrawGrid {c w h inc} {
 }
 
 proc Reshape {t} {
-    set gph [GetFrame $t.gph]
+    set gph [GetFrame $t.wrapper.gph]
     set grid $gph.gridf.canvas
     
     SetCombos $t
