@@ -678,8 +678,9 @@ namespace eval RunEnv {
 	global helperTable
         variable currentNode
 
-	ExDestroyHelpers $currentNode
-	ScrubRun $currentNode 1
+	if {[ExDestroyHelpers $currentNode]} {
+	    ScrubRun $currentNode 1
+	}
     }
 
     proc Destroy {node} {
