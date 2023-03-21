@@ -741,11 +741,7 @@ as well to stop rand_vars being changed in the R-K subphase */
 	%	[build([EndPath, StartPath]), build([PureEnd, PureStart])]),
 	    %suffix(PurePath, PureEnd),
 	    %suffix(PurePath, PureStart), % all(...) cannot retry subgoals
-	    (suffix(AlPath, EndPath),
-	        AlPath = [sm(_,_,_,fm_loop(_,_,al_action(Alarm, _),_)) | _],
-		nonvar(Alarm) -> true;
-	      AlPath = EndPath),
-	    remove_non_loopers(AlPath, PurePath),
+	    remove_non_loopers(EndPath, PurePath),
 	    (outside_loop(Loop2, PurePath-Step),
 	       Out = Loop2;
 	     find_antecedent([Loop2], outside_loop, 1, PurePath-Step, Out)),
@@ -2377,12 +2373,10 @@ order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign) :
 
 	    % Check for incomplete single-loop chains before exiting loop
 	    % (open_separately(SmLevel) -> % this makes some take too long...
-	    (member(sm(_,_,_,fm_loop(_,_,al_action(Alarm0, _),_)), Path),
-		nonvar(Alarm0);
-	      \+ (member(make(_, Conds-_, _,_,_), SubPass),
+	    \+ (member(make(_, Conds-_, _,_,_), SubPass),
 		nonvar(Conds), % filter dummy instructions from d_c_s
 		member(later(Hanger), Conds),
-		not_yet_ordered(Hanger))),
+		not_yet_ordered(Hanger)),
 	    
 	    /* If this line uncommented, do not do anything that would use the
 	    check-member feature */

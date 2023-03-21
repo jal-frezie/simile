@@ -2307,17 +2307,17 @@ proc ToggleIOToolMenu {node} {
         if {[string equal $node $window_info($win)]} {
             set c [string range $win 0 end-9]
             set winData $window_info($c,parent)
-            set topMenu ${winData}top
+#            set topMenu ${winData}top
 # MacOS defines the Help menu for the application, so there is one fewer menu
 # -- removed because it is so hard to use the MacOS-defined menu
 #            if [string match Darwin $tcl_platform(os)] {
 #                set numberOfMenus 7
 #            } else {
-                set numberOfMenus 8
+#                set numberOfMenus 8
 #            }
-            if {[$topMenu index last]==$numberOfMenus} {
-                $topMenu delete "I/O tools"
-            }
+#            if {[$topMenu index last]==$numberOfMenus} {
+#                $topMenu delete "I/O tools"
+#            }
             $winData.toolSlot.navbar.runenv configure -state disabled
             if {[HaveValues $node]} {
                 set newState normal
