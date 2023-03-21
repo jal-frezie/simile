@@ -220,6 +220,7 @@ itcl::class similescript::$newHelperClass {
 	}
 	set planes [linsert $planes $putBelow $layerObj]
 	GrowMenuList $lvl $layerObj
+	MarkChanged
     }
 
     public method TweakLayer {action calledFrom} {
@@ -263,7 +264,6 @@ itcl::class similescript::$newHelperClass {
 		    -label [$layerObj GetTitle]
 	    } DeleteCurrent {
 		set id [lindex $planes $oldIdx]
-		unset ::helperTable(${winId}.$id,whichInstance)
 		itcl::delete object $id
 		set planes [lreplace $planes $oldIdx $oldIdx]
 		$winId.add delete $serialActive [incr serialActive]
@@ -272,11 +272,16 @@ itcl::class similescript::$newHelperClass {
 		[lindex $planes $oldIdx] Settings
 	    }
 	}
+	MarkChanged
     }
 
     public method Click {path} {
     }
 
+    method MarkChanged {} {
+	set ::helperTable([GetNode],keepSetup) 1
+    }
+    
     public method Reset {args} {
 	foreach plane $planes {
 	    $plane Reset

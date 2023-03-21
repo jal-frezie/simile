@@ -34,7 +34,7 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes(title) [Identify]
 	    AddVariable
 	}
-	array set temp {act {} count 0}
+	array set temp {count 0}
     }
 
     destructor {
@@ -96,7 +96,7 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method SetPosn {x y action} {
-	set temp(act) [list $x $y $action]
+#	set temp(act) [list $x $y $action]
 #	if {$action} {
 	    SendPosn $x $y $action
 	    RedoRatesAndDisplay [GetNode]
