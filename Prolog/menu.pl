@@ -1238,7 +1238,7 @@ set_properties(Wid, Model) :-
 		add_parameter(Model, 0, multiplication_spec, Spec)),
 	    
 	    ((abs(NewFatness - Fatness) =< 0.005;
-	      Fatness > 1, NewFatness > 0.995), !;
+	      Fatness > 1.5, NewFatness > 1.495), !;
 		FatFactor is Fatness/NewFatness,
 		start_progress_dialogue(Wid),
 		reassure_user(pl_refatten, []),

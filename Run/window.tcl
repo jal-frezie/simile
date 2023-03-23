@@ -796,7 +796,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     
     $c configure -scrollregion "$wl $wt $wr $wb" \
 	-width [expr $wr-$wl] -height [expr $wb-$wt]
-    set window_info($c,scale) $scale
+    set window_info($c,scale) [expr {$::defScaling*$scale}]
     # last will be overwritten if drawing from Prolog
     
     ChangeParentTitle $c $winTitle $bg

@@ -144,7 +144,7 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
             -variable disaggregate(hide)
     pack $appearancef.hide -anchor w
     set scf [ttk::frame $appearancef.scale]
-    scale $scf.value -from .01 -to 1 -orient horizontal \
+    scale $scf.value -from .01 -to 1.5 -orient horizontal \
 	-resolution 0.01 -variable disaggregate(fatness)
     $scf.value configure -background \
 	[lindex [$scf.value configure -background] 3] ;# no idea why this needed
