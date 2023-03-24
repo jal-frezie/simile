@@ -463,7 +463,11 @@ if {[info exists custom(layout,theme)] && $custom(layout,theme) ne ""} {
     ttk::style theme use $custom(layout,theme)
 }
 if {[info exists custom(layout,text)] && $custom(layout,text) ne ""} {
-    set niceSize $custom(layout,text)
+    if {$tcl_platform(platform) eq "windows"} {
+	tk scaling [expr {$defScaling*$custom(layout,text)/$niceSize}]
+    } else {
+	set niceSize $custom(layout,text)
+    }
 }
 entry .hidden_e -font [list -size $niceSize] -width 25
 pack .hidden_e
@@ -472,6 +476,7 @@ pack .hidden_e
 # value does not depend on the system dpi setting. However the default
 # fonts do depend on this, so put up a box sized in characters and see
 # how many pixels it takes, and use the ratio to set the scaling.
+
 
 set textBigness [expr {$defScaling*[winfo reqwidth .hidden_e]/288}]
 set scalRat [ChooseIntegerRatio $textBigness 0.9]

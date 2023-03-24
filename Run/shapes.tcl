@@ -941,6 +941,9 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     }
     set fontData [ExtractFontData $looks($n,$type,font)]
     set realFont [Scale $w [lindex $fontData 3]*$fatness/100]
+    if {$::tcl_platform(platform) eq "windows"} {
+	set realFont [expr {$realFont/$::defScaling}] ;# cos windows applies it
+    }
 #    if {$realFont<10} {
 #        set closeFont 10
 #    } else {
