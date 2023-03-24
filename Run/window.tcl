@@ -648,7 +648,6 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set window_info($c,height) [expr $wb - $wt]
     if {[set window_info($c,is_top_level) $isTopLevel]} {
 	set window_info($c,topCapt) {}
-#	set initialScale [expr {$::defScaling*$initialScale}]
     } else {
 	set window_info($c,topCapt) $window_info(lastClickCapt)
     }
@@ -656,9 +655,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
     #    wm maxsize $winName [winfo screenwidth $winName] \
     #   [winfo screenheight $winName]
-#    if {!$isTopLevel} {
-    	DoZoom $c $::defScaling
-#    }
+    DoZoom $c $::defScaling
     
     AddMainMenu $winName $topNode [expr $wr-$wl] $isTopLevel $args
     $winName configure  -menu ${winName}top
