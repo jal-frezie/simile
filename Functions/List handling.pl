@@ -14,7 +14,7 @@ firsttrueafter(BoolArr, Start) --> [st]=makearray(
 	    then element(sofar([st]),preceding(place_in(1)))
 	elseif element(BoolArr,place_in(1)) then place_in(1)
 	else '"NULL"', count(BoolArr)),
-    element([st],count(BoolArr)-element([0,1],1)).
+    element([st],element([count(BoolArr),preceding(count(BoolArr))],1)).
 
 posgreatest(Incoming) --> [local]=Incoming,[records]=makearray(
 			if first(place_in(1)) or

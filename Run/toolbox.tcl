@@ -1267,7 +1267,7 @@ proc InitExecThread {node} {
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
 	# callback cmds will need adjusting to include global nodeid
-	foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached AddLogEntry ExecQuery TransEnums InDays VisitUrl FileParamDialogue ListFoci extract_list extract_json extract_gif_tail} {
+	foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached AddLogEntry ExecQuery TransEnums InDays VisitUrl FileParamDialogue ListFoci extract_list extract_json extract_gif_tail distinct_values} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }

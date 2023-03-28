@@ -3,8 +3,8 @@ if {$::tcl_platform(platform) eq "windows"} {
 } else {
    set sign {}
 }
-$c create text 0 0 -text {?} -anchor center \
+$c create text 0 -12 -text {?} -anchor n \
    	-tag "unscaled $title realwidth(${sign}300)" \
-	-font "-family helvetica -weight bold -slant roman -size ${sign}36"
+	-font "-family helvetica -weight bold -slant roman -size ${sign}25"
 # query
 
