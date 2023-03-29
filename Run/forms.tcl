@@ -1952,23 +1952,16 @@ proc ShowAbout {winId} {
     pack .about.upper -pady 4
     frame .about.fr -relief sunken -borderwidth 2
     pack .about.fr -expand on -fill x -padx 8 -pady 2
-    switch [tk windowingsystem] {
-        aqua {
-            set fSize 12; set fsSize 12
-        } default {
-            set fSize 8; set fsSize 8
-        }
-    }
     set fullVers $sendvars(simV)$sendvars(simP)
-    pack [label .about.fr.lab1 -font "-family helvetica -size $fSize" \
+    pack [label .about.fr.lab1 -font "-family helvetica" \
 	      -text "[tr. Simile] v$fullVers [tr. $userinfo(edn)], $::tclBitness-bit"]
 # TRANSLATOR: $userinfo(edn) is one of:
 # evaluation, teaching, standard, enterprise
     set platform [frame .about.fr.platform]
     pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
-            -font "-family helvetica -size $fsSize"] -side left
+            -font "-family helvetica"] -side left
     pack [label $platform.tcl -text "TclTk: [info patchlevel]" \
-            -font "-family helvetica -size $fsSize"] -side left
+            -font "-family helvetica"] -side left
     switch [tk windowingsystem] {
         win32 {
 	    if {[PrefValue custom(compChoice) compChoice] eq "Default"} {
@@ -1978,7 +1971,7 @@ proc ShowAbout {winId} {
 	    }		
             pack [label $platform.g++ \
 		      -text "MinGW g++: $gppVers" \
-		      -font "-family helvetica -size $fsSize"] -side left
+		      -font "-family helvetica"] -side left
         } aqua {
 	    if {[package vcompare 14.0.0 $tcl_platform(osVersion)] > 0} {
 		set gppVers [exec [file join $::execDir g++] -dumpversion]
@@ -1987,7 +1980,7 @@ proc ShowAbout {winId} {
 	    }
             pack [label $platform.g++ \
 		      -text "XCode g++: $gppVers" \
-		      -font "-family helvetica -size $fsSize"] -side left
+		      -font "-family helvetica"] -side left
 	}
     }
     pack $platform
@@ -1995,8 +1988,8 @@ proc ShowAbout {winId} {
         set edate [clock format $userinfo(exp_time) -format {%d %h %Y}]
         set expf [frame .about.fr.expf]
         pack [label $expf.lab1 -text [tr. "This product expires on"] \
-            -font "-family helvetica -size $fsSize"] -side left
-        pack [label $expf.lab2 -text $edate -font "-family helvetica -size $fsSize"] -side left
+            -font "-family helvetica"] -side left
+        pack [label $expf.lab2 -text $edate -font "-family helvetica"] -side left
         pack $expf
     }
     set curVers [GetLatestVers]
@@ -2005,7 +1998,7 @@ proc ShowAbout {winId} {
     }
     pack [label .about.fr.lab4 -text "[tr. {This product is registered to}]\
             $userinfo(name), $userinfo(corp)" \
-            -font "-family helvetica -size $fsSize"]
+            -font "-family helvetica"]
     
     set gen [frame .about.fr.gen]
     switch -regexp $userinfo(edn) {
@@ -2018,9 +2011,9 @@ proc ShowAbout {winId} {
         }
     }
     pack [label $gen.visit -text $service \
-	      -font "-family helvetica -size $fsSize"] -side left
+	      -font "-family helvetica"] -side left
     pack [label $gen.www -text www.simulistics.com -relief flat \
-            -font "-underline true -family helvetica -size $fsSize" -fg blue -cursor hand2] -pady 2 -side left
+            -font "-underline true -family helvetica" -fg blue -cursor hand2] -pady 2 -side left
     bind $gen.www <Button-1> "VisitUrl http://www.simulistics.com/"
     pack $gen -padx 4 -pady 2
     

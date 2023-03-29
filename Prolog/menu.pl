@@ -1449,12 +1449,10 @@ do_save(Win, Model, New_name) :-
 	
         start_progress_dialogue(Win),
 	/* Remove any old executables (and make sure dirs exist) */
-	(is_toplevel(Model),
-	 output><safe_tcl_eval(['NeedNewExec', Model], "0") ->
-	     (get_av_pair(Model, 1, c_new, LocalNew) -> true;
-	      LocalNew = 1); % executable unchanged since loading with model
-	 LocalNew = 0),
+	(get_av_pair(Model, 1, c_new, LocalNew) -> true;
+	 LocalNew = 1), % executable unchanged since loading with model
 	output><shift_dll(Point, Dir, Model, LocalNew),
+	% save executable whether up-to-date or not
 
 	/* save prolog data */
 	append_atoms(SaveDir, '/model.pl', TempFile),

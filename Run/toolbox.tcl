@@ -775,7 +775,11 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 
 proc LoadProgram {node lang} {
     global runState myNode
-    set runState($node,updated) 0
+    if {$runState($node,updated)==-1} {
+	set runState($node,updated) 1
+    } else {
+	set runState($node,updated) 0
+    }
     set runState($node,lang) $lang
     if {[info exists runState($node,runParams)] && \
 	    ![info exists runState($node,currentTime)]} {
@@ -1563,6 +1567,7 @@ proc GetParts {top tree noPkg} {
     set mdlExts pl,cnv,svg,spj,shf,spf,sxf,cpp,so,dylib,dll,tcl
     foreach subtree [glob -nocomplain \
 			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
+	puts $subtree
         #ShowMess debug info "GetParts subtree $subtree" ok
         if {[file isdirectory $subtree]} {
             set mimes [concat $mimes [GetParts $top $subtree $noPkg]]
@@ -1913,7 +1918,8 @@ proc OpenProjectFile {path} {
 	# if undo enabled, a log has been applied, so do not rerun!
 	if {[$tw.toolSlot.navbar.undo cget -state] eq "normal"} return
 
-	set runState($topNode,updated) [expr {$SimileProject(modelRunning)-1}]
+	set runState($topNode,updated) [expr {1-$SimileProject(modelRunning)}]
+	set runState($topNode,modelRunning) 0
 	if {$SimileProject(running_c)} {
             MenuSelect $tw.canvas code run_c
         } else  {

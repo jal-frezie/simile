@@ -20,7 +20,7 @@ posgreatest(Incoming) --> [local]=Incoming,[records]=makearray(
 			if first(place_in(1)) or
 			element([local],place_in(1))>element([local],element(sofar([records]),preceding(place_in(1)))) then place_in(1)
 			else element(sofar([records]),preceding(place_in(1))),count([local])),
-            element([records],count([local])).
+            element([records],element([count([local]),preceding(count([local]))],1)).
 
 posleast(Incoming) --> posgreatest(-Incoming).
 

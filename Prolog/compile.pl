@@ -187,19 +187,13 @@ build_instances(Language, DestDir, Parent, TopNode,
 	ExtLibs = []),
 	/* model can go incomplete then complete again without change
 	 so check all */
-	(setof(Issue, check_level_for_reds(TopNode, Parent, Issue), Issues),
-	    retractall(error_free(build)),	    
-	    (all(ame_gen, query, [build(Issues), unify(warning), unify(top),
-				  unify([abort]), unify(more)]), fail;
-	    throw(aborted));
-	true),
 % what follows should be separate fn
 	(( %Parent has_class_refinement separate of 1;
 	  error_free(build),
 	   backup><is_toplevel(Parent)), !,
 	    /* we need an executable for this level */
 	    safe_tcl_eval(['NeedNewExec', Parent], ChangeTop),
-	     (ChangeTop = "0" -> OldTgt = 1;
+	     (member(ChangeTop, ["-1","0"]) -> OldTgt = 1;
 	      OldTgt = 0),
 	    check_directory(CheckDir),
 	    % Only create directory if building code -- for now I
@@ -228,6 +222,14 @@ build_instances(Language, DestDir, Parent, TopNode,
 		 % neither worked, or model changed: rebuild source
 		    % delete old code, including c++ v1 as 1 may mean last
 		    % build was tcl, or get sought after save/restore
+		 (setof(Issue, check_level_for_reds(TopNode, Parent, Issue),
+			Issues),
+		      retractall(error_free(build)),	    
+		      (all(ame_gen, query, [build(Issues), unify(warning),
+					    unify(top), unify([abort]),
+					    unify(more)]), fail;
+		       throw(aborted));
+		      true),
 		    all(compile, delete_prog, [unify(CheckDir),
 			build(['.tcl', '.cpp'])]),
 		    (Language = c, Extn = '.cpp';

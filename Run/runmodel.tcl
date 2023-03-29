@@ -1458,7 +1458,7 @@ proc StartRun {node} {
 #    }
 
 #    MakeSlidersForInputs
-    StartNow $node reset ;# do now as helper updates may query values
+#    StartNow $node reset ;# do now as helper updates may query values
     
     set ::RunEnv::CurrentContainer $RunEnv::variableListFrame($node)
     set oldInsp helperTable($::RunEnv::CurrentContainer.container,whichInstance)
@@ -1484,8 +1484,8 @@ proc StartRun {node} {
 	set ::preSelect $savedExpt
 	${helperId}::Open $hlp expt
 	file delete $savedExpt
-	StartNow $node reset ;# do again so exptl values loaded
     }
+    StartNow $node reset ;# do again so exptl values loaded
     #	if {![winfo exists $helperTable(autosliders)]} {
     # No sliders in model, so delete notebook page
     #	    $sliderBook delete InputSliders
