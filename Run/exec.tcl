@@ -394,13 +394,6 @@ proc FreeAll {load} {
     }
 }
 
-proc CResetModel {node initTime pS phase} {
-    global model_id instance_id
-    eval [list c_resetmodel $model_id $instance_id] $initTime $pS $phase
-
-    return [CJoinExecution $node $initTime $phase]
-}
-
 proc StartRemoteModels {myNode} {
     foreach comp [GetCompProperty $myNode Objects] {
 	if {[GetCompProperty $myNode Class $comp] eq "SUBMODEL" && \
@@ -451,15 +444,18 @@ proc OldResetModel {myNode howInt initTime redo} {
 }
 
 proc ResetModel {myNode howInt initTime redo} {
+    global model_id instance_id
+
     set preserveSliders -[string is false $howInt]
     # -1 selects new slider rollover
     PlanRefresh
     if {[RunningInC $myNode]} {
-#	    set model_id $myNode
-	set errList [CResetModel $myNode $initTime $preserveSliders $redo]
+	eval [list c_resetmodel $model_id $instance_id] $initTime $preserveSliders $redo
     } else {
-	set errList [TclResetModel $myNode $initTime $preserveSliders $redo]
+	catch {TclResetModel $myNode $initTime $preserveSliders $redo} \
+	    ::modelStopped
     }
+    set errList [CJoinExecution $myNode $initTime $redo]
     return [lindex $errList 0]
 }
 
