@@ -14,13 +14,10 @@ firsttrueafter(BoolArr, Start) --> [st]=makearray(
 	    then element(sofar([st]),preceding(place_in(1)))
 	elseif element(BoolArr,place_in(1)) then place_in(1)
 	else '"NULL"', count(BoolArr)),
-    element([st],element([count(BoolArr),preceding(count(BoolArr))],1)).
+    element([st],end([st])).
 
-posgreatest(Incoming) --> [local]=Incoming,[records]=makearray(
-			if first(place_in(1)) or
-			element([local],place_in(1))>element([local],element(sofar([records]),preceding(place_in(1)))) then place_in(1)
-			else element(sofar([records]),preceding(place_in(1))),count([local])),
-            element([records],element([count([local]),preceding(count([local]))],1)).
+posgreatest(Incoming) --> with_greatest(Incoming,
+					makearray(place_in(1),count(Incoming))).
 
 posleast(Incoming) --> posgreatest(-Incoming).
 

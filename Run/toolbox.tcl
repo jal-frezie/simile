@@ -1567,7 +1567,6 @@ proc GetParts {top tree noPkg} {
     set mdlExts pl,cnv,svg,spj,shf,spf,sxf,cpp,so,dylib,dll,tcl
     foreach subtree [glob -nocomplain \
 			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
-	puts $subtree
         #ShowMess debug info "GetParts subtree $subtree" ok
         if {[file isdirectory $subtree]} {
             set mimes [concat $mimes [GetParts $top $subtree $noPkg]]
