@@ -222,7 +222,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 		 % neither worked, or model changed: rebuild source
 		    % delete old code, including c++ v1 as 1 may mean last
 		    % build was tcl, or get sought after save/restore
-		 (setof(Issue, check_level_for_reds(TopNode, Parent, Issue),
+		 (setof(Issue, check_level_for_reds(TopNode, Issue),
 			Issues),
 		      retractall(error_free(build)),	    
 		      (all(ame_gen, query, [build(Issues), unify(warning),
@@ -300,7 +300,9 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	     unify(Node), unify(Step),
 	     unify(KeepDir), unify(none)]).
 
-check_level_for_reds(TopNode, Submodel, Wrinkle) :-
+check_level_for_reds(TopNode, Wrinkle) :-
+    contains(TopNode, Submodel),
+    find_type(Submodel, submodel),
 	(Submodel = TopNode -> OuterText = '(none)';
 	 abs_path_name(Submodel, TopNode, OuterText)),
 	(find_all_comps(Submodel, VisEntity),
