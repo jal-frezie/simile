@@ -857,7 +857,7 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	     (Pairs = [_Either-FullStr];
 	      select(_Desc-Pt1, Pairs, [comment-Pt2]),
 	      append_atoms([Pt1, '\n', Pt2], FullStr));
-         (Node has_class_refinement external_code of ExtCode, wake,
+         (Node has_class_refinement external_code of ExtCode,
 	      member(Field-Attr, [spec-procedure, units-unit]),
 	      member(Attr=Term, ExtCode), \+ Term = none;
 	 member(Field-Attr, [spec-spec, spec-value, units-units]),
@@ -1322,6 +1322,7 @@ combine( L, Op, VArgs, Atom) :-
 	    VArgs = [Test, IfT, IfF], !,
 	    Atom = (Test?IfT:IfF);
 	member(Op, [happens, as_number, in_update]), VArgs = [Atom];
+	Op = as_type, VArgs = [_, Atom];
 	Op = nonnull, (L = c, VArgs = [Atom];
 		       L = tcl, VArgs = [Test], Atom = (Test ne '"NULL"'));
 	(member(Op, [and, ',', '&&']), !,

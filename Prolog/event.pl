@@ -157,7 +157,7 @@ get_info(Comp, context, DescAtm) :-
 	(setof(Dest, m_update><connects(Vis, Source, Dest), DestList), !,
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
-	    (\+ find_type(Source, cloud), !, wake,
+	    (\+ find_type(Source, cloud), !,
 		abs_path_name(Source, Context, SourceLoc), !,
 		sicstus_format_to_chars("from ~a", [SourceLoc], Suffix2);
 	      Suffix2 = []),

@@ -589,7 +589,7 @@ make_intermediates(
 	we put in a dummy reference to them to make sure the increment takes
 	place in the source loop. */
 	(cumulative(Source, Epsilon, InitVal, IncrOp, Wee, Muckle);
-	 Source = count(Epsilon);
+	 member(Source, [count(Epsilon), end(Epsilon)]);
 	Source = with_least(Epsilon, Payload),
 		InitVal = Muckle,
 		IncrOp = min;
@@ -674,18 +674,24 @@ make_intermediates(
 
 	/* Total must have same dims as one element of its arg,
 	so lets work that out... */
-	(Functor = count,
-	    IncrExpr = FillRef+1,
-	    (nonvar(SumLoop), SumLoop = [set(_, loop(SourceRef, Units))],
+	(member(Functor, [count, end]),
+	    (nonvar(SumLoop), SumLoop = [set(_, loop(ODim, Units))],
  		(nonvar(Units); % enum type is provided only when building
-		 integer(SourceRef),
+		 integer(ODim),
  		    Units = const_int;
- 		atom(SourceRef), \+ SourceRef = records,
- 		    Units = n(SourceRef)),
+ 		 atom(ODim), \+ ODim = records,
+ 		    (Functor = end -> Units = a(ODim);
+		       Units = n(ODim))),
+		(Units = const_int, Functor = end,
+		       m_update><applies_in(SubId, index0, 'Yes') ->
+		     SourceRef is ODim-1; SourceRef = ODim),
 		UsingDim = true;
 	    Units = int,
-		append(NowBuilding, DestPath, ReadyContext)), !,
-	    InitVal = 0;
+		(Functor = end -> throw(only_works_on_array(end, Epsilon));
+		    true),
+	        InitVal = 0,
+	        IncrExpr = FillRef+1,
+		append(NowBuilding, DestPath, ReadyContext)), !;
 	member(Functor, [make_inter, last, 
 			 in_preceding, in_progenitor, at_phase]), !,
 	    InitVal = 0,
@@ -795,7 +801,7 @@ make_intermediates(
 	    (var(Ph), SetTime = Step; SetTime=Ph), !,
 	    KeepDeps = [on_step | Depends]; % on_step forces time to be step
 	SetTime = Step, 
-	    (Functor = count, Units = const_int, !,
+	    (member(Functor, [count, end]), Units = const_int, !,
 	     % do not purge if counting vm or they may not be enumerated
 		purge(Depends, OldArgs, KeepDeps);
 	    KeepDeps = Depends)),
@@ -1826,6 +1832,8 @@ builtin('Model properties', first, boolean, [int]).
 builtin('Model properties', as_number, int, [boolean]).
 builtin('Model properties', as_number, int, [a(_T)]).
 builtin('Model properties', as_number, int, [n(_T)]). % so it works on count()
+builtin('Model properties', as_type, a(T), [n(T), int]).
+builtin('Model properties', as_type, int, [const_int, int]).
 builtin('Model properties', dies_of, boolean, [boolean]).
 builtin('Model properties', dies_of, boolean, [real]).
 builtin('Model properties', latency, real, [real]).
