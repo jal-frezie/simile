@@ -2181,23 +2181,29 @@ proc equationlisting_start {DefEquationListingFileName topNode} {
     set ww [$wrapper create window 0 0 -anchor nw \
 		-window $equationlist(textbox)]
     bind $wrapper <Configure> [list TrackSize $wrapper $ww]
-    
-    $equationlist(textbox) tag configure bigtag \
-            -font {Helvetica 12 bold} -wrap word -spacing3 5 -lmargin1 10 -lmargin2 10
+
+    set bigFont 12
+    set medFont 10
+    if {$::tcl_platform(platform) ne "windows"} {
+	set bigFont [expr {round($::defScaling*$bigFont)}]
+	set medFont [expr {round($::defScaling*$medFont)}]
+    }
+    $equationlist(textbox) tag configure bigtag -lmargin1 10 -lmargin2 10 \
+	-font [list Helvetica $bigFont bold] -wrap word -spacing3 5
     $equationlist(textbox) tag configure descrtag \
-            -font {Helvetica 10} -wrap word -lmargin1 10 -lmargin2 45
+            -font [list Helvetica $medFont] -wrap word -lmargin1 $medFont -lmargin2 45
     $equationlist(textbox) tag configure cmttag \
-            -font {Helvetica 10} -wrap word -lmargin1 0 -lmargin2 75
+            -font [list Helvetica $medFont] -wrap word -lmargin1 0 -lmargin2 75
     $equationlist(textbox) tag configure whrtag \
-            -font {Helvetica 10 italic} -wrap word -lmargin1 0 -lmargin2 75
+            -font [list Helvetica $medFont italic] -wrap word -lmargin1 0 -lmargin2 75
     $equationlist(textbox) tag configure eqntag \
-            -font {Helvetica 10 bold} -wrap char -lmargin1 5 -lmargin2 45
+            -font [list Helvetica $medFont bold] -wrap char -lmargin1 5 -lmargin2 45
     $equationlist(textbox) tag configure typtag \
-            -font {Helvetica 10} -wrap word -lmargin1 5 -lmargin2 45
+            -font [list Helvetica $medFont] -wrap word -lmargin1 5 -lmargin2 45
     $equationlist(textbox) tag configure initag \
-            -font {Helvetica 10} -wrap char -lmargin1 10 -lmargin2 10
+            -font [list Helvetica $medFont] -wrap char -lmargin1 $medFont -lmargin2 10
     $equationlist(textbox) tag configure dummytag \
-            -font {Helvetica 5}
+	-font [list Helvetica 5]
     
     bind $w <Control-a>  {EquationListingSelectAll $equationlist(textbox)}
     $w configure -height 600 -width 800
