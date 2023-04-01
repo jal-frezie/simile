@@ -32,7 +32,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     $notebook add [panedwindow $paramF -orient vertical] \
 	-text [tr. "Parameters etc."]
     set docF $notebook.documentation
-    $notebook add [frame $docF] -text [tr. Documentation]
+    $notebook add [::ttk::frame $docF] -text [tr. Documentation]
     set equation(notebook) $notebook
     set equation(main) $mainF
     set equation(params) $paramF
@@ -321,7 +321,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     # Miscellaneous other stuff below
     $paramF add [TitleFrame $paramF.indices -text "[tr. Indices]: "]
     set indicesf [GetFrame $paramF.indices]
-    frame $indicesf.list
+    ::ttk::frame $indicesf.list
     set lbx [listbox $indicesf.list.ilist \
             -height 8 -width 16 \
             -yscrollcommand [list $indicesf.list.scrolli set]]
@@ -335,13 +335,13 @@ proc create_equation {parent purpose comp indices enum_types} {
 #    pack $middleF.indices -side left -anchor nw  -padx 2 -pady 2 -expand true -fill both
 
     # Bottom frame has the influences and parameters list boxes
-    $paramF add [set bottomF [frame $paramF.bottom]]
+    $paramF add [set bottomF [::ttk::frame $paramF.bottom]]
     TitleFrame $bottomF.influences -text "[tr. Influences]: "
     set influencesf [GetFrame $bottomF.influences]
-    frame $influencesf.captions
-    label $influencesf.captions.p -text [tr. Parameter]:
-    label $influencesf.captions.i -text [tr. "In units"]:
-    label $influencesf.captions.d -text [tr. Dimensions]:
+    ::ttk::frame $influencesf.captions
+    ::ttk::label $influencesf.captions.p -text [tr. Parameter]:
+    ::ttk::label $influencesf.captions.i -text [tr. "In units"]:
+    ::ttk::label $influencesf.captions.d -text [tr. Dimensions]:
     pack $influencesf.captions.p $influencesf.captions.i \
             $influencesf.captions.d -side left -fill x -expand true
     pack $influencesf.captions -fill x
@@ -367,10 +367,10 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     # comments in the Documentation page
     
-    set descF [frame $docF.descf]
+    set descF [::ttk::frame $docF.descf]
     TitleFrame $descF.description -text "[tr. Title]: "
     set descf [GetFrame $descF.description]
-    label $descf.desclabel -text "[tr. Description]: "
+    ::ttk::label $descf.desclabel -text "[tr. Description]: "
     text $descf.text -height 1 -width 20 -relief sunken -bd 2 -highlightthickness 0
     pack $descf.desclabel -side left -padx 2 -pady 2
     pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
@@ -379,9 +379,9 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack $docF.descf -fill x -expand off
     #$notebook itemconfigure Documentation -raisecmd "focus $descf.text"
     
-    label $docF.cmtlabel -text [tr. Comments]:
+    ::ttk::label $docF.cmtlabel -text [tr. Comments]:
     pack $docF.cmtlabel -side top
-    pack [set frm [frame $docF.cmtFrame]] -fill both -expand true
+    pack [set frm [::ttk::frame $docF.cmtFrame]] -fill both -expand true
     text $frm.text -height 3 -width 40 -wrap word -relief sunken -bd 2 \
 	-highlightthickness 0 -yscrollcommand "$frm.scrly set"
     AllowTextDrags $frm.text
