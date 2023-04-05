@@ -1214,11 +1214,13 @@ set_properties(Wid, Model) :-
 		(\+ Error = [],
 		    query(bad_syntax(dimensions, Error), error, model_dims,
 			  [ok], _);
-		on_exception(Gax,
+		 add_parameter(Model, 0, setting_dims, true),
+		 on_exception(Gax,
 			     all(ame_gen, get_actual_size,
 				 [unify(Model), build(UseCount), unify(bare),
 				  append(Sizes, []), build(_), build(_)]),
 			     query(Gax, error, model_dims, [ok], _)),
+		 add_parameter(Model, 0, setting_dims, ''),
 		    (nonvar(Gax);
 		    member(Dodgy, Sizes),
 			\+ (integer(Dodgy), Dodgy > 1),

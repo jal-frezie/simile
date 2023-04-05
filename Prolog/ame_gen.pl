@@ -674,7 +674,7 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, Units) :-
 	    (setof(SzSource, name_matches(SzSource, Top, ModName), Sources), !,
 	     % maybe also check for non-empty dims here?
 		(Sources = [Source], !,
-		    \+ (Source = Node,
+		    \+ (Source has_class_refinement setting_dims of true,
 			raise_exception(self_reference(ModName))),
 		    get_node_size(Source, RealN, RealSize, AllUnits),
 		    (var(Ind), !,
