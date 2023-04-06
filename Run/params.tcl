@@ -198,7 +198,9 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     set levels [concat $exptLevels $handle]
     set compName /[lindex $exptLevels end]$compName
 
-    set readMany($compName) [expr {![FirstIndexCheck $topNode $node]}]
+    if {$notInput>-1} {
+	set readMany($compName) [expr {![FirstIndexCheck $topNode $node]}]
+    } ;# otherwise it has been set by the PEST interface GUI
     set compClass [GetCompProperty $topNode Class $node]
     if {$compClass eq "SUBMODEL"} {
         set suppliedData($compName) {}

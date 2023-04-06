@@ -470,14 +470,14 @@ namespace eval $keyValue {
                     ReleaseClicks $winId
                 }
             } adding_outputs {
-		set readMany($fullCapt) 0
+		set readMany(/$fullCapt) 0
                 set success [InsertDriver $winId $node $fullCapt]
                 if {[llength $success]} {
                     $useNodes($winId,output).intro configure -text {}
                     ReleaseClicks $winId
                 }
             } adding_series {
-		set readMany($fullCapt) 1
+		set readMany(/$fullCapt) 1
                 set success [InsertDriver $winId $node $fullCapt]
                 if {[llength $success]} {
                     $useNodes($winId,output).intro configure -text {}
@@ -917,7 +917,7 @@ namespace eval $keyValue {
 #            set outId $useNodes($winId,output)
 #            set f [MakeSubFrames {} $outId.c.canvas.frame \
 #                    $levels [namespace current] 0]
-            if {$readMany($eTitle)} {
+            if {$readMany(/$eTitle)} {
                 foreach {time defSet} $targetData(/$eTitle) {
                     lappend spitLists($time) $node=$defSet
                 }
@@ -1654,6 +1654,7 @@ $numOutputs"
 	set t0 $::runState($::myNode,resetTo)
 	set descent [winfo children $subFrame]
 	puts $stm "<variables>"
+	set ::helperTable(beingCalled) $::helperTable($winId,whichInstance)
 	foreach f [lsearch -inline -all $descent $subFrame.frame*] {
 	    if {[winfo exists $f.body]} continue ;# it is a submodel
 	    set level [string range $f [expr {[string last . $f]+6}] end]
