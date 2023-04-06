@@ -218,7 +218,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     set origDims [llength $nodeDims]
     set nodeDims [RemoveVMLevels $nodeDims]
     if {$notInput==-1 && [llength $nodeDims]<$origDims} {
-	return "This value has variable dimensions, and therefore cannot be optimized by parameter estimation."
+	error "This value has variable dimensions, and therefore cannot be optimized by parameter estimation."
     }
     
     #ShowMess debug info "$node $trans $nodeDims" ok
@@ -229,7 +229,6 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     set topFrame $winId.c.canvas.frame
     set slot [AddSubFrames $topNode $topNode $topFrame $levels fileparams 0]
     set holder [winfo parent $slot]
-
     set lbg [$holder.head cget -bg]
     set colStyle style$holder
     $slot configure -bg $lbg
@@ -583,14 +582,13 @@ proc AcceptAll {topNode compNames notInput complain} {
 proc AcceptData {topNode compName notInput complain {caseId {}}} {
     global runState msgs whichParamsAffected readMany paramMetadata
     set namencase [split $compName ,]
-    set compLocal [lindex $namencase 0]
+    set compLocal [TrimDTFromPath [lindex $namencase 0]]
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
-	set compLocal [TrimDTFromPath $compLocal]
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames

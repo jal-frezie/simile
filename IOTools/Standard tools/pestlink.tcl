@@ -536,7 +536,7 @@ namespace eval $keyValue {
         set levels [split $title /]
         if {$nest} {
             set f [MakeSubFrames $inpId $inpId.c.canvas.frame $levels {} 0]
-            if {[llength [winfo children $f]]} {
+            if {[llength [winfo children $f]]>1} {
                 ScrollToSee $inpId.c.canvas $f
                 return $f
             } else {
@@ -706,12 +706,11 @@ namespace eval $keyValue {
         set outGrpData($node,weight) 1.0
         set f [MakeSubFrames $myNode $outId.c.canvas.frame \
                 [split $title /] [namespace current] 0]
-        if {[llength [winfo children $f]]} {
+        if {[llength [winfo children $f]]>1} {
             ScrollToSee $outId.c.canvas $f
         } else {
-            lappend targetData(needed) $title
-            set mess [AddEntry $outId $myNode $node {} 1 -1]
-	    if {[string length $mess]} {
+            lappend targetData(needed) /$title
+            if {[catch {AddEntry $outId $myNode $node {{}} 1 -1} mess]} {
 		$useNodes($winId,output).intro configure -text $mess
 		return {}
 	    }
@@ -912,18 +911,18 @@ namespace eval $keyValue {
 	set runLength [$useNodes($winId,results).lbf.rl.ent get]
 	set runEnd [expr {$t0+$runLength}]
 	foreach eTitle $useNodes($winId,drivers) {
-            AcceptData $myNode $eTitle -1 1
+            AcceptData $myNode /$eTitle -1 1
             set node [GetIdFromCaptionPath $eTitle]
-            set levels [split $eTitle /]
-            set outId $useNodes($winId,output)
-            set f [MakeSubFrames {} $outId.c.canvas.frame \
-                    $levels [namespace current] 0]
+#            set levels [split $eTitle /]
+#            set outId $useNodes($winId,output)
+#            set f [MakeSubFrames {} $outId.c.canvas.frame \
+#                    $levels [namespace current] 0]
             if {$readMany($eTitle)} {
-                foreach {time defSet} $targetData($eTitle) {
+                foreach {time defSet} $targetData(/$eTitle) {
                     lappend spitLists($time) $node=$defSet
                 }
             } else {
-                lappend spitLists($runEnd) $node=$targetData($eTitle)
+                lappend spitLists($runEnd) $node=$targetData(/$eTitle)
                 set useEndTime 1
             }
         }
@@ -931,7 +930,7 @@ namespace eval $keyValue {
 	    ShowMess "PEST setup incomplete" warning "Some measured data not specified: [join $targetData(needed) ", "]" ok
 	    return
 	}
-        set ptList [lsort -real [array names spitLists]]   
+        set ptList [lsort -real [array names spitLists]]
 	return runEnd
     }
 
@@ -1444,6 +1443,8 @@ $numOutputs"
 				   $runState($topNode,currentTime)] \
 			    warning pest_setup {} ok
                     }
+		    set ::helperTable(beingCalled) \
+			$::helperTable($winId,whichInstance)
                     foreach pair $spitLists($breakPt) {
                         set node [lindex [split $pair =] 0]
                         # need to prettify so we can seek on indices
@@ -1653,8 +1654,9 @@ $numOutputs"
 	set t0 $::runState($::myNode,resetTo)
 	set descent [winfo children $subFrame]
 	puts $stm "<variables>"
-	foreach f [lsearch -inline -all $descent $subFrame.box*] {
-	    set level [string range $f [expr {[string last . $f]+4}] end]
+	foreach f [lsearch -inline -all $descent $subFrame.frame*] {
+	    if {[winfo exists $f.body]} continue ;# it is a submodel
+	    set level [string range $f [expr {[string last . $f]+6}] end]
 	    set node [GetIdFromCaptionPath $path/$level]
 
             set nodeDims [GetModelDims $node]
@@ -1712,6 +1714,7 @@ $numOutputs"
 	puts $stm "</variables>"
 	puts $stm "<submodels>"
 	foreach f [lsearch -inline -all $descent $subFrame.frame*] {
+	    if {![winfo exists $f.body]} continue
 	    set level [string range $f [expr {[string last . $f]+6}] end]
 	    puts $stm "<submodel label=[Entitize $level]>"
 	    WriteXMLTemplate $winId $stm $path/$level $f
