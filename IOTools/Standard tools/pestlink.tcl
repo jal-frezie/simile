@@ -470,14 +470,14 @@ namespace eval $keyValue {
                     ReleaseClicks $winId
                 }
             } adding_outputs {
-		set readMany(/$fullCapt) 0
+		set readMany($fullCapt) 0
                 set success [InsertDriver $winId $node $fullCapt]
                 if {[llength $success]} {
                     $useNodes($winId,output).intro configure -text {}
                     ReleaseClicks $winId
                 }
             } adding_series {
-		set readMany(/$fullCapt) 1
+		set readMany($fullCapt) 1
                 set success [InsertDriver $winId $node $fullCapt]
                 if {[llength $success]} {
                     $useNodes($winId,output).intro configure -text {}
@@ -709,8 +709,8 @@ namespace eval $keyValue {
         if {[llength [winfo children $f]]>1} {
             ScrollToSee $outId.c.canvas $f
         } else {
-            lappend targetData(needed) /$title
-            if {[catch {AddEntry $outId $myNode $node {{}} 1 -1} mess]} {
+            lappend targetData(needed) $title
+            if {[catch {AddEntry $outId $myNode $node {} 1 -1} mess]} {
 		$useNodes($winId,output).intro configure -text $mess
 		return {}
 	    }
@@ -911,18 +911,18 @@ namespace eval $keyValue {
 	set runLength [$useNodes($winId,results).lbf.rl.ent get]
 	set runEnd [expr {$t0+$runLength}]
 	foreach eTitle $useNodes($winId,drivers) {
-            AcceptData $myNode /$eTitle -1 1
+            AcceptData $myNode $eTitle -1 1
             set node [GetIdFromCaptionPath $eTitle]
 #            set levels [split $eTitle /]
 #            set outId $useNodes($winId,output)
 #            set f [MakeSubFrames {} $outId.c.canvas.frame \
 #                    $levels [namespace current] 0]
-            if {$readMany(/$eTitle)} {
-                foreach {time defSet} $targetData(/$eTitle) {
+            if {$readMany($eTitle)} {
+                foreach {time defSet} $targetData($eTitle) {
                     lappend spitLists($time) $node=$defSet
                 }
             } else {
-                lappend spitLists($runEnd) $node=$targetData(/$eTitle)
+                lappend spitLists($runEnd) $node=$targetData($eTitle)
                 set useEndTime 1
             }
         }

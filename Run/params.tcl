@@ -189,16 +189,16 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 	set handle [lrange $handle end end]
 	# ...and give it an array for the new parameter...that is done in
 	# AcceptData for default parameters
-    } else {
+    } elseif {$notInput > -1} {
 	set handle [lrange $handle 1 end]
     }
     if {$caseId eq ""} {
 	set caseId [CaseForExpt $topNode $exptLevels]
     }
     set levels [concat $exptLevels $handle]
-    set compName /[lindex $exptLevels end]$compName
 
     if {$notInput>-1} {
+	set compName /[lindex $exptLevels end]$compName
 	set readMany($compName) [expr {![FirstIndexCheck $topNode $node]}]
     } ;# otherwise it has been set by the PEST interface GUI
     set compClass [GetCompProperty $topNode Class $node]
