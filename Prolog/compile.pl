@@ -303,6 +303,7 @@ build_sub_instances(Language, DestDir, Parent, Node,
 check_level_for_reds(TopNode, Wrinkle) :-
     contains(TopNode, Submodel),
     find_type(Submodel, submodel),
+    appears(Submodel), % no function fragments
 	(Submodel = TopNode -> OuterText = '(none)';
 	 abs_path_name(Submodel, TopNode, OuterText)),
 	(find_all_comps(Submodel, VisEntity),
