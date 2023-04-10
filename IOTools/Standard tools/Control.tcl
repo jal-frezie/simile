@@ -299,22 +299,12 @@ namespace eval runcontrol33857 {
 	}
     }
 
-    proc ShareAction {node defcon} {
-	global execThread
-
-	if {[info exists execThread]} {
-	    tsv::set action $node $defcon
-	}
-    }
-
     proc SetMode { node action } {
         global runState
 
 	set runState($node,currentMode) $action
 	if {!$runState($node,busy)} { ;# do action now
 	    switchMode $node
-	} else {
-	    ShareAction $node 1
 	}
     }
 
@@ -323,7 +313,6 @@ namespace eval runcontrol33857 {
 
 	if {[info exists runState($node,busy)] && $runState($node,busy)} {
 	    set hideQuery $action
-	    ShareAction $node 10 ;# rest done on exit
 	} else {
 	    ScrubRun $node 1
 	    eval $action
@@ -518,7 +507,6 @@ namespace eval runcontrol33857 {
 	}
 	set finish [expr {$current+$exec}]
 
-	ShareAction $node 0
 	set runState(pacer) [set updateLastDone [clock clicks -milliseconds]]
 	if {[info exists redoPhase($node)]} {
 	    UpdateBar $node $current yellow

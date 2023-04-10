@@ -513,7 +513,7 @@ proc WatchModel {node gui end stepStart} {
 		set gui [OuteractGUI $end 3]
 		PlanRefresh
 	    }
-	    set status [list [expr {1-($gui==2)}] $end]
+	    set status [list [expr {$gui==1}] $end]
 	}
 	if {[lindex $status 0]!=2} {
 	    if {$stepStart eq "done"} {
@@ -545,7 +545,7 @@ proc WatchModel {node gui end stepStart} {
 
 proc CJoinExecution {node until phase} {
     if {[RunningInC $node]} {
-	set result [WatchModel $node 0 $until [clock clicks -milliseconds]]
+	set result [WatchModel $node 1 $until [clock clicks -milliseconds]]
     } else {
 	set result $::modelStopped
     }
