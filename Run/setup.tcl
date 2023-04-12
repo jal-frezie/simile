@@ -130,3 +130,5 @@ if {[file exists $custom(prefDir)/.layout]} {
     }
     close $stm
 }
+
+set ::headless 1 ;# for R etc

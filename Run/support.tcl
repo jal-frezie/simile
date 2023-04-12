@@ -1430,7 +1430,7 @@ proc stop {code} {
 
 proc GetCompProperty {dummy prop args} {
     if {[RunningInC $dummy]} {
-	set result [eval GetCCompProperty $prop $args]
+	set result [eval GetCCompProperty DUMMY $prop $args]
     } else {
 	set result [eval GetTclCompProperty $prop $args]
     }

@@ -595,7 +595,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
-    if {[focus] eq "$outNames($compName).cross"} {return 0}
+    if {!$::headless && [focus] eq "$outNames($compName).cross"} {return 0}
     # tick invoked by clicking on cross, not what user wanted
     set node [IdFromTail $topNode $compLocal -1]
     set dataChanged 0

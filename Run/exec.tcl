@@ -691,7 +691,7 @@ proc getnodeid {modelId capt} {
     return $::captionCache($modelId,$capt)
 }
 
-proc GetCCompProperty {prop args} {
+proc GetCCompProperty {DUMMY prop args} {
     global model_id instance_id
     set node [lindex $args 0]
     set set [lrange $args 1 end]
@@ -1085,7 +1085,7 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 
 proc DoNotPassTcl {caseId node dims tableSpec} {
 #puts "dims $dims spec $tableSpec"
-    if {[string equal REAL [GetCCompProperty Type $node]]} {
+    if {[string equal REAL [GetCCompProperty DUMMY Type $node]]} {
 	set gdalType GDT_Float64
     } else {
 	set gdalType GDT_Int32
