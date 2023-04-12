@@ -90,10 +90,10 @@ endif
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
 	USETCL =  -DUSE_TCL_STUBS -L../$(TCLFW) -ltclstub$(VERS)
-#	ADJUST_LOCAL_LIBS = install_name_tool -change ../System64/lib/$(1) @loader_path/$(1)
+	ADJUST_LOCAL_LIBS = install_name_tool -change ../System64/lib/$(1) @loader_path/../$(1)
 # Above will work OK for developer but installation will fail due to
 # 'unsafe use of relative rpath' -- so need more long-winded method below
-	ADJUST_LOCAL_LIBS = install_name_tool -change ../$(1) @executable_path/../Resources/$(1)
+#	ADJUST_LOCAL_LIBS = install_name_tool -change ../$(1) @executable_path/../Resources/$(1)
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 else
@@ -274,13 +274,14 @@ $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c $(USETCL) -L../$(RESDIR) -l5d$(ARCHEXTN) \
 		$(CHECK_LOCAL_LIBS); cd ..; \
-	$(call ADJUST_LOCAL_LIBS,$(SLDIR)/$(SHANK)) $(SHIM)
+	$(call ADJUST_LOCAL_LIBS,$(SHANK)) $(SHIM)
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 endif
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h $(SLDIR)/$(INSTLIB)
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
 		-o ../$(UNPK) unpacker.c $(USETCL) -L../$(RESDIR) -linstall$(ARCHEXTN) $(CHECK_LOCAL_LIBS); cd ..; \
+	$(call ADJUST_LOCAL_LIBS,$(INSTLIB)) $(UNPK)
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
