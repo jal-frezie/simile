@@ -214,7 +214,7 @@ proc ExecuteTo {node current pause unitLength display \
 		set nextDisp [expr 2*$pause-$current]
 		set scaled_next [expr {$pause*$unitLength}]
 	    }
-	    ExecuteModel $node $intMethod $scaled_current \
+	    SplitExecution $node $intMethod $scaled_current \
 		$scaled_next $maxErr $lmtPause $evtPause
 	}
 
@@ -569,7 +569,7 @@ proc CExecuteModel {isRK start finish args} {
     # return [CJoinExecution] ;# comment out if using new ExecuteTo
 }
 
-proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
+proc SplitExecution {myNode howInt start finish errLim lmtPause evtPause} {
     if {[RunningInC $myNode]} {
 	CExecuteModel [expr ![string equal Euler $howInt]] \
 	    $start $finish $errLim $lmtPause $evtPause
@@ -577,6 +577,11 @@ proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
 	catch {TclExecuteModel $myNode $howInt $start $finish $errLim \
 		   $lmtPause $evtPause} ::modelStopped
     }
+}
+
+proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
+    SplitExecution $myNode $howInt $start $finish $errLim $lmtPause $evtPause
+    return [CJoinExecution $myNode $finish 1]
 }
 
 proc OldExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
@@ -618,7 +623,7 @@ proc OuteractGUI {time mode} {
     global nodeId web_service
 
     if {[info exists web_service(node)]} { # running in browser, ignore timeouts
-	return 0
+	return 1
     }
     return [InteractGUI $nodeId $time $mode]
 }

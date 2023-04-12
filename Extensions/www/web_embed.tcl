@@ -259,9 +259,8 @@ proc ResponseTo {paramList} {
 	    for {set t $params(current)} {$t<$endPt} {set t $endInt} {
 		set endInt [expr {$t+$params(log)}]
 		if {$endInt>$endPt} {set endInt $endPt}
-		ExecuteModel DUMMY $params(method) $t $endInt \
-			      $params(errLimit) 0 0
-		set stat [CJoinExecution DUMMY $endInt 1]
+		set stat [ExecuteModel DUMMY $params(method) $t $endInt \
+			      $params(errLimit) 0 0]
 		set resp [ValuesOfInterest $iH $reqs]
 
 		lappend resp [lindex $stat 1] ;# actual finish time
