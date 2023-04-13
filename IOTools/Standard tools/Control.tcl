@@ -102,11 +102,9 @@ namespace eval runcontrol33857 {
         pack $rcf.upper.topbuttons -side left
         
         ttk::frame $rcf.upper.bf
-	set fontForUnicodeDisc [expr round(36*$::defScaling)]
-        set runState($node,cnvs) [ttk::label $rcf.upper.bf.flag -text \u2b24 \
+        set runState($node,cnvs) [ttk::label $rcf.upper.bf.flag -text \u25cf \
 				      -foreground [RestingColour $node]]
-			 # -font [list -size [expr {round(36*$::defScaling)}]]]
-        pack $runState($node,cnvs) -side right -anchor e
+        pack $runState($node,cnvs) -side right -anchor e ;# \u2b24 bigger
 	BindPopup $runState($node,cnvs) led_status
 	bind $runState($node,cnvs) <Enter> \
 	    +[namespace code [list RunStatusText %W]]
