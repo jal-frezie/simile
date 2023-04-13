@@ -74,8 +74,10 @@ proc RedoRatesAndDisplay {node} {
     ResetModel $node 0 [expr {$runState($node,currentTime)*$runState($node,unitLength)}] 1
     set runState($node,currentMode) stop
     # ...and display new rates
+    $runState($node,cnvs) configure -foreground blue
     TellAllHelpers $node {} 1 Display $runState($node,currentTime) \
 	$runState($node,displayInt) 1
+    $runState($node,cnvs) configure -foreground [RestingColour $node]
     return 0
 }
 
