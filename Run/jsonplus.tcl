@@ -1,4 +1,4 @@
-package require json
+package require json 1.3
 
 # word token any atom not just TRUE etc
 namespace eval ::json {

@@ -601,9 +601,9 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     set dataChanged 0
     if {$complain > -1 && \
 	    ![string equal disabled [$outNames($compName).e cget -state]]} {
-	if {[catch {UglifyValList [$outNames($compName).e get] \
-			$readMany($compName)} newData]} {
-	    Query [list json_parse_fail $newData] warning spf {} ok
+	set rawParam [$outNames($compName).e get]
+	if {[catch {UglifyValList $rawParam $readMany($compName)} newData]} {
+	    Query [list json_parse_fail $rawParam $newData] warning spf {} ok
 	    return 0
 	}
 	set preload [GetCompProperty $topNode Spec $node]
