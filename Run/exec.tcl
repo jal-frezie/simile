@@ -492,12 +492,12 @@ proc OldWatchModel {gui end} {
     return $status
 }
 
-proc WatchRecursive {node gui end} {
+proc WatchRecursive {node gui end phase} {
     HandleStuck $node arm
-    set ::recursiveWatchResult [WatchModel $node $gui $end done]
+    set ::recursiveWatchResult [WatchModel $node $gui $end $phase done]
 }
 
-proc WatchModel {node gui end stepStart} {
+proc WatchModel {node gui end phase stepStart} {
     global model_id instance_id refreshDue recursiveWatchResult
     set reached 0
     while {1} {
@@ -525,16 +525,16 @@ proc WatchModel {node gui end stepStart} {
 	    return $status
 	}
 	if {[llength $status] == 2} { # model still running
-	    # Outeract takes current time and colour (black/green/blue)
+	    # Outeract takes current time and colour (black/yellow/green/blue)
 	    # returns selected state (reset/start/stop/exit)
-	    set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
+	    set gui [OuteractGUI [lindex $status 1] [expr {1+($phase>0)}]]
 	    PlanRefresh
 	    if {[lindex $status 1] != $reached} {
 		if {$stepStart ne "done"} {set stepStart $refreshDue}
 		set reached [lindex $status 1]
 	    }
 	    if {$gui==2 && $stepStart ne "done" && $refreshDue-$stepStart>2000} {
-		after 40 [list WatchRecursive $node $gui $end]
+		after 40 [list WatchRecursive $node $gui $end $phase]
 		HandleStuck $node do
 		#vwait recursiveWatchResult
 		return $recursiveWatchResult
@@ -545,7 +545,8 @@ proc WatchModel {node gui end stepStart} {
 
 proc CJoinExecution {node until phase} {
     if {[RunningInC $node]} {
-	set result [WatchModel $node 1 $until [clock clicks -milliseconds]]
+	set result [WatchModel $node 1 $until $phase \
+			[clock clicks -milliseconds]]
     } else {
 	set result $::modelStopped
     }

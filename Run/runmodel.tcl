@@ -94,7 +94,7 @@ proc MessFileParams {topNode parent} {
 	}
 	
     }
-    $runState($topNode,cnvs) itemconfigure 1 -fill [RestingColour $topNode]
+    $runState($topNode,cnvs) configure -foreground [RestingColour $topNode]
     # now update displays if only doing immediate changes to variables
     if {$runState($topNode,modelRunning)>2 && \
 	    $runState($topNode,reloadParams)==1} {
@@ -1365,7 +1365,7 @@ proc StartRun {node} {
     # otherwise query tangles with fp dialogue and hangs under windows
     if {[FileParamDialogue $node $fpParent 0]<1} {
 	if {[info exists runState($node,cnvs)]} {
-	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
+	    $runState($node,cnvs) configure -foreground [RestingColour $node]
 	}
 	return 0
     }

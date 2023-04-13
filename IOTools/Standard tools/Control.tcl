@@ -102,9 +102,10 @@ namespace eval runcontrol33857 {
         pack $rcf.upper.topbuttons -side left
         
         ttk::frame $rcf.upper.bf
-        set runState($node,cnvs) [canvas $rcf.upper.bf.flag -width 18 -height 18]
-        $runState($node,cnvs) create oval 6 6 12 12 -fill [RestingColour $node]
-        $runState($node,cnvs) create oval 6 6 12 12 -outline grey
+	set fontForUnicodeDisc [expr round(36*$::defScaling)]
+        set runState($node,cnvs) [ttk::label $rcf.upper.bf.flag -text \u2b24 \
+				      -foreground [RestingColour $node]]
+			 # -font [list -size [expr {round(36*$::defScaling)}]]]
         pack $runState($node,cnvs) -side right -anchor e
 	BindPopup $runState($node,cnvs) led_status
 	bind $runState($node,cnvs) <Enter> \
@@ -273,7 +274,7 @@ namespace eval runcontrol33857 {
     }
 
     proc RunStatusText {c} {
-	set ::msgs(led_status) "Status LED is [$c itemcget 1 -fill]"
+	set ::msgs(led_status) "Status LED is [$c cget -foreground]"
     }
     
 #    proc UpdateIntMethod {menu node method} {
@@ -448,7 +449,7 @@ namespace eval runcontrol33857 {
 		     $runState($node,run_length)]
 	    ShiftBar $runState($node,progressBar) $node
 	}
-	$runState($node,cnvs) itemconfigure 1 -fill $col
+	$runState($node,cnvs) configure -foreground $col
 	return [lsearch {reset start stop exit} $runState($node,currentMode)]
     }
 
