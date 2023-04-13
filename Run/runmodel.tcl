@@ -1350,7 +1350,7 @@ proc StartRun {node} {
 	    if {$smPath eq "{}"} {
 		set sxFile [file rootname $spFile].sxf
 		if {[file exists $sxFile]} {
-		    file rename $sxFile [file join $::simtmpdir temp.sxf]
+		    file rename -force $sxFile [file join $::simtmpdir temp.sxf]
 		    # put experiment setup where it will be loaded later
 		}
 	    }

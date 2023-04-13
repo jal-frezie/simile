@@ -86,7 +86,7 @@ proc AnyValue {iH itm max} {
     } else {
 	set hdl [handle_data dummyMHandle $iH $itm]
 	set loseZeros [expr {[lsearch {EVENT SQUIRT} \
-				  [GetCCompProperty Class $itm]]+1}]
+				  [GetCCompProperty DUMMY Class $itm]]+1}]
 	set resp [extract_json $hdl $max $loseZeros 1]
 	# set resp [JsonifyAny [thread::send $::masterId [list extract_list $hdl $max $loseZeros]]]
 	
@@ -124,7 +124,7 @@ proc ResponseTo {paramList} {
 	    set service($params(base)) $iH
 	    # Now create data structs for all parameters except per-record
 	    foreach obj [listobjects $mH] {
-		if {[lsearch {INPUT TABLE} [GetCCompProperty Eval $obj]]>-1 && [lsearch [GetCCompProperty Dims $obj] RECORDS]==-1} {
+		if {[lsearch {INPUT TABLE} [GetCCompProperty DUMMY Eval $obj]]>-1 && [lsearch [GetCCompProperty DUMMY Dims $obj] RECORDS]==-1} {
 		    # per-records too difficult -- avoid
 		    set ::aH($obj) [c_createparamarray $iH $obj]
 		}
@@ -175,18 +175,18 @@ proc ResponseTo {paramList} {
 		    }
 		    lappend dict text \"[Sanitize [file tail $path]]\" \
 			captpath \"[Sanitize $path]\" \
-			icon images/[GetCCompProperty Class $id].gif
+			icon images/[GetCCompProperty DUMMY Class $id].gif
 		    # include path too
 		    foreach {prop key} \
 			{equation Spec comment Comment eval Eval min MinVal \
 			     max MaxVal type Type units Units} {
-			set jBit [GetCCompProperty $key $id]
+			set jBit [GetCCompProperty DUMMY $key $id]
 			lappend dict $prop \"[Sanitize $jBit]\"
 		    }
 		    lappend dict dims \
-			[JsonifyArray [GetCCompProperty Dims $id]]
+			[JsonifyArray [GetCCompProperty DUMMY Dims $id]]
 		    set transList {}
-		    foreach level [GetCCompProperty Trans $id] {
+		    foreach level [GetCCompProperty DUMMY Trans $id] {
 			lappend transList [JsonifyArray $level]
 		    }
 		    lappend dict trans [JsonifyArray $transList]
@@ -207,9 +207,9 @@ proc ResponseTo {paramList} {
 	    array unset incoming seqNo
 	    foreach {path stack} [array get incoming] {
 		set id [getnodeid $::model_id $path]
-		set trans [GetCCompProperty Trans $id]
-		set times [string equal INPUT [GetCCompProperty Eval $id]]
-		set dims [GetCCompProperty Dims $id]
+		set trans [GetCCompProperty DUMMY Trans $id]
+		set times [string equal INPUT [GetCCompProperty DUMMY Eval $id]]
+		set dims [GetCCompProperty DUMMY Dims $id]
 		if {[lsearch $dims RECORDS]>-1} continue ;# too complicated
 		if {$times} {
 		    if {[info exists parmTimeStamps($id)] && \
