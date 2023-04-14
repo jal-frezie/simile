@@ -390,7 +390,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	    // use a "lambert" material rather than "basic" for realistic lighting.
 	    //   (don't forget to add (at least one) light!)
 	    
-	    var sphere = new THREE.Mesh(sphereGeometry, sphereMats[defn.c]);
+	    var sphere = new THREE.Mesh(sphereGeometry, sphereMats[Math.floor(defn.c)]);
 	    sphere.position.set(defn.x, defn.z, defn.y);
 	    sphere.scale.set(defn.r, defn.r, defn.r);
 	    instruct[6][i] = sphere;
@@ -427,7 +427,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 		var line = new THREE.Line(lineGeometry, lineMaterial);
 
 	New version uses cylinders */
-	    var line = new THREE.Mesh(lineGeometry, lineMats[defn.c]);
+	    var line = new THREE.Mesh(lineGeometry, lineMats[Math.floor(defn.c)]);
 	    line.position.set((defn.fx+defn.sx)/2,
 			      (defn.fz+defn.sz)/2,
 			      (defn.fy+defn.sy)/2);
@@ -541,14 +541,14 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	    defn = defns[i];
 	    if (defn.r < 1) continue;
 
-	    var circle = new THREE.Mesh(circleGeom, frontMats[defn.f]);
+	    var circle = new THREE.Mesh(circleGeom, frontMats[Math.floor(defn.f)]);
 	    circle.position.set(defn.cx, defn.cz, defn.cy);
 	    circle.scale.set(defn.r, defn.r/defn.e, 1);
 	    circle.rotation.set(-defn.rx-1.57, -defn.ry, -defn.rz, 'XZY');
 	    instruct[11][i + ",f"] = circle;
 	    this.scene.add(circle);
 
-	    circle = new THREE.Mesh(circleGeom, backMats[defn.b]);
+	    circle = new THREE.Mesh(circleGeom, backMats[Math.floor(defn.b)]);
 	    circle.position.set(defn.cx, defn.cz, defn.cy);
 	    circle.scale.set(defn.r, defn.r/defn.e, 1);
 	    circle.rotation.set(-defn.rx+1.57, defn.ry, defn.rz, 'XZY');

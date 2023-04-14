@@ -201,9 +201,8 @@ itcl::class similescript::$newHelperClass {
 		    set ETCount [llength [lindex [GetTransTable $node] end]]
 		    set ::EditLegend::nswatches $ETCount
 		    if {$ETCount>2} {
-			set carousel {blue orange green brown purple red black DeepSkyBlue\
- \
-                    HotPink ForestGreen}
+			set carousel {blue orange green brown purple red black \
+					  DeepSkyBlue HotPink ForestGreen}
 			for {set n 0} {$n < $ETCount} {incr n} {
 			    lappend ::EditLegend::flags [list $n [lindex $carousel [expr {$n%[llength $carousel]}]]]
 			}
@@ -222,7 +221,9 @@ itcl::class similescript::$newHelperClass {
 		    if {$::EditLegend::done} {
 			# OK button was clicked -- import results
 			set map [::EditLegend::MakeColours]
-			lset template $i [concat [list ,colours $selected] $map]
+#			lset template $i [concat [list ,colours $selected] $map]
+# above puts curlies round 1st colour, which tcl devs insist is not a bug
+			lset template $i [linsert $map 0 ,colours $selected]
 		    } else {
 			incr i -1 ;# do stage again
 		    }
