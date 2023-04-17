@@ -1354,8 +1354,10 @@ void ExecutingModel::WrapUpThreads(excpData* userDefStop) {
     */
     aChild->now->paused = paused;
     pthread_join(aChild->thredd, &clientResult);
-    if (clientResult)
+    if (clientResult) {
       *userDefStop = *(excpData*)clientResult; // copy it up?
+      userDefStop->completed = false; // parent will not be
+    }
     aChild = aChild->next;
   }
 }
@@ -1756,7 +1758,8 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
       incr_time(&ts, max_wait);
     ping = pthread_cond_timedwait(&topList->cond, &topList->mtx, &ts);
     clientResult->timeOfCrime = lts[modelSpec->phases];
-  }
+  } else
+    printf("Thread was set complete despite lock\n");
   if (!clientResult->completed) { // still
     if (cancel>2) { // user has lost patience
       //ping = pthread_cancel(topList->thredd); does not work on Mac

@@ -819,8 +819,9 @@ namespace eval ::$keyValue {
 		    if {[info exists allYOld($i)]} {
 			set YoldV $allYOld($i)
 			set ToldV $allTOld($i)
-			plot_Y $w [expr $iplot+($KeyArrays*($i-1))] \
+			plot_Y $w $iplot \
 			    $ToldV $YoldV $TnewV $YnewV [concat $id [list $i]]
+			incr iplot $KeyArrays
 		    }
 		}
 	    }
@@ -1033,7 +1034,7 @@ namespace eval ::$keyValue {
         set YYnew($w) {}
         foreach node $ynodes($w) {
             set values [GetModelValue $node]
-            set values [lindex $values 0]
+	    set values [lindex $values 0]
             lappend YYnew($w) [list $node $values]
             #        ShowMess debug info "$YYnew($w)" ok
         }
