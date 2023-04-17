@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
-<shf simile_version="6.3">
-<external x="18" y="288"  w="1533" h="686"/>
-<std_tool_layout left_panel_width="274" run_control_height="181"/>
+<shf simile_version="7.0">
+<external x="867" y="226" w="1533" h="1404"/>
+<std_tool_layout left_panel_width="274" run_control_height="240"/>
 <notebook>
   <page caption="Pattern">
     <panedwindow orient="vertical">
       <pane>
          <container type="plotterXY1_dot_0">
-          <![CDATA[/WIN/,pointer 1 /WIN/,Y_min_scalestep 0 /WIN/,YColours {{#0000ff} #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,Xmajorstep 0.01 /WIN/,xstep_Ylabels 120 /WIN/,yborder_bottom 30 /WIN/,Ymax_axis 9.999999999999999e-11 /WIN/,y_Ylabels 0 /WIN/,DrawPoints 0 /WIN/,Yprecision 2 /WIN/,XaxisLabel x /WIN/,grid off /WIN/,Yminorstep 2e-11 /WIN/,Yvars /runs/y /WIN/,Xmax_axis 106.02000000000001 /WIN/,ystep_Ylabels 12 /WIN/,Ymin_axis 0.0 /WIN/,ylength 525 /WIN/,xlength 1182 /WIN/,x_Ylabels 25 /WIN/,Tscale 3.384094754653659e-5 /WIN/,Ymajorstep 2e-11 /WIN/,AxisDivisions 10 /WIN/,grapharea_colour white /WIN/,Ylabels y /WIN/,yborder_top 30 /WIN/,state ycoord /WIN/,fontTitle {Helvetica 8 normal} /WIN/,topright 1 /WIN/,Ymax_data 0.0 /WIN/,y_Xlabel 10 /WIN/,Xmin_axis 105.98 /WIN/,redraw 0 /WIN/,nodeCount 2 /WIN/,x_Xlabel 100 /WIN/,stringInfo {} /WIN/,xborder_left 50 /WIN/,Xmax_data 106.0 /WIN/,Yscale 1.9047619047619045e-13 /WIN/,CurrentOnly 0 /WIN/,Ymin_data 0.0 /WIN/,Y_max_scalestep 0 /WIN/,X_scalestep 0 /WIN/,DrawLines 1 /WIN/,xborder_right 15 /WIN/,fontValues {Helvetica 8 normal} /WIN/,xwindow_size 0 /WIN/,Xvars /runs/x /WIN/,fontLabels {Helvetica 8 normal} /WIN/,ywindow_size 0 /WIN/,Xprecision 5 /WIN/,ordinal 2 /WIN/,Xmin_data 106.0 /WIN/,canvas_colour #e0e0e0 /WIN/,Xminorstep 0.005]]>
+          <![CDATA[/WIN/,Tscale 0.3412969283276451 /WIN/,Ymajorstep 100.0 /WIN/,y_Xlabel 10 /WIN/,fontTitle {Helvetica 8 normal} /WIN/,KeyRuns 0 /WIN/,Xminorstep 50.0 /WIN/,Xmax_axis 105.0 /WIN/,X_scalestep 0 /WIN/,x_Ylabels 25 /WIN/,xborder_right 15 /WIN/,Ymax_axis 105.0 /WIN/,y_Ylabels 0 /WIN/,Xmin_data -102.03767705860551 /WIN/,Ymin_data -101.98325698081919 /WIN/,Y_min_scalestep 0 /WIN/,canvas_colour #e0e0e0 /WIN/,x_Xlabel 100 /WIN/,Yscale 0.7936507936507936 /WIN/,Yminorstep 50.0 /WIN/,Xvars /runs/x /WIN/,grapharea_colour white /WIN/,nodeCount 2 /WIN/,ystep_Ylabels 12 /WIN/,YColours {{#0000ff} #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,ordinal 1748 /WIN/,topright 1 /WIN/,fontLabels {Helvetica 8 normal} /WIN/,ArrayLines 0 /WIN/,DrawPoints 0 /WIN/,ylength 1222 /WIN/,Xprecision 0 /WIN/,Xmax_data 106.0 /WIN/,Ymax_data 102.08570185069584 /WIN/,state ycoord /WIN/,xwindow_size 0 /WIN/,KeyArrays 1 /WIN/,lastx 106.0 /WIN/,lasty -3.4692891411057e-13 /WIN/,CurrentOnly 0 /WIN/,Yprecision 0 /WIN/,XaxisLabel x /WIN/,grid off /WIN/,xborder_left 57 /WIN/,xlength 1172 /WIN/,Ylabels y /WIN/,redraw 0 /WIN/,DrawLines 1 /WIN/,Y_max_scalestep 0 /WIN/,yborder_top 30 /WIN/,yborder_bottom 38 /WIN/,Yvars /runs/y /WIN/,xstep_Ylabels 120 /WIN/,Xmin_axis -105.0 /WIN/,Ymin_axis -105.0 /WIN/,ywindow_size 0 /WIN/,Xmajorstep 100.0 /WIN/,AxisDivisions 10 /WIN/,fontValues {Helvetica 8 normal} /WIN/,pointer 1 /WIN/,stringInfo {}]]>
         </container>
       </pane>
     </panedwindow>
