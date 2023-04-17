@@ -149,7 +149,7 @@ call to the stub */
 
 instance_of(NType, Node, Path,
 	    [instance(function, Node, Default, Val, Base-Dims)], []) :-
-        member(NType-BelowParam, [variable-0, event-1]),
+        member(NType-BelowParam, [variable-0, event-1, compartment-0]),
 	is_parameter(Node, PType),
 	PType > BelowParam, !,
 	get_units(Node, Base, Dims),
