@@ -260,7 +260,7 @@ namespace eval slide139 {
 	    set widgetSeln($node) $defVal
 	    set widgetSeln(old,$node) $defVal
             set allVals $defVal
-	    } else {
+	} else {
             #	    set useTrans [lindex $trans $useDim]
             set count [lindex $sliderDoes($title,dims) $useDim]
             # bodge it to work with record submodels
@@ -468,10 +468,12 @@ namespace eval slide139 {
         global paramData runState myNode widgetSeln
 	set sub [join [concat [list {}] $indices] ,]
         if {$fixed} {
-	    set ledColour [$runState($myNode,cnvs) itemcget 1 -fill]
+	    set ledColour [$runState($myNode,cnvs) cget -foreground]
 	    if {[lsearch {yellow green blue} $ledColour]>-1} {return 0}
 # bug: command is called when slider created, generating spurious reset request
-            if {![RunningInC $myNode]} {
+            if {[RunningInC $myNode]} {
+		c_setparamarray $myNode $node {} 1
+	    } else {
                 set paramData($node$sub) $value
             }
         }

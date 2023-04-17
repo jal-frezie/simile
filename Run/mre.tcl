@@ -778,8 +778,9 @@ namespace eval RunEnv {
 	    set copyAbility normal
 
 	    set inst $helperTable($win.container,whichInstance)
-# now reset add menu in case 
-	    if {[catch {$inst info function CustomizeAddMenu}]} {
+	    # now reset add menu in case
+	    set allFns [$inst info function]
+	    if {[lsearch $allFns *CustomizeAddMenu]<0} {
 		set AddAbility disabled
 		$mreMenu insert $addMenuLocn cascade -label [tr. "Add"] \
 		    -menu .helpers.sub2
@@ -788,12 +789,12 @@ namespace eval RunEnv {
 	    }
 		
 		
-	    if {[catch {$inst info function CopyToClipboard}]} {
+	    if {[lsearch $allFns *CopyToClipboard]<0} {
 		set exportAbility disabled
 	    } else {
 		set exportAbility normal
 	    }
-	    if {[catch {$inst info function Print}]} {
+	    if {[lsearch $allFns *Print]<0} {
 		set printAbility disabled
 	    } else {
 		set printAbility normal
