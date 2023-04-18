@@ -1190,18 +1190,18 @@ proc ChooseDatabase {parent title} {
     wm title .sqlentry $title
     pack [set form [GetFrame [TitleFrame .sqlentry.form \
 				  -text [tr. "Specifics:"]]]]
-    grid [label $form.lhostname -text Hostname:] \
+    grid [ttk::label $form.lhostname -text Hostname:] \
 	[ttk::entry $form.ehostname -textvar sqlEntry(host)]
-    grid [label $form.luser -text User:] \
+    grid [ttk::label $form.luser -text User:] \
 	[ttk::entry $form.euser -textvar sqlEntry(user)]
-    grid [label $form.lpasswd -text Password:] \
+    grid [ttk::label $form.lpasswd -text Password:] \
 	[ttk::entry $form.epasswd -textvar sqlEntry(passwd)]
-    grid [label $form.ldbname -text Database:] \
+    grid [ttk::label $form.ldbname -text Database:] \
 	[ttk::entry $form.edbname -textvar sqlEntry(dbname)]
-    pack [set buttons [frame .sqlentry.buttons]]
-    pack [ttk::button .sqlentry.cancel -text Cancel \
+    pack [set buttons [ttk::frame .sqlentry.buttons]] -fill both -expand 1
+    pack [ttk::button $buttons.cancel -text Cancel \
 	      -command "set sqlEntry(done) 0"] -padx 4 -pady 4 -side left
-    pack [ttk::button .sqlentry.done -text OK \
+    pack [ttk::button $buttons.done -text OK \
 	      -command "set sqlEntry(done) 1"] -padx 4 -pady 4 -side right
 
     focus .sqlentry
