@@ -71,11 +71,12 @@ proc FileParamDialogue {topNode topWin mustShow} {
 }
 
 proc AlignParamsToModel {topNode} {
-    global paramData
+    global paramData msgs
     
     set ::bermudaTriangle {}
     foreach curVal [array names paramData /$topNode/*] {
-        if {![string is space $paramData($curVal)]} {
+        if {![string is space $paramData($curVal)] && \
+		$msgs(param_source_$curVal) ne $msgs(fce)} {
 	    set shortVal [TrimDTFromPath $curVal]
             set hitsPath [lindex [ExistCheck $topNode $shortVal /$topNode 0 \
 				      "current database"] 0]
