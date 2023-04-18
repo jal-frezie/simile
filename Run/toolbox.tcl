@@ -2008,7 +2008,7 @@ proc SaveProjectFile {topNode path tgt} {
 #    }
 
 # start by always writing it, later add check if version in tmp has been updated
-    if {[HaveValues $topNode] && [[winfo parent $RunEnv::paramFrame($topNode)] tab $RunEnv::paramFrame($topNode) -state] eq "normal"} { ;# will be hidden if no params
+    if {[HaveValues $topNode]>1 && [[winfo parent $RunEnv::paramFrame($topNode)] tab $RunEnv::paramFrame($topNode) -state] eq "normal"} { ;# will be hidden if no params
 	set ::preSelect [file join $path model.spf]
 	fileparams::Save $topNode $topNode
 

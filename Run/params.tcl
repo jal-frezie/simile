@@ -255,7 +255,8 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     pack [::ttk::entry $slot.e -width 1] -side left -fill x -expand on
     BindPopup $slot.e param_source_$compName comment_$compName
     bind $slot.e <Return> [list $slot.tick invoke]
-    bind $slot.e <FocusOut> [list $slot.tick invoke]
+    bind $slot.e <FocusOut> [list AcceptData $topNode $compName \
+				      $notInput 0 $caseId]
     $slot.e configure -validate key \
 	-validatecommand "[list focus $slot.e]; return 1"
     # above makes sure field has focus after paste so leaving accepts data
