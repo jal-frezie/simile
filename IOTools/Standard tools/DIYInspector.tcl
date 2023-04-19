@@ -267,6 +267,8 @@ itcl::class similescript::$newHelperClass {
 		    ExtendPerms $newLevel $parmCase $clickPath
 		}
 		pack [label $f.label -wrap 250 -text [tr. "Select the parameter to vary in this case from the model diagram or explorer"] -fg red]
+		UpdateByOS
+		ScrollToSee [winfo parent $topFrame] $f.label
 		lappend clickPath $type
 		$modelInst GrabClicks $this
 	    } default {

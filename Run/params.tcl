@@ -151,7 +151,7 @@ proc ScrollToSee {canvas w} {
     set move [expr {($current-$goesTo)/$height}] ;# +ve move makes rooty lower
     set start [lindex [$canvas yview] 0]
     $canvas yview moveto [expr {$start+$move}]
-#puts "current $current goesTo $goesTo cbox $cbox height $height move $move start $start"
+puts "current $current goesTo $goesTo cbox $cbox height $height move $move start $start"
 }
 
 proc CaseForExpt {topNode levels} {
@@ -255,8 +255,9 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     pack [::ttk::entry $slot.e -width 1] -side left -fill x -expand on
     BindPopup $slot.e param_source_$compName comment_$compName
     bind $slot.e <Return> [list $slot.tick invoke]
-    bind $slot.e <FocusOut> [list AcceptData $topNode $compName \
-				      $notInput 0 $caseId]
+    if {[winfo toplevel $slot] ne ".fpdialogue"} {
+	bind $slot.e <FocusOut> [list $slot.tick invoke]
+    }
     $slot.e configure -validate key \
 	-validatecommand "[list focus $slot.e]; return 1"
     # above makes sure field has focus after paste so leaving accepts data
@@ -597,8 +598,10 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
-    if {!$::headless && [focus] eq "$outNames($compName).cross"} {return 0}
-    # tick invoked by clicking on cross, not what user wanted
+    if {!$::headless} {
+	if {[focus] eq "$outNames($compName).cross"} {return 0}
+	# tick invoked by clicking on cross, not what user wanted
+    }
     set node [IdFromTail $topNode $compLocal -1]
     set dataChanged 0
     if {$complain > -1 && \
