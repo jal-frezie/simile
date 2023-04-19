@@ -151,7 +151,7 @@ proc ScrollToSee {canvas w} {
     set move [expr {($current-$goesTo)/$height}] ;# +ve move makes rooty lower
     set start [lindex [$canvas yview] 0]
     $canvas yview moveto [expr {$start+$move}]
-puts "current $current goesTo $goesTo cbox $cbox height $height move $move start $start"
+#puts "current $current goesTo $goesTo cbox $cbox height $height move $move start $start"
 }
 
 proc CaseForExpt {topNode levels} {
