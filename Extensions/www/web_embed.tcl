@@ -107,7 +107,7 @@ proc Sanitize {rough} {
     return [string map {\" \\\" \t \\t \\ \\\\} $rough]
 }
 
-
+package require json
 proc ResponseTo {paramList} {
     # puts [info level 0]
     global service

@@ -175,7 +175,8 @@ bound_all_boxes([[L1, T1, R1, B1] | More], [L, T, R, B]) :-
 
 tcl_export_graphics(Tgt, Node) :-
         draw><display(Tgt, Node, -1, _, 1),
-        setof(Box, image><contains_box(Node, Box), Boxes),
+        (setof(Box, image><contains_box(Node, Box), Boxes), !;
+            Boxes = [[image,contains,no,boxes]]),
         bound_all_boxes(Boxes, Frame),
         draw><callback(br(Frame)).
 

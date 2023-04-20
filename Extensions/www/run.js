@@ -2348,10 +2348,10 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
        function(execParms) {
 	   console.log("BSL returns " + execParms);
 	   try {
-	       pipeBits = JSON.parse(execParms);
+	       pipeBits = JSON.parse(execParms.split('\n').slice(-1));
 	   } catch(err) {
 	       $("#WaitDialog").dialog("close");
-	       document.getElementById("right").innerText = "There was a problem -- see console log for details";
+	       document.getElementById("right").innerText = "There was a problem -- " + err + "\nsee console log for details";
 	       return;
 	   }
 

@@ -97,8 +97,8 @@ if ( file_exists($_POST['base'] . ".so")) {
    if ($_POST['act'] == "BuildShareLib") {
 //  return last line of $pipe_contents for execution parameters
 //       echo end(explode("\n", $pipe_contents));
-	echo substr($pipe_contents,strrpos($pipe_contents,"\n")+1,strlen($pipe_contents));
-//       echo $pipe_contents; // whole lot for debugging purposes
+//	 echo substr($pipe_contents,strrpos($pipe_contents,"\n")+1,strlen($pipe_contents));
+       echo $pipe_contents; // whole lot for debugging purposes, js will trim
     }
 } else {
    echo "Command returned $return_value<br>";
