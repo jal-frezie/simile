@@ -185,7 +185,7 @@ itcl::class similescript::$newHelperClass {
 		lappend result [concat $part [list $extn]]
 	    }
 	}
-	return [concat $result $bases $additions]
+	return [concat $result $bases [list $additions]]
     }
 
     public method ExtendPerms {src case levels} {

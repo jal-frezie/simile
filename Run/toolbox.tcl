@@ -1867,12 +1867,13 @@ proc OpenAll {win} {
     global window_info
     
     MenuSelect $win file open
-    if {$window_info($win,is_top_level)} {
-	set ::runState($window_info($win,top_node),updated) 0
-	if {![info exists ::SimileAutoObjLoaded]} {
-	    RunIfPackage
+    if {![info exists ::SimileAutoObjLoaded]} {
+	if {!$window_info($win,is_top_level)} {
+	    return
 	}
+	RunIfPackage
     }
+    set ::runState($window_info($win,top_node),updated) 0
 }
 
 proc RunIfPackage {} {

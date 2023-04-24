@@ -1051,19 +1051,20 @@ proc DoIfApplicable {winName item action} {
     }
 }
 
-if {[tk windowingsystem] eq "aqua"} {
-    set platDefActs {{Control-Button-1 Button-2} {Control-B1-Motion B2-Motion} 
-	ButtonRelease-2 Command-Button-1 Command-Button-2}
-} else {
-    set platDefActs {Button-3 B3-Motion ButtonRelease-3 Control-Button-1
-	Control-Button-3}
-}
-
 proc CrossPlatformBind {tgt args} {
-    global platDefActs
 # Bindings are slightly different in the MacVersion because many users have
 # one button mice.  Thus ctrl-left click is used to simulate right click,
 # and command-left click replaces the function of ctrl-left.    
+
+    if {[tk windowingsystem] eq "aqua"} {
+	set platDefActs {{Control-Button-1 Button-2}
+	    {Control-B1-Motion B2-Motion} 
+	    ButtonRelease-2 Command-Button-1 Command-Button-2}
+    } else {
+	set platDefActs {Button-3 B3-Motion ButtonRelease-3 Control-Button-1
+	    Control-Button-3}
+    }
+    
     if {[string index $tgt 0] eq "."} { ;# widget: bind to it
 	set cmd [list bind $tgt]
     } else { ;# list of tag and canvas item
