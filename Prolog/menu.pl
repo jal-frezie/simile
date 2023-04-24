@@ -176,7 +176,8 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		/* Graphics update will have made a tk_visible call which we do
 		not want to save as a separate move so forget it */
  	        input><retract(resizing_windows(Win)), !;
-	    resize_canvas_for(Parent),
+	     (is_session(Name) -> true; resize_canvas_for(Parent)),
+	     % only at 1st pause if session so no point fitting to canvas
 		(Win2 shows_model Parent,
 		    redraw_window(Win2),
 		    fail;
