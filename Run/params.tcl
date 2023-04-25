@@ -184,6 +184,8 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     set compName [GetCompProperty $topNode Caption $node]
     if {$caseId ne {}} {
 	append compName ", " $caseId
+    } else {
+	set caseId [CaseForExpt $topNode $exptLevels]
     }
     set handle [split $compName /]
     if {$caseId ne {}} {
@@ -192,9 +194,6 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 	# AcceptData for default parameters
     } elseif {$notInput > -1} {
 	set handle [lrange $handle 1 end]
-    }
-    if {$caseId eq ""} {
-	set caseId [CaseForExpt $topNode $exptLevels]
     }
     set levels [concat $exptLevels $handle]
 
