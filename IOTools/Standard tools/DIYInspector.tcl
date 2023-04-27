@@ -472,12 +472,13 @@ itcl::class similescript::$newHelperClass {
 		puts $pStr "$indent<$type label=\"[string range $lvl 5 end]\"$compCase>"
 		SaveLevel $subF $pStr "  $indent"
 		puts $pStr "$indent</$type>"
-		return
+		continue
 	    }
 	    # stuff for leaf cases
 	    set value [$subF.e get]
-	    set lvl [string range [lindex [bind $subF.e <Enter>] end] 14 end]
+	    set cmtRef [lindex [bind $subF.e <Enter>] end]
 	    # reverse engineer popup cmd to get full path?!
+	    set lvl [string range $cmtRef [string first / $cmtRef 10]+1 end]
 	    if {[string range $lvl end-2 end] eq ", s"} {
 		puts $pStr "$indent<plist tgt=\"[string range $lvl 0 end-3]\">"
 		WriteLiteralParam $pStr $value "  $indent"
