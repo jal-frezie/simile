@@ -414,7 +414,8 @@ mentions_graphics(Action, Comp) :-
 	   Term = graphical_info(Fn, along, _Val3)), % bowtie fn 'along' flow
 	    get_host(Fn, Comp);
 	  Term = connection(_Start, _Finish, Comp); % arc end pts changed
-	  Term = arc_info(Comp, complete, _Val4)).
+	  Term = arc_info(Comp, Shows, _Val4),
+	    member(Shows, [complete, enabled_roles, use_sofar])).
 % things that make submodel conditional still not handled
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-
