@@ -696,7 +696,6 @@ namespace eval grid005 {
 #	}
         recolour_scale $::helperTable($winId,whichInstance) $winId
         PrepareSaveString $winId
-	set ::helperTable(beingCalled) $::helperTable($winId,whichInstance)
         display $winId 0 0 0
     }
     

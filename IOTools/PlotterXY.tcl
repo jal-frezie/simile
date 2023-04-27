@@ -70,8 +70,8 @@ namespace eval ::$keyValue {
         set plot($w,AxisDivisions) 10
         
         # choose colours for variables
-        set plot($w,YColours) [list #0000ff #ff0000 #00ff00 #007777 #777700 \
-                #770077 #222244 #442222 #224422]
+        set plot($w,YColours) [list blue orange green brown purple \
+			       red black DeepSkyBlue HotPink ForestGreen]
                 set plot($w,Xmax_axis) -1e20
         set plot($w,Xmin_axis) 1e20
         set plot($w,Xmax_data) -1e20
@@ -277,8 +277,10 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
+	variable ynodes
 	variable runCount
         
+	set ::graphtools::YTrans [GetTransTable $ynodes($winId)]
         set YYold($winId) {}
         set YYnew($winId) {}
         set Told($winId) {}
@@ -921,8 +923,6 @@ namespace eval ::$keyValue {
 	set runCount 1
         
         drawGraphpad $w
-	set ::helperTable(beingCalled) $::helperTable($w,whichInstance)
-        display $w [GetModelTime] 0 0
         display $w [GetModelTime] 0 0
     }
     

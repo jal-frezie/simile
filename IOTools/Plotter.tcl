@@ -57,8 +57,8 @@ namespace eval ::$keyValue {
         set plot($w,AxisDivisions) 10
         
         # choose colours for variables
-        set plot($w,YColours) {blue orange green brown purple red black DeepSkyBlue \
-                    HotPink ForestGreen}
+        set plot($w,YColours) [list blue orange green brown purple \
+			       red black DeepSkyBlue HotPink ForestGreen]
         set NColours [llength $plot($w,YColours)]
         set plot($w,Xmax_axis) -1e100
         set plot($w,Xmin_axis) 1e100
@@ -987,7 +987,6 @@ namespace eval ::$keyValue {
         
         $w.canvas delete prompt
         drawGraphpad $w
-	set ::helperTable(beingCalled) $::helperTable($w,whichInstance)
         display $w [GetModelTime] 0 0
     }
     
