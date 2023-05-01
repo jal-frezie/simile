@@ -107,7 +107,6 @@ proc Sanitize {rough} {
     return [string map {\" \\\" \t \\t \\ \\\\} $rough]
 }
 
-package require json
 proc ResponseTo {paramList} {
     # puts [info level 0]
     global service
@@ -124,11 +123,12 @@ proc ResponseTo {paramList} {
 	    set service($params(base)) $iH
 	    # Now create data structs for all parameters except per-record
 	    foreach obj [listobjects $mH] {
-		if {[lsearch {INPUT TABLE} [GetCCompProperty DUMMY Eval $obj]]>-1 && \
-			[lsearch [GetCCompProperty DUMMY Dims $obj] RECORDS]==-1 && \
-			[GetCCompProperty DUMMY Eval $obj] eq {}} {
+		set isP [GetCCompProperty DUMMY Eval $obj]
+		if {[lsearch [GetCCompProperty DUMMY Dims $obj] RECORDS]<0 && \
+			($isP eq "INPUT" || $isP eq "TABLE" && \
+			     [GetCCompProperty DUMMY Eval $obj] eq {})} {
 		    # per-records too difficult -- avoid
-		    # dont prevent v7 using eqn as default
+		    # dont prevent v7 using eqn as default for fixparams
 		    set ::aH($obj) [c_createparamarray $iH $obj]
 		}
 	    }
@@ -161,7 +161,7 @@ proc ResponseTo {paramList} {
 		close $stm
 	    }
 	} Can2SVG {
-	    foreach {tclCmd} [json::json2dict [urlDecode $params(cnvdraw)]] {
+	    foreach {tclCmd} [json::json2dict $params(cnvdraw)] {
 		append result [can2svg::can2svg $tclCmd]
 	    }
 	} Describe - Report {
@@ -205,7 +205,7 @@ proc ResponseTo {paramList} {
 	    global parmTimeStamps ;# clear if reloading run.js
 	    
 	    set result {""}
-	    array set incoming [::json::json2dict [urlDecode $params(data)]]
+	    array set incoming [::json::json2dict $params(data)]
 	    set parmReqOrdinality $incoming(seqNo)
 	    array unset incoming seqNo
 	    foreach {path stack} [array get incoming] {
@@ -243,10 +243,10 @@ proc ResponseTo {paramList} {
 	    }
 	    set isRK [expr {$params(method) ne "Euler"}]
 	    ResetModel $params(current) 1 0.0 $params(depth)
-	    set reqs [::json::json2dict [urlDecode $params(note)]]
+	    set reqs [::json::json2dict $params(note)]
 	    set result [JsonifyArray [ValuesOfInterest $iH $reqs]]
 	} Query {
-	    set reqs [::json::json2dict [urlDecode $params(note)]]
+	    set reqs [::json::json2dict $params(note)]
 	    set result [JsonifyArray [ValuesOfInterest $service($params(base)) $reqs]]
 	} ExecuteMulti {
 	    set iH $service($params(base))
@@ -254,7 +254,7 @@ proc ResponseTo {paramList} {
 	    foreach dt [split $params(step) " "] {
 		c_setstepmodel $iH $dt [incr i]
 	    }
-	    set reqs [::json::json2dict [urlDecode $params(note)]]
+	    set reqs [::json::json2dict $params(note)]
 	    set endPt [expr {$params(current)+$params(runlength)}]
 
 	    set ::instance_id $iH
