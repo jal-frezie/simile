@@ -124,8 +124,11 @@ proc ResponseTo {paramList} {
 	    set service($params(base)) $iH
 	    # Now create data structs for all parameters except per-record
 	    foreach obj [listobjects $mH] {
-		if {[lsearch {INPUT TABLE} [GetCCompProperty DUMMY Eval $obj]]>-1 && [lsearch [GetCCompProperty DUMMY Dims $obj] RECORDS]==-1} {
+		if {[lsearch {INPUT TABLE} [GetCCompProperty DUMMY Eval $obj]]>-1 && \
+			[lsearch [GetCCompProperty DUMMY Dims $obj] RECORDS]==-1 && \
+			[GetCCompProperty DUMMY Eval $obj] eq {}} {
 		    # per-records too difficult -- avoid
+		    # dont prevent v7 using eqn as default
 		    set ::aH($obj) [c_createparamarray $iH $obj]
 		}
 	    }
