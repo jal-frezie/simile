@@ -1975,7 +1975,10 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
     } else {
         set table_entry(data) {}
     }
-    if {[string match normal [$outNames($compName).e cget -state]]} {
+    set node [IdFromTail $topNode $compName $notInput]
+    if {$msgs(param_source_$compName) eq $msgs(fce)} {
+	set table_entry(values) [lindex [GetModelValue $node] 0]
+    } elseif {[string match normal [$outNames($compName).e cget -state]]} {
         set table_entry(values) [UglifyValList [$outNames($compName).e get] \
 				    $::readMany($compName)]
     } else {
@@ -1997,7 +2000,6 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
     if {$newSource>0} {
         set suppliedData($compName) $table_entry(values)
 	set whichParamsAffected($compName) 1
-	set node [IdFromTail $topNode $compName $notInput]
 	set trans [GetCompProperty $topNode Trans $node]
         FillIfSmall $outNames($compName).e $suppliedData($compName) $trans
         switch $newSource {

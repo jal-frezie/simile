@@ -535,8 +535,9 @@ proc AbleSetup {mathf} {
 proc PipeSetup {mdl modelLocn} {
     global disaggregate
 
-    set t [PutItThere .pipesetup .disaggregation]
-    wm title $t [tr. "Pipe/socket interaction"]
+    set tl [PutItThere .pipesetup .disaggregation]
+    wm title $tl [tr. "Pipe/socket interaction"]
+    pack [set t [ttk::frame $tl.f]] -fill both -expand 1
     set prev $disaggregate(xinc)
     if {$prev eq "none"} {set prev pipe}
     pack [TitleFrame $t.incfilefr -text [tr. "Pipe/socket name:"]] \
@@ -555,37 +556,53 @@ proc PipeSetup {mdl modelLocn} {
     pack [TitleFrame $t.remmodfr -text [tr. "Remote model:"]] \
 	-padx 4 -pady 4 -fill x
     set remmod [GetFrame $t.remmodfr]
-    pack [frame $remmod.cmd] -fill x
-    pack [label $remmod.cmd.lbl -text "Command to start:"] \
+    pack [ttk::frame $remmod.cmd] -fill x
+    pack [ttk::label $remmod.cmd.lbl -text "Command to start:"] \
 	-side left
-    pack [entry $remmod.cmd.e -textvariable disaggregate(xproc)] -side right
+    pack [ttk::entry $remmod.cmd.e -textvariable disaggregate(xproc)] -side right
     if {$disaggregate(xunit) eq "none"} {set disaggregate(xunit) day}
-    pack [frame $remmod.tu] -fill x
-    pack [label $remmod.tu.lbl -text "Time unit:"] \
+    pack [ttk::frame $remmod.tu] -fill x
+    pack [ttk::label $remmod.tu.lbl -text "Time unit:"] \
 	-side left
-    pack [entry $remmod.tu.e -textvariable disaggregate(xunit)] -side right
+    pack [ttk::entry $remmod.tu.e -textvariable disaggregate(xunit)] -side right
 
-    pack [frame $t.btnfr]
-    pack [button $t.btnfr.ok -text [tr. OK] \
+    pack [ttk::frame $t.btnfr]
+    pack [ttk::button $t.btnfr.ok -text [tr. OK] \
 	      -command "set disaggregate(xdone) 1"] -side right
-    pack [button $t.btnfr.cancel -text [tr. Cancel] \
+    pack [ttk::button $t.btnfr.cancel -text [tr. Cancel] \
 	      -command "set disaggregate(xdone) 0"] -side right
-    LetItShow $t disaggregate(xdone)
+    LetItShow $tl disaggregate(xdone)
     if {$disaggregate(xdone)} {
 # transfer data back to variables
 	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
     }
-    PackItUp $t
+    PackItUp $tl
 }
 
 proc ExtCodeSetup {mdl modelLocn} {
     global disaggregate
 
-    set t [PutItThere .extcodesetup .disaggregation]
-    wm title $t [tr. "External code interaction"]
+    set tl [PutItThere .extcodesetup .disaggregation]
+    wm title $tl [tr. "External code interaction"]
+    pack [set t [ttk::frame $tl.f]] -fill both -expand 1
     pack [TitleFrame $t.procnamfr -text [tr. "Procedure name:"]] \
 	-padx 4 -pady 4 -fill x
-    pack [entry [GetFrame $t.procnamfr].ent] -fill x
+    pack [    if {$disaggregate(xdone)} {
+# transfer data back to variables
+	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
+    }
+    PackItUp $tl
+}
+
+proc ExtCodeSetup {mdl modelLocn} {
+    global disaggregate
+
+    set tl [PutItThere .extcodesetup .disaggregation]
+    wm title $tl [tr. "External code interaction"]
+    pack [set t [ttk::frame $tl.f]] -fill both -expand 1
+    pack [TitleFrame $t.procnamfr -text [tr. "Procedure name:"]] \
+	-padx 4 -pady 4 -fill x
+    pack [ttk::entry [GetFrame $t.procnamfr].ent] -fill x
     [GetFrame $t.procnamfr].ent insert 0 $disaggregate(xproc)
 
     pack [TitleFrame $t.incfilefr -text [tr. "Include file:"]] \
@@ -595,7 +612,7 @@ proc ExtCodeSetup {mdl modelLocn} {
 	-side left -fill x
     $incFileTxt insert 1.0 $disaggregate(xinc)
     $incFileTxt configure -state disabled
-    pack [button [GetFrame $t.incfilefr].btn -text [tr. Browse] \
+    pack [ttk::button [GetFrame $t.incfilefr].btn -text [tr. Browse] \
 	      -command [list ChangeIncFile $incFileTxt 0 $mdl $modelLocn]] \
 	-anchor e -side right
 
@@ -606,24 +623,24 @@ proc ExtCodeSetup {mdl modelLocn} {
     foreach libFile $disaggregate(xlibs) {
 	${LibListFr}.box insert end $libFile
     }
-    pack [button ${LibListFr}.badd -text [tr. Add] \
+    pack [ttk::button ${LibListFr}.badd -text [tr. Add] \
 	      -command "AddLibF $LibListFr $mdl"] -anchor w -side top
-    pack [button ${LibListFr}.bdel -text [tr. Delete] \
+    pack [ttk::button ${LibListFr}.bdel -text [tr. Delete] \
 	     -command "RemoveLibF $LibListFr"] -anchor w -side top
 
-    pack [frame $t.btnfr]
-    pack [button $t.btnfr.ok -text [tr. OK] \
+    pack [ttk::frame $t.btnfr]
+    pack [ttk::button $t.btnfr.ok -text [tr. OK] \
 	      -command "set disaggregate(xdone) 1"] -side right
-    pack [button $t.btnfr.cancel -text [tr. Cancel] \
+    pack [ttk::button $t.btnfr.cancel -text [tr. Cancel] \
 	      -command "set disaggregate(xdone) 0"] -side right
-    LetItShow $t disaggregate(xdone)
+    LetItShow $tl disaggregate(xdone)
     if {$disaggregate(xdone)} {
 # transfer data back to variables
 	set disaggregate(xproc) [[GetFrame $t.procnamfr].ent get]
 	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
 	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
     }
-    PackItUp $t
+    PackItUp $tl
 }    
 
 proc SetupDisagExtras {exFrame} {
