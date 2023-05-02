@@ -63,9 +63,8 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
   case READGRAPH:
     graphptr = find_graph_by_index(index, *graphdata);
     if (!graphptr) {
-      Tcl_SetStringObj(resultPtr, 
-		       "There is no graph associated with this component", -1);
-      return TCL_ERROR;
+      Tcl_SetStringObj(resultPtr, "nograph", -1);
+      return TCL_OK;
     }
     sprintf(current, "%f %f %d %f %f %d %d %d",
             graphptr->xlow,

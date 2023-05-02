@@ -100,7 +100,10 @@ make_cons_dest(instance(Type, Sym, _, Name, _), ConLines, DeLines) :-
 	    make_assignment(c, curInst, this, SubConLine),
 	    append(["        ", SubConLine, ";"], ConLineStr),
 	    name(ConLine, ConLineStr),
-	    ConLines = [ConLine],
+	    make_assignment(c, c_graphdata, 'NULL', SubConLine2),
+	    append(["        ", SubConLine2, ";"], ConLineStr2),
+	    name(ConLine2, ConLineStr2),
+	    ConLines = [ConLine, ConLine2],
 	    DeLines = [];
 	[ConLines, DeLines] = [[], []].
 
