@@ -602,7 +602,6 @@ namespace eval $keyValue {
         global minForOpt maxForOpt
         variable inGrpData
         set t [PutItThere .pestinpdlg $win]
-        wm protocol .pestinpdlg  WM_DELETE_WINDOW [namespace code DoneInpDlg]
         wm title $t "Set properties for $title"
         
         pack [set f [labelframe $t.grp -text "Group properties:"]] \
@@ -675,10 +674,7 @@ namespace eval $keyValue {
                 -side left
         
         pack [button $t.done -text Done -command [namespace code DoneInpDlg]]
-        LetItShow $t
-        grab $t
-        tkwait variable [namespace current]::inGrpData(done)
-        grab release $t
+        LetItShow $t [namespace current]::inGrpData(done)
         PackItUp $t
     }
     
@@ -770,7 +766,6 @@ namespace eval $keyValue {
         global minForOpt maxForOpt
         variable outGrpData
         set t [PutItThere .pestoutdlg $win]
-        wm protocol .pestoutdlg  WM_DELETE_WINDOW [namespace code DoneOutDlg]
         wm title $t "Set properties for $title"
         
         pack [set f [labelframe $t.inp -text "Value interpretations:"]] \
@@ -782,10 +777,7 @@ namespace eval $keyValue {
                 -side left
         
         pack [button $t.done -text Done -command [namespace code DoneOutDlg]]
-        LetItShow $t
-        grab $t
-        tkwait variable [namespace current]::outGrpData(done)
-        grab release $t
+        LetItShow $t [namespace current]::outGrpData(done)
         PackItUp $t
     }
     

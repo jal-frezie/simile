@@ -7,7 +7,6 @@
 #
 
 proc FileParamDialogue {topNode topWin mustShow} {
-    puts [info level 0]
     global paramData widgetNames myNode
 
     set topCapt [GetExecTitle $topNode]
@@ -17,7 +16,6 @@ proc FileParamDialogue {topNode topWin mustShow} {
     AlignParamsToModel $topNode
     
     set t [PutItThere .fpdialogue $topWin]
-    wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
     wm title $t [format [tr. {File parameters for "%1$s"}] $topCapt]
     if {!$mustShow} {
         set paramData(needed) {}
@@ -1839,8 +1837,6 @@ proc ChooseByInspection {topNode oldObj type} {
 
     set parent [grab current]
     set t [PutItThere .new[NameToTag $type] $parent] ;# window id used to bring clix here
-    wm protocol $t WM_DELETE_WINDOW \
-	[list set paramData(newPath,done) none]
     wm title $t "$type for $oldObj values:" 
 
     # go through gymnastix to put a Model Inspector in ths window

@@ -495,8 +495,8 @@ namespace eval grid005 {
         
         #create widgets
 	pack [set t [::ttk::notebook $dlg.notebook]] -fill both -expand true
-	$t add [set fd [frame $t.disp]] -text "Display"
-        set coloursF [labelframe $fd.colours -text "Colour scale"]
+	$t add [set fd [::ttk::frame $t.disp]] -text "Display"
+        set coloursF [::ttk::labelframe $fd.colours -text "Colour scale"]
 	pack [button $coloursF.change -text "Edit colour key" \
 		  -command [namespace code [list EditKey $winId $dlg]]]
 #        pack [ttk::labelframe $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
@@ -532,29 +532,29 @@ namespace eval grid005 {
 	    pack $coloursF -padx 10 -pady 10 -fill x
 #        }
 	
-        set rangeF [labelframe $fd.range -text "Scale range"]
-        pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,dataMin)"] -fill x  -padx 10
-        pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,dataMax)"] -fill x  -padx 10
+        set rangeF [::ttk::labelframe $fd.range -text "Scale range"]
+        pack [::ttk::label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,dataMin)"] -fill x  -padx 10
+        pack [::ttk::label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,dataMax)"] -fill x  -padx 10
         pack [ttk::labelframe $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
         pack [entry $rangeF.minF.entry -textvar [namespace current]::min($winId) -width 20] -side right -padx 10
         pack [ttk::labelframe $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
         pack [entry $rangeF.maxF.entry -textvar [namespace current]::max($winId) -width 20] -side right -padx 10
         pack $rangeF -padx 10 -pady 10
         
-        set oriF [labelframe $fd.orient -text "Legend orientation"]
+        set oriF [::ttk::labelframe $fd.orient -text "Legend orientation"]
 	pack [ttk::radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
 	pack [ttk::radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
         pack $oriF -padx 10 -pady 10 -fill x
         
-	$t add [set fr [frame $t.rec]] -text "Record"
-        set targetF [labelframe $fr.target -text "Target:"]
+	$t add [set fr [::ttk::frame $t.rec]] -text "Record"
+        set targetF [::ttk::labelframe $fr.target -text "Target:"]
 	pack [entry $targetF.e \
 		  -textvar [namespace current]::useNodes($winId,target)] \
 	    -padx 10 -pady 10 -fill x -expand true
 	pack [button $targetF.b -text Browse -command \
 		  [namespace code [list GetImg $winId]]] -padx 10 -pady 10 
         pack $targetF -padx 10 -pady 10 -fill x -expand true
-        set templateF [labelframe $fr.template -text "Template:"]
+        set templateF [::ttk::labelframe $fr.template -text "Template:"]
 	pack [entry $templateF.e -textvar \
 		  [namespace current]::useNodes($winId,template)] \
 	    -padx 10 -pady 10 -fill x -expand true
@@ -563,7 +563,7 @@ namespace eval grid005 {
 	pack [button $templateF.b -text Browse -command \
 		  [namespace code [list SetImg $winId]]] -padx 10 -pady 10 
         pack $templateF -padx 10 -pady 10 -fill x -expand true
-        set actionF [labelframe $fr.action -text "Actions:"]
+        set actionF [::ttk::labelframe $fr.action -text "Actions:"]
 	pack [button $actionF.b -text "Save current" \
 		  -command [namespace code [list WriteImage $winId now]]] \
 	    -padx 10 -pady 10 
@@ -577,7 +577,7 @@ namespace eval grid005 {
 	    $actionF.cb configure -state disabled
 	}
 
-	pack [frame $dlg.btnfr]
+	pack [::ttk::frame $dlg.btnfr] -fill both -expand 1
 	pack [button $dlg.btnfr.ok -text [tr. OK] \
 		  -command "set gridprops(xdone) 1"] -side right
 	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \

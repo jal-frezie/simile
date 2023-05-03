@@ -1109,8 +1109,8 @@ proc ControlDraw {prologVersion} {
     LoadModelWindowExtensions
     if {!$::headless} {
 	Pref_Init $custom(prefDir)/.prefs
-	set themes [ttk::style theme names]
-	set current [ttk::style theme use]
+	set themes [lsort [ttk::style theme names]]
+	set current default ;# make option 0 as will be selected initially
 	set idx [lsearch -exact $themes $current]
 	set themes [linsert [lreplace $themes $idx $idx] 0 $current]
     Pref_Add [list [list custom(winPosn) winPosn [list CHOICE [tr. "Where it was last time"]  [tr. "OS default position"]]  [tr. "Place initial window:"]] \

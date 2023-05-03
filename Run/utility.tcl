@@ -905,6 +905,7 @@ proc Numeric {str} {
 proc PutItThere {t parent} {
     global tcl_platform
     toplevel $t -bd 4
+    $t config -bg [ttk::style lookup default -background]
     if {[winfo exists $parent] && [string compare . $parent]} {
 	wm transient $t $parent
     } else {
@@ -970,7 +971,9 @@ proc LetItShow {t {doneVar {}}} {
     if {[string length $doneVar]} {
 # have variable that gets set on exit, if scripting just set it
 # otherwise do interaction here
-        set oldGrab [grab current]
+        wm protocol $t WM_DELETE_WINDOW [list set $doneVar 0]
+	# this delays killing it until subdialogues exited
+	set oldGrab [grab current]
 	if {[string length $oldGrab]} {
 	    grab release $oldGrab
 	}

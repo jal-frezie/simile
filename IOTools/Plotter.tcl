@@ -368,7 +368,7 @@ namespace eval ::$keyValue {
 #         pack $entryF -side top
 ################################################################################
         
-        set chkF [frame $dlg.checkbuttons -relief groove -width 300]
+        set chkF [ttk::frame $dlg.checkbuttons -relief groove -width 300]
         #pack [ttk::labelframe $chkF.automaticScalingF -text "Automatic scaling"] -fill x
         #pack [checkbutton $chkF.automaticScalingF.cbutton -variable [namespace current]::AutoAxisScaling] -side right
         pack [ttk::labelframe $chkF.fewXAxisTicksF -text "Few x-axis ticks"] -fill x
@@ -382,7 +382,7 @@ namespace eval ::$keyValue {
         
         pack $chkF -padx 10
         
-	pack [frame $dlg.btnfr]
+	pack [ttk::frame $dlg.btnfr]
 	pack [button $dlg.btnfr.ok -text [tr. OK] \
 		  -command "set ::graphtools::plot(xdone) 1"] -side right
 	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \

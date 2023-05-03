@@ -437,7 +437,6 @@ set repts [expr {$hex*$bpp/8}]
     public method Settings {} {
 	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
 	wm title $dlg [tr. "Grid display properties"]
-	wm protocol $dlg WM_DELETE_WINDOW "set polyProps(xdone) 0"
         
         # copy display parameters to temp values
         # colours are stored by frames used as example colour swatch (eg $coloursF.lowcolourF.colF)

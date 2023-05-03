@@ -625,7 +625,6 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     PutItThere .table $parent
     set haveDND [llength [package provide tkdnd]]
     wm title .table "Table data for [BlankCrs "$tgt $dims"]"
-    wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
 
     if {![info exists table_entry(separator)]} {
 	set table_entry(separator) ,
@@ -1528,7 +1527,6 @@ proc EditListAsTable {parent caption startLine valueArray} {
     set t .table_edit.helperzone
     set b .table_edit.buttonzone
     wm title .table_edit "Table Editor"
-    wm protocol .table_edit WM_DELETE_WINDOW {set table_viewer(done) 0}
     
     pack [frame $b] -side bottom
     # button frame packed first so it is not squeeeezed if window dragged smaller

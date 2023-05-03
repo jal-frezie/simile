@@ -42,7 +42,6 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     #    set tf [::ttk::frame [PutItThere $tt $parent].all]
     set t [::ttk::notebook $tf.notebook]
     wm resizable $tt 0 1
-    wm protocol $tt WM_DELETE_WINDOW {set disaggregate(done) 0}
     wm title $tt [format $::msgs(props_title) [BlankCrs $title]]
     set okCmd {set disaggregate(done) 1}
     
@@ -535,9 +534,8 @@ proc AbleSetup {mathf} {
 proc PipeSetup {mdl modelLocn} {
     global disaggregate
 
-    set tl [PutItThere .pipesetup .disaggregation]
-    wm title $tl [tr. "Pipe/socket interaction"]
-    pack [set t [ttk::frame $tl.f]] -fill both -expand 1
+    set t [PutItThere .pipesetup .disaggregation]
+    wm title $t [tr. "Pipe/socket interaction"]
     set prev $disaggregate(xinc)
     if {$prev eq "none"} {set prev pipe}
     pack [TitleFrame $t.incfilefr -text [tr. "Pipe/socket name:"]] \
@@ -571,35 +569,19 @@ proc PipeSetup {mdl modelLocn} {
 	      -command "set disaggregate(xdone) 1"] -side right
     pack [ttk::button $t.btnfr.cancel -text [tr. Cancel] \
 	      -command "set disaggregate(xdone) 0"] -side right
-    LetItShow $tl disaggregate(xdone)
+    LetItShow $t disaggregate(xdone)
     if {$disaggregate(xdone)} {
 # transfer data back to variables
 	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
     }
-    PackItUp $tl
+    PackItUp $t
 }
 
 proc ExtCodeSetup {mdl modelLocn} {
     global disaggregate
 
-    set tl [PutItThere .extcodesetup .disaggregation]
-    wm title $tl [tr. "External code interaction"]
-    pack [set t [ttk::frame $tl.f]] -fill both -expand 1
-    pack [TitleFrame $t.procnamfr -text [tr. "Procedure name:"]] \
-	-padx 4 -pady 4 -fill x
-    pack [    if {$disaggregate(xdone)} {
-# transfer data back to variables
-	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
-    }
-    PackItUp $tl
-}
-
-proc ExtCodeSetup {mdl modelLocn} {
-    global disaggregate
-
-    set tl [PutItThere .extcodesetup .disaggregation]
-    wm title $tl [tr. "External code interaction"]
-    pack [set t [ttk::frame $tl.f]] -fill both -expand 1
+    set t [PutItThere .extcodesetup .disaggregation]
+    wm title $t [tr. "External code interaction"]
     pack [TitleFrame $t.procnamfr -text [tr. "Procedure name:"]] \
 	-padx 4 -pady 4 -fill x
     pack [ttk::entry [GetFrame $t.procnamfr].ent] -fill x
@@ -633,14 +615,14 @@ proc ExtCodeSetup {mdl modelLocn} {
 	      -command "set disaggregate(xdone) 1"] -side right
     pack [ttk::button $t.btnfr.cancel -text [tr. Cancel] \
 	      -command "set disaggregate(xdone) 0"] -side right
-    LetItShow $tl disaggregate(xdone)
+    LetItShow $t disaggregate(xdone)
     if {$disaggregate(xdone)} {
 # transfer data back to variables
 	set disaggregate(xproc) [[GetFrame $t.procnamfr].ent get]
 	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
 	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
     }
-    PackItUp $tl
+    PackItUp $t
 }    
 
 proc SetupDisagExtras {exFrame} {
@@ -1215,7 +1197,6 @@ proc TweakFloatingImage {parent title state} {
 
     set t [PutItThere .relcheck $parent]
     wm resizable $t 0 0
-    wm protocol $t WM_DELETE_WINDOW {set text_props(done) 0}
     wm title $t [format $::msgs(props_title) [BlankCrs $title]]
     frame .relcheck.top
     TitleFrame .relcheck.top.left -text [tr. {Image options:}]
@@ -1262,7 +1243,6 @@ proc TextCheckAndSet {parent title state} {
 
     set t [PutItThere .relcheck $parent]
     wm resizable $t 0 0
-    wm protocol $t WM_DELETE_WINDOW {set text_props(done) 0}
     wm title $t [format $::msgs(props_title) [BlankCrs $title]]
     frame .relcheck.top
     TitleFrame .relcheck.top.left -text [tr. {Text options:}]
@@ -1300,7 +1280,6 @@ proc GetDimOrTimePtList {parent title msg} {
 
     set t [PutItThere .dotpl $parent]
     wm resizable $t 0 0
-    wm protocol $t WM_DELETE_WINDOW {set text_props(done) 0}
     wm title $t $title
 
     pack [TitleFrame $t.txtframe -text Text] -padx 4 -pady 4 -fill x
@@ -1328,7 +1307,6 @@ proc RelationCheck {parent title type entries state init_comment} {
     
     PutItThere .relcheck $parent
     wm resizable .relcheck 0 0
-    wm protocol .relcheck WM_DELETE_WINDOW {set relation(done) 0}
     wm title .relcheck [format $msgs(props_title) [BlankCrs $title]]
     set t [ttk::frame .relcheck.t]
     pack $t -fill both -expand 1
@@ -1388,11 +1366,8 @@ set find(prevs) {}
 proc GetFindText {canvas} {
     global find tcl_platform
     set t [PutItThere .findentry $canvas]
-    wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
     wm title $t "Find"
     wm resizable $t 0 0
-    set t [::ttk::frame $t.f]
-    pack $t -fill both -expand 1
     TitleFrame $t.follow -text "Follow influences "
     set follow [GetFrame $t.follow]
     pack [ttk::label $follow.to -text [tr. Components...]] -anchor w
@@ -1442,9 +1417,9 @@ proc GetFindText {canvas} {
 	-padx 2 -pady 4 -side left
     
     focus $ft.e
-    LetItShow .findentry find(done)
+    LetItShow $t find(done)
     set result [$ft.e get]
-    PackItUp .findentry
+    PackItUp $t
     if {$find(done)==1} {
     set find(prevs) [AddIfAbsent $result $find(prevs)]
         return $result
@@ -1553,7 +1528,6 @@ proc DoWelcomeDialog {dtId} {
     }
     set t [PutItThere .register $dtId]
     wm title $t "Welcome to Simile version $userinfo(Version)"
-    wm protocol $t WM_DELETE_WINDOW {set userinfo(done) 0}
     set welcomeDone 0
     image create photo welcome
     welcome read "../Images/Welcome.gif"
@@ -1905,7 +1879,6 @@ proc ErrorHelp {diagnostic} {
     PutItThere .diag $parent
 
     wm title .diag {Error diagnostics}
-    wm protocol .diag WM_DELETE_WINDOW {set diagno(done) 0}
     labelframe .diag.errorf -text [tr. "Diagnostics:"]
     message .diag.errorf.errorm -text [tr. "Full text of the error report, as generated by the TclTk interpreter:"] -aspect 5000
     pack .diag.errorf.errorm -side top
@@ -2495,7 +2468,6 @@ proc add_text {text font across down colour} {
 
 proc NotifyOverLimit {win edn limit} {
     wm title [PutItThere .notify $win] "Over Limit For Edition"
-    wm protocol .notify WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     switch [tk windowingsystem] {
     win32 {wm attributes .notify -toolwindow true}
@@ -2892,13 +2864,12 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
 #        }
 #    }
     wm title $ProbWin $Title
-    wm protocol $ProbWin WM_DELETE_WINDOW {set dialogues(ack) 1}
     switch [tk windowingsystem] {
         win32 {wm attributes $ProbWin -toolwindow true}
     }
 
-    set labf1 [frame $ProbWin.labf1]
-    pack [label $labf1.img -image $::iconImages($errLevel)] -side left 
+    set labf1 [ttk::frame $ProbWin.labf1]
+    pack [ttk::label $labf1.img -image $::iconImages($errLevel)] -side left 
 #    pack [label $labf1.lab1 -text "Warning:" \
 #            -font {-weight bold -family helvetica -size 10}] -side left
     pack [scrollbar $labf1.yscroll -orient v \
@@ -2929,7 +2900,7 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     #            -font {-family helvetica -size 10} -justify left] -side left
     pack $labf1 -padx 8 -pady 2 -fill both -expand on
     
-    set buttons [frame $ProbWin.buttons]
+    set buttons [ttk::frame $ProbWin.buttons]
     set ack1 -1
     set defButton [lindex $opts 0]
     set defCapt $::msgs(${defButton}_button)

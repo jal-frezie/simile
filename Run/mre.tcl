@@ -255,12 +255,13 @@ namespace eval RunEnv {
 	    InitializeDisplays
             
 #            pack $mainframe -fill both -expand yes
-            pack $mainpw -fill both -expand yes
-            UpdateByOS ;# needed for sash place to work
-	    $mainpw sash place 0 [expr {round($::niceSize*$defScaling*25)}] 0
-	    # must be wide enough (270ish) for the sliders
-            
             pack $hiercontrolpw -fill both -expand yes
+            pack $mainpw -fill both -expand yes
+#            UpdateByOS ;# needed for sash place to work, callback also works
+	    after 50 $mainpw sash place 0 [expr {round($::niceSize*$defScaling*25)}] 0
+	    # must be wide enough (270ish) for the sliders
+	    after 100 $hiercontrolpw sash place 0 0 [expr {round($::niceSize*$defScaling*20)}]
+            
             
             # Model variable explorer is created automatically elsewhere
             # run control is automatically created when model is run

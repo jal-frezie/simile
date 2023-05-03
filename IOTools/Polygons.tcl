@@ -545,15 +545,14 @@ namespace eval ::polygon375 {
         set ${winId}l5 $displayUpdate($winId)
 	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
 	wm title $dlg [tr. "Polygon display properties"]
-        
         # copy display parameters to temp values
         # colours are stored by frames used as example colour swatch (eg $coloursF.lowcolourF.colF)
         set min($winId) $useNodes($winId,min)
         set max($winId) $useNodes($winId,max)
         
         #create widgets
-        set coloursF [labelframe $dlg.colours -text "Colour scale"]
-	pack [button $coloursF.change -text "Edit colour key" \
+        set coloursF [::ttk::labelframe $dlg.colours -text "Colour scale"]
+	pack [::ttk::button $coloursF.change -text "Edit colour key" \
 		  -command [namespace code [list EditKey $winId $dlg]]]
 #        pack [ttk::labelframe $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
 #        frame $coloursF.lowcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cbot)
@@ -575,8 +574,8 @@ namespace eval ::polygon375 {
         
         pack $coloursF -padx 10 -pady 10 -fill x
         
-        set borderF [labelframe $dlg.border -text "Borders"]
-        pack [ttk::labelframe $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
+        set borderF [::ttk::labelframe $dlg.border -text "Borders"]
+        pack [::ttk::labelframe $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
         pack [entry $borderF.widF.entry -textvar [namespace current]::useNodes($winId,bw) -width 20] -side left -padx 10
         pack [ttk::labelframe $borderF.colourF -text "Colour"] -fill x -padx 10
         frame $borderF.colourF.colF -width 20 -height 15 -bg $useNodes($winId,cbord)
@@ -585,7 +584,7 @@ namespace eval ::polygon375 {
         pack $borderF.colourF.colF -side right -padx 10
         pack $borderF -padx 10 -pady 10 -fill x
         
-        set rangeF [labelframe $dlg.range -text "Scale range"]
+        set rangeF [::ttk::labelframe $dlg.range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,datamin)"] -fill x  -padx 10
         pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,datamax)"] -fill x  -padx 10
         pack [ttk::labelframe $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
@@ -596,7 +595,7 @@ namespace eval ::polygon375 {
         pack [ttk::checkbutton $dlg.update -variable ${winId}l5 \
 		  -text "Update at display intervals"]
         
-        set oriF [labelframe $dlg.orient -text "Orientation"]
+        set oriF [::ttk::labelframe $dlg.orient -text "Orientation"]
 	pack [ttk::radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
 	pack [ttk::radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
         pack $oriF -padx 10 -pady 10 -fill x
@@ -606,10 +605,7 @@ namespace eval ::polygon375 {
 		  -command "set polyProps(xdone) 1"] -side right
 	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
 		  -command "set polyProps(xdone) 0"] -side right
-	LetItShow $dlg
-	grab $dlg
-	tkwait variable polyProps(xdone)
-	grab release $dlg
+	LetItShow $dlg polyProps(xdone)
 	    # copy the values from the temp values to those to be edited if OK clicked
 	if {$polyProps(xdone)} {
  		# OK button was clicked

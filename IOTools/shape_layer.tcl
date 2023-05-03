@@ -1,3 +1,4 @@
+
 # 2-d shapes layer helper -- basically will use the 3-d engine with
 # 0 for the z coords
 
@@ -72,7 +73,6 @@ itcl::class similescript::ShapeLayer {
     public method Settings {} {
 	set dlg [PutItThere .shapeprop [winfo toplevel $winId]]
 	wm title $dlg "[GetTitle] properties"
-	wm protocol $dlg WM_DELETE_WINDOW "set polyProps(xdone) 0"
         
 	set rg [labelframe $dlg.relgeom -text "Offset and scaling"]
 	grid [label $rg.lxo -text [tr. {X offset:}]] \

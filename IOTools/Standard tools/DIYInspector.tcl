@@ -20,6 +20,7 @@ itcl::class similescript::$newHelperClass {
 	variable chop
 	variable cMenu
 	variable decor
+	variable paramEdits
 
 	set chop [string length $state]
 	set doPops 0
@@ -157,7 +158,11 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     destructor {
-	array unset ::widgetNames /[GetNode]/*
+	variable paramEdits
+
+	if {$paramEdits} {
+	    array unset ::widgetNames /[GetNode]/*
+	}
 	destroy .expt_context
     }
 
@@ -503,7 +508,6 @@ itcl::class similescript::$newHelperClass {
 	    return $result
 	}
 	set t [PutItThere .caseentry $winId]
-	wm protocol $t WM_DELETE_WINDOW {set case(done) 0}
 	wm title $t "Case name"
 	wm resizable $t 0 0
 	

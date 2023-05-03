@@ -23,7 +23,6 @@ proc create_equation {parent purpose comp indices enum_types} {
 # TRANSLATOR: $purpose part of string is one of:
 # Cause, Initial value, equation
     set equation(top) $t
-    wm protocol $t WM_DELETE_WINDOW "equationCancel"
     
     set notebook [::ttk::notebook $t.notebook]
     set mainF $notebook.main
@@ -392,7 +391,6 @@ proc create_equation {parent purpose comp indices enum_types} {
     $notebook select 0
     pack $notebook -fill both -expand true
     set equation(newGraphs) ""
-    set equation(showing) 0
     set equation(done) 0
     equationBindings $t $en $eu $lbf $lbx $lbp $graph $table $ok $can
     if {![llength $indices]} {
@@ -614,29 +612,18 @@ proc interact_equation {} {
     set t $equation(top)
     set descFrame [GetFrame $equation(doc).descf.description]
     
-    if {!$equation(showing)} {
-	set equation(showing) 1
-	LetItShow $t
-    }
     if {[llength $equation(ckWidg)]} {
 	.equation.notebook select 1 ;# raise parameters tab
 	focus $equation(ckWidg) ;# keep here until correct input or cancel
     } else {
 	focus $t
     }
-    if {[tk windowingsystem] eq "none"} { ;# see utyility.tcl
-	bind $t <FocusOut> [list grab $t]
-	# MacOS may disable dialog if grabbed now so only do if needed
-    } else {
-	grab $t
-	# Xfce generates spurious FocusOuts while dragging which cause errors
-    }
-    tkwait variable equation(done)
-    bind $t <FocusOut> {}
-    grab release $t
+    LetItShow $t equation(done)
 
     set units [UnityForReal $equation(units)]
-    switch $equation(done) {
+    set result $equation(done)
+    unset equation(done)
+    switch $result {
         1 {
 	    set res [string trimright [$equation(actzone).text get 1.0 end]]
 	    set equation(prevs) [AddIfAbsent $res $equation(prevs)]
@@ -1040,7 +1027,6 @@ proc equationDoGraph {parent name box} {
 proc equationGraph {parent name} {
     global equation tcl_platform
     PutItThere .graph $parent
-    wm protocol .graph WM_DELETE_WINDOW {set graph(.graph,done) 0}
     # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
     # set default values for new graph
     set graphArgs {0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200}
