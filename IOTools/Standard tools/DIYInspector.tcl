@@ -157,6 +157,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     destructor {
+	array unset ::widgetNames /[GetNode]/*
 	destroy .expt_context
     }
 
@@ -253,7 +254,6 @@ itcl::class similescript::$newHelperClass {
 	
 	switch -regexp $type {
 	    param|plist {
-		set paramEdits 1
 		set f [MakeSubFrames $this $topFrame [concat $clickPath {{}}] \
 			   [namespace current] 0]
 		if {[CaseForExpt $myNode $clickPath] ne ""} {

@@ -7,6 +7,7 @@
 #
 
 proc FileParamDialogue {topNode topWin mustShow} {
+    puts [info level 0]
     global paramData widgetNames myNode
 
     set topCapt [GetExecTitle $topNode]
@@ -38,7 +39,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
     set hlp [UniqueId helper]
     set helperId $::helperTable(VariableList)
     set runClass $::classTable(run,$topNode)
-    array unset widgetNames
+    array unset widgetNames /$topNode/*
     do_for_node $topNode similescript::$helperId $hlp $runClass parameters
 
     if {$mustShow || [llength $paramData(needed)]} {
@@ -1270,7 +1271,7 @@ set parseStatus(spfParser) [::xml::parser -ignorewhitespace true \
 				-characterdatacommand LoadBase64CharData]
 }
 proc RevertXMLParams {oldPath newPath topNode smPath} {
-    global parseStatus widgetNames errorInfo
+    global parseStatus errorInfo
 
     array unset parseStatus simV
     array set parseStatus [list oldPath $oldPath topNode $topNode \
