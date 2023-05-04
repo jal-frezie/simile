@@ -126,7 +126,7 @@ itcl::class similescript::$newHelperClass {
 			-compound left
 		    pack $label -expand 0
 		    if {[string first . $capt]>=0} { ;# frag submodel
-			$label configure -text $capt:
+			Compand $f ;# initially closed
 		    }
 		} else {
 		    set beeGee [[winfo parent $f].head cget -bg]

@@ -258,9 +258,9 @@ namespace eval RunEnv {
             pack $hiercontrolpw -fill both -expand yes
             pack $mainpw -fill both -expand yes
 #            UpdateByOS ;# needed for sash place to work, callback also works
-	    after 50 $mainpw sash place 0 [expr {round($::niceSize*$defScaling*25)}] 0
+	    after 50 $mainpw sash place 0 [expr {round($::niceSize*25)}] 0
 	    # must be wide enough (270ish) for the sliders
-	    after 100 $hiercontrolpw sash place 0 0 [expr {round($::niceSize*$defScaling*20)}]
+	    after 100 $hiercontrolpw sash place 0 0 [expr {round($::niceSize*20)}]
             
             
             # Model variable explorer is created automatically elsewhere

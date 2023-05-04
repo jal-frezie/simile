@@ -535,12 +535,12 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 }
 
 proc Compand {level} {
-    if {[winfo viewable $level.body]} {
-	pack forget $level.body
-	set newImg rerun
-    } else {
+    if {[catch {pack info $level.body}]} {
 	pack $level.body -fill x -expand 1
 	set newImg drop
+    } else {
+	pack forget $level.body
+	set newImg rerun
     }
     $level.head.vis configure -image $::iconImages($newImg)
 }
