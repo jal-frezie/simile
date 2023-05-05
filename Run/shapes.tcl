@@ -90,8 +90,9 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set fCol $::looks($::window_info($w,top_node),compartment,fill)
     set width [GetLineSize $w compartment $fatness]
+    
     $w create rectangle $ml $mt $mr $mb -outline {} -fill $fCol \
-	-tags "$tagSet has_info"
+	-stipple $density -tags "$tagSet has_info"
     set stackDepth 0
     set switches [concat {-width $width} [FuzzFor $w $density] \
 		      {-tags "$tagSet size_on_this realwidth($width)"}]
@@ -903,24 +904,27 @@ proc PositionBowtie {w ptz} {
 }
 
 proc DrawBlob {w startX startY size switches} {
-#    $w create line $startX $startY $startX $startY -width $size \
-#            -capstyle round -tags "$tags realwidth($size)"
+    if {[tk windowingsystem] ne "aqua"} {
+	eval {$w create line $startX $startY $startX $startY -width $size \
+		  -capstyle round} $switches
 # above fails to dash for MacOS stipple substitute (cross-platform TclTk bug)
-    set width [expr {$size/2.0}]
-    if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
-	set width [expr $width+$::borderSpread]
-    }
-    set rad [expr {$size/4.0}]
-    eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
-	      [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
-	      -width $width -extent 359.999} \
-	      [string map {-stipple -outlinestipple} $switches]
+    } else {
+	set width [expr {$size/2.0}]
+	if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
+	    set width [expr $width+$::borderSpread]
+	}
+	set rad [expr {$size/4.0}]
+	eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
+		  [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
+		  -width $width -extent 359.999} \
+	    [string map {-stipple -outlinestipple} $switches]
 # works but will need to improve can2svg to cope with real extent
-#    $w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
-#	[expr {$startX+$rad}] [expr {$startY+$rad}] \
-#	-width $width -tags "$tags realwidth($width)"
+	$w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
+	    [expr {$startX+$rad}] [expr {$startY+$rad}] \
+	    -width $width -tags "$tags realwidth($width)"
 # works but mac stipple workaround poor because outline dashes cannot be shorter
 # than width
+    }
 }
 
 # This puts random bits of normally non-editable text on the screen...
