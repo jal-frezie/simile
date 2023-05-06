@@ -451,18 +451,19 @@ source $SIMILE_PATH/Run/language.tcl
 LoadTrans
 
 if {!$headless} {
-#    if {$tcl_platform(platform) eq "windows"} {
+    if {$tcl_platform(platform) eq "windows"} {
+	set niceSize 10
+    } else {
 	set niceSize 12
-#    } else {
-#	set niceSize [font actual {-size -12} -size]
-#    }
+    }
 #    if {$niceSize<=0} {
 #	set niceSize 12 ;# otherwise is -12 on Buckaroo
 #    }
-if {[info exists custom(layout,theme)] && $custom(layout,theme) ne ""} {
-    ttk::style theme use $custom(layout,theme)
+    if {[info exists custom(layout,theme)] && $custom(layout,theme) ne ""} {
+	ttk::style theme use $custom(layout,theme)
 }
-if {[info exists custom(layout,text)] && $custom(layout,text) ne ""} {
+if {[info exists custom(layout,text)] && \
+	[string is integer -strict $custom(layout,text)]} {
     if {$tcl_platform(platform) eq "windows"} {
 	tk scaling [expr {$defScaling*$custom(layout,text)/$niceSize}]
     } else {
