@@ -599,25 +599,28 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     if {!$::headless} {
 	if {[focus] eq "$outNames($compName).cross"} {return 0}
 	# tick invoked by clicking on cross, not what user wanted
+	set chking $outNames($compName).e
     }
     set node [IdFromTail $topNode $compLocal -1]
     set dataChanged 0
     if {$complain > -1 && \
-	    ![string equal disabled [$outNames($compName).e cget -state]]} {
-	set rawParam [$outNames($compName).e get]
+	    ![string equal disabled [$chking cget -state]]} {
+	set rawParam [$chking get]
 	if {[catch {UglifyValList $rawParam $readMany($compName)} newData]} {
 	    Query [list json_parse_fail $rawParam $newData] warning spf {} ok
+	    focus $chking
 	    return 0
 	}
 	set preload [GetCompProperty $topNode Spec $node]
 	if {$newData eq "" && \
 		[GetCompProperty $topNode Class $node] ne "EVENT"} {
 	    if {$caseId eq "" && $preload ne ""} {
-		$outNames($compName).e insert 0 $preload
+		$chking insert 0 $preload
 		set msgs(param_source_$compName) $msgs(fce)
 		ColourCaptions $outNames($compName) blue
-	    } elseif {$suppliedData($compName) ne ""} {
-		set msgs(param_source_$compName) $msgs(fce)
+#	    } elseif {$suppliedData($compName) ne ""} {
+#		set msgs(param_source_$compName) $msgs(fce)
+# would allow absent value to be accepted
 	    }
 	    if {$caseId ne "s" && $suppliedData($compName) ne ""} {
 		set dataChanged 1 ;# still need to clear old param
@@ -668,22 +671,25 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     if {$dataChanged} {
         set useCppArray [RunningInC $topNode]
 
-	if {!$readMany($compName) && \
-		$msgs(param_source_$compName) eq $msgs(fce)} {
+	if {$msgs(param_source_$compName) eq $msgs(fce)} {
 	    # Parameter removed, delete its space to go back to eqn value
-	    if {$useCppArray} {
-		#puts "c_setparamarray b $node"
-		c_setparamarray $topNode $node $caseId 0
+	    if  {$readMany($compName)} {
+		set newData {}
 	    } else {
-		tcl_setparamarray $topNode $node 0
-	    }
-	    set result [expr {-1+$readMany($compName)}]
-	    if {![info exists runState($topNode,reloadParams)] || \
-		    $result<$runState($topNode,reloadParams)} {
+		if {$useCppArray} {
+		    #puts "c_setparamarray b $node"
+		    c_setparamarray $topNode $node $caseId 0
+		} else {
+		    tcl_setparamarray $topNode $node 0
+		}
+		set result -1
+		if {![info exists runState($topNode,reloadParams)] || \
+			$result<$runState($topNode,reloadParams)} {
 # do not set if we already found an update needing a bigger reset than this one
-		set runState($topNode,reloadParams) $result
+		    set runState($topNode,reloadParams) $result
+		}
+		return 1
 	    }
-	    return 1
 	}	    
         #   set msgs(param_source_$compName) Unsaved
         # only if the actual entry field has been edited
@@ -806,6 +812,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		ColourCaptions $outNames($compName) red
 	    }
 	    if {[string equal abort $boredom]} {
+		focus $chking
 		return 0
 	    }
         } else { ;# all went well

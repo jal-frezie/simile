@@ -1355,18 +1355,14 @@ proc FixSize {c} {
     set win [winfo parent $c]
     # seems necessary for console to hide
     #    catch {console hide}
-    if {[file exists $custom(prefDir)/.layout] && \
+    if {[info exists custom(layout,geom)] && \
 	    [string equal [tr. {Where it was last time}] \
 		 [PrefValue custom(winPosn) winPosn]]} {
-        set stream [NetOpen $custom(prefDir)/.layout r]
-        gets $stream whetherMaxed
-        #ShowMess debug info $whetherMaxed ok
 	catch { ;# in case file is not what we think
-	    if {$whetherMaxed} {
+	    if {$custom(layout,full)} {
 		wm state $win zoomed
 	    } else {
-		gets $stream oldGeom
-		scan $oldGeom "%dx%d%1s%d%1s%d" w h lr l tb t
+		scan $custom(layout,geom) "%dx%d%1s%d%1s%d" w h lr l tb t
 		if {$w>200 && $h>200 && \
 			$l>=0 && $l+$w<=[winfo screenwidth $win] && \
 			$t>=0 && $t+$h<=[winfo screenheight $win]} {
@@ -1377,7 +1373,6 @@ proc FixSize {c} {
 		}
 	    }
 	}
-        close $stream
     }
     UpdateByOS
 
