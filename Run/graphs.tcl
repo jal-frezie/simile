@@ -1834,10 +1834,10 @@ proc LoadTableData {specLocn lineCount addSpecials} {
         for {set rowInd 1} {$rowInd <= $ylast} {incr rowInd} {
             gets $tStr entryLine
 	    if {$rowInd == $idxRow} {
-		set xIndPts [concat dummy [TrimFields [eval $split_row {$entryLine} $brkr]]]
+		set xIndPts [concat dummy [TrimFields [eval $split_row {$entryLine} {$brkr}]]]
 	    }
             if {$rowInd >= $yfirst} {
-                set usePts [concat dummy [TrimFields [eval $split_row {$entryLine} $brkr]]]
+                set usePts [concat dummy [TrimFields [eval $split_row {$entryLine} {$brkr}]]]
 		if {$idxCol>-1} {
 		    set yInd [lindex $usePts $idxCol]
 		} elseif {$yflip} {
