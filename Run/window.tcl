@@ -1472,7 +1472,7 @@ proc MenuSelect { window button item } {
 
 		set ::preSelect [file join $::simtmpdir temp.sxf]
 		similescript::$helperTable(VariableList)::Save \
-		    $::runState($node,parmsId) expt
+		    $::runState($node,parmsId) ${node}_expt
 	    }
 	    switch $item {
 		build_c {

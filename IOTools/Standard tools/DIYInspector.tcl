@@ -78,13 +78,13 @@ itcl::class similescript::$newHelperClass {
 		-image $iconImages(globe) -compound left
 	    pack $f.head.label -side left -expand 0
 
-	    set f [MakeSubFrames $this $topFrame {expt {}} \
+	    set f [MakeSubFrames $this $topFrame [list ${::myNode}_expt {}] \
 		       [namespace current] 0]
 	    $f.head.label configure -text [tr. {Experimental conditions}] \
 		-image $iconImages(flask) -compound left
 	    pack $f.head.label -side left -expand 0
 	    CrossPlatformBind $f \
-		[namespace code [list OnElementContext {expt} %X %Y]]
+		[namespace code [list OnElementContext ${::myNode}_expt %X %Y]]
 	}
 	#set f [MakeSubFrames insp $topFrame [list $::myNode {}] \
 	#	   [namespace current] 0]
@@ -162,6 +162,7 @@ itcl::class similescript::$newHelperClass {
 
 	if {$paramEdits} {
 	    array unset ::widgetNames /[GetNode]/*
+	    array unset ::widgetNames /[GetNode]_expt/*
 	}
 	destroy .expt_context
     }
@@ -382,7 +383,7 @@ itcl::class similescript::$newHelperClass {
 	
 	switch $type {
 	    sxf {
-		set clickPath expt
+		set clickPath [GetNode]_expt
 	    } value {
 		$filling.e insert end " [list $attrs(index) $attrs(value)]"
 	    } default {
@@ -394,6 +395,7 @@ itcl::class similescript::$newHelperClass {
 		if {$type eq "plist" || [info exists attrs(val)]} {
 		    set f [MakeSubFrames $this $topFrame $clickPath \
 			       [namespace current] 0]
+		    $f.e delete 0 end
 		    if {$type eq "plist"} {
 			set filling $f
 		    } else {
@@ -547,6 +549,10 @@ itcl::class similescript::$newHelperClass {
 	variable listStrings
 
 	set node [IdFromTail $myNode $path -1]
+	if {[GetModelClass $node] eq "SUBMODEL" || \
+		[lsearch {INPUT TABLE} [GetModelEval $node]] == -1} {
+	    return
+	}
 	set action [lindex $clickPath end]
 	set clickPath [lrange $clickPath 0 end-1]
 
@@ -631,8 +637,8 @@ itcl::class similescript::$newHelperClass {
 	variable listStrings
 	variable clickPath
 
-	if {[focus] eq "$box.cross"} {return 0}
-	# tick invoked by clicking on cross, not what user wanted
+	if {[lsearch [list $box.cross $box.b] [focus]]>-1} {return 0}
+	# tick invoked by clicking on cross or settings, not what user wanted
 	#bind $box.e <FocusOut> {} ;# in case of error message
 	set oldCases $compCases($myNode,$path)
 	set lvl [string range [winfo name $box] 5 end]

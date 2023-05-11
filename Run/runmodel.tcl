@@ -1484,7 +1484,7 @@ proc StartRun {node} {
     set savedExpt [file join $::simtmpdir temp.sxf]
     if {[file exists $savedExpt]} {
 	set ::preSelect $savedExpt
-	${helperId}::Open $hlp expt
+	${helperId}::Open $hlp ${node}_expt
 	file delete $savedExpt
     }
     StartNow $node reset ;# do again so exptl values loaded

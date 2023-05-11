@@ -2010,7 +2010,7 @@ proc SaveProjectFile {topNode path tgt} {
 
 	set ::preSelect [file join $path model.sxf]
 	similescript::$::helperTable(VariableList)::Save \
-	    $runState($topNode,parmsId) expt
+	    $runState($topNode,parmsId) ${topNode}_expt
     }
 
     set projectF [NetOpen $ProjectFile w]

@@ -597,9 +597,10 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     upvar \#0 $widgetLocn outNames
 
     if {!$::headless} {
-	if {[focus] eq "$outNames($compName).cross"} {return 0}
-	# tick invoked by clicking on cross, not what user wanted
-	set chking $outNames($compName).e
+	set box $outNames($compName)
+	if {[lsearch [list $box.cross $box.b] [focus]]>-1} {return 0}
+	# tick invoked by clicking on cross or settings, not what user wanted
+	set chking $box.e
     }
     set node [IdFromTail $topNode $compLocal -1]
     set dataChanged 0
@@ -617,7 +618,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	    if {$caseId eq "" && $preload ne ""} {
 		$chking insert 0 $preload
 		set msgs(param_source_$compName) $msgs(fce)
-		ColourCaptions $outNames($compName) blue
+		ColourCaptions $box blue
 #	    } elseif {$suppliedData($compName) ne ""} {
 #		set msgs(param_source_$compName) $msgs(fce)
 # would allow absent value to be accepted
@@ -809,7 +810,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		lappend suppliedData(needed) $compName
 	    }
 	    if {$complain>-1} {
-		ColourCaptions $outNames($compName) red
+		ColourCaptions $box red
 	    }
 	    if {[string equal abort $boredom]} {
 		focus $chking
@@ -823,7 +824,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		set suppliedData($compName) $newData
 	    }
             if {$complain>-1 && $newData ne ""} { ;# leave eqned variables blue
-                ColourCaptions $outNames($compName) black
+                ColourCaptions $box black
             }
             set suppliedData(needed) [purge $suppliedData(needed) $compName]
 	    if {![info exists runState($topNode,reloadParams)] || \
