@@ -397,6 +397,12 @@ itcl::class similescript::$newHelperClass {
 			       [namespace current] 0]
 		    $f.e delete 0 end
 		    if {$type eq "plist"} {
+			if {[info exists attrs(start)]} {
+			    $f.e insert end " $attrs(start) to $attrs(end)"
+			    if {[info exists attrs(step)]} {
+				$f.e insert end " step $attrs(step)"
+			    }
+			}
 			set filling $f
 		    } else {
 			$f.e insert 0 $attrs(val)
@@ -488,9 +494,20 @@ itcl::class similescript::$newHelperClass {
 	    # reverse engineer popup cmd to get full path?!
 	    set lvl [string range $cmtRef [string first / $cmtRef 10]+1 end]
 	    if {[string range $lvl end-2 end] eq ", s"} {
-		puts $pStr "$indent<plist tgt=\"[string range $lvl 0 end-3]\">"
-		WriteLiteralParam $pStr $value "  $indent"
-	        puts $pStr $indent</plist>
+		puts -nonewline $pStr "$indent<plist tgt=\"[string range $lvl 0 end-3]\""
+		set range [scan $value "%f to %f step %f" start end step]
+		if {$range>1} {
+		    puts -nonewline $pStr " start=\"$start\" end=\"$end\""
+		    if {$range>2} {
+			puts $pStr " step=\"$step\"/>"
+		    } else {
+			puts $pStr "/>"
+		    }
+		} else {
+		    puts $pStr ">"
+		    WriteLiteralParam $pStr $value "  $indent"
+		    puts $pStr $indent</plist>
+		}
 	    } else {
 		set v4throwback [UglifyValList $value 0]
 		set npt [string first ", " $lvl]
