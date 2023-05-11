@@ -448,7 +448,8 @@ itcl::class similescript::$newHelperClass {
 	    puts $pStr {<?xml version="1.0"?>}
 	    puts $pStr {<?xml-stylesheet type="text/xsl" href="sxf1.xsl"?>}
 	    puts $pStr "<sxf simile_version=\"$::env(SIMILE_VERSION)\">"
-	    set topF [MakeSubFrames $inst [$inst cget -topFrame] $path {} 0]
+	    set topF [MakeSubFrames $inst [$inst cget -topFrame] \
+			  ${topNode}_expt {} 0]
 	    SaveLevel $topF $pStr "  "
 	    puts $pStr {</sxf>}
 	    close $pStr

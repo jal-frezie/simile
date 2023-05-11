@@ -224,6 +224,9 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     
     #ShowMess debug info "$node $trans $nodeDims" ok
     set nodeDims [TransBounds $trans $nodeDims]
+    if {$caseId eq "s"} {
+	set nodeDims [linsert $nodeDims 0 RECORDS]
+    }
     
     set dimList [MakeDimsLegible $nodeDims \
 		     [GetCompProperty $topNode Type $node]]
@@ -307,7 +310,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
         if {[lsearch $suppliedData(needed) $compName]==-1} {
             ColourCaptions $slot black
         }
-    } else {
+    } elseif {$caseId ne "s"} { ;# list of cases not a real one
         AcceptData $topNode $compName $notInput 0 $caseId
     }
     return $slot
