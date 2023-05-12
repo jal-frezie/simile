@@ -115,7 +115,7 @@ else
 #	TCLDIR = "$(shell pwd)/$(SYSDIR)"
 	TCLDIR = /usr/local32
 	RESCMD = windres
-	MSI = /c/MinGW-w64/v49j32/mingw32/opt
+	# MSI = /c/MinGW-w64/v49j32/mingw32/opt
 # must be 32-bit because installer is
 endif
 	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
