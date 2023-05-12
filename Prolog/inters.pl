@@ -356,8 +356,22 @@ load_fragment_macro(AllDirs, Context, Category, [FnEntry]) :-
 	    
 	name(FnEntry, FnChars),
 %	m_update><make_blind_toplevel(AllDirs, TopLevel), 
-	assert(fragment_expansion(Category, AllDirs, Functor, OutNode, Params)).
+	assert(fragment_expansion(Category, AllDirs, Functor, OutNode, Params)),
+	add_comment_for_fn(AllDirs, Functor).
 
+add_comment_for_fn(FilePath, Fn) :-
+    open_native(FilePath, read, Stream),
+    % assume it is Prolog declarations in utf-8
+    user><reopen_stream_internally_formatted(Stream, Stm, no),
+    catch((read(Stm, _Header),
+    read(Stm, _Roots),
+    read(Stm, Props)), _, Props = none),
+    close_internally_formatted_stream(Stm),
+    Props = properties(PropPairs),
+    member(comment-Comment, PropPairs),
+    output><safe_tcl_eval([set, br(write('::msgs'(Fn))), br(Comment)], _R), !;
+    true.
+    
 split_into_list(Joined, Link, Separated) :-
 	append(One, [Link | Many], Joined), !,
 	split_into_list(Many, Link, Multi),
