@@ -904,7 +904,7 @@ proc PositionBowtie {w ptz} {
 }
 
 proc DrawBlob {w startX startY size switches} {
-    if {[tk windowingsystem] ne "aqua"} {
+    if {[tk windowingsystem] ne "aqua" && $w ne "ToSVG"} {
 	eval {$w create line $startX $startY $startX $startY -width $size \
 		  -capstyle round} $switches
 # above fails to dash for MacOS stipple substitute (cross-platform TclTk bug)
@@ -919,11 +919,11 @@ proc DrawBlob {w startX startY size switches} {
 		  -width $width -extent 359.999} \
 	    [string map {-stipple -outlinestipple} $switches]
 # works but will need to improve can2svg to cope with real extent
-	$w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
-	    [expr {$startX+$rad}] [expr {$startY+$rad}] \
-	    -width $width -tags "$tags realwidth($width)"
-# works but mac stipple workaround poor because outline dashes cannot be shorter
-# than width
+#	$w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
+#	    [expr {$startX+$rad}] [expr {$startY+$rad}] \
+#	    -width $width -tags "$switches realwidth($width)"
+# works but mac stipple workaround poor on other platforms because
+# outline dashes cannot be shorter than width
     }
 }
 
