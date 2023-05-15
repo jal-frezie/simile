@@ -451,11 +451,11 @@ source $SIMILE_PATH/Run/language.tcl
 LoadTrans
 
 if {!$headless} {
-    if {$tcl_platform(platform) eq "windows"} {
-	set niceSize 10
-    } else {
+#    if {$tcl_platform(platform) eq "windows"} {
+#	set niceSize 10
+#    } else {
 	set niceSize 12
-    }
+#    }
 #    if {$niceSize<=0} {
 #	set niceSize 12 ;# otherwise is -12 on Buckaroo
 #    }
@@ -465,7 +465,7 @@ if {!$headless} {
 if {[info exists custom(layout,text)] && \
 	[string is integer -strict $custom(layout,text)]} {
     if {$tcl_platform(platform) eq "windows"} {
-	tk scaling [expr {$defScaling*$custom(layout,text)/$niceSize}]
+	tk scaling [expr {$defScaling*$custom(layout,text)/$niceSize/1.5}]
     } else {
 	set niceSize $custom(layout,text)
     }
