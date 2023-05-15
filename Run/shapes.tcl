@@ -2078,7 +2078,7 @@ proc ExtractFontData {font} {
     }
     # already a new style one, do not pass Tk in case headless
     return [list $fontAttrs(-family) $fontAttrs(-weight) \
-		$fontAttrs(-slant) $fontAttrs(-size)]
+		$fontAttrs(-slant) [expr -$fontAttrs(-size)]]
 }
 
 proc CopyLooks {t n object nta} {
@@ -2341,7 +2341,7 @@ proc ResetFont { top } {
 
 proc AssembleFont {family weight style textsize} {
     set newFont [list -family $family -weight $weight -slant $style \
-		     -size [expr {round($textsize)}]]
+		     -size [expr {-round($textsize)}]]
 
     return $newFont
 }
