@@ -168,15 +168,16 @@ itcl::class similescript::$newHelperClass {
     }
 
     proc OnElementContext {path X Y} {
+	puts [info level 0]
 	variable cMenu
 	variable clickPath
 
-	$cMenu entryconfig Insert -state normal
+	$cMenu entryconfig Insert -state disabled
 	# We have a hierarchy of frames below the click, need to find which
 	set clickPath $path
-	switch [lindex $clickPath end] {
-	    param {
-		$cMenu entryconfig Insert -state disabled
+	switch -glob [lindex $clickPath end] {
+	    perm* - compound* - *_expt {
+		$cMenu entryconfig Insert -state normal
 	    }
 	}
 	tk_popup $cMenu $X $Y

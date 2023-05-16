@@ -1473,6 +1473,8 @@ proc MenuSelect { window button item } {
 		set ::preSelect [file join $::simtmpdir temp.sxf]
 		similescript::$helperTable(VariableList)::Save \
 		    $::runState($node,parmsId) ${node}_expt
+	    } else {
+		set mreIsNew 1
 	    }
 	    switch $item {
 		build_c {
@@ -1498,6 +1500,9 @@ proc MenuSelect { window button item } {
 	    if {$builtOK} {
 		if {[info exists lang]} {
 		    LoadProgram $node $lang
+		    if {[info exists mreIsNew]} {
+			::RunEnv::InitializeDisplays
+		    }
 		} elseif {$item eq "run_in_browser"} {
 		    global simtmpdir
 		    # preload location for .svg

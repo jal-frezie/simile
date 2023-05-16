@@ -1915,11 +1915,22 @@ proc OpenProjectFile {path} {
 
 	set runState($topNode,updated) [expr {1-$SimileProject(modelRunning)}]
 	set runState($topNode,modelRunning) 0
+#	if {$SimileProject(running_c)} {
+#            MenuSelect $tw.canvas code run_c
+#        } else  {
+#            MenuSelect $tw.canvas code run_tcl
+#        }
 	if {$SimileProject(running_c)} {
-            MenuSelect $tw.canvas code run_c
-        } else  {
-            MenuSelect $tw.canvas code run_tcl
-        }
+	    set lang c
+	} else {
+	    set lang tcl
+	}
+	OpenProgressBox $tw.canvas
+	if {[prolog tk_code($topNode,run_$lang,dummy)]} {
+	    LoadProgram $topNode $lang
+	}
+	CloseProgressBox
+	
 	UpdateByOS
         if {$runState($topNode,modelRunning)<3} return
 	set defaultSHF [file join $path model.shf]

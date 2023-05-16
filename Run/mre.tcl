@@ -98,7 +98,7 @@ namespace eval RunEnv {
             
             #tk_messageBox -message MakeMRE -type ok
 	    set mreMenu ${mreId}top
-            toplevel $mreId -width 200m -height 150m
+            toplevel $mreId ;# -width 200m -height 150m
 # following is the answer to all those pesky bgerrors on stdout
 #	    pack [button $mreId.reveal -text "Reveal all" -command {puts $errorInfo}]
 	    wm iconphoto $mreId graphoto
@@ -252,23 +252,24 @@ namespace eval RunEnv {
             
 	    array unset helperTable $currentNode,keepSetup
 # it was set by adding explorer etc panes but we do not want save dialogue here
-	    InitializeDisplays
+#	    InitializeDisplays
+	    SetCurrentContainer $dp0
             
 #            pack $mainframe -fill both -expand yes
             pack $hiercontrolpw -fill both -expand yes
             pack $mainpw -fill both -expand yes
 #            UpdateByOS ;# needed for sash place to work, callback also works
-	    after 50 $mainpw sash place 0 [expr {round($::niceSize*25)}] 0
+#	    after 50 $mainpw sash place 0 [expr {round($::niceSize*25)}] 0
 	    # must be wide enough (270ish) for the sliders
-	    after 100 $hiercontrolpw sash place 0 0 [expr {round($::niceSize*20)}]
+#	    after 100 $hiercontrolpw sash place 0 0 [expr {round($::niceSize*20)}]
             
             
             # Model variable explorer is created automatically elsewhere
             # run control is automatically created when model is run
             # input slider helper is automatically created if needed when model is run
-            
-            wm geometry $mreId \
-		[expr {round($width*$defScaling)}]x[expr {round($height*$defScaling)}]
+            set mapSc $::defScaling/[OStrim]
+            wm geometry $mreId [expr int($width*$mapSc)]x[expr int($height*$mapSc)]
+	    # needed here for stability, and doing again later sticks in corner
 #            if {[string match unix $tcl_platform(platform)]} {
 #                wm iconbitmap $mreId @$::SIMILE_PATH/Images/dribble.xbm
 #            }; # on Windows uses default icon set in Runmodel.tcl
@@ -277,7 +278,7 @@ namespace eval RunEnv {
 #	${mreId}top.file entryconfigure [tr. Parameters...] \
 #	    -state $helperTable($node,paramAble)
 #	[GetFrame $mreId].tbar.b60 configure \
-#	    -state $helperTable($node,paramAble)
+	    #	    -state $helperTable($node,paramAble)
 	return $mreId
     }
 
@@ -972,12 +973,12 @@ namespace eval RunEnv {
     
     proc InitializeDisplays {} {
         variable dp0
+	variable currentNode
         
-	if {![EmptyDisplays]} {
+        SetCurrentContainer $dp0
+	if {![LoadSHF $currentNode $::SIMILE_PATH/Run/initial.shf]} { \
 	    return
 	}
-        SetCurrentContainer $dp0
-	AddNotebookToCurrentContainer
 	ForgetHelperState
 	PreserveSetup 0
     }
@@ -997,8 +998,8 @@ namespace eval RunEnv {
     proc OStrim {} {
 	switch [tk windowingsystem] {
 	    aqua {return 0.8}
-	    X11 {return 1.25}
-	    default {return 1.25}
+	    X11 {return 0.8}
+	    default {return 0.8}
 	}
     }
 
@@ -1158,12 +1159,12 @@ namespace eval RunEnv {
 
 	if {[catch {open $oldPath r} pStr]} {
 	    Query [list no_shf_for_project $oldPath] warning shf {} ok
-	    return
+	    return 0
 	}
 	set dada [read $pStr]
 	close $pStr
 	if {![EmptyDisplays]} {
-	    return
+	    return 0
 	}
 	# attempt to use system for relocating lost model components
 	set bermudaTriangle {}
@@ -1179,10 +1180,11 @@ namespace eval RunEnv {
 		 feedback]} {
 		Query [list xml_parse_fail $::errorInfo \
 			   [array get parseStatus]] error shf {} ok
-		return
+		return 0
 	    }
 	}
 	set ::helperTable($currentNode,stateName) $oldPath
+	return 1
     }
 
     proc StartElement {name attList args} {
@@ -1202,8 +1204,6 @@ namespace eval RunEnv {
 		if {$x>=0 && $x+$width<[winfo screenwidth $win] && \
 			$y>=0 && $y+$height<[winfo screenheight $win]} {
 		    wm geometry $win ${width}x${height}+${x}+${y}
-		} else {
-		    wm geometry $win ${width}x${height}
 		}
 	    } std_tool_layout {
 		set topFrame [GetFrame $win].mainpw 
