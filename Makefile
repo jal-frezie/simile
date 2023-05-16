@@ -616,6 +616,7 @@ install:
 		Run/forms.tcl \
 		Run/graphs.tcl \
 		Run/hai2mmii.tcl \
+		Run/initial.shf \
 		Run/jsonplus.tcl \
 		Run/language.tcl \
 		Run/toolbox.tcl \
