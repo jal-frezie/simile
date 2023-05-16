@@ -268,7 +268,7 @@ namespace eval RunEnv {
             # run control is automatically created when model is run
             # input slider helper is automatically created if needed when model is run
             set mapSc $::defScaling/[OStrim]
-            wm geometry $mreId [expr int($width*$mapSc)]x[expr int($height*$mapSc)]
+            wm geometry $mreId [expr round($width*$mapSc)]x[expr round($height*$mapSc)]
 	    # needed here for stability, and doing again later sticks in corner
 #            if {[string match unix $tcl_platform(platform)]} {
 #                wm iconbitmap $mreId @$::SIMILE_PATH/Images/dribble.xbm
@@ -278,7 +278,7 @@ namespace eval RunEnv {
 #	${mreId}top.file entryconfigure [tr. Parameters...] \
 #	    -state $helperTable($node,paramAble)
 #	[GetFrame $mreId].tbar.b60 configure \
-	    #	    -state $helperTable($node,paramAble)
+#	    -state $helperTable($node,paramAble)
 	return $mreId
     }
 
