@@ -1154,6 +1154,7 @@ namespace eval RunEnv {
     }
     proc LoadSHF {currentNode oldPath} {
 	global bermudaTriangle
+	variable runControlFrame
 	variable parseStatus
 	variable dp0
 
@@ -1184,6 +1185,8 @@ namespace eval RunEnv {
 	    }
 	}
 	set ::helperTable($currentNode,stateName) $oldPath
+	# little tweak for oddities like Aqua
+	[winfo parent [winfo parent $runControlFrame($currentNode)]] sash place 0 0 [winfo reqheight $runControlFrame($currentNode)]
 	return 1
     }
 
