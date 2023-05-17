@@ -382,6 +382,8 @@ proc PrefSaveFile {new oldValues} {
     puts $out "!!! Lines below here automatically added"
     puts $out [clock format [clock seconds] -format "!!! %a %d %b %Y, %H:%M"]
 	puts $out [tr. "!!! Do not edit below here"]
+# write zomby value for discontinued preferences, lack can break older vs
+        set ::pref(helperManager) 1
 # next line is the anti-dibble -- a bug in the example program to check
 # if students have been paying attention
 	foreach item $::pref(items) {
