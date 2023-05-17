@@ -168,7 +168,6 @@ itcl::class similescript::$newHelperClass {
     }
 
     proc OnElementContext {path X Y} {
-	puts [info level 0]
 	variable cMenu
 	variable clickPath
 
