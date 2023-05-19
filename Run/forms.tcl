@@ -1938,19 +1938,19 @@ proc ShowAbout {winId} {
 #    image create photo dripl
     dripu read "$SIMILE_PATH/Images/HelpAboutUpper.gif"
 #    dripl read "../Images/HelpAboutLower.gif"
-    label .about.upper -image dripu
+    ttk::label .about.upper -image dripu
     pack .about.upper -pady 4
-    frame .about.fr -relief sunken -borderwidth 2
+    ttk::frame .about.fr -relief sunken -borderwidth 2
     pack .about.fr -expand on -fill x -padx 8 -pady 2
     set fullVers $sendvars(simV)$sendvars(simP)
-    pack [label .about.fr.lab1 -font "-family helvetica" \
+    pack [ttk::label .about.fr.lab1 -font "-family helvetica" \
 	      -text "[tr. Simile] v$fullVers [tr. $userinfo(edn)], $::tclBitness-bit"]
 # TRANSLATOR: $userinfo(edn) is one of:
 # evaluation, teaching, standard, enterprise
     set platform [frame .about.fr.platform]
-    pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
+    pack [ttk::label $platform.prolog -text "Prolog: $sendvars(proV)" \
             -font "-family helvetica"] -side left
-    pack [label $platform.tcl -text "TclTk: [info patchlevel]" \
+    pack [ttk::label $platform.tcl -text "TclTk: [info patchlevel]" \
             -font "-family helvetica"] -side left
     switch [tk windowingsystem] {
         win32 {
@@ -1959,7 +1959,7 @@ proc ShowAbout {winId} {
 	    } else {
 		catch {exec g++ -dumpversion} gppVers
 	    }		
-            pack [label $platform.g++ \
+            pack [ttk::label $platform.g++ \
 		      -text "MinGW g++: $gppVers" \
 		      -font "-family helvetica"] -side left
         } aqua {
@@ -1968,7 +1968,7 @@ proc ShowAbout {winId} {
 	    } else {
 		catch {exec g++ -dumpversion} gppVers
 	    }
-            pack [label $platform.g++ \
+            pack [ttk::label $platform.g++ \
 		      -text "XCode g++: $gppVers" \
 		      -font "-family helvetica"] -side left
 	}
@@ -1977,20 +1977,20 @@ proc ShowAbout {winId} {
     if [info exists userinfo(exp_time)] {
         set edate [clock format $userinfo(exp_time) -format {%d %h %Y}]
         set expf [frame .about.fr.expf]
-        pack [label $expf.lab1 -text [tr. "This product expires on"] \
+        pack [ttk::label $expf.lab1 -text [tr. "This product expires on"] \
             -font "-family helvetica"] -side left
-        pack [label $expf.lab2 -text $edate -font "-family helvetica"] -side left
+        pack [ttk::label $expf.lab2 -text $edate -font "-family helvetica"] -side left
         pack $expf
     }
     set curVers [GetLatestVers]
     if {$curVers} {
-	pack [label .about.fr.lab3 -text [format [tr. {Latest available version is %1$s}] $curVers]]
+	pack [ttk::label .about.fr.lab3 -text [format [tr. {Latest available version is %1$s}] $curVers]]
     }
-    pack [label .about.fr.lab4 -text "[tr. {This product is registered to}]\
+    pack [ttk::label .about.fr.lab4 -text "[tr. {This product is registered to}]\
             $userinfo(name), $userinfo(corp)" \
             -font "-family helvetica"]
     
-    set gen [frame .about.fr.gen]
+    set gen [ttk::frame .about.fr.gen]
     switch -regexp $userinfo(edn) {
         evaluation {
 	    set service [tr. {For upgrade to Standard, please visit}]
@@ -2000,21 +2000,21 @@ proc ShowAbout {winId} {
             set service [tr. {For support, please visit}]
         }
     }
-    pack [label $gen.visit -text $service \
+    pack [ttk::label $gen.visit -text $service \
 	      -font "-family helvetica"] -side left
-    pack [label $gen.www -text www.simulistics.com -relief flat \
-            -font "-underline true -family helvetica" -fg blue -cursor hand2] -pady 2 -side left
+    pack [ttk::label $gen.www -text www.simulistics.com -relief flat \
+            -font "-underline true -family helvetica" -foreground blue -cursor hand2] -pady 2 -side left
     bind $gen.www <Button-1> "VisitUrl http://www.simulistics.com/"
     pack $gen -padx 4 -pady 2
     
 #    label .about.lower -image dripl
 #    pack .about.lower
     
-    pack [label .about.low1 -text [tr. Simile] -font $graph(megafont)]
-    pack [label .about.low2 -text $graph(anality) -font $graph(font)]
+    pack [ttk::label .about.low1 -text [tr. Simile] -font $graph(megafont)]
+    pack [ttk::label .about.low2 -text $graph(anality) -font $graph(font)]
     pack [button .about.b -text [tr. OK] -width 10 -default active \
             -command "set sendvars(doneAbout) 1"] -pady 2
-    pack [label .about.l16]
+    pack [ttk::label .about.l16]
     LetItShow .about sendvars(doneAbout)
     PackItUp .about
 }
