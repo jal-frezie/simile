@@ -1499,8 +1499,8 @@ proc MenuSelect { window button item } {
 	    CloseProgressBox
 	    if {$builtOK} {
 		if {[info exists lang]} {
-		    LoadProgram $node $lang
-		    if {[info exists mreIsNew]} {
+		    set good [LoadProgram $node $lang]
+		    if {$good && [info exists mreIsNew]} {
 			::RunEnv::InitializeDisplays
 		    }
 		} elseif {$item eq "run_in_browser"} {

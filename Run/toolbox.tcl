@@ -787,9 +787,11 @@ proc LoadProgram {node lang} {
     }
     update_executable $node $lang
     set runState($node,reloadParams) -2 ;# the initialize phase
-    if {[StartRun $node]} {
-        ToggleIOToolMenu $node
+    if {![StartRun $node]} {
+	return 0
     }
+    ToggleIOToolMenu $node
+    return 1
 }
 
 proc AddCase {node caseId {parent {}}} {
@@ -1926,10 +1928,11 @@ proc OpenProjectFile {path} {
 	    set lang tcl
 	}
 	OpenProgressBox $tw.canvas
-	if {[prolog tk_code($topNode,run_$lang,dummy)]} {
+	set builtOK [prolog tk_code($topNode,run_$lang,dummy)]
+	CloseProgressBox
+	if {$builtOK} {
 	    LoadProgram $topNode $lang
 	}
-	CloseProgressBox
 	
 	UpdateByOS
         if {$runState($topNode,modelRunning)<3} return
@@ -1946,7 +1949,9 @@ proc OpenProjectFile {path} {
 				     $SimileProject(nameOfHelperStateFile)]]
 	    RecordPathChoice .shf $helperTable($topNode,stateName) $topNode
             ::RunEnv::LoadSHF $topNode $helperTable($topNode,stateName)
-        }
+        } else {
+	    ::RunEnv::InitializeDisplays
+	}
     }
 }
 

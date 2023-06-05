@@ -124,7 +124,7 @@ proc AlignParamsToModel {topNode} {
 # 
 proc DIYMakeFrames {windowId} {
     frame $windowId.c
-    #frame $windowId.c.canary
+    frame $windowId.c.canary
     # above somehow prevents spurious configure event to width 1 being sent
     # from canvas if dialogue is redone after cancel without defocusing parent
     # (Mac only, report it some time)

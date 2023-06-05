@@ -90,7 +90,7 @@ endif
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
 	USETCL =  -DUSE_TCL_STUBS -L../$(TCLFW) -ltclstub$(VERS)
-	ADJUST_LOCAL_LIBS = install_name_tool -change ../System64/lib/$(1) @loader_path/../$(1)
+	ADJUST_LOCAL_LIBS = install_name_tool -change $(1) @loader_path/$(2)
 # Above will work OK for developer but installation will fail due to
 # 'unsafe use of relative rpath' -- so need more long-winded method below
 #	ADJUST_LOCAL_LIBS = install_name_tool -change ../$(1) @executable_path/../Resources/$(1)
@@ -274,14 +274,14 @@ $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c $(USETCL) -L../$(RESDIR) -l5d$(ARCHEXTN) \
 		$(CHECK_LOCAL_LIBS); cd ..; \
-	$(call ADJUST_LOCAL_LIBS,$(SHANK)) $(SHIM)
+	$(call ADJUST_LOCAL_LIBS,../$(RESDIR)/$(SHANK),../$(SHANK)) $(SHIM)
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 endif
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h $(SLDIR)/$(INSTLIB)
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
 		-o ../$(UNPK) unpacker.c $(USETCL) -L../$(RESDIR) -linstall$(ARCHEXTN) $(CHECK_LOCAL_LIBS); cd ..; \
-	$(call ADJUST_LOCAL_LIBS,$(INSTLIB)) $(UNPK)
+	$(call ADJUST_LOCAL_LIBS,../$(RESDIR)/$(INSTLIB),../$(INSTLIB)) $(UNPK)
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
@@ -292,9 +292,9 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h $(SLDIR)/$(INSTLIB)
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -std=c++11 -DSHARELIB $(CFLAGS) $(CPPFLAGS) \
 		$(MAKEPIC) $(MAKESL) -I. -Wl,--out-implib,lib5d$(ARCHEXTN).a \
-		-o $(SHANK) shank.cpp -lpthread -lportaudio; \
-		mv $(SHANK) ../$(SLDIR); \
-		mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
+		-o $(SHANK) shank.cpp -lpthread -L../$(RESDIR) -lportaudio; \
+	mv $(SHANK) ../$(SLDIR); \
+	mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
 
 CRYPTOBJ = sha-256_$(BITEXTN)$(ARCHEXTN).o
 Run/$(CRYPTOBJ): Run/sha-256.h Run/sha-256.c
@@ -316,6 +316,8 @@ $(EXECDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(CFLAGS) $(CPPFLAGS) -std=c++11 -I. $(MAKEPIC) \
 		$(MAKESL) -o ../$(SLDIR)/$(SHANK) shank.cpp -lportaudio; cd ..
+	$(call ADJUST_LOCAL_LIBS,/usr/local/lib/libportaudio.2.dylib,libportaudio.2.dylib) $(SLDIR)/$(SHANK)
+
 $(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) \
 		$(MAKEPIC) $(MAKESL) \

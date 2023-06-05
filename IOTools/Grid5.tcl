@@ -908,7 +908,6 @@ namespace eval grid005 {
 	set atLeft [expr {-fmod($dataL,1)*$mult+$miss}]
 	set atTop [expr {-fmod($dataT,1)*$mult+$miss}]
         $winId.c coords 1 [$winId.c canvasx $atLeft] [$winId.c canvasy $atTop]
-	#puts "Displaying $dataL $dataT $dataR $dataB"
 	$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB \
 	    -to 0 0 -zoom $mult $sqz -shrink
@@ -927,17 +926,24 @@ namespace eval grid005 {
 	if {$useNodes($winId,imgs)} {
 # images can be all different sizes and shapes, so regularize
 	    for {set c 0} {$c<$useNodes($winId,nswatches)} {incr c} {
-		if {[info exists useNodes($winId,i$c)]} {
-		    set new [image create photo]
-		    $new copy [GrowImage $useNodes($winId,i$c) $mult $mult]
-		    set imgFor([winfo rgb $winId $useNodes($winId,c$c)]) $new
+		if {![info exists useNodes($winId,i$c)]} continue
+		set new [image create photo]
+		$new copy [GrowImage $useNodes($winId,i$c) $mult $mult]
+		set dataPt {}
+		foreach tooPrecise [winfo rgb $winId $useNodes($winId,c$c)] {
+		    lappend dataPt [expr {$tooPrecise/256}]
 		}
+		set imgFor($dataPt) $new
+#puts "Adding imgFor($dataPt)"
 	    }
 	    for {set row [expr {int($dataT)}]} {$row<$dataB} {incr row} {
 		for {set col [expr {int($dataL)}]} {$col<$dataR} {incr col} {
-		    set dataPt [winfo rgb $winId [lindex [$useNodes($winId,hiddenMap) data -from $col $row [expr {$col+1}] [expr {$row+1}]] 0]]
+		    set dataPt {}
+		    foreach tooPrecise [winfo rgb $winId [lindex [$useNodes($winId,hiddenMap) data -from $col $row [expr {$col+1}] [expr {$row+1}]] 0]] {
+			lappend dataPt [expr {$tooPrecise/256}]
+		    }		    
+#puts "Seeking imgFor($dataPt)"
 		    if {[info exists imgFor($dataPt)]} {
-#puts "Using image $imgFor($dataPt) for $dataPt"
 			$useNodes($winId,visibleMap) copy $imgFor($dataPt) \
 			    -to [expr {($col-int($dataL))*$mult}] \
 			    [expr {($row-int($dataT))*$mult}]

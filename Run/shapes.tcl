@@ -92,7 +92,7 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     set width [GetLineSize $w compartment $fatness]
     
     $w create rectangle $ml $mt $mr $mb -outline {} -fill $fCol \
-	-stipple $density -tags "$tagSet has_info"
+	-tags "$tagSet has_info"
     set stackDepth 0
     set switches [concat {-width $width} [FuzzFor $w $density] \
 		      {-tags "$tagSet size_on_this realwidth($width)"}]

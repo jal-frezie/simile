@@ -478,6 +478,8 @@ namespace eval runcontrol33857 {
 	$widget.upper.topbuttons.start configure -image $pauseImg
 	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $node stop"
+	$widget.upper.topbuttons.reset configure -command \
+	    "[namespace current]::SetMode $node stop"
 	set runState($node,busy) 1
 
 	foreach param {display current exec} val $runState($node,newData) {
@@ -577,6 +579,8 @@ namespace eval runcontrol33857 {
 	$widget.upper.topbuttons.start configure -image $go
 	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $node start"
+	$widget.upper.topbuttons.reset configure -command \
+	    "[namespace current]::SetMode $node reset"
 	UpdateBar $node $current [RestingColour $node]
 	set runState($node,busy) 0
 	if {[info exists hideQuery]} { ;# finish aborting execution

@@ -304,14 +304,14 @@ void playsound(const char* file) {
 
   // sendCommand("Play theWAV Wait");
 
-  sprintf(cmd, "cmdwav.exe \"%s\" &", file);
+  snprintf(cmd, 256, "cmdwav.exe \"%s\" &", file);
   printf(cmd);
   WinExec(cmd, SW_HIDE);
 #elif __APPLE__
-  sprintf(cmd, "afplay \"%s\" &", file);
+  snprintf(cmd, 256, "afplay \"%s\" &", file);
   system(cmd);
 #else
-  sprintf(cmd, "aplay -q \"%s\" &", file);
+  snprintf(cmd, 256, "aplay -q \"%s\" &", file);
   system(cmd);
 #endif
 }
@@ -329,13 +329,13 @@ void play_at_vol(const char* file, double level) {
 
   // sendCommand("Play theWAV Wait");
 
-  sprintf(cmd, "..\\..\\System\\bin\\sox.exe -v%lf \"%s\" -d -q", level, file);
+  snprintf(cmd, 256, "..\\..\\System\\bin\\sox.exe -v%lf \"%s\" -d -q", level, file);
   WinExec(cmd, SW_HIDE);
 #elif __APPLE__
-  sprintf(cmd, "afplay -v %f \"%s\" &", level, file);
+  snprintf(cmd, 256, "afplay -v %f \"%s\" &", level, file);
   system(cmd);
 #else
-  sprintf(cmd, "AUDIODRIVER=alsa play -q -v %f \"%s\" &", level, file);
+  snprintf(cmd, 256, "AUDIODRIVER=alsa play -q -v %f \"%s\" &", level, file);
   system(cmd);
 #endif
 }
@@ -2162,13 +2162,13 @@ ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
     // even if different versions change the args to getcount()
     if (getversion == NULL) {
       *complaint = new char[256];
-      sprintf(*complaint, "the shared object is probably not a Simile model");
+      snprintf(*complaint, 256, "the shared object is probably not a Simile model");
       return;
     }
     // Version number is AME version = simile version + 4
     if (fabs(getversion()-4-MDL_OBJ_VERS)>0.00001) {
       *complaint = new char[256];
-      sprintf(*complaint, "client is for version %.3f but model is %.3f", 
+      snprintf(*complaint, 256, "client is for version %.3f but model is %.3f", 
 	      MDL_OBJ_VERS, getversion()-4);
       return;
     }
@@ -2184,7 +2184,7 @@ showMess(globMess); */
     // Now check if this client is entitled to run it
     if (entitled(clientEdn, identStr)<0) {
       *complaint = new char[256];
-      sprintf(*complaint, "%s edition cannot use this model", clientEdn);
+      snprintf(*complaint, 256, "%s edition cannot use this model", clientEdn);
       return;
     }
   }
