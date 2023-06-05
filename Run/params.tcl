@@ -1247,6 +1247,9 @@ namespace eval expt_setup {
 }
 
 proc Entitize {str} {
+    if {[llength $str]==1} {
+	set str [lindex $str 0] ;# get rid of any superfluous delimiters
+    }
     regsub -all & $str {\&amp;} str ;# do first because subs add them
     regsub -all \" $str {\&quot;} str
     regsub -all ' $str {\&apos;} str
