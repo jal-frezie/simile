@@ -634,7 +634,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		set dataChanged 1 ;# still need to clear old param
 	    }
 	    set suppliedData($compName) $preload
-	} elseif {![string equal $newData $suppliedData($compName)]} {
+	} elseif {![string equal $newData [UglifyValList $suppliedData($compName) $readMany($compName)]]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
 	    #                set suppliedData($compName) $newData
