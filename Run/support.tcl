@@ -270,6 +270,7 @@ proc MakeContext {topNode levels} {
 
 proc collect {tgt index count args} {
     global paramLocns
+    if {![info exists paramLocns($index,arr)]} return
     set val [BringParameter $tgt $paramLocns($index,arr) \
 		 $paramLocns($index,nod) $args 0]
 }
