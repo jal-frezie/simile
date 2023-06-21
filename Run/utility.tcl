@@ -187,6 +187,9 @@ proc Relate {startPt offset} {
 # read/write access to a file it cannot be opened readonly, or something...
 
 proc NetOpen {name way} {
+    if {$way eq "w"} {
+	catch {file delete $name} ;# sometimes enables open w on Windows
+    }
     if {[catch {open $name $way} stream]} {
 	set err $stream
 	if {[catch {open $name r+} stream]} {
