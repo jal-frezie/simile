@@ -1369,9 +1369,10 @@ proc FixSize {c} {
 			$l>=0 && $l+$w<=[winfo screenwidth $win] && \
 			$t>=0 && $t+$h<=[winfo screenheight $win]} {
 		    # these give wrong values on multi-screen Windows setup
-		    wm geometry $win $oldGeom
+		    wm geometry $win $custom(layout,geom)
 		} else {
 		    # puts "$w $h $lr $l $tb $t"
+		    wm geometry $win ${w}x$h
 		}
 	    }
 	}
