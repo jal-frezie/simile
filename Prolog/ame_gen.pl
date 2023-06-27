@@ -1122,7 +1122,7 @@ Obj is_class_of_sort Class :-
 				has_function, level, value_outside, pop_only],
 		reproduction-[regular_box, box, rectangle, channel, rate,
 				has_function, level, pop_only],
-		loss-[regular_box, box, rectangle, channel, rate, has_function,
+		loss-[regular_box, box, rectangle, channel, has_function,
 		      pop_only]]),
 	member(Class, SortList).
 
