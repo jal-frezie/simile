@@ -500,6 +500,9 @@ set msgs(using_own_value_detail) [tr. {If an iterative calculation is required, 
 set msgs(condition_outside_loop_title) [tr. {Problem with model design}]
 set msgs(condition_outside_loop_message) [tr. {This model contains the target %1$s which depends on its own values from previous iterations of a program loop, which are used to make component %2$s. However the cycle of evaluations includes target %3$s, which is calculated outside the innermost program loop in which the values of %2$s are used by target %1$s}]
 
+set msgs(mixed_phase_loop_title) [tr. {Problem with model design}]
+set msgs(mixed_phase_loop_message) [tr. {This model contains the target %1$s which depends on its own values from previous iterations of a program loop, which are used to make component %2$s. However these components need to be updated in different phases %3$s and %4$s, meaning, e.g., that one is calculated only when resetting the model while the other needs to be updated every time step, so they cannot both be calculated from one another.}]
+
 set msgs(undecipherable_operand_title) [tr. {Problem getting number}]
 set msgs(undecipherable_operand_message) [tr. {%1$s does not stand for a number in the context of %2$s}]
 
