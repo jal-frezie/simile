@@ -375,13 +375,15 @@ itcl::class similescript::$newHelperClass {
     public method Display {time dispInt step} {
 	variable ::gen3d1::grid
 	variable ::gen3d1::viewVector
+	variable lower
+	variable upper
 
 # time is current model time
 # dispInt is time to next display call
-	# step is a spare parameter
+	# step is a spare parameter, now -1 if handling a view change
 	set layerId [namespace tail [string range $this 0 end-7]].main
 	$winId.c delete -withtag $layerId
-
+	if {![info exists upper] || $step > -1} {
 	set lower {}
 	set upper {}
 	foreach instruct $State {
@@ -547,14 +549,17 @@ itcl::class similescript::$newHelperClass {
 		}
 	    }
 	}
-	if {$viewVector($winId,sin_elevation) <= 0} {
-	    set spare $upper
-	    set upper $lower
-	    set lower $spare
 	}
-	::gen3d1::DrawShapes $winId $lower $layerId
+	if {$viewVector($winId,sin_elevation) <= 0} {
+	    set back $upper
+	    set front $lower
+	} else {
+	    set front $upper
+	    set back $lower
+	}
+	::gen3d1::DrawShapes $winId $back $layerId
 	$winId.c raise graticule
-	::gen3d1::DrawShapes $winId $upper $layerId
+	::gen3d1::DrawShapes $winId $front $layerId
     }
 
     public method TweakScale {which where} {
@@ -570,7 +575,7 @@ itcl::class similescript::$newHelperClass {
 	$winId.c delete -withtag graticule
 	::gen3d1::DrawGrid $winId graticule
 	set ::helperTable(beingCalled) $this
-	Display 0 0 0
+	Display 0 0 -1
     }    
     public method WindowSizeChanged {} {
 	variable ::gen3d1::viewVector
@@ -580,7 +585,7 @@ itcl::class similescript::$newHelperClass {
 	$winId.c delete -withtag graticule
 	::gen3d1::DrawGrid $winId graticule
 	set ::helperTable(beingCalled) $this
-	Display 0 0 0
+	Display 0 0 -1
     }
 
     public method AmLayer {} {
