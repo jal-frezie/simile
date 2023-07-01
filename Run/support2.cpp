@@ -294,9 +294,9 @@ modeldata InstanceOfModel::retract_from_pipe(delay<modeldata>* extras,
 }
 
 template <class modeldata> 
-void InstanceOfModel::insert_to_pipe(delay<modeldata>* extras, 
-					  double wait, 
-					  modeldata payload) {
+void InstanceOfModel::insert_to_pipe(modeldata payload,
+				     delay<modeldata>* extras, 
+				     double wait) {
   int phase = int(ts[0]);
   double time = ts[phasecount];
 

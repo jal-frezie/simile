@@ -139,7 +139,7 @@ public:
   template <class modeldata> 
     modeldata retract_from_pipe(delay<modeldata>*, int);
   template <class modeldata> 
-    void insert_to_pipe(delay<modeldata>*, double, modeldata);
+      void insert_to_pipe(modeldata, delay<modeldata>*, double);
   int loses(double, int);
   void collect(void*, int, int, ...);
   int stop_on_id(int, int);

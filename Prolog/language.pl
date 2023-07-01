@@ -669,11 +669,19 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	    make_pointer(L, ScalarSoFar, SoFarPtr),
 	    append_atoms(assign_if_, Op, Functor),
 	    CallSpec =.. [Functor, TestedExpr, PayloadExpr, SoFarPtr, DestPtr];
-	SpecialOp =.. [insert_to_pipe | Args], !,
+	SpecialOp =.. [insert_to_pipe, Unit | Args], !,
 	    all(language, make_evaluation_routine,
 		[unify(L), build(Args), unify(Used), build(VArgs)]),
-	    all(render, make_expr, [unify(L), build(VArgs), build(ArgExps)]),
-	    CallSpec =.. [insert_to_pipe | ArgExps];
+	    all(render, make_expr, [unify(L), build(VArgs),
+				    build([Payload | ArgExps])]),
+	    (L = c, Unit = boolean ->
+		 % make sure the template function matches
+		 render><type_for_unit(Unit, Type),
+		 sicstus_format_to_chars("(~w)(~w)", [Type, Payload],
+					 CastPLStr),
+	         name(CastPL, CastPLStr);
+	       CastPL = Payload),
+	    CallSpec =.. [insert_to_pipe, CastPL | ArgExps];
 	 SpecialOp = list_fixed_nbrs(Ptr, Shp, CB, RB, Inds), !,
 	     all(language, make_evaluation_routine,
 		 [unify(L), build(Inds), unify(Used), build([CX, RX])]),

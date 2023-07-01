@@ -1792,7 +1792,7 @@ things that need to be evaluated in the model and turns them into a
 list of 'make' functions which include information about how to order
 the actions corresponding to them.*/
 
-get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
+get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	       DestPath, SmStep, Swaps, ExtInters, Used, Inters, Assignments) :-
 /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
@@ -1963,7 +1963,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 			    [assign(Val, ValRef+QChange)])]);
 	  Type = magnitude, % poss ScaleFactor prob as above?
 	    Assigns = [assign(Val,  delay_for(PipeExp, WaitExp, ValExp))],
-	    Acts = [insert_to_pipe(ref_to(PipeExp), WaitExp, ValExp)],
+	    Acts = [insert_to_pipe(Unit, ValExp, ref_to(PipeExp), WaitExp)],
 	    Linkers = [make(Dest, [on_step], Path, SmStep,
 			   [assign(Val, retract_from_pipe(ref_to(PipeExp),
 							  graph_id(Dest)))])];
