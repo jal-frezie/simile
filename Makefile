@@ -1,6 +1,7 @@
 MAJREL = 7
 MINREL = 0
-MY_CPU = $(firstword $(subst -, ,$(shell gcc -dumpmachine)))
+MACH = $(shell gcc -dumpmachine)
+MY_CPU = $(firstword $(subst -, ,$(MACH)))
 
 # days after install: 0 for no installation expiry
 REL_EXP = 0
@@ -26,8 +27,8 @@ DEFNS=-DSIM_BUILT=$(shell date $(DATESPEC) +%s)
 # customisation - though conflicts may, of course, occur.
 # could require execs to be in PATH, sicstus, gplc, gcc/g++
 # default *nix variables overwritten in special cases
-GCCCMD = gcc
-GPPCMD = g++
+GCCCMD = $(CC)
+GPPCMD = $(CXX)
 
 ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
 BITEXTN = 64
@@ -178,7 +179,10 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 
 # Prolog is not Sicstus
 ifeq ($(PROLOG),SWI)
-SWIPLSHARELIB = $(shell ldd /usr/bin/swipl | grep libswipl | { read str a; echo $$str; })
+#SWIPLSLREF = $(shell ldd `which swipl`)
+#$(info parsing $(SWIPLSLREF) for lib snaffle)
+#SWIPLSHARELIB = $(shell ldd `which swipl` | grep libswipl | { read name at loc tail; echo $$name; })
+#SWIPLSLPATH = $(shell ldd `which swipl` | grep libswipl | { read name at loc tail; echo $$loc; })
 # above should painlessly extract the name of the relevant shared library
 UINFO_TPL = mdlrinfo.swi
 $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
@@ -190,7 +194,7 @@ $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
 # results in xssimile also looking in its own directory. We cannot
 # just copy it to /usr/lib on the target in case user wants to install
 # a different version of swi-prolog.
-	cp -L $(LIBDIR)/$(SWIPLSHARELIB) $(EXECDIR)/../lib
+#	cp -L $(SWIPLSLPATH) $(EXECDIR)/../lib
 # However we cannot put a patched swi-prolog into build environment, so
 # patch the new standalone now
 	patchelf --set-rpath '$$ORIGIN/../lib' $(PROLOGSTATE)
@@ -203,8 +207,10 @@ $(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
 #		struct_db.o $(SWIPLDIR)/bin/swipl.dll; cd ..
 # for new SWI
 	cd Prolog; swipl-ld -o ../$(PROLOG_DB) struct_db.c \
+		-cc $(GCCCMD) -c++ $(GPPCMD) -ld $(GCCCMD) \
 		-cc-options,$(MAKEPIC) \
 		-ld-options,$(MAKESL); cd ..
+	patchelf --set-rpath '$$ORIGIN/../lib' $(PROLOG_DB)
 # note that libxml2 includes and libs are not needed
 clean_prolog:
 	rm -f $(PROLOGSTATE) $(PROLOG_DB)

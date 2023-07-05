@@ -16,10 +16,12 @@
 # When cleaning, also clean the included packages
 # (dummy configure as set out in bug #570503)
 override_dh_auto_clean:
-	cd Extensions/tkdnd;./configure;cd -
 	dh_auto_clean -- -C Extensions/tkdnd
 	dh_auto_clean -- -C Extensions/tcl-gdal
 	dh_auto_clean --
+
+override_dh_auto_configure:
+	cd Extensions/tkdnd; dh_auto_configure; cd ..
 
 # Likewise when making
 override_dh_auto_build:
