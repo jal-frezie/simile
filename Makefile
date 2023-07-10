@@ -1,6 +1,6 @@
 MAJREL = 7
 MINREL = 0
-MACH = $(shell gcc -dumpmachine)
+MACH = $(shell $(CC) -dumpmachine)
 MY_CPU = $(firstword $(subst -, ,$(MACH)))
 
 # days after install: 0 for no installation expiry
@@ -29,6 +29,8 @@ DEFNS=-DSIM_BUILT=$(shell date $(DATESPEC) +%s)
 # default *nix variables overwritten in special cases
 GCCCMD = $(CC)
 GPPCMD = $(CXX)
+MA2ASM = ma2asm
+GPLIB = /usr/local/gprolog-1.6.0/lib
 
 ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
 BITEXTN = 64
@@ -62,6 +64,21 @@ ADJUST_LOCAL_LIBS = ls # placebo command
 CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
 
+ifeq ($(PLATFORM),Linux)
+	DISTRO = $(shell lsb_release -is)
+ifneq (,$(filter $(DISTRO),Debian Ubuntu))
+ifneq ($(DEB_HOST_GNU_TYPE),$(DEB_BUILD_GNU_TYPE))
+	CC = $(DEB_HOST_GNU_TYPE)-gcc
+	CXX = $(DEB_HOST_GNU_TYPE)-g++
+endif
+endif
+endif
+HOST = $(shell gcc -dumpmachine)
+TGT = $(shell $(CC) -dumpmachine)
+ifneq ($(TGT),$(HOST))
+	MA2ASM = $(TGT)-ma2asm
+	GPLIB = /usr/local/gprolog-1.6.0/$(TGT)-lib
+endif
 ifeq ($(PLATFORM),Darwin)
 	SYSDIR = System$(BITEXTN)
 	VERS = 8.6
@@ -248,22 +265,25 @@ $(PROLOG_DB_A): Prolog/struct_db.c Run/dllcalls.h
 clean_prolog:
 	rm -f $(PROLOGSTATE) $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A) $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
 else # not on mac
-PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).o
-	PROLOG_DB = $(EXECDIR)/struct_db$(ARCHEXTN).o
+PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).s
+PROLOG_DB = $(EXECDIR)/struct_db$(ARCHEXTN).o
+PROLOG_MA = $(EXECDIR)/gmain$(ARCHEXTN).ma
 # All-in-one without database
 # $(PROLOGSTATE): $(PROLOG_FILES)
 # 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) gmain.pl \
 # 		-L '$(OPT)'; cd ..
 # In separate steps with database
 $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
-	gplc --no-top-level -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
-$(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
-	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c gmain.pl; cd ..
+	$(CC) -fno-strict-aliasing -fcommon  -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(GPLIB)/all_pl_bips.o $(GPLIB)/libbips_pl.a  $(GPLIB)/libengine_pl.a $(GPLIB)/liblinedit.a -lm
+$(PROLOG_OBJ): $(PROLOG_MA) Prolog/gmain.pl Prolog/gstr_db.pl
+	$(MA2ASM) -o $(PROLOG_OBJ) $(PROLOG_MA)
+$(PROLOG_MA): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
+	cd Prolog; gplc --c-compiler $(GCCCMD) -o ../$(PROLOG_MA) -M gmain.pl; cd ..
 $(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
-	cd Prolog; gplc -c -C '-D_GNU_PROLOG -fPIE' \
-		-o ../$(PROLOG_DB) struct_db.c; cd ..
+	gplc --c-compiler $(GCCCMD) -c -C '-D_GNU_PROLOG -fPIE' \
+		-o $(PROLOG_DB) Prolog/struct_db.c
 clean_prolog:
-	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
+	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(PROLOG_MA)
 endif # on Mac
 endif # GNU prolog
 
