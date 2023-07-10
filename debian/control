@@ -12,7 +12,7 @@ Source: simile
 Section: science
 Priority: extra
 Maintainer: Jasper Taylor <jasper@simulistics.com>
-Build-Depends: debhelper (>= 9.0.0), gprolog (>= 1.4.0), libc-bin, tcl-dev (>= 8.6) | tcl8.6-dev, tk-dev (>= 8.6) | tk8.6-dev, libxcursor-dev, libgdal-dev (>= 1.5), portaudio19-dev (>= 19)
+Build-Depends: debhelper (>= 9.0.0), libc-bin (>= 2), lsb-release | redhat-lsb-core, gprolog (>= 1.4.0), tcl-dev (>= 8.6) | tcl8.6-dev, tk-dev (>= 8.6) | tk8.6-dev, libxcursor-dev, libgdal-dev (>= 1.5), portaudio19-dev (>= 19)
 # tk needed for building tkdnd
 Standards-Version: 3.9.3
 Homepage: http://simulistics.com
