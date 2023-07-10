@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.3.2.2 2022/12/23 11:44:18 jaspert Exp $
+# $Id: can2svg.tcl,v 1.3.2.3 2023/07/10 16:11:39 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -438,6 +438,10 @@ proc can2svg::svgasxmllist {cmd args} {
             if {[string length $idAttr] > 0} {
                 set attr [concat $attr $idAttr]
             }
+	    if {[info exists optA(-angle)]} {
+		lappend attr transform [list rotate([expr {-$optA(-angle)}] \
+							$xbase,$ybase)]
+	    }
             set attr [concat $attr [MakeAttrList \
               $type $opts $argsA(-usestyleattribute)]]
             if {$nlines > 1} {

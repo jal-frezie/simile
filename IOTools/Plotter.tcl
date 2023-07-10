@@ -57,7 +57,7 @@ namespace eval ::$keyValue {
         set plot($w,AxisDivisions) 10
         
         # choose colours for variables
-        set plot($w,YColours) [list blue orange green brown purple \
+        set plot($w,YColours) [list blue #c06000 green brown purple \
 			       red black DeepSkyBlue HotPink ForestGreen]
         set NColours [llength $plot($w,YColours)]
         set plot($w,Xmax_axis) -1e100
@@ -500,7 +500,7 @@ namespace eval ::$keyValue {
         
         ### Label the two axes
         $w.canvas create text [expr $x0+$plot($w,xlength)/2.0] $y0 \
-                -text "\nTime" -anchor n \
+                -text " \nTime" -anchor n \
                 -tags {movable scalable xaxis_label markable toplevel}
         $w.canvas create text $x0 [expr $y0-$plot($w,ylength)/2.0] \
                 -tags {movable scalable yaxis_label markable toplevel}
