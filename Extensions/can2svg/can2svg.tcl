@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.3.2.3 2023/07/10 16:11:39 jaspert Exp $
+# $Id: can2svg.tcl,v 1.3.2.4 2023/07/14 13:27:48 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -450,6 +450,7 @@ proc can2svg::svgasxmllist {cmd args} {
                 set subList {}
 		set dy 0
                 foreach line [split $chdata "\n"] {
+		    if {$line eq ""} {set line " "} ;# empty lines space badly
                     lappend subList [MakeXMLList "tspan"  \
                       -attrlist [list "x" $xbase "dy" $dy] -chdata $line]
                     set dy 1.4em
