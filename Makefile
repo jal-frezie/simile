@@ -274,7 +274,7 @@ PROLOG_MA = $(EXECDIR)/gmain$(ARCHEXTN).ma
 # 		-L '$(OPT)'; cd ..
 # In separate steps with database
 $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
-	$(CC) -fno-strict-aliasing -fcommon  -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(GPLIB)/all_pl_bips.o $(GPLIB)/libbips_pl.a  $(GPLIB)/libengine_pl.a $(GPLIB)/liblinedit.a -lm
+	$(CC) -fno-strict-aliasing -fcommon  -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(GPLIB)/libbips_pl.a  $(GPLIB)/libengine_pl.a $(GPLIB)/liblinedit.a -lm
 $(PROLOG_OBJ): $(PROLOG_MA) Prolog/gmain.pl Prolog/gstr_db.pl
 	$(MA2ASM) -o $(PROLOG_OBJ) $(PROLOG_MA)
 $(PROLOG_MA): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl

@@ -7,6 +7,9 @@ This starts off the application and goes into an event loop from which it is dri
 % GNU-friendly notation for cross-module calls
 :- op(550, xfy, ><).
 
+% needed for GNU minimization to work
+:- ensure_linked([(=)/2, var/1]).
+
 /* allow module system to be ignored */
 _Module><Function :-
         call(Function).
