@@ -581,6 +581,17 @@ proc DoneParams {topNode} {
     }
 }
 
+proc SeparateCase {topNode compName} {
+    set head [lindex [split $compName /] 1]
+    if {$head ne $topNode} {
+	set mark [string last {, } $compName]
+	return [list [string range $compName 0 $mark-1] \
+		    [string range $compName $mark+2 end]]
+    } else {
+	return [list $compName]
+    }
+}
+
 proc AcceptAll {topNode compNames notInput complain} {
     foreach compName $compNames {
 	if {![AcceptData $topNode $compName $notInput $complain]} {
@@ -591,7 +602,7 @@ proc AcceptAll {topNode compNames notInput complain} {
 
 proc AcceptData {topNode compName notInput complain {caseId {}}} {
     global runState msgs whichParamsAffected readMany paramMetadata
-    set namencase [split $compName ,]
+    set namencase [SeparateCase $topNode $compName]
     set compLocal [TrimDTFromPath [lindex $namencase 0]]
     if {$notInput==-1} {
 	set dataLocn targetData
