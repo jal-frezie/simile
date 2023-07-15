@@ -1540,7 +1540,7 @@ proc GetTclCompProperty {prop args} {
 	} Name|Spec|Units|Comment {
 	    set which [lsearch {Name Spec Units Comment} $prop]
 	    set targetVar [lindex [getinfo $node 12] $which]
-	    if {![string equal NULL $targetVar]} {
+	    if {[lsearch {"" NULL} $targetVar]==-1} {
 		return [set ::$targetVar]
 	    }
 	}
