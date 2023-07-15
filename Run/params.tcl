@@ -531,7 +531,10 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 #			 active [Gradient $fColour $nextLevel -75] {} $fColour]
 		$nextLevel.head.vis configure -highlightbackground $fColour
 	    }
-        }
+	    if {$nextPt>2} {
+		Compand $nextLevel
+	    }
+	}
     }
     if {!$leaf && [lindex $hierarchy $nextPt] ne {}} {
 	return [AddSubFrames $topNode $clientId $nextLevel $hierarchy \
