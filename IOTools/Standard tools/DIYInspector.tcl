@@ -505,7 +505,11 @@ itcl::class similescript::$newHelperClass {
 		    }
 		} else {
 		    puts $pStr ">"
-		    WriteLiteralParam $pStr $value "  $indent"
+		    set v4throwback [UglifyValList $value 0]
+		    #WriteLiteralParam $pStr $v4throwback "  $indent"
+		    foreach {case val} $v4throwback {
+			puts $pStr "$indent  <value index=\"$case\" value=\"$val\"/>"
+		    }
 		    puts $pStr $indent</plist>
 		}
 	    } else {
