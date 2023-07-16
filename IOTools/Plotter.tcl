@@ -88,7 +88,7 @@ namespace eval ::$keyValue {
         set plot($w,ystep_Ylabels) 12
         set plot($w,x_Xlabel) 100
         set plot($w,y_Xlabel) 10
-        set plot($w,canvas_colour) #e0e0e0
+        set plot($w,canvas_colour) $::looks(buttonColor)
         set plot($w,grapharea_colour) white
         set plot($w,pointer) 1
         set plot($w,X_scalestep) 0
