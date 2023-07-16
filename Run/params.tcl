@@ -585,11 +585,11 @@ proc DoneParams {topNode} {
 }
 
 proc SeparateCase {topNode compName} {
+    set mark [string last {, } $compName]
     set head [lindex [split $compName /] 1]
-    if {$head ne $topNode} {
-	set mark [string last {, } $compName]
+    if {$mark>-1 && $head ne $topNode} {
 	return [list [string range $compName 0 $mark-1] \
-		    [string range $compName $mark+2 end]]
+		    [string range $compName $mark+1 end]]
     } else {
 	return [list $compName]
     }
