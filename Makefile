@@ -265,7 +265,8 @@ $(PROLOG_DB_A): Prolog/struct_db.c Run/dllcalls.h
 clean_prolog:
 	rm -f $(PROLOGSTATE) $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A) $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
 else # not on mac
-PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).s
+PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).o
+PROLOG_AS = $(EXECDIR)/gmain$(ARCHEXTN).s
 PROLOG_DB = $(EXECDIR)/struct_db$(ARCHEXTN).o
 PROLOG_MA = $(EXECDIR)/gmain$(ARCHEXTN).ma
 # All-in-one without database
@@ -276,6 +277,7 @@ PROLOG_MA = $(EXECDIR)/gmain$(ARCHEXTN).ma
 $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
 #	$(CC) -fno-strict-aliasing -fcommon  -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(GPLIB)/libbips_pl.a  $(GPLIB)/libengine_pl.a $(GPLIB)/liblinedit.a -lm
 	PL_PATH=$(PL_PATH) gplc --c-compiler $(GCCCMD) --min-bips -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
+# gplc will not use as from specified gcc so do this step explicitly
 $(PROLOG_OBJ): $(PROLOG_AS)
 	$(GCCCMD) -c -o $(PROLOG_OBJ) $(PROLOG_AS)
 $(PROLOG_AS): $(PROLOG_MA)
