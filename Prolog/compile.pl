@@ -357,13 +357,21 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	get_host(Fn, Cond),
 	find_type(Cond, condition),
 	Fn has_class_refinement value of Val,
-	instance><is_lookup_cond(Val, _),
+	instance><is_lookup_cond(Val, _), 
 	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | _]),
-	\+ (Link = none;
+	(\+ (Link = none;
 	    find_name_host(Link, HostLink),
 	    HostLink has_attribute can_lookup of 1),
 	caption_for(Link, LinkText),
 	Wrinkle = lookup_not_allowed(OuterText, LinkText);
+	 In is_connector from _ to Fn,
+	 initiates(In, Orig),
+	 initiates(Link, Base),
+	 (contains(Submodel, Orig); contains(Base, Orig)),
+	 % also need to check if Orig is in base model being looked up (bad)
+	 all(ame_gen, caption_for, [build([Submodel, Orig]),
+				    build([SubmodelCapt, OrigCapt])]),
+	 Wrinkle = own_component_used_for_lookup(SubmodelCapt, OrigCapt));
 	setof(Unitless, (find_all_comps(Submodel, Unitless),
 			 Unitless has_class_refinement units of any), BadBound),
 	all(ame_gen, caption_for, [build(BadBound), build(BadCapt)]),
