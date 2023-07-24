@@ -904,7 +904,7 @@ proc PositionBowtie {w ptz} {
 }
 
 proc DrawBlob {w startX startY size switches} {
-    if {[tk windowingsystem] ne "aqua" && $w ne "ToSVG"} {
+    if {$w ne "ToSVG" && [tk windowingsystem] ne "aqua"} {
 	eval {$w create line $startX $startY $startX $startY -width $size \
 		  -capstyle round} $switches
 # above fails to dash for MacOS stipple substitute (cross-platform TclTk bug)
