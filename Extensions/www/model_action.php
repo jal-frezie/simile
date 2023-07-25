@@ -144,7 +144,6 @@ $descriptorspec = array(
 $process = proc_open($cgiRel . "/socketizer.cgi " . implode(" ", $tculargs),
     $descriptorspec, $clPipes);
 if (! is_resource($process)) { exit('Failed to start test process'); }
-
 // UNIX sockets: id is temp filename so no return value needed or supplied
 echo "UNIX socket created";
 
@@ -162,6 +161,8 @@ break;
    case "WaitSocket":
    $rdyFile = $_POST['base'] . ".uxs";
    while (!file_exists($rdyFile)) sleep(1);
+   doTcl("set ::web_service(node) DUMMY");
+   doTcl("ResponseTo [list act CreateSocket]");
    echo 'UNIX socket';
 //   echo file_get_contents($rdyFile);
 //   unlink($rdyFile);

@@ -1,10 +1,6 @@
 #!/usr/bin/tclsh
 #
 
-package require json
-package require can2svg
-package require Trf ;# for native code base64
-
 proc JsonifyDict {ugly} {
     set result {}
     set safety {\n \\n}
@@ -137,6 +133,10 @@ proc ResponseTo {paramList} {
 	    array set rps $::web_service(parms) ;# override defaults
 	    set result [JsonifyDict [array get rps]]
 	} CreateSocket {
+	    package require json
+	    package require can2svg
+	    package require Trf ;# for native code base64
+
 	    set result "Direct SIMILE Connection"
 	} WaitSocket {
 	    set result "Local SIMILE"
@@ -241,7 +241,7 @@ proc ResponseTo {paramList} {
 	    foreach dt [split $params(step) " "] {
 		c_setstepmodel $iH $dt [incr i]
 	    }
-	    set isRK [expr {$params(method) ne "Euler"}]
+	    set ::instance_id $iH
 	    ResetModel $params(current) 1 0.0 $params(depth)
 	    set reqs [::json::json2dict $params(note)]
 	    set result [JsonifyArray [ValuesOfInterest $iH $reqs]]

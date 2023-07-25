@@ -583,6 +583,7 @@ function model_reset(ratesOnly) {
 		       resetDepth = 0;
 		   }); // Report
 	    }
+	    handyGlobalForData = initVals;
 	    initState = JSON.parse(initVals);
 	    allResults = {};
 	    for (var i=0; i<note.length;i++) {

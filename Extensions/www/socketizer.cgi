@@ -11,6 +11,7 @@ source [file join $sPath Run client5d.tcl]
 source [file join $sPath Extensions www web_embed.tcl]
 # we also want to convert tk canvas graphics to svg for the layer helper
 package require can2svg
+set ::web_service(node) DUMMY
 
 proc InstallModelExec {mdl} {
 #catch {
