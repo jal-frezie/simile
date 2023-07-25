@@ -1,6 +1,10 @@
 #!/usr/bin/tclsh
 #
 
+package require json
+package require can2svg
+package require Trf ;# for native code base64
+
 proc JsonifyDict {ugly} {
     set result {}
     set safety {\n \\n}
@@ -114,10 +118,6 @@ proc ResponseTo {paramList} {
    
     switch $params(act) {
 	BuildShareLib {
-	    package require json
-	    package require can2svg
-	    package require Trf ;# for native code base64
-
 	    set mH $::model_id
 	    set iH [c_createmodel $mH]
 	    set service($params(base)) $iH
