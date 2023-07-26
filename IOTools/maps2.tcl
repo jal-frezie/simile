@@ -78,8 +78,8 @@ namespace eval ::maptools2 {
 		}
 	    }
 	} elseif {$useNodes($winId,ETCount)} {
-	    set useNodes($winId,c0) gray20
-	    set useNodes($winId,c1) gray80
+	    set useNodes($winId,c0) #333333
+	    set useNodes($winId,c1) #cccccc
 	} else {
 	    scan [winfo rgb $winId $useNodes($winId,cbot)] "%d %d %d" botr botg botb
 	    scan [winfo rgb $winId $useNodes($winId,cmid)] "%d %d %d" midr midg midb
