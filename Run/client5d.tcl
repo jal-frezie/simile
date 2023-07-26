@@ -35,6 +35,7 @@ set msgs(metafile_ref)  {}
 set msgs(metafile_lit)  {}
 set msgs(metafile_bin)  {}
 set msgs(direct_ref) {}
+set msgs(fce) fce
 
 # report queries to console and take default action
 proc Query {act level topic win opts} {
@@ -117,7 +118,7 @@ proc GetModelProperty {modelId path prop} {
 }
 
 proc GetCompProperty {dummy prop args} {
-    return [eval GetCCompProperty $prop $args]
+    return [eval GetCCompProperty DUMMY $prop $args]
 }
 
 proc CreateTimeSeriesStructs {mHandle iHandle} {

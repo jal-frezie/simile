@@ -208,7 +208,7 @@ break;
 	 $gotAll = 1;
       	 for($x=0;$x<count($notMissing);$x++) {
 	    $pName = escapeNasties($notMissing[$x]);
-	    if ($pName != '"needed"' &&
+	    if ($pName != 'needed' &&
 	       		doTcl("set paramData($pName)") == "" &&
 			doTcl("GetModelProperty [set mH] [TrimDTFromPath $pName] Class") != "SUBMODEL") {
 	       $gotAll = 0;

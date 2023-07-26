@@ -122,7 +122,7 @@ proc ResponseTo {paramList} {
 		set isP [GetCCompProperty DUMMY Eval $obj]
 		if {[lsearch [GetCCompProperty DUMMY Dims $obj] RECORDS]<0 && \
 			($isP eq "INPUT" || $isP eq "TABLE" && \
-			     [GetCCompProperty DUMMY Eval $obj] eq {})} {
+			     [GetCCompProperty DUMMY Spec $obj] eq {})} {
 		    # per-records too difficult -- avoid
 		    # dont prevent v7 using eqn as default for fixparams
 		    set ::aH($obj) [c_createparamarray $iH $obj]
@@ -230,7 +230,39 @@ proc ResponseTo {paramList} {
 		}
 	    }
 	} LoadSPF {
-	    set result [ParamsFromGUI $service($params(base))]
+	    if {$params(base) eq "local"} {
+		return [ParamsFromGUI $service($params(base))]
+	    } elseif {[file exists $params(base).spf]} { ;# SimiLive
+		# This is currently handled in model_action -- following is
+		# experimental version
+		ConsultParameterMetafile $service($params(base)) \
+		    $params(base).spf
+		# do whatever cpm did here
+#		set allComps [listobjects $::model_id]
+#		set topNode [lindex $allComps 0]
+#		foreach id [lrange $allComps 1 end] {
+#		    set component [getvalue $::model_id $id 5] 
+#		    set eval [GetCCompProperty DUMMY Eval $id]
+#		    set ::readMany($component) \
+#		        [string equal INPUT $eval]
+#		    if {[string equal TABLE $eval]} {
+#			set ::paramData($component) {}
+	    # placeholders needed for table submodels set per record
+#		    }
+#		}
+#		ZapParams $topNode {} [file normalize $params(base).spf] 0
+
+		set gotAll [GetCompProperty DUMMY IdFromCapt $component]
+		foreach {pName pVal} [array get ::paramData] {
+		    if {$pName ne "needed" && $pVal eq "" && \
+			    [GetCCompProperty DUMMY Class [TrimDTFromPath $pName]] ne "SUBMODEL"} {
+			#return 0
+		    }
+		}
+		return $gotAll
+	    } else {
+		return -1
+	    }
 	} GetParamVals {
 	    # get strings from GUI side as we have no functions to get from c++
 	    set prmStrs [array get ::paramData]
