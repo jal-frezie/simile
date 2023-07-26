@@ -1642,14 +1642,14 @@ function BytesFromHex (hex) {
 }
 
 function ColorMapFromPoints (n, bot, mid, top) {
-    specials = ["black", "red", "green", "white"];
+    specials = ["black", "red", "green", "white", "gray20", "gray80"];
 
     data = [];
     for (var x=0; x<3; ++x) {
 	hiPt = [bot, mid, top][x];
 	var c = specials.indexOf(hiPt);
 	if (c > -1) {
-	    hi = {R:[0,255,0,255][c],G:[0,0,255,255][c],B:[0,0,0,255][c]};
+	    hi = {R:[0,255,0,255,51,204][c],G:[0,0,255,255,51,204][c],B:[0,0,0,255,51,204][c]};
 	} else {
 	    hi = BytesFromHex(hiPt);
 	}
