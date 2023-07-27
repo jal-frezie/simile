@@ -25,6 +25,14 @@ if {[catch {
 # now export the svg not over the original model
     puts "svg to $mdl.svg"
     modelWin BuildSVGDiagram $mdl.svg
+    foreach bundled {.spf .shf} {
+	set dest $mdl$bundled
+	set src [file join $mimedir model$bundled]
+	puts "$src $dest [file exists $src] && ![file exists $dest]"
+	if {[file exists $src] && ![file exists $dest]} {
+	    file copy $src $dest
+	}
+    }
 
     # try returning the runParams if we have them...as json of course
     array set runParams {execTime 100.0 timeUnit unit displayInt 1 errLimit 0 \
