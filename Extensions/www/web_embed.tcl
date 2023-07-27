@@ -268,7 +268,7 @@ proc ResponseTo {paramList} {
 	    #set prmStrs [array get ::paramData]
 	    # purge any that are refs or binary
 	    set prmStrs {}
-	    foreach {paramPath paramSpec} [array get ::paramData] {
+	    foreach {paramPath paramSpec} [ReportParams] {
 		if {[lsearch {scenario} [lindex $paramSpec 0]]==-1} {
 		    lappend prmStrs $paramPath $paramSpec
 		}

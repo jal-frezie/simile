@@ -1927,6 +1927,11 @@ proc ReferenceWorks {compName} {
     return 0
 }
 
+# utility procedure to allow exec side to query parameters eg for browser
+proc ReportParams {} {
+    return [array get ::paramData]
+}
+
 # This tests for sensible model values.
 # 0: not sensible
 # 1: the timepoint NOW (not acceptable as datum)
