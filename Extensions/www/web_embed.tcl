@@ -265,7 +265,14 @@ proc ResponseTo {paramList} {
 	    }
 	} GetParamVals {
 	    # get strings from GUI side as we have no functions to get from c++
-	    set prmStrs [array get ::paramData]
+	    #set prmStrs [array get ::paramData]
+	    # purge any that are refs or binary
+	    set prmStrs {}
+	    foreach {paramPath paramSpec} [array get ::paramData] {
+		if {[lsearch {scenario} [lindex $paramSpec 0]]==-1} {
+		    lappend prmStrs $paramPath $paramSpec
+		}
+	    }
 	    set result [JsonifyDict $prmStrs]
 	} Reset {
 	    set iH $service($params(base))
