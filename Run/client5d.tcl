@@ -114,7 +114,7 @@ proc SetParameter {path value} {
 proc GetModelProperty {modelId path prop} {
     set node [getnodeid $modelId $path]
     set ::model_id $modelId
-    return [GetCCompProperty $prop $node]
+    return [GetCCompProperty DUMMY $prop $node]
 }
 
 proc GetCompProperty {dummy prop args} {

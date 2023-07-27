@@ -137,7 +137,8 @@ case "GetAsmJs":
 $tculargs = array($simileLocn, $simileHome, $_POST['base']);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
-   1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+//   1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+   1 => array("file", "/tmp/std-output.txt", "a"), // stdout is a file to write to
    2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
 );
 
