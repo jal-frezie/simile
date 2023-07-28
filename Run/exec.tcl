@@ -168,6 +168,7 @@ proc ExecuteTo {node current pause unitLength display \
 		    set currentMode exit
 		} 0 {
 		    set currentMode stop
+		    set displayNow 1
 		} 2 { ;# event
 		    if {$evtDisp} {
 			set displayNow 1
