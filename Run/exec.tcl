@@ -144,11 +144,11 @@ proc ExecuteTo {node current pause unitLength display \
     if {$display} {
 	set lastDisp [expr int($current/$display)]
 	set timedDisp 1
-	set ptClasses {}
-	set foci [ListFoci $node]
-	foreach point $foci {
-	    lappend ptClasses [GetCompProperty dummy Class $point]
-	}
+    }
+    set ptClasses {}
+    set foci [ListFoci $node]
+    foreach point $foci {
+	lappend ptClasses [GetCompProperty dummy Class $point]
     }
     set first 1
     PlanRefresh
