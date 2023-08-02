@@ -149,7 +149,7 @@ call to the stub */
 
 instance_of(NType, Node, Path,
 	    [instance(function, Node, Default, Val, Base-Dims)], []) :-
-        member(NType-BelowParam, [variable-0, event-1, compartment-0]),
+        member(NType-BelowParam, [variable-0, event-1]),
 	is_parameter(Node, PType),
 	PType > BelowParam, !,
 	get_units(Node, Base, Dims),
@@ -173,13 +173,13 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	     SetterType = init_function,
 	       Instances = Local);
 	F = Node,
-	    SetterType = init_function,
+	    SetterType = function,
 	    Instances = [FuncRef | Local]),
 
 	get_units(F, Base, Units),
 	Home = elt(Path, _, Base-Units),
 	Diffs = elt(Path, _, diffs-Units),
-	(\+ PType = 1, !;
+	(\+ PType = 2, !;
 	    choose_default_value(Node, Base, PType, Default)),
 	FuncRef = instance(SetterType, F, Default, Home, Base-Units),
 	change_due_to(flow, Node, Base, Units, FChange, FRefs),
