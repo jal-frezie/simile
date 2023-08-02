@@ -168,7 +168,7 @@ proc ExecuteTo {node current pause unitLength display \
 		    set currentMode exit
 		} 0 {
 		    set currentMode stop
-		    set displayNow 1
+		    set displayNow $display
 		} 2 { ;# event
 		    if {$evtDisp} {
 			set displayNow 1
@@ -212,7 +212,7 @@ proc ExecuteTo {node current pause unitLength display \
 		    set scaled_next [expr {$nextDisp*$unitLength}]
 		}
 	    } else {
-		set nextDisp [expr 2*$pause-$current]
+		set nextDisp [expr {$pause+$forward}]
 		set scaled_next [expr {$pause*$unitLength}]
 	    }
 	    SplitExecution $node $intMethod $scaled_current \
