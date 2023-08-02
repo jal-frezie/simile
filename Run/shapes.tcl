@@ -86,7 +86,6 @@ proc FuzzFor {w density} {
 }
 
 proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
-    
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set fCol $::looks($::window_info($w,top_node),compartment,fill)
     set width [GetLineSize $w compartment $fatness]
@@ -98,7 +97,7 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
 		      {-tags "$tagSet size_on_this realwidth($width)"}]
     eval {$w create line $mr $mt $ml $mt $ml $mb} $switches
 
-    set decor [expr $extras/10] ;# no decor yet for input param compartments
+    set decor [expr $extras/10] ;# decor for file param compartments
     set stack [expr $extras-10*$decor]
 
     while {$stackDepth < $stack} {
@@ -109,6 +108,13 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
         set sb [expr $mb+$stackDistance]
         eval {$w create line $sr $st $sr $sb $sl $sb} $switches
         incr stackDepth
+    }
+    if {$decor == 2} {
+	set rollHt [expr {min($mr-$ml, $mb-$mt)}]
+	set rollTop [expr {$mt-$rollHt}]
+	set rollOut [list $ml $mt $ml $rollTop [expr {$ml+$rollHt/3}] $rollTop]
+	eval {$w create polygon} $rollOut {-fill $fCol} $switches
+	eval {$w create line} $rollOut {$ml $mt} $switches
     }
 #    ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
 }
