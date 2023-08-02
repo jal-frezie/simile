@@ -173,7 +173,7 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	     SetterType = init_function,
 	       Instances = Local);
 	F = Node,
-	    SetterType = function,
+	    SetterType = init_function,
 	    Instances = [FuncRef | Local]),
 
 	get_units(F, Base, Units),

@@ -1816,8 +1816,9 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  (Type = function, Tgt = Dest, Step = -1,
 	   (Source = use_param_state -> Wait = [on_step];
 	    Wait = [preload(Dest), on_step]);
-	    Type = init_function, Tgt = init(Dest),
-		Step = 0, Wait = [on_reset]);
+	   Type = init_function, Tgt = init(Dest), Step = 0,
+	   (Source = use_param_state -> Wait = [on_reset];
+	    Wait = [preload(Dest), on_reset]));
 	 member(Is_P, [1,3]),
 	    Tgt = update(Dest),
 	    (Type = function, Step = SmStep, Wait = [preload(Dest), on_step];
@@ -1855,10 +1856,10 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  UseStep = SmStep; % was -2 but that allowed variation after reset
 	 % then 0 but changed in v7 to allow default to be e.g., graph(time())
 	 Is_P = 2, \+ Source = use_param_state, SourceEqn = Source,
-	  UseStep = -1;
+	  UseStep = Revert;
 	 Is_P = 3, instance><regenerate_makearrays(0, LocalPath, SourceEqn),
 	  UseStep = 0),
-	    Type = function,
+	    member(Type-Revert, [init_function-0, function-(-1)]),
 	    UseList = [on_step | RefList], 
 	    Made = preload(Dest);
 	member(Type, [compartment, immigration, reproduction, state]),
