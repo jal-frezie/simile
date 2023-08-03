@@ -950,6 +950,8 @@ proc LetItShow {t {doneVar {}}} {
 #puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
 	tkwait visibility $t
+    } else {
+	set alreadyPlaced 1
     }
     set scw [winfo screenwidth $t]
     set sch [winfo screenheight $t]
@@ -970,7 +972,9 @@ proc LetItShow {t {doneVar {}}} {
     set fillh [winfo reqheight $t]
     set left [expr {max(0, min($scw-$fillw, $tgtx+($tgtw-$fillw)/2))}]
     set top [expr {max(0, min($sch-$fillh, $tgty+($tgth-$fillh)/2))}]
-    wm geometry $t $sgnx$left$sgny$top
+    if {![info exists alreadyPlaced] || $tgty == [winfo screenheight $t]} {
+	wm geometry $t $sgnx$left$sgny$top
+    }
     if {[string length $doneVar]} {
 # have variable that gets set on exit, if scripting just set it
 # otherwise do interaction here

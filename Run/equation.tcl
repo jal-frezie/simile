@@ -26,9 +26,11 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     set notebook [::ttk::notebook $t.notebook]
     set mainF $notebook.main
-    $notebook add [panedwindow $mainF -orient vertical] -text [tr. Main]
+    $notebook add [panedwindow $mainF -orient vertical \
+		       -sashrelief raised -showhandle 1] -text [tr. Main]
     set paramF $notebook.params
-    $notebook add [panedwindow $paramF -orient vertical] \
+    $notebook add [panedwindow $paramF -orient vertical \
+		       -sashrelief raised -showhandle 1] \
 	-text [tr. "Parameters etc."]
     set docF $notebook.documentation
     $notebook add [::ttk::frame $docF] -text [tr. Documentation]
@@ -54,7 +56,8 @@ proc create_equation {parent purpose comp indices enum_types} {
     # Middle frame has the functions, indices and keypad
     # created variable middleF to point to the Middle frame makes moving the frame in
     # the widget hierrachy easier Jonathan 22 Aug 2002
-    $mainF add [set middleF [panedwindow $mainF.middle -orient horizontal]]
+    $mainF add [set middleF [panedwindow $mainF.middle -orient horizontal \
+			    -sashrelief raised -showhandle 1]]
     $middleF add [TitleFrame $middleF.functions -text "[tr. Functions]: "]
     BindPopup $middleF.functions function
     set fnFrame [GetFrame $middleF.functions].fnFrame
@@ -616,7 +619,7 @@ proc interact_equation {} {
 	.equation.notebook select 1 ;# raise parameters tab
 	focus $equation(ckWidg) ;# keep here until correct input or cancel
     } else {
-	focus $t
+	focus $equation(actzone).text
     }
     LetItShow $t equation(done)
 

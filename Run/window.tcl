@@ -2146,7 +2146,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     global equation msgs
     # create but only pack while state being edited
-    ::ttk::combobox $eb.events -width 8 -font EquationFont -state readonly
+    ::ttk::combobox $eb.events -width 12 -font EquationFont -state readonly
     BindPopup $eb.events events
     bind $eb.events <<ComboboxSelected>> [list SwitchEvent $winid $eb]
     ::ttk::label $eb.minlabel -anchor w -text below:
