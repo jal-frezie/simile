@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.3.2.4 2023/07/14 13:27:48 jaspert Exp $
+# $Id: can2svg.tcl,v 1.3.2.5 2023/08/04 09:53:38 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -285,7 +285,7 @@ proc can2svg::svgasxmllist {cmd args} {
 	
 	# Make a key of the arrowshape list into the array.
 	regsub -all -- $wsp_ $arrowShape _ shapeKey
-	set arrowKey ${fillValue}_${shapeKey}
+	set arrowKey [string map {\# hash} $fillValue]_${shapeKey}
 
         if {!$argsA(-reusedefs) || \
           ![info exists defsArrowMarkerArr($arrowKey)]} {
@@ -805,8 +805,9 @@ proc can2svg::MakeStyleList {type opts args} {
 	    lappend arrowScaleArgs $arrowShape
 	}
 	set arrowSizeRef [join [eval ScaleArrow $arrowScaleArgs] _]
-	set arrowIdKey arrowMarkerDef_${fillCol}_$arrowSizeRef
-	set arrowIdKeyLast arrowMarkerLastDef_${fillCol}_$arrowSizeRef
+	set fillColRef [string map {\# hash} $fillCol]
+	set arrowIdKey arrowMarkerDef_${fillColRef}_$arrowSizeRef
+	set arrowIdKeyLast arrowMarkerLastDef_${fillColRef}_$arrowSizeRef
         
         switch -- $arrowValue {
             first {
@@ -1369,8 +1370,9 @@ proc can2svg::MakeArrowMarker {a b c col} {
           -subtags [list $arrowLastList] ] ] ]
         set formatArrowMarkerLast $defElemLastList
     }
-    set idKey "arrowMarkerDef_${col}_${a}_${b}_${c}"
-    set idKeyLast "arrowMarkerLastDef_${col}_${a}_${b}_${c}"
+    set colRef [string map {\# hash} $col]
+    set idKey "arrowMarkerDef_${colRef}_${a}_${b}_${c}"
+    set idKeyLast "arrowMarkerLastDef_${colRef}_${a}_${b}_${c}"
     
     # Figure out the order of all %s substitutions.
     set markerXML [format $formatArrowMarker $idKey  \
