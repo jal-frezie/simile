@@ -265,8 +265,9 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	(Depth < 0, !;
 	 get_highlit_obj(N, Comp), !,
 	    highlight(Comp, N);
-	 normal_colour_for(Comp, NormCol),
-	    change_color(Comp, NormCol)).
+	 normal_colour_for(Comp, NormCol), \+ NormCol = normal,
+	    change_color(Comp, NormCol);
+	 true). % should be drawn normal to start with so no recolour needed
 
 /* highlight not only redraws the component in any of a number of styles, it also
 records its id in the GUI state database so it can be manipulated independently of

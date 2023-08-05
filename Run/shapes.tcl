@@ -87,13 +87,14 @@ proc FuzzFor {w density} {
 
 proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
+    set oCol $::looks($::window_info($w,top_node),compartment,outline)
     set fCol $::looks($::window_info($w,top_node),compartment,fill)
     set width [GetLineSize $w compartment $fatness]
     
     $w create rectangle $ml $mt $mr $mb -outline {} -fill $fCol \
 	-tags "$tagSet has_info"
     set stackDepth 0
-    set switches [concat {-width $width} [FuzzFor $w $density] \
+    set switches [concat {-width $width} [FuzzFor $w $density] -fill $oCol \
 		      {-tags "$tagSet size_on_this realwidth($width)"}]
     eval {$w create line $mr $mt $ml $mt $ml $mb} $switches
 
@@ -121,6 +122,7 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
 
 proc PutShape {w l t r b file fatness colourScheme title} {
     global window_info
+    set oCol $::looks($::window_info($w,top_node),channel,outline)
     set fCol $::looks($::window_info($w,top_node),channel,fill)
     set nameList {condition cond creation creation \
                 immigration immig reproduction repro loss loss alarm alarm}
@@ -135,7 +137,7 @@ proc PutShape {w l t r b file fatness colourScheme title} {
     # box
     $w create rectangle -15 -15 15 15 -outline {} -fill $fCol \
 	-tags "unscaled $title"
-    $w create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
+    $w create line -15 -15 -15 15 15 15 15 -15 -15 -15 -fill $oCol \
 	-tags "unscaled $title size_on_this realwidth(1.0)"
 
     set c $w
@@ -165,10 +167,13 @@ proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
 
 proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
     set width [GetLineSize $w flow $fatness]
+    set oCol $::looks($::window_info($w,top_node),flow,outline)
     set fCol $::looks($::window_info($w,top_node),flow,fill)
     set bounds [PositionBowtie $w [list $l $t $r $b]]
-    $w create polygon $bounds -outline {} -fill $fCol -tags "$tagSet bowtie has_info"
-    $w create line $bounds -width $width -tags "$tagSet bowtie realwidth($width)"
+    $w create polygon $bounds -outline {} -fill $fCol \
+	-tags "$tagSet bowtie has_info"
+    $w create line $bounds -width $width -fill $oCol \
+	-tags "$tagSet bowtie realwidth($width)"
 #    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
@@ -183,22 +188,30 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
 # outline sections will be stippled. Let's hope 8.5 is better.
 
 proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
+
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set rad [expr ($mr-$ml)/2.0]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
 
     set style [expr $extras/100]
+    set extras [expr $extras-100*$style]
+    set decor [expr $extras/10]
+    set stack [expr $extras-10*$decor]
     #    set look [expr {$style?"event":"variable"}]
     # Do not have separate appearance for events for now, it would require
     # separate display depth
-    set look variable
+    if {$stack==0} {
+	set look flow
+    } else {
+	set look variable
+    }
+    set oCol $::looks($::window_info($w,top_node),$look,outline)
     set fCol $::looks($::window_info($w,top_node),$look,fill)
     set width [GetLineSize $w $look $fatness]
     set fuzz [FuzzFor $w $density]
-    set blobSws [concat $fuzz [list -tags "$tagSet has_info bg_blob"]]
+    set blobSws [concat $fuzz [list -fill $oCol -tags "$tagSet has_info bg_blob"]]
     set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $blobSws]
-    set extras [expr $extras-100*$style]
     set generic [concat "-width $width" $fuzz \
 		     [list -tags "$tagSet size_on_this realwidth($width) has_info"]]
     # second approximation to fill
@@ -241,8 +254,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	eval {$w create arc $ml $mt $mr $mb -start 45 -extent 180 \
 #		  -style arc} $generic
     }
-    set decor [expr $extras/10]
-    set stack [expr $extras-10*$decor]
+    lappend generic -fill $oCol
     
     switch $decor {
 	1 {
@@ -257,7 +269,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	    eval {$w create line $sr $st $sr $sb} $generic
 	} 2 {
 	    set st [expr $mt-2*$rad]
-	    eval {$w create polygon $ml $st $hm $st $ml $vm -fill $fCol} $generic
+	    $w create polygon $ml $st $hm $st $ml $vm -fill $fCol -tags $tagSet
 	    eval {$w create line $ml $st $hm $st $ml $vm $ml $st} $generic
 	} 3 {
 	    set sl [expr $ml+$rad/2]
@@ -294,25 +306,27 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 
 proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     set width [GetLineSize $w flow $fatness]
+    set oCol $::looks($::window_info($w,top_node),flow,outline)
     set fCol $::looks($::window_info($w,top_node),flow,fill)
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     
     set mtb13 [expr ($mb + 2*$mt)/3]
-    set arcTags [concat $tagSet [list size_on_this realwidth($width)]]
+    set arcTags [concat $tagSet [list size_on_this realwidth($width) -outline $oCol]]
     $w create oval $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -outline $fCol \
              -fill $fCol -tags $tagSet
     $w create oval [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -outline $fCol \
              -fill $fCol -tags $tagSet
     $w create oval [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
-            [expr (2*$mb + $mt)/3] -outline $fCol -fill $fCol -tags $tagSet
+	[expr (2*$mb + $mt)/3] -outline $fCol -fill $fCol -tags $tagSet
+    lappend tagSet size_on_this realwidth($width)
     $w create arc $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -width $width \
-            -style arc -start 120 -extent 210 -tags $arcTags
+            -style arc -start 120 -extent 210 -outline $oCol -tags $tagSet
     $w create arc [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -width $width \
-            -style arc -start 240 -extent 210 -tags $arcTags
+            -style arc -start 240 -extent 210 -outline $oCol -tags $tagSet
     $w create arc [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
             [expr (2*$mb + $mt)/3] -width $width \
-            -style arc -start -10 -extent 225 -tags $arcTags
+            -style arc -start -10 -extent 225 -outline $oCol -tags $tagSet
 #    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
@@ -356,7 +370,8 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     #puts "drawing submodel with fill $fillColour"
     #    previously had min width of 1 to ensure stack visibility
     #    set width [expr $width0>1?$width0:1]
-    
+
+    set col $looks($window_info($w,top_node),submodel,outline)
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     
     if {$mr < $ml} {set temp $mr ; set mr $ml ; set ml $temp}
@@ -481,20 +496,20 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     if {$wedge} {
 	$w create line $ml $v6 $ml $mt [expr $ml+$cornerRad/4] $mt \
 	    [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
-	    -width $width -tags /new_bd/
+	    -width $width -fill $col -tags /new_bd/
     }
     if {$wings} {
 	set mm [expr {($mt+$mb)/2}]
 	$w create line [expr {$ml-$cornerRad}] [expr {$mm-$cornerRad}] \
 	    [expr {$ml-$cornerRad}] [expr {$mm+$cornerRad}] \
-	    -width $width -tags /new_bd/
+	    -width $width -fill $col -tags /new_bd/
 	$w create line [expr {$mr+$cornerRad}] [expr {$mm-$cornerRad}] \
 	    [expr {$mr+$cornerRad}] [expr {$mm+$cornerRad}] \
-	    -width $width -tags /new_bd/
+	    -width $width -fill $col -tags /new_bd/
 	$w create line [expr {$ml-$cornerRad}] $mm $ml $mm \
-	    -width $width -tags /new_bd/
+	    -width $width -fill $col -tags /new_bd/
 	$w create line [expr {$mr+$cornerRad}] $mm $mr $mm \
-	    -width $width -tags /new_bd/
+	    -width $width -fill $col -tags /new_bd/
     }
     foreach tag [concat $tagSet /background/] {
 	$w addtag $tag withtag /new_bg/
@@ -503,15 +518,15 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     while {$tabs < $back} {
 	set offs [expr {$tabs*$backSpacing}]
 	$w create arc [ShiftAll $offs $ml $ib $il $mb] -start 180 -extent 45 \
-	    -style arc -width $width -tags "/new_bd/"
+	    -style arc -width $width -outline $col -tags "/new_bd/"
 	$w create line [ShiftAll $offs $ml $v7 $ml $v6] \
-	    -width $width -tags "/new_bd/"
+	    -width $width -fill $col -tags "/new_bd/"
 	$w create arc [ShiftAll $offs $ml $mt $il $it] -start 90 -extent 90 \
-	    -style arc -width $width -tags "/new_bd/"
+	    -style arc -width $width -outline $col -tags "/new_bd/"
 	$w create line [ShiftAll $offs $h6 $mt $h7 $mt] \
-	    -width $width -tags "/new_bd/"
+	    -width $width -fill $col -tags "/new_bd/"
 	$w create arc [ShiftAll $offs $ir $mt $mr $it] -start 45 -extent 45 \
-	    -style arc -width $width -tags "/new_bd/"
+	    -style arc -width $width -outline $col -tags "/new_bd/"
 	if {!$tabs} {
 	    $w addtag /encs/ withtag /new_bd/
 	}
@@ -522,16 +537,16 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
         if {$dots && $tabs} {
             $w create line $mr [expr $mt + $cornerRad] \
                     [expr $mr + $width] [expr $mt + $cornerRad + $width] \
-                    -width $width -tags "$tagSet realwidth($width)"
+                    -width $width -fill $col -tags "$tagSet realwidth($width)"
             $w create line $mr [expr $mb - $cornerRad] \
                     [expr $mr + $width] [expr $mb - $cornerRad + $width] \
-                    -width $width -tags "$tagSet realwidth($width)"
+                    -width $width -fill $col -tags "$tagSet realwidth($width)"
             $w create line [expr $ml + $cornerRad] $mb \
                     [expr $ml + $cornerRad + $width] [expr $mb + $width] \
-                    -width $width -tags "$tagSet realwidth($width)"
+                    -width $width -fill $col -tags "$tagSet realwidth($width)"
             $w create line [expr $mr - $cornerRad] $mb \
                     [expr $mr - $cornerRad + $width] [expr $mb + $width] \
-                    -width $width -tags "$tagSet realwidth($width)"
+                    -width $width -fill $col -tags "$tagSet realwidth($width)"
             set ml [expr $ml + $stackSpacing]
             set mt [expr $mt + $stackSpacing]
             set mr [expr $mr + $stackSpacing]
@@ -540,17 +555,17 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	    set offs [expr {$tabs*$stackSpacing}]
 	    $w create arc [ShiftAll $offs $ml $ib $il $mb] \
 		-start 225 -extent 45 \
-		-style arc -width $width -tags "/new_br/"
+		-style arc -width $width -outline $col -tags "/new_br/"
 	    $w create line [ShiftAll $offs $mr $v7 $mr $v6] \
-		-width $width -tags "/new_br/"
+		-width $width -fill $col -tags "/new_br/"
 	    $w create arc [ShiftAll $offs $mr $mb $ir $ib] \
 		-start 270 -extent 90 \
-		-style arc -width $width -tags "/new_br/"
+		-style arc -width $width -outline $col -tags "/new_br/"
 	    $w create line [ShiftAll $offs $h6 $mb $h7 $mb] \
-		-width $width -tags "/new_br/"
+		-width $width -fill $col -tags "/new_br/"
 	    $w create arc [ShiftAll $offs $ir $mt $mr $it] \
 		-start 0 -extent 45 \
-		-style arc -width $width -tags "/new_br/"
+		-style arc -width $width -outline $col -tags "/new_br/"
 	    if {!$tabs} {
 		$w addtag /encs/ withtag /new_br/
 	    }
@@ -643,30 +658,31 @@ proc PutThinArrow { w ptz extras fatness density colourScheme tagSet} {
     # (not any more)
     set pulse [expr {$extras/100}]
     set stack [expr {$extras-100*$pulse}]
+    set col $::looks($::window_info($w,top_node),influence,outline)
     
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
     set mptz [ScaleList $w $ptz]
-    eval {$w create line} $mptz [FuzzFor $w $density] {-arrow last \
-                -arrowshape [list [expr $features/6] [expr $features/5] \
-                [expr $features/16]] -smooth true -splinesteps $::splinePts \
-		-width $width -tags "$tagSet realwidth($width) has_info"}
+    eval {$w create line} $mptz [FuzzFor $w $density] \
+	{-arrow last -arrowshape [list [expr $features/6] [expr $features/5] \
+	     [expr $features/16]] -smooth true -splinesteps $::splinePts \
+	   -fill $col -width $width -tags "$tagSet realwidth($width) has_info"}
     
     # next few lines put blob with diameter equal to width of
     # arrowhead at start of line
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] \
-	[list -tags "$tagSet startblob"]
+	[list -fill $col -tags "$tagSet startblob"]
 # now experimental bit to draw extra lines around middle to indicate stack
     if {$stack>1} {
 	foreach level {-9 -3 3 9} {
 	    eval {$w create line} [CurveStackEnds $mptz [expr {$level*$width/2.0}]] \
-	    {-width $width -tags "$tagSet stackdecor($level)"}
+	    {-fill $col -width $width -tags "$tagSet stackdecor($level)"}
 	}
     }
     if {$pulse} {
 	set ripple [expr {3*$width}]
 	$w create line $mptz -smooth 1 -splinesteps $::splinePts \
-	    -width $ripple -capstyle round -dash {.  } \
+	    -fill $col -width $ripple -capstyle round -dash {.  } \
 	    -tags "$tagSet realwidth($ripple) has_info evtdecor"
     }
 #    ResetColours $w influence $density $colourScheme [lindex $tagSet 0]
@@ -676,17 +692,18 @@ proc PutRelation { w ptz fatness colourScheme tagSet} {
     # Have to use eval because points are packed in a list -- what a language
     set width [expr 5*[GetLineSize $w relation $fatness]]
     set arrowRad [expr [GetObjectSize $w relation $fatness]/10]
+    set col $::looks($::window_info($w,top_node),relation,outline)
     
     set mptz [ScaleList $w $ptz]
     set fuzz [FuzzFor $w gray50]
-    eval {$w create line} $mptz $fuzz {-arrow last \
-                -arrowshape [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
-                -smooth true -splinesteps $::splinePts -width $width \
-				     -tags "$tagSet realwidth($width) has_info"}
+    eval {$w create line} $mptz $fuzz \
+	{-arrowshape [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
+	     -arrow last -smooth true -splinesteps $::splinePts -fill $col \
+	     -width $width -tags "$tagSet realwidth($width) has_info"}
     # next few lines put blob with diameter equal to width of arrowhead at start of
     # line
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
-	[concat $fuzz [list -tags "$tagSet startblob"]]
+	[concat $fuzz [list -fill $col -tags "$tagSet startblob"]]
 #    ResetColours $w relation gray50 $colourScheme [lindex $tagSet 0]
 }
 
@@ -696,11 +713,12 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
     #    set width [Scale $w [expr $fatness/10.0]]
     set mptz [ScaleList $w $ptz]
     set arrowRad [expr $features/10]
-    eval {$w create line} $mptz {-arrow last -arrowshape \
+    set col $::looks($::window_info($w,top_node),flow,outline)
+    eval {$w create line} $mptz {-fill $col -arrow last -arrowshape \
 		[list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -smooth false \
 		-width $width -tags "$tagSet realwidth($width) has_info"}
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] \
-	[expr 2*$arrowRad] [list -tags "$tagSet startblob"]
+	[expr 2*$arrowRad] [list -fill $col -tags "$tagSet startblob"]
     set stackWidth [expr {$features/50}]
     set stackDepth 2
     while {$stackDepth <= $stack} {
@@ -714,7 +732,7 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
 	foreach pt $mptz {
 	    lappend levelLine [expr $pt+$stackDistance]
 	}
-	$w create line $levelLine -width $stackWidth \
+	$w create line $levelLine -width $stackWidth -fill $col \
 	    -tags "$tagSet size_on_this realwidth($stackWidth) \
 		       no_stipple has_info"
         incr stackDepth
@@ -923,7 +941,7 @@ proc DrawBlob {w startX startY size switches} {
 	eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
 		  [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
 		  -width $width -extent 359.999} \
-	    [string map {-stipple -outlinestipple} $switches]
+	    [string map {-fill -outline -stipple -outlinestipple} $switches]
 # works but will need to improve can2svg to cope with real extent
 #	$w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
 #	    [expr {$startX+$rad}] [expr {$startY+$rad}] \
