@@ -1886,7 +1886,6 @@ proc Customize {winId mode} {
     
     set n $window_info($winId.canvas,top_node)
     set looks(width) 180
-    set looks(trwhite) 0
     
     set t [PutItThere .customize $winId]
     
@@ -2056,10 +2055,12 @@ proc LoadLooks {t n object} {
     
     if {[string compare $object text]} {
 	set g [GetFrame $t.graphics]
+	set looks(trwhite) 0
 	foreach flash {outline fill incomplete} {
 	    set attack $looks($n,$object,$flash)
 	    if {![llength $attack]} {
 		set attack white
+		set looks(trwhite) 1
 	    }
 	    $g.setcolours.$flash configure -activebackground $attack
 	}
