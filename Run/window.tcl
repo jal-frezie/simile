@@ -843,7 +843,7 @@ proc ChangeParentTitle {wc title bg} {
 set looks(scrollIncr) 10
 
 proc AddGrid {c onCol wl wt wr wb} {
-    global looks window_info custom
+    global window_info custom
 
     if {$custom(showgrids,$c)} {
 	set stat normal
@@ -853,15 +853,13 @@ proc AddGrid {c onCol wl wt wr wb} {
     set interval [expr {[PrefValue custom(gridH) gridH]*$window_info($c,scale)}]
     for {set x [expr $interval*ceil($wl/$interval)]} {$x<$wr} \
 	    {set x [expr $x+$interval]} {
-	set nearx [expr int($x)]
-	$c create line $nearx $wt $nearx $wb -state $stat -fill $onCol \
+	$c create line $x $wt $x $wb -state $stat -fill $onCol \
 	    -tag "/background/ /base/ /grid/"
     }
     set interval [expr {[PrefValue custom(gridV) gridV]*$window_info($c,scale)}]
     for {set y [expr $interval*ceil($wt/$interval)]} {$y<$wb} \
 	    {set y [expr $y+$interval]} {
-	set neary [expr int($y)]
-	$c create line $wl $neary $wr $neary -state $stat -fill $onCol \
+	$c create line $wl $y $wr $y -state $stat -fill $onCol \
 	    -tag "/background/ /base/ /grid/"
     }
 }
