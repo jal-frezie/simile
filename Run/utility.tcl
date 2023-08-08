@@ -926,7 +926,7 @@ proc PutItThere {t parent} {
 	}
     }
     if {![string eq x11 [tk windowingsystem]]} {
-	wm geometry $t +0+[winfo screenheight $t]
+	wm geometry $t 1x1+0+[winfo screenheight $t]
     }
 # supposed to reduce flicker but stuffs placement under Gnome
     return $t
@@ -950,35 +950,33 @@ proc LetItShow {t {doneVar {}}} {
 #puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
 	tkwait visibility $t
-    } else {
-	set alreadyPlaced 1
     }
     set scw [winfo screenwidth $t]
     set sch [winfo screenheight $t]
     set wotParent [wm transient $t]
 #puts "Parent of $t is $wotParent"
-    if {[llength $wotParent]} {
+    if {[tk windowingsystem] ne "x11"} {
+	if {[llength $wotParent]} {
 # OK note special geometry scanning to cope with -ve geom offsets! It should
 # be done like this everywhere else too.
-	scan [wm geometry [winfo toplevel $wotParent]] {%dx%d%1s%d%1s%d} \
-	    tgtw tgth sgnx tgtx sgny tgty
-    } else {
-	set tgtx 0; set tgty 0
-	set sgnx +; set sgny +
-	set tgtw $scw
-	set tgth $sch
-    }
-    set fillw [winfo reqwidth $t]
-    set fillh [winfo reqheight $t]
-    set left [expr {max(0, min($scw-$fillw, $tgtx+($tgtw-$fillw)/2))}]
-    set top [expr {max(0, min($sch-$fillh, $tgty+($tgth-$fillh)/2))}]
-    if {![info exists alreadyPlaced] || $tgty == [winfo screenheight $t]} {
+	    scan [wm geometry [winfo toplevel $wotParent]] {%dx%d%1s%d%1s%d} \
+		tgtw tgth sgnx tgtx sgny tgty
+	} else {
+	    set tgtx 0; set tgty 0
+	    set sgnx +; set sgny +
+	    set tgtw $scw
+	    set tgth $sch
+	}
+	set fillw [winfo reqwidth $t]
+	set fillh [winfo reqheight $t]
+	set left [expr {max(0, min($scw-$fillw, $tgtx+($tgtw-$fillw)/2))}]
+	set top [expr {max(0, min($sch-$fillh, $tgty+($tgth-$fillh)/2))}]
 	wm geometry $t $sgnx$left$sgny$top
     }
     if {[string length $doneVar]} {
 # have variable that gets set on exit, if scripting just set it
 # otherwise do interaction here
-        wm protocol $t WM_DELETE_WINDOW [list set $doneVar 0]
+	wm protocol $t WM_DELETE_WINDOW [list set $doneVar 0]
 	# this delays killing it until subdialogues exited
 	set oldGrab [grab current]
 	if {[string length $oldGrab]} {
