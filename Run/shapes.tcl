@@ -91,8 +91,12 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     set fCol $::looks($::window_info($w,top_node),compartment,fill)
     set width [GetLineSize $w compartment $fatness]
     
-    $w create rectangle $ml $mt $mr $mb -outline {} -fill $fCol \
-	-tags "$tagSet has_info"
+#    $w create rectangle $ml $mt $mr $mb -outline {} -fill $fCol \
+#	-tags "$tagSet has_info"
+    set mid [expr {($mt+$mb)/2.0}]
+    set breadth [expr {$mb-$mt}]
+    eval {$w create line $ml $mid $mr $mid -fill $fCol -width $breadth} \
+	[FuzzFor $w $density] {-tags "$tagSet has_info realwidth($breadth) /noflash/"}
     set stackDepth 0
     set switches [concat {-width $width} [FuzzFor $w $density] -fill $oCol \
 		      {-tags "$tagSet size_on_this realwidth($width)"}]
@@ -245,12 +249,14 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
 #		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
-	set sliceBounds [list [expr {$ml+$width/2.0}] [expr {$mt+$width/2.0}] \
-			     [expr {$mr-$width/2.0}] [expr {$mb-$width/2.0}]]
-	eval {$w create arc} $sliceBounds {-start 45 -extent 90 \
-		  -style pieslice -outline {} -fill $fCol} $generic
-	eval {$w create arc} $sliceBounds {-start 225 -extent 90 \
-		  -style pieslice -outline {} -fill $fCol} $generic
+	set diam [expr {($rad+$width)/2.0}]
+	set sliceBounds [list [expr {$ml+$diam}] [expr {$mt+$diam}] \
+			     [expr {$mr-$diam}] [expr {$mb-$diam}]]
+	set specific [concat [string map {-stipple -outlinestipple} $fuzz] \
+			  [list -width $rad -style arc -outline $fCol \
+			       -tags "$tagSet has_info /noflash/"]]
+	eval {$w create arc} $sliceBounds {-start 45 -extent 90} $specific
+	eval {$w create arc} $sliceBounds {-start 225 -extent 90} $specific
 #	eval {$w create arc $ml $mt $mr $mb -start 45 -extent 180 \
 #		  -style arc} $generic
     }
@@ -928,27 +934,24 @@ proc PositionBowtie {w ptz} {
 }
 
 proc DrawBlob {w startX startY size switches} {
-    if {$w ne "ToSVG" && [tk windowingsystem] ne "aqua"} {
-	eval {$w create line $startX $startY $startX $startY -width $size \
-		  -capstyle round} $switches
+#    eval {$w create line $startX $startY $startX $startY -width $size \
+#	      -capstyle round} $switches
 # above fails to dash for MacOS stipple substitute (cross-platform TclTk bug)
-    } else {
-	set width [expr {$size/2.0}]
-	if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
-	    set width [expr $width+$::borderSpread]
-	}
-	set rad [expr {$size/4.0}]
-	eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
-		  [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
-		  -width $width -extent 359.999} \
-	    [string map {-fill -outline -stipple -outlinestipple} $switches]
+    set width [expr {$size/2.0}]
+    if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
+	set width [expr $width+$::borderSpread]
+    }
+    set rad [expr {$size/4.0}]
+    eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
+	      [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
+	      -width $width -extent 359.999} \
+	[string map {-fill -outline -stipple -outlinestipple} $switches]
 # works but will need to improve can2svg to cope with real extent
 #	$w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
 #	    [expr {$startX+$rad}] [expr {$startY+$rad}] \
 #	    -width $width -tags "$switches realwidth($width)"
 # works but mac stipple workaround poor on other platforms because
 # outline dashes cannot be shorter than width
-    }
 }
 
 # This puts random bits of normally non-editable text on the screen...
@@ -1066,23 +1069,22 @@ proc ColorSymbol { w name type density colorSpec } {
 
 proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
     foreach object [$w find withtag $name] {
+	if {[string match */background/* [$w gettags $object]] || \
+		[string match */noflash/* [$w gettags $object]]} continue
         switch -regexp [$w type $object] {
             text {$w itemconfigure $object -fill $textColor}
             line {
 #		if {[string match */*_text/* [$w gettags $object]]} {
 #		    $w itemconfigure $object -fill $textColor
 		#		} else
-		if {![string match */background/* [$w gettags $object]]} {
-		    $w itemconfigure $object -fill $outlineColor
-		}
+		$w itemconfigure $object -fill $outlineColor
             } oval {
 # clouds have separate arcs too now
 #                if {![string match */background/* [$w gettags $object]]} {
 #		    $w itemconfigure $object -outline $outlineColor
 #		}
             } arc {
-		if {[string equal arc [$w itemcget $object -style]] && \
-			![string match */background/* [$w gettags $object]]} {
+		if {[string equal arc [$w itemcget $object -style]]} {
 		    $w itemconfigure $object -outline $outlineColor
 		}
 	    }
