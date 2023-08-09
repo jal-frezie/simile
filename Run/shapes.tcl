@@ -229,7 +229,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	DrawBlob $w $hm $vm $outer $inner \
 	    [concat $fuzz [list -fill $fCol -tags "$tagSet has_info bg_blob noflash"]]
 	DrawBlob $w $hm $vm $inner 0 \
-	    [concat $fuzz [list -fill $fCol -tags "$tagSet has_info"]]
+	    [concat $fuzz [list -fill $oCol -tags "$tagSet has_info"]]
 	# needs zero width to print/copy nice on Windows so avoid generic
     
 #	scan [GetPoints $ol $outer] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
