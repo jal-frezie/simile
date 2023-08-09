@@ -301,7 +301,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	set stackSide \
 	    [eval {$w create arc} [ShiftAll $stackDistance $ml $mt $mr $mb] \
 		 {-style arc -start 225 -extent 180} \
-		 [string map {-stipple -outlinestipple} $generic]]
+		 [string map {-fill -outline -stipple -outlinestipple} $generic]]
 	if {$stackDepth} {
             $w lower $stackSide $p1
             set p1 $stackSide
@@ -945,7 +945,7 @@ proc DrawBlob {w startX startY outer inner switches} {
     set rad [expr {($outer+$inner)/4.0}]
     eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
 	      [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
-	      -width $width -start 45 -extent 359.999} \
+	      -width $width -extent 359.999} \
 	[string map {-fill -outline -stipple -outlinestipple} $switches]
 # works but will need to improve can2svg to cope with real extent
 #	$w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
