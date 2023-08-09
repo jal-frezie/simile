@@ -936,24 +936,28 @@ proc PositionBowtie {w ptz} {
 }
 
 proc DrawBlob {w startX startY outer inner switches} {
-#    eval {$w create line $startX $startY $startX $startY -width $size \
-#	      -capstyle round} $switches
+    if {$w ne "ToSVG" && [tk windowingsystem] ne "aqua"} {
+	eval {$w create line $startX $startY $startX $startY -width $outer \
+		  -capstyle round} $switches
 # above fails to dash for MacOS stipple substitute (cross-platform TclTk bug)
-    set width [expr {($outer-$inner)/2.0}]
-    if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
-	set width [expr $width+$::borderSpread]
-    }
-    set rad [expr {($outer+$inner)/4.0}]
-    eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
-	      [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
-	      -width $width -extent 359.999} \
-	[string map {-fill -outline -stipple -outlinestipple} $switches]
-# works but will need to improve can2svg to cope with real extent
+# also no hole but superposition should look ok with real stipple...
+    } else {
+	set width [expr {($outer-$inner)/2.0}]
+	if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
+	    set width [expr $width+$::borderSpread]
+	}
+	set rad [expr {($outer+$inner)/4.0}]
+	eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
+		  [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
+		  -width $width -extent 359.999} \
+	    [string map {-fill -outline -stipple -outlinestipple} $switches]
+# does not stipple on Windows 
 #	$w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
 #	    [expr {$startX+$rad}] [expr {$startY+$rad}] \
 #	    -width $width -tags "$switches realwidth($width)"
 # works but mac stipple workaround poor because
 # outline dashes cannot be shorter than width
+    }
 }
 
 # This puts random bits of normally non-editable text on the screen...
