@@ -1516,6 +1516,7 @@ proc MenuSelect { window button item } {
 			file copy -force [file join $::SIMILE_PATH Extensions www $localAsset] $simtmpdir
 		    }
 		    set ::runState($node,modelRunning) 1
+		    set ::runState($node,lang) c
 		    set cmd [list StartWebService $node $simtmpdir $::SIMILE_PATH]
 		    catch {lappend cmd $::runState($node,runParams)}
 		    eval $cmd

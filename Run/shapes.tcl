@@ -70,17 +70,18 @@ proc ShiftAll {shift args} {
 # generate appropriate stippling switches
 proc FuzzFor {w density} {
     switch $density {
-      gray50 {
-	if {$w eq "ToSVG" || [tk windowingsystem] eq "aqua"} {
-	    set fuzz {-dash {1 1}}
-	} else {
-	    set fuzz {-stipple gray50}
+	gray50 {
+	    if {$w eq "ToSVG" || [tk windowingsystem] eq "aqua"} {
+		# svg can stipple but converter is buggy
+		set fuzz {-dash {1 1}}
+	    } else {
+		set fuzz {-stipple gray50}
+	    }
+	} dashed {
+	    set fuzz {-dash -}
+	} default {
+	    set fuzz {}
 	}
-      } dashed {
-	  set fuzz {-dash -}
-      } default {
-	set fuzz {}
-      }
     }
     return $fuzz
 }
