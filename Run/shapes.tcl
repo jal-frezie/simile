@@ -32,8 +32,8 @@ if {!$headless} {
 	    set hideTinies 6
 	    set borderSpread 2
 	} aqua {
-	    set hideTinies 5
-	    set borderSpread 0
+	    set hideTinies 10
+	    set borderSpread 1
 	}
     }
 }
@@ -96,7 +96,7 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     set mid [expr {($mt+$mb)/2.0}]
     set breadth [expr {$mb-$mt}]
     eval {$w create line $ml $mid $mr $mid -fill $fCol -width $breadth} \
-	[FuzzFor $w $density] {-tags "$tagSet has_info realwidth($breadth) /noflash/"}
+	[FuzzFor $w $density] {-tags "$tagSet has_info realwidth($breadth) noflash"}
     set stackDepth 0
     set switches [concat {-width $width} [FuzzFor $w $density] -fill $oCol \
 		      {-tags "$tagSet size_on_this realwidth($width)"}]
@@ -215,23 +215,21 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set width [GetLineSize $w $look $fatness]
     set fuzz [FuzzFor $w $density]
     set blobSws [concat $fuzz [list -fill $oCol -tags "$tagSet has_info bg_blob"]]
-    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $blobSws]
-    set generic [concat "-width $width" $fuzz \
-		     [list -tags "$tagSet size_on_this realwidth($width) has_info"]]
     # second approximation to fill
 #    scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
 #    scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
 #    scan [GetPoints $mr -$rad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
 #    scan [GetPoints $mb -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 
+    set overall [expr {2*$rad+$width}] 
     if {$style} {
-	set outer [expr 3*($rad+$width/2)/5+$width/2]
-	set ol [expr $hm-$outer]
-	set ot [expr $vm-$outer]
-	set or [expr $hm+$outer]
-	set ob [expr $vm+$outer]
-	$w create oval $ol $ot $or $ob -width 0 -outline $fCol -fill $fCol \
-	    -tags "$tagSet has_info"
+	set outer [expr {3*$overall/5.0}]
+	set inner [expr {$overall/5.0}]
+	set p1 [DrawBlob $w $hm $vm $overall $outer $blobSws]
+	DrawBlob $w $hm $vm $outer $inner \
+	    [concat $fuzz [list -fill $fCol -tags "$tagSet has_info bg_blob noflash"]]
+	DrawBlob $w $hm $vm $inner 0 \
+	    [concat $fuzz [list -fill $fCol -tags "$tagSet has_info"]]
 	# needs zero width to print/copy nice on Windows so avoid generic
     
 #	scan [GetPoints $ol $outer] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
@@ -240,7 +238,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	scan [GetPoints $ob (-$outer)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 	
 #	eval {$w create polygon $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {}} $generic
-	DrawBlob $w $hm $vm [expr 2*($rad+$width/2)/5] $blobSws
+#	DrawBlob $w $hm $vm [expr 2*($rad+$width/2)/5] 0 $blobSws
     } else {
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
@@ -249,18 +247,21 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
 #		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
-	set diam [expr {($rad+$width)/2.0}]
-	set sliceBounds [list [expr {$ml+$diam}] [expr {$mt+$diam}] \
-			     [expr {$mr-$diam}] [expr {$mb-$diam}]]
-	set specific [concat [string map {-stipple -outlinestipple} $fuzz] \
-			  [list -width $rad -style arc -outline $fCol \
-			       -tags "$tagSet has_info /noflash/"]]
+	set p1 [DrawBlob $w $hm $vm $overall [expr 2*$rad-$width] $blobSws]
+	set diam [expr {(2*$rad-$width)/4.0}]
+	set sliceBounds [list [expr {$hm-$diam}] [expr {$vm-$diam}] \
+			     [expr {$hm+$diam}] [expr {$vm+$diam}]]
+	set generic [concat [string map {-stipple -outlinestipple} $fuzz] \
+			 [list -width [expr {$diam*2}] -style arc]]
+	set specific [concat $generic [list -outline $fCol -tags "$tagSet has_info noflash"]]
 	eval {$w create arc} $sliceBounds {-start 45 -extent 90} $specific
 	eval {$w create arc} $sliceBounds {-start 225 -extent 90} $specific
-#	eval {$w create arc $ml $mt $mr $mb -start 45 -extent 180 \
-#		  -style arc} $generic
+	set specific [concat $generic [list -fill $fCol -tags "$tagSet has_info"]]
+	eval {$w create arc} $sliceBounds {-start 135 -extent 90} $specific
+	eval {$w create arc} $sliceBounds {-start 315 -extent 90} $specific
     }
-    lappend generic -fill $oCol
+    set generic [concat "-width $width -fill $oCol" $fuzz \
+		     [list -tags "$tagSet size_on_this realwidth($width) has_info"]]
     
     switch $decor {
 	1 {
@@ -676,7 +677,7 @@ proc PutThinArrow { w ptz extras fatness density colourScheme tagSet} {
     
     # next few lines put blob with diameter equal to width of
     # arrowhead at start of line
-    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] \
+    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] 0 \
 	[list -fill $col -tags "$tagSet startblob"]
 # now experimental bit to draw extra lines around middle to indicate stack
     if {$stack>1} {
@@ -708,7 +709,7 @@ proc PutRelation { w ptz fatness colourScheme tagSet} {
 	     -width $width -tags "$tagSet realwidth($width) has_info"}
     # next few lines put blob with diameter equal to width of arrowhead at start of
     # line
-    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
+    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] 0 \
 	[concat $fuzz [list -fill $col -tags "$tagSet startblob"]]
 #    ResetColours $w relation gray50 $colourScheme [lindex $tagSet 0]
 }
@@ -724,7 +725,7 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
 		[list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -smooth false \
 		-width $width -tags "$tagSet realwidth($width) has_info"}
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] \
-	[expr 2*$arrowRad] [list -fill $col -tags "$tagSet startblob"]
+	[expr 2*$arrowRad] 0 [list -fill $col -tags "$tagSet startblob"]
     set stackWidth [expr {$features/50}]
     set stackDepth 2
     while {$stackDepth <= $stack} {
@@ -933,24 +934,24 @@ proc PositionBowtie {w ptz} {
     return $bounds
 }
 
-proc DrawBlob {w startX startY size switches} {
+proc DrawBlob {w startX startY outer inner switches} {
 #    eval {$w create line $startX $startY $startX $startY -width $size \
 #	      -capstyle round} $switches
 # above fails to dash for MacOS stipple substitute (cross-platform TclTk bug)
-    set width [expr {$size/2.0}]
+    set width [expr {($outer-$inner)/2.0}]
     if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
 	set width [expr $width+$::borderSpread]
     }
-    set rad [expr {$size/4.0}]
+    set rad [expr {($outer+$inner)/4.0}]
     eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
 	      [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
-	      -width $width -extent 359.999} \
+	      -width $width -start 45 -extent 359.999} \
 	[string map {-fill -outline -stipple -outlinestipple} $switches]
 # works but will need to improve can2svg to cope with real extent
 #	$w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
 #	    [expr {$startX+$rad}] [expr {$startY+$rad}] \
 #	    -width $width -tags "$switches realwidth($width)"
-# works but mac stipple workaround poor on other platforms because
+# works but mac stipple workaround poor because
 # outline dashes cannot be shorter than width
 }
 
@@ -1070,7 +1071,7 @@ proc ColorSymbol { w name type density colorSpec } {
 proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
     foreach object [$w find withtag $name] {
 	if {[string match */background/* [$w gettags $object]] || \
-		[string match */noflash/* [$w gettags $object]]} continue
+		[string match *noflash* [$w gettags $object]]} continue
         switch -regexp [$w type $object] {
             text {$w itemconfigure $object -fill $textColor}
             line {
