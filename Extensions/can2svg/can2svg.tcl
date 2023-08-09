@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.3.2.5 2023/08/04 09:53:38 jaspert Exp $
+# $Id: can2svg.tcl,v 1.3.2.6 2023/08/09 14:10:48 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -831,7 +831,7 @@ proc can2svg::MakeStyleList {type opts args} {
     if {[info exists outlineStippleValue]} {
         
         # Overwrite any existing.
-        set styleArr(stroke) "url(#tile[string trimleft $stippleValue @])"
+        set styleArr(stroke) "url(#tile[string trimleft $outlineStippleValue @])"
     }
     
     # Transform dash value.
