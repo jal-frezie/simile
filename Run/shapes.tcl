@@ -67,11 +67,15 @@ proc ShiftAll {shift args} {
     return $res
 }
 
+proc NoStipple {w} {
+    return [expr {$w eq "ToSVG" || [tk windowingsystem] eq "aqua"}]
+}
+
 # generate appropriate stippling switches
 proc FuzzFor {w density} {
     switch $density {
 	gray50 {
-	    if {$w eq "ToSVG" || [tk windowingsystem] eq "aqua"} {
+	    if {[NoStipple $w]} {
 		# svg can stipple but converter is buggy
 		set fuzz {-dash {1 1}}
 	    } else {
@@ -258,8 +262,10 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	eval {$w create arc} $sliceBounds {-start 45 -extent 90} $specific
 	eval {$w create arc} $sliceBounds {-start 225 -extent 90} $specific
 	set specific [concat $generic [list -fill $fCol -tags "$tagSet has_info"]]
-	eval {$w create arc} $sliceBounds {-start 135 -extent 90} $specific
-	eval {$w create arc} $sliceBounds {-start 315 -extent 90} $specific
+	if {[NoStipple $w]} { ;# otherwise the is part of bg blob
+	    eval {$w create arc} $sliceBounds {-start 135 -extent 90} $specific
+	    eval {$w create arc} $sliceBounds {-start 315 -extent 90} $specific
+	}
     }
     set generic [concat "-width $width -fill $oCol" $fuzz \
 		     [list -tags "$tagSet size_on_this realwidth($width) has_info"]]
@@ -936,7 +942,7 @@ proc PositionBowtie {w ptz} {
 }
 
 proc DrawBlob {w startX startY outer inner switches} {
-    if {$w ne "ToSVG" && [tk windowingsystem] ne "aqua"} {
+    if {![NoStipple $w]} {
 	eval {$w create line $startX $startY $startX $startY -width $outer \
 		  -capstyle round} $switches
 # above fails to dash for MacOS stipple substitute (cross-platform TclTk bug)
