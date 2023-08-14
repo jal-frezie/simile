@@ -253,18 +253,41 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
 	set p1 [DrawBlob $w $hm $vm $overall [expr 2*$rad-$width] $blobSws]
-	set diam [expr {(2*$rad-$width)/4.0}]
-	set sliceBounds [list [expr {$hm-$diam}] [expr {$vm-$diam}] \
-			     [expr {$hm+$diam}] [expr {$vm+$diam}]]
-	set generic [concat [string map {-stipple -outlinestipple} $fuzz] \
-			 [list -width [expr {$diam*2}] -style arc]]
-	set specific [concat $generic [list -outline $fCol -tags "$tagSet has_info noflash"]]
-	eval {$w create arc} $sliceBounds {-start 45 -extent 90} $specific
-	eval {$w create arc} $sliceBounds {-start 225 -extent 90} $specific
-	set specific [concat $generic [list -fill $fCol -tags "$tagSet has_info"]]
-	if {[NoStipple $w]} { ;# otherwise the is part of bg blob
+	if {[NoStipple $w]} {
+	    set diam [expr {(2*$rad-$width)/4.0}]
+	    set sliceBounds [list [expr {$hm-$diam}] [expr {$vm-$diam}] \
+				 [expr {$hm+$diam}] [expr {$vm+$diam}]]
+	    set generic [concat [string map {-stipple -outlinestipple} $fuzz] \
+			     [list -width [expr {$diam*2}] -style arc]]
+	    set specific [concat $generic [list -outline $fCol \
+					       -tags "$tagSet has_info noflash"]]
+	    eval {$w create arc} $sliceBounds {-start 45 -extent 90} $specific
+	    eval {$w create arc} $sliceBounds {-start 225 -extent 90} $specific
+	    set specific [concat $generic [list -fill $fCol -tags "$tagSet has_info"]]
 	    eval {$w create arc} $sliceBounds {-start 135 -extent 90} $specific
 	    eval {$w create arc} $sliceBounds {-start 315 -extent 90} $specific
+	} else {
+# on Windows the only curved shapes that stipple are splines, but if we try to
+# make a whole quadrant a curve its shape is scrappy, so build the quadrant  
+# from a curve and a polygon...numbers are trial and error  
+	    set curve [list \
+		   [expr {$hm-$rad*177.0/300}] [expr {$vm-$rad*177.0/300}] \
+		       [expr {$hm-$rad*109.0/300}] [expr {$vm-$rad*250.0/300}] \
+		       [expr {$hm+$rad*109.0/300}] [expr {$vm-$rad*250.0/300}] \
+		       [expr {$hm+$rad*177.0/300}] [expr {$vm-$rad*177.0/300}]]
+	    eval {$w create polygon $hm $vm} $curve $fuzz {-fill $fCol -tags \
+							     "$tagSet has_info"}
+	    eval {$w create line} $curve $fuzz {-width [expr {0.16*$rad}] \
+		       -smooth 1 -fill $fCol -tags "$tagSet has_info noflash"}
+	    set curve [list \
+		   [expr {$hm-$rad*177.0/300}] [expr {$vm+$rad*177.0/300}] \
+		       [expr {$hm-$rad*109.0/300}] [expr {$vm+$rad*250.0/300}] \
+		       [expr {$hm+$rad*109.0/300}] [expr {$vm+$rad*250.0/300}] \
+		       [expr {$hm+$rad*177.0/300}] [expr {$vm+$rad*177.0/300}]]
+	    eval {$w create polygon $hm $vm} $curve $fuzz {-fill $fCol -tags \
+							     "$tagSet has_info"}
+	    eval {$w create line} $curve $fuzz {-width [expr {0.16*$rad}] \
+		       -smooth 1 -fill $fCol -tags "$tagSet has_info noflash"}
 	}
     }
     set generic [concat "-width $width -fill $oCol" $fuzz \
