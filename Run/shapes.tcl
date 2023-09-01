@@ -263,7 +263,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 					       -tags "$tagSet has_info noflash"]]
 	    eval {$w create arc} $sliceBounds {-start 45 -extent 90} $specific
 	    eval {$w create arc} $sliceBounds {-start 225 -extent 90} $specific
-	    set specific [concat $generic [list -fill $fCol -tags "$tagSet has_info"]]
+	    set specific [concat $generic [list -outline $oCol -tags "$tagSet has_info"]]
 	    eval {$w create arc} $sliceBounds {-start 135 -extent 90} $specific
 	    eval {$w create arc} $sliceBounds {-start 315 -extent 90} $specific
 	} else {
@@ -700,7 +700,8 @@ proc PutThinArrow { w ptz extras fatness density colourScheme tagSet} {
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
     set mptz [ScaleList $w $ptz]
-    eval {$w create line} $mptz [FuzzFor $w $density] \
+    set fuzz [FuzzFor $w $density]
+    eval {$w create line} $mptz $fuzz \
 	{-arrow last -arrowshape [list [expr $features/6] [expr $features/5] \
 	     [expr $features/16]] -smooth true -splinesteps $::splinePts \
 	   -fill $col -width $width -tags "$tagSet realwidth($width) has_info"}
@@ -708,7 +709,7 @@ proc PutThinArrow { w ptz extras fatness density colourScheme tagSet} {
     # next few lines put blob with diameter equal to width of
     # arrowhead at start of line
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] 0 \
-	[list -fill $col -tags "$tagSet startblob"]
+	[concat $fuzz [list -fill $col -tags "$tagSet startblob"]]
 # now experimental bit to draw extra lines around middle to indicate stack
     if {$stack>1} {
 	foreach level {-9 -3 3 9} {
@@ -979,8 +980,8 @@ proc DrawBlob {w startX startY outer inner switches} {
 	eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
 		  [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
 		  -width $width -extent 359.999} \
-	    [string map {-fill -outline -stipple -outlinestipple} $switches]
-# does not stipple on Windows 
+	    [string map {-fill -outline} $switches]
+# does not pseudostipple on Windows 
 #	$w create oval [expr {$startX-$rad}] [expr {$startY-$rad}] \
 #	    [expr {$startX+$rad}] [expr {$startY+$rad}] \
 #	    -width $width -tags "$switches realwidth($width)"
@@ -1624,6 +1625,7 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 		FillSmImage $winId $sourceImage $layout $tgtImage $newWidth $newHt
 	    }
 	} arc {
+	    if {[$winId itemcget $object -outline] eq {}} continue
 	    set newWidth [AdjustWidth $winId $object $factor]
 	    set minWidth 0.1
 	    if {[string match */encs/* [$winId gettags $object]]} {
