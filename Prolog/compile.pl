@@ -358,7 +358,7 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	find_type(Cond, condition),
 	Fn has_class_refinement value of Val,
 	instance><is_lookup_cond(Val, _), 
-	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | _]),
+	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | Normal]),
 	(\+ (Link = none;
 	    find_name_host(Link, HostLink),
 	    HostLink has_attribute can_lookup of 1),
@@ -367,8 +367,9 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	 In is_connector from _ to Fn,
 	 initiates(In, Orig),
 	 initiates(Link, Base),
-	 (contains(Submodel, Orig); contains(Base, Orig)),
-	 % also need to check if Orig is in base model being looked up (bad)
+	 (contains(Submodel, Orig); contains(Base, Orig), Normal = []),
+	 % also need to check if Orig is in base model being looked up (bad) --
+	 % if both, give modeller benefit of doubt fttb
 	 all(ame_gen, caption_for, [build([Submodel, Orig]),
 				    build([SubmodelCapt, OrigCapt])]),
 	 Wrinkle = own_component_used_for_lookup(SubmodelCapt, OrigCapt));
@@ -2033,15 +2034,21 @@ connect_params(AllInsts, Insts) :-
 	    (member(OrigParam, [this_loop(Deferred), later(Deferred)]),
 	     Param = later(Deferred), !,
 	      (SafePath = CommonPath,
-                \+ OrigParam = this_loop(Deferred),
+                % \+ OrigParam = this_loop(Deferred),
                 (member(sm(_,_,_, fm_loop(_,_, Al, _)), SafePath),
 		 nonvar(Al), !; % if in alarm let other loops exit
 		 SafePath = [sm(_,_,_, vm_loop(_,_, [_B1, _B2 |_], _)) | _],
 		 !); % same if in association
-	       SafePath = [_RetroLevel | CommonPath],
-	       suffix(SafePath, Path), !; % stay inside loop using vals
+	       % SafePath = [_RetroLevel | CommonPath],
+	       % suffix(SafePath, Path),
+	       append(ValDims, SafePathPlus, PathPlus),
+	       SafePathPlus = [sm(_,_,_,_) | _],
+	       \+ member(sm(_,_,_,_), ValDims),
+	       remove_non_loopers(SafePathPlus, SafePath),
+	       suffix([_RetroLevel | CommonPath], SafePath),
+	       !; % stay inside loop using vals
 	       % UsingLast = 1, use later to sidestep ordering constraints
-	       query(using_own_value(Deferred), warning, top, [ok], _));
+	       query(using_own_value(Deferred), silent, top, [ok], _));
 	     Param = OrigParam,
 	     SafePath = CommonPath),
 							   

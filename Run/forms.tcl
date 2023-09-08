@@ -2712,7 +2712,7 @@ proc Query {specifics icon helpRef parent opts} {
 	}
     }
 
-    if {[info exists ::SimileAutoObjLoaded]} {
+    if {[info exists ::SimileAutoObjLoaded] || $icon eq "silent"} {
 	set skip 1
     } else {
         set useParent [ChooseParent $parent [set oldFocus [focus]]]
