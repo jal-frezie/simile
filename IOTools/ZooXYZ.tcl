@@ -7,6 +7,8 @@ itcl::class similescript::$newHelperClass {
     public variable inTitle tbc
     variable template {}
     variable nodeIdCache
+    variable lower
+    variable upper
     
     proc Identify {} {
 	return "3-D Shape Plotter"
@@ -18,7 +20,7 @@ itcl::class similescript::$newHelperClass {
     } {
 	variable ::gen3d1::scaleVector
 	variable ::gen3d1::viewVector
-
+	
 	if {[AmLayer]} {
 	    set winId [winfo parent [lindex $winTitle 2]]
 #	    foreach {x y} [lrange $winTitle 3 4] {}
@@ -375,8 +377,6 @@ itcl::class similescript::$newHelperClass {
     public method Display {time dispInt step} {
 	variable ::gen3d1::grid
 	variable ::gen3d1::viewVector
-	variable lower
-	variable upper
 
 # time is current model time
 # dispInt is time to next display call

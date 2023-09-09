@@ -767,6 +767,7 @@ as well to stop rand_vars being changed in the R-K subphase */
 		\+ suffix(PurePath, PureAPath),
 		raise_exception(condition_outside_loop(LoopEnd, LoopStart,
 						       Xefct));
+	     % below should never happen as mixed step now OK
 	     raise_exception(mixed_phase_loop(LoopEnd, Xefct, Step, AStep)));
 	!).
 /*
@@ -3042,7 +3043,7 @@ find_antecedent(Chain, TestFn, CallSeq, TestData, Found) :-
 	find_antecedent([Prev | Chain], TestFn, CallSeq, TestData, Found)).
 
 outside_loop(make(_,_, Path, [_,_, NPhase | _], Act), LoopedPath-Phase) :-
-	\+ NPhase == Phase, \+ Act = [], !; % mixed step
+	% \+ NPhase == Phase, \+ Act = [], !; mixed step -- allow!
 	remove_non_loopers(Path, ShortPath),
 	\+ suffix(LoopedPath, ShortPath).
 	
