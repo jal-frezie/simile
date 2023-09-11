@@ -545,7 +545,11 @@ set msgs(lookup_not_allowed_title) [tr. {Problem with model}]
 set msgs(lookup_not_allowed_message) [tr. {Submodel "%1$s" has a membership condition that looks up instances of the model at the base of role arrow "%2$s", but this role arrow does not have base instance lookup enabled.}]
 
 set msgs(own_component_used_for_lookup_title) [tr. {Problem with model}]
-set msgs(own_component_used_for_lookup_message) [tr. {Submodel "%1$s" has a membership condition that looks up its indices, but this condition refers to the value of "%2$s", which is inside the submodel or the base instance being looked up and therefore is not defined until the indices are set.}]
+set msgs(own_component_used_for_lookup_message) [tr. {Submodel "%1$s" has a membership condition that looks up its indices, but this condition refers to the value of "%2$s", which is inside the submodel and therefore is not defined until the indices are set.}]
+set msgs(own_component_used_for_lookup_detail) [tr. {Influences to the lookup must come from outside the submodel and outside the base instance being looked up.}] 
+
+set msgs(tgt_component_used_for_lookup_title) [tr. {Problem with model}]
+set msgs(tgt_component_used_for_lookup_message) [tr. {Submodel "%1$s" has a membership condition that looks up its indices, but this condition refers to the parameter "%2$s", which comes from the base instance being looked up and therefore is not defined until the indices are set.}]
 set msgs(own_component_used_for_lookup_detail) [tr. {Influences to the lookup must come from outside the submodel and outside the base instance being looked up.}] 
 
 set msgs(missing_boundary_cond_title) [tr. {Problem with model}]

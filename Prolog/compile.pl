@@ -358,7 +358,7 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	find_type(Cond, condition),
 	Fn has_class_refinement value of Val,
 	instance><is_lookup_cond(Val, _), 
-	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | Normal]),
+	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | _Normal]),
 	(\+ (Link = none;
 	    find_name_host(Link, HostLink),
 	    HostLink has_attribute can_lookup of 1),
@@ -366,13 +366,19 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	Wrinkle = lookup_not_allowed(OuterText, LinkText);
 	 In is_connector from _ to Fn,
 	 initiates(In, Orig),
-	 initiates(Link, Base),
-	 (contains(Submodel, Orig); contains(Base, Orig), Normal = []),
-	 % also need to check if Orig is in base model being looked up (bad) --
-	 % if both, give modeller benefit of doubt fttb
-	 all(ame_gen, caption_for, [build([Submodel, Orig]),
-				    build([SubmodelCapt, OrigCapt])]),
-	 Wrinkle = own_component_used_for_lookup(SubmodelCapt, OrigCapt));
+	 contains(Submodel, Orig),
+	 caption_for(Orig, OrigCapt),
+	 Wrinkle = own_component_used_for_lookup(OuterText, OrigCapt);
+	 % also need to check if Orig is in base model being looked up (bad...)
+	 find_name_host(Link, HostLink),
+	 setof(InputPair,
+	       instance><generate_input_pair(Fn, identified, InputPair),
+	       InputPairs),
+	 replace_subexps(Val, instance, process_expr,
+			 sub(InputPairs, [], _), top_down,
+			 Switched, _SubbedExpr),
+	 member(var_pair(LocalName, input(_,_, HostLink, _)), Switched),
+	 Wrinkle = tgt_component_used_for_lookup(OuterText, LocalName));
 	setof(Unitless, (find_all_comps(Submodel, Unitless),
 			 Unitless has_class_refinement units of any), BadBound),
 	all(ame_gen, caption_for, [build(BadBound), build(BadCapt)]),
