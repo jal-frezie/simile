@@ -123,7 +123,7 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
 	set rollHt [expr {min($mr-$ml, $mb-$mt)}]
 	set rollTop [expr {$mt-$rollHt}]
 	set rollOut [list $ml $mt $ml $rollTop [expr {$ml+$rollHt/3}] $rollTop]
-	eval {$w create polygon} $rollOut {-fill $fCol} $switches
+	eval {$w create polygon} $rollOut $switches {-fill $fCol} ;# override!
 	eval {$w create line} $rollOut {$ml $mt} $switches
     }
 #    ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
