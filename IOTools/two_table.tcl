@@ -583,11 +583,12 @@ namespace eval $keyValue {
 	set data${winId}($row,$col) $text
 	set hpxl -[winfo reqwidth .hidden_l]
 	set vpxl -[winfo reqheight .hidden_l]
-	#puts "$text at $row,$col is $hpxl,$vpxl (now [$winId.t width $col], [$winId.t height $row], floor [expr -48*$::defScaling])"
+	set minW [expr {-72*$::defScaling}]
+	#puts "$text at $row,$col is $hpxl,$vpxl (now [$winId.t width $col], [$winId.t height $row], floor $minW)"
 	if {$vpxl < [$winId.t height $row]} {
 	    $winId.t height $row $vpxl
 	}
-	if {$hpxl < [$winId.t width $col] && $hpxl < -40*$::defScaling} {
+	if {$hpxl < [$winId.t width $col] && $hpxl < $minW} {
 	    $winId.t width $col $hpxl
 	}
     }
