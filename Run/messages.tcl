@@ -536,6 +536,10 @@ set msgs(absent_enum_type_message) [tr. {Cannot resolve reference to size of %1$
 set msgs(enum_type_mix_title) [tr. {Inconsistent type definitions}]
 set msgs(enum_type_mix_message) [tr. {You cannot refer to the value of %1$s at this point because it depends on the enumerated type %2$s, which at that point has the definition %3$s but here has the definition %4$s}]
 
+set msgs(param_with_undefined_ET_units_title) [tr. {Undefined enumerated type}]
+set msgs(param_with_undefined_ET_units_message) [tr. {The submodel "%1$s" contains the file parameter "%3$s", which is defined as being a member of enumerated type "%2$s", for which there is no definition at this position in the model hierarchy.}]
+set msgs(param_with_undefined_ET_units_detail) [tr. {The defined enumerated types at this level are: %4$s.}]
+
 set msgs(param_in_vm_model_title) [tr. {Problem with model}]
 set msgs(param_in_vm_model_message) [tr. {There is an external parameter, "%1$s", inside a variable-membership submodel, "%2$s."}]
 set msgs(param_in_vm_model_detail) [tr. {This is not allowed, as the number of values in the file cannot change as the membership of the submodel does.}]

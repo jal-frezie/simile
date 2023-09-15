@@ -531,7 +531,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 #			 active [Gradient $fColour $nextLevel -75] {} $fColour]
 		$nextLevel.head.vis configure -highlightbackground $fColour
 	    }
-	    if {$nextPt>2} {
+	    if {$nextPt>2 && $ns ne "fileparams"} {
 		Compand $nextLevel
 	    }
 	}

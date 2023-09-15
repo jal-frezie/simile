@@ -2168,7 +2168,7 @@ ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
     // Version number is AME version = simile version + 4
     if (fabs(getversion()-4-MDL_OBJ_VERS)>0.00001) {
       *complaint = new char[256];
-      snprintf(*complaint, 256, "client is for version %.3f but model is %.3f", 
+      snprintf(*complaint, 256, "client is for version %.4f but model is %.4f", 
 	      MDL_OBJ_VERS, getversion()-4);
       return;
     }

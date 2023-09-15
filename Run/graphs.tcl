@@ -1860,11 +1860,10 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		    set cell [lindex $usePts $colInd]
 		    if {[string length $cell]} {
 			if {$transpose} {
-			    set paramArray([list $xInd $yInd]) \
-				[EnquoteIfNonNumeric $cell]
+			    set paramArray([list $xInd $yInd]) $cell
 			} else {
-			    set paramArray([list $yInd $xInd]) \
-				[EnquoteIfNonNumeric $cell]
+			    set paramArray([list $yInd $xInd]) $cell
+			    # [EnquoteIfNonNumeric $cell] see below
 			}
 		    }
 		}
@@ -2016,8 +2015,8 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		    } else {
 			set potEntry [lindex $entryList $headerColumn]
 			if {[llength $potEntry]} {
-			    set paramArray($arrayIndex) \
-				[EnquoteIfNonNumeric $potEntry]
+			    set paramArray($arrayIndex) $potEntry
+# was [EnquoteIfNonNumeric $potEntry] but overquoted ET members
 			}
 		    }
 		}
@@ -2053,8 +2052,8 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		    if {$datum eq "empty"} continue
 		}
 		# keep empty data points if indices present
-		set paramArray($arrayIndex) \
-		    [EnquoteIfNonNumeric $datum]
+		set paramArray($arrayIndex) $datum
+		    # [EnquoteIfNonNumeric $datum] see above
 	    }]
 	    # reinsert dbtable into tableSpec so it gets written to .spfs
 	    set tableSpec [linsert $tableSpec 2 ,dbtable:$dbtable]

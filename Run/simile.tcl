@@ -328,7 +328,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 7.0
-set sendvars(simP) {.10}
+set sendvars(simP) {.11}
 
 if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols
@@ -607,7 +607,13 @@ switch $tcl_platform(platform) {
 # not finished
 
 if {[string equal swi_interp $userinfo(prologId)]} {
-    set PROLOG_CMD [concat $swiplLocn {-f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}]
+    if {[file exists [file join $SIMILE_PATH Prolog smain.pl]]} {
+	set PROLOG_CMD [concat $swiplLocn {-f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}]
+    } else {
+	wm withdraw .splash
+	tk_messageBox -title "Bad setup" -icon error -message "Interpreted Prolog execution selected but source not available!" -type ok
+	exit
+    }
 } else {
     switch $userinfo(prologId) {
 	gnu {
