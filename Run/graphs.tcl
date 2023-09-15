@@ -356,7 +356,7 @@ proc EditAsTable {t canvas} {
                 [expr $graph($t,lowx)+$range*$index/($size-1.0)] \
                 [PointToYValue $t [lindex $graph($t,points) $index]]
     }
-    if {[EditListAsTable $t Value 1 table]} {
+    if {[EditListAsTable $t Value 1 dim table]} {
         foreach {index y} $table {
             set zone [expr round(($size-1.0)*($index-$graph($t,lowx))/$range)]
             GStick $canvas $zone [YValueToPoint $t $y]
@@ -1373,7 +1373,7 @@ proc EditTableData {startLine capt dims trans} {
             set values [NumberElements [ReadGdalRefToList $values \
                     [lindex $dims 0] [lindex $dims 1]]]
         }
-        if {[EditListAsTable .table $capt $startLine values]} {
+        if {[EditListAsTable .table $capt $startLine $dims values]} {
             set table_entry(source) 1
         } elseif {[info exists oldValues]} {
             set values $oldValues
@@ -1521,7 +1521,7 @@ proc AcquireTableData {redo startLine} {
     }
 }
 
-proc EditListAsTable {parent caption startLine valueArray} {
+proc EditListAsTable {parent caption startLine dims valueArray} {
     global table_viewer
     PutItThere .table_edit $parent
     set t .table_edit.helperzone
@@ -1544,6 +1544,7 @@ proc EditListAsTable {parent caption startLine valueArray} {
     set ${viewerId}::displayList($t) eqn_table
     set ${viewerId}::displayList($t,paths) [list $caption]
     set ${viewerId}::displayList($t,ids) [list dummyId]
+    set ${viewerId}::displayList($t,transes) [list [lappend dims 0]]
     if {$startLine} {
 	set ${viewerId}::dataStore($t,dummyId,0.0) $values
 	set ${viewerId}::orientList($t) {none cols rows cols}

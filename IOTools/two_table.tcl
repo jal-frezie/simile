@@ -638,14 +638,15 @@ namespace eval $keyValue {
             set valDims [split $valId ,]
             set varId [lindex $valDims 1]
 	    set varIndex [lsearch $displayList($winId,ids) $varId]
+	    set depth [llength [lindex $displayList($winId,transes) $varIndex]]
             if {[string match none [lindex $orientList($winId) 0]]} {
                 if {[lindex $valDims 2]==$lastDisplay($winId)} {
                     GrabIndices $winId 1 {} {} $varIndex $dataStore($valId) \
-			$varIndex
+			$depth $varIndex
                 }
             } else {
                 GrabIndices $winId 0 {} {} [lindex $valDims 2] \
-                        [list $varIndex $dataStore($valId)] $varIndex
+                        [list $varIndex $dataStore($valId)] $depth $varIndex
             }
         }
         
@@ -1000,7 +1001,7 @@ namespace eval $keyValue {
         return $math
     }
     
-    proc GrabIndices {winId depth rowsList colsList index struct varId} {
+    proc GrabIndices {winId depth rowsList colsList index struct lmt varId} {
         variable orientList
         variable values
         variable rowNames
@@ -1013,10 +1014,10 @@ namespace eval $keyValue {
             incr depth
         }
         
-        if {[string is list $struct] && [llength $struct]>1} {
+        if {[string is list $struct] && [llength $struct]>1 && $depth<=$lmt} {
             foreach {newIndex newStruct} $struct {
                 GrabIndices $winId $depth $rowsList $colsList $newIndex \
-                        $newStruct $varId
+                        $newStruct $lmt $varId
             }
         } else {
             set values([list $rowsList $colsList]) $struct
