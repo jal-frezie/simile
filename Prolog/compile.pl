@@ -348,8 +348,10 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	 Param has_class_refinement units of ETRef,
 	    member(ETRef, [a(ET), n(ET)]),
 	    get_all_enum_types(Submodel, Types),
-            \+ member([ET | _Mems], Types),
-	    Wrinkle = param_with_undefined_ET_units(InnerText, ET, OuterText)),
+	    (setof(ETN, member([ETN | _], Types), Ns) -> true; Ns = []),
+            \+ member(ET, Ns),
+	    Wrinkle = param_with_undefined_ET_units(InnerText, ET, OuterText,
+						   Ns)),
 	caption_for(Param, InnerText),
 	caption_for(Submodel, OuterText);
 	find_all_comps(Submodel, Fn),
@@ -3048,7 +3050,7 @@ find_antecedent(Chain, TestFn, CallSeq, TestData, Found) :-
 	    find_antecedent(Chain, TestFn, CallSeq, TestData, Found));
 	find_antecedent([Prev | Chain], TestFn, CallSeq, TestData, Found)).
 
-outside_loop(make(_,_, Path, [_,_, NPhase | _], Act), LoopedPath-Phase) :-
+outside_loop(make(_,_, Path, [_,_, _NPhase | _], _Act), LoopedPath-_Phase) :-
 	% \+ NPhase == Phase, \+ Act = [], !; mixed step -- allow!
 	remove_non_loopers(Path, ShortPath),
 	\+ suffix(LoopedPath, ShortPath).
