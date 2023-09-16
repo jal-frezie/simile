@@ -1681,6 +1681,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 			set act [list failed_dir_reference [file tail $VFile] \
 				     $relativeComp [file dirname $VFile] \
 				     [file normalize $seekDir]]
+			set suppliedData($restoredComp) {}
 			switch [Query $act warning spf {} abort] {
 			    abort {break}
 			    more {continue}
@@ -1693,6 +1694,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 			set act [list failed_param_reference [file tail $VFile] \
 				     $relativeComp [file dirname $VFile] \
 				     [file normalize $seekDir]]
+			set suppliedData($restoredComp) {}
 			switch [Query $act warning spf {} abort] {
 			    abort {break}
 			    more {continue}
