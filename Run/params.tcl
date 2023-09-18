@@ -739,7 +739,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 #                            c_setparamarray $recordNode
 # not needed with universal structure, but might help -- later
 		    } else {
-			tcl_setparamarray $topNode $recordNode
+			tcl_setparamarray $topNode $recordNode 1
 		    }
 # Not sure how this condition would ever fail...does if TIME added above
 #		    set outerDims [lrange [GetCompProperty $topNode $topNode Dims \
