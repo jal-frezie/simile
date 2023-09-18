@@ -348,7 +348,7 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	 Param has_class_refinement units of ETRef,
 	    member(ETRef, [a(ET), n(ET)]),
 	    get_all_enum_types(Submodel, Types),
-	    (setof(ETN, member([ETN | _], Types), Ns) -> true; Ns = []),
+	    all(user, nth, [unify(1), build(Types), build(Ns)]),
             \+ member(ET, Ns),
 	    Wrinkle = param_with_undefined_ET_units(InnerText, ET, OuterText,
 						   Ns)),
