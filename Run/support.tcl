@@ -65,7 +65,17 @@ proc tcl_insert {node newVs} {
     }
     return novalue
 }
+
+proc TweakIndexList {inds ofset} {
+    set inds0 {} ;# not if indices already start at 0
+    foreach ind $inds {
+	lappend inds0 [expr {$ind+$ofset}]
+    }
+    return $inds0
+}    
+
 proc ExplainError {myNode errList origError} {
+    puts [info level 0]
     global introspect
     
     set severity -2
@@ -104,8 +114,8 @@ proc ExplainError {myNode errList origError} {
 	if {[llength $dest] == 1} {
 	    set target $dest
 	} else {
-	    set target \
-		"[lindex $dest 0] at indices [join [lrange $dest 1 end] ,]"
+	    set target "[lindex $dest 0] at indices \
+		       [join [TweakIndexList [lrange $dest 1 end] 1] ,]"
 	}
     }
 
@@ -341,7 +351,8 @@ proc tcl_setparamelement {node inds val} {
 
     set paramIdx [getinfo $node 8]
     upvar #0 $paramLocns($paramIdx,arr) varData
-    set varData([join [concat [list $node] $inds] ,]) $val
+    set varData([join [concat [list $node] [TweakIndexList $inds -1]] ,]) \
+	$val
 } 
 
 # replaces previous param values with 0s, used to clear events
