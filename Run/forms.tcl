@@ -1000,12 +1000,13 @@ proc GetEnumMems {fr mdl} {
 
 proc ListDiscrete {memList fileData} {
     upvar 1 $memList inList
-    if {[llength $fileData]!=1} {
+    if {[llength $fileData]!=1 && [string is integer [lindex $fileData 0]]} {
+	# true for empty list and all index/value lists unless modeller mad
 	foreach {pos mem} $fileData {
 	    ListDiscrete inList $mem
 	}
     } else {
-	set fileData [lindex $fileData 0]
+	# set fileData [lindex $fileData 0] ; breaks members with spaces
 	if {[lsearch $inList $fileData]==-1} {
 	    lappend inList $fileData
 	}
