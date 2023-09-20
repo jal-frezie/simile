@@ -5,7 +5,7 @@
 itcl::class similescript::ShapeLayer {
     inherit Layer
     variable useNodes
-
+    
     constructor {modelInst mainCanvas type xzoom yzoom {state {}}} {
 # perverse extra body because base class constructor has args
 	Layer::constructor $modelInst $mainCanvas
@@ -20,7 +20,7 @@ itcl::class similescript::ShapeLayer {
 	}
 	SetScaling
 	::similescript::Shapes3D20141208 ${this}_3dinst $modelInst \
-	    [list layer $type $winId $xzoom $yzoom] $state
+	    [list layer $type $winId $host $xzoom $yzoom] $state
     }
 
     destructor {

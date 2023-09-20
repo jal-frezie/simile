@@ -23,7 +23,7 @@ itcl::class similescript::$newHelperClass {
 	
 	if {[AmLayer]} {
 	    set winId [winfo parent [lindex $winTitle 2]]
-#	    foreach {x y} [lrange $winTitle 3 4] {}
+#	    foreach {x y} [lrange $winTitle 4 5] {}
 	    array set scaleVector [list $winId,zoff 0 $winId,zmag 150.0]
 # others done in 2d helper now
 	    array set viewVector [list $winId,X 500 $winId,Y 500 \
@@ -64,7 +64,7 @@ itcl::class similescript::$newHelperClass {
 	    if {[lindex $inTitle 0] eq ",colours"} {
 		set inTitle [lindex $inTitle 1]
 	    }
-	    #set ::helperTable(beingCalled) $this
+	    set ::helperTable(beingCalled) [lindex $winTitle 3]
 	    Display 0 0 0
 	    return
 	}	
@@ -574,7 +574,9 @@ itcl::class similescript::$newHelperClass {
 	    [expr sin($viewVector($winId,elevation))]
 	$winId.c delete -withtag graticule
 	::gen3d1::DrawGrid $winId graticule
-	set ::helperTable(beingCalled) $this
+	if {![AmLayer]} {
+	    set ::helperTable(beingCalled) $this
+	}
 	Display 0 0 -1
     }    
     public method WindowSizeChanged {} {
@@ -584,7 +586,9 @@ itcl::class similescript::$newHelperClass {
 	set viewVector($winId,Y) [winfo height $winId.c]
 	$winId.c delete -withtag graticule
 	::gen3d1::DrawGrid $winId graticule
-	set ::helperTable(beingCalled) $this
+	if {![AmLayer]} {
+	    set ::helperTable(beingCalled) $this
+	}
 	Display 0 0 -1
     }
 

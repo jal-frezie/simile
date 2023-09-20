@@ -122,6 +122,7 @@ itcl::class similescript::$newLayerClass {
 		$modelInst ReleaseClicks
 		set useNodes(dir) $path
 		set useNodes(state) displaying
+		set ::helperTable(beingCalled) $host
 		Display 0 0 0
 	    }
 	}

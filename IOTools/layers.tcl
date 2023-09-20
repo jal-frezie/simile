@@ -293,7 +293,7 @@ itcl::class similescript::$newHelperClass {
 # dispInt is time to next display call
 # step is a spare parameter
 	foreach plane $planes {
-	    set ::helperTable(beingCalled) [namespace current]::$plane
+	    set ::helperTable(beingCalled) $this ;# [namespace current]::$plane
 	    $plane Display $time $dispInt $step
 	}
 	foreach plane $planes {
