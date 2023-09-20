@@ -248,13 +248,17 @@ itcl::class similescript::$newHelperClass {
 		component {
 		    if {[AmLayer] && [lsearch {"Z positions" "start Z positions" "end Z positions" "Z vertex position lists" "centre Z positions" "X rotations" "Y rotations"} $descrip]>-1} {
 			MakeSelection null
-		    } else {
-			$winId.bottom.ms configure -text "Click on component with $descrip of [lindex $template 0], or enter fixed $descrip here:"
-			pack [ttk::entry $winId.bottom.e] -side bottom
-			bind $winId.bottom.e <Return> [list $this SetConst]
-			$modelInst GrabClicks $this
+			return
 		    }
+		    $winId.bottom.ms configure -text "Click on component with $descrip of [lindex $template 0], or enter fixed $descrip here:"
+		    pack [ttk::entry $winId.bottom.e] -side bottom
+		    bind $winId.bottom.e <Return> [list $this SetConst]
+		    $modelInst GrabClicks $this
 		} colour {
+		    if {[AmLayer] && $descrip eq "BACK"} {
+			MakeSelection null ;# never seen
+			return
+		    }	
 		    $winId.bottom.ms configure -text "Click on component setting colour of $descrip of [lindex $template 0], or here:"
 		    pack [ttk::button $winId.bottom.e \
 			      -command [list $this SetColour \
