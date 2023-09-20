@@ -64,7 +64,7 @@ itcl::class similescript::$newHelperClass {
 	    if {[lindex $inTitle 0] eq ",colours"} {
 		set inTitle [lindex $inTitle 1]
 	    }
-	    set ::helperTable(beingCalled) $this
+	    #set ::helperTable(beingCalled) $this
 	    Display 0 0 0
 	    return
 	}	
