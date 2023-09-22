@@ -2262,7 +2262,8 @@ proc FillReopen {winId} {
             .openrecent add command -label [file tail $hottie] -command $cmd
 	    if {$n<1} { ;# only cmd-0 binds on Mac
 		.openrecent entryconfigure last -accelerator "$accKey+$n"
-		bind $winId <$accSym-$n> $cmd
+		bind $winId <$accSym-$n> [list .openrecent invoke $n]
+		# cannot just call cmd because %s get subsitiuted
 	    }
             lappend posted $hottie
         }

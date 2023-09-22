@@ -172,6 +172,10 @@ proc CaseForExpt {topNode levels} {
     }
 }
 
+proc InvokeTickOnEntry {e} {
+    [winfo parent $e].tick invoke
+}
+
 proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {
@@ -259,12 +263,12 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     # Using entries played merry hell with very long arrays -- texts work better
     pack [::ttk::entry $slot.e -width 1] -side left -fill x -expand on
     BindPopup $slot.e param_source_$compName comment_$compName
-    bind $slot.e <Return> [list $slot.tick invoke]
+    bind $slot.e <Return> {InvokeTickOnEntry %W}
     if {[winfo toplevel $slot] ne ".fpdialogue"} {
-	bind $slot.e <FocusOut> [list $slot.tick invoke]
+	bind $slot.e <FocusOut> {InvokeTickOnEntry %W}
     }
     $slot.e configure -validate key \
-	-validatecommand "[list focus $slot.e]; return 1"
+	-validatecommand "[list focus %W]; return 1"
     # above makes sure field has focus after paste so leaving accepts data
     KoreanClick $slot.e 1 {}
     bind $slot.e <Double-1> [list EditValueComment $topFrame $compName]
