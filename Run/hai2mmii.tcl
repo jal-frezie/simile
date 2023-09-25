@@ -68,11 +68,11 @@ proc IsPretty {bride} {
 
 proc PrettifyValList {ugly txtVals} {
     #puts [info level 0]
-    if {[string is double -strict $ugly] || $ugly eq "sm"} {
+    if {$ugly eq "sm"} {
 	set result $ugly
     } elseif {[llength $ugly]==1 || [lsearch $txtVals $ugly]>-1} {
 	# do mind even length ET mem mangling
-	set result \"$ugly\"
+	set result [EnquoteIfNonNumeric $ugly]
     } else {
 	set result {}
 	foreach {indx val} $ugly {
