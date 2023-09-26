@@ -93,8 +93,8 @@ sort_units(Before, After, Conv) :-
 	(Op1 = (*), Op2 = (/), !,
 	    Simpler = Mid;
 	    Op1 = Op2, SomeConv > 1, !,
-	    join_without_ones(Op1, F2, Mid, Step2),
-	    Simpler =.. [Op2, F2, Step2]),
+	    join_without_ones(Op1, Mid, F2, Step2),
+	    Simpler =.. [Op2, Step2, F2]),
 	sort_units(Simpler, After, MoreConv),
 	    Conv =.. [Op1, MoreConv, SomeConv];
 	After = Before, Conv = 1.
