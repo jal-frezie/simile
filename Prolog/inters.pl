@@ -10,7 +10,8 @@ sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
 final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used, 
                  NewFormula, Setups, Context, Prereqs, NewInters) :-
-	DestRef = elt(DestPathForm, Target, XUnits-Dims),
+        DestRef =.. [elt, DestPathForm, Target, XUnits-Dims],
+    % works round SWI bug that deassembles pred if 1st clause is X=Y
 	copy_term(DestPathForm, DestPath),
 	
 	catch((replace_subexps(Expr, inters, insert_paths,
