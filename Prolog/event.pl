@@ -389,6 +389,9 @@ check_snap :-
 	
 snap_to_grid([], []).
 
+snap_to_grid(XY, XY) :-
+    grid_pitch_is(1,1), !. % just never round, then minimal rounding errors
+
 snap_to_grid([X, Y | Rest], [GX, GY | GRest]) :-
 	grid_pitch_is(HPitch, VPitch), !,
 	    GX is HPitch*round(X/HPitch),
@@ -1224,9 +1227,10 @@ drag(Xpt, Ypt) :-
 	(get_phase(Phase),
 	    member(Phase, [moving_spline, moving_text,
 			   moving_bowtie, moving_kink]), !,
-	    RelPt = [RelX, RelY],
-	    NewXpt is round(RelX),
-	    NewYpt is round(RelY);
+	    RelPt = [NewXpt, NewYpt];
+% do not round, as we are not working in canvas units here	 
+%	    NewXpt is round(RelX),
+%	    NewYpt is round(RelY);
 	snap_to_grid(RelPt, [NewXpt, NewYpt])),
 	drag_to(NewXpt, NewYpt, Comp).
 
