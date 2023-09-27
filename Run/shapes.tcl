@@ -200,8 +200,8 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set rad [expr ($mr-$ml)/2.0]
-    set hm [expr $ml+$rad]
-    set vm [expr $mt+$rad]
+    set hm [expr round($ml+$rad)]
+    set vm [expr round($mt+$rad)]
 
     set style [expr $extras/100]
     set extras [expr $extras-100*$style]
