@@ -384,13 +384,12 @@ check_snap :-
 	retractall(grid_pitch_is(_,_)),
 	(tk_get_pref(gridSnap, 0), !,
 	 % snapping to integer coordinates prevents rounding errors building up
-	    assert(grid_pitch_is(1,1));
+	    image><scale_factor_is(ScF),
+	    Quantum is 1/ScF,
+	    assert(grid_pitch_is(Quantum, Quantum));
         set_snap).
 	
 snap_to_grid([], []).
-
-snap_to_grid(XY, XY) :-
-    grid_pitch_is(1,1), !. % just never round, then minimal rounding errors
 
 snap_to_grid([X, Y | Rest], [GX, GY | GRest]) :-
 	grid_pitch_is(HPitch, VPitch), !,

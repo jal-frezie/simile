@@ -65,14 +65,32 @@ get_window_colour(Submodel, Colour, Images) :-
     Colour = TopColour,
         Images = AddImages).
 
+scale_factor_is(1000).
+
+scale_attribute(Att) :-
+    member(Att, [bounding_box, internal_extent, centre, caption_offset]).
+
+scale(Before, After, ScF) :-
+    number(Before) -> After is Before*ScF;
+    all(image, scale, [build(Before), build(After), unify(ScF)]).
+
 get_shape(Component, Shape_field, Data) :-
-    Component has_graphical_attribute Shape_field of Data.
+    Component has_graphical_attribute Shape_field of WData,
+    (scale_attribute(Shape_field) ->
+	scale_factor_is(ScF),
+	scale(WData, Data, 1/ScF);
+    WData = Data).
 
 change_shape(Component, Shape_field, Data) :-
-    Component has_changed_graphical_attribute Shape_field to Data.
+    clear_shape(Component, Shape_field),
+    set_shape(Component, Shape_field, Data).
 
 set_shape(Component, Shape_field, Data) :-
-    Component has_new_graphical_attribute Shape_field of Data.
+    (scale_attribute(Shape_field) ->
+	scale_factor_is(ScF),
+	scale(Data, WData, ScF);
+    WData = Data),
+    Component has_new_graphical_attribute Shape_field of WData.
 
 clear_shape(Component, Shape_field) :-
     Component has_graphical_attribute Shape_field of _,

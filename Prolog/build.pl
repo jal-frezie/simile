@@ -101,8 +101,8 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 	    event><get_posn_around(Ctr, Box, Theta),
 	    append(B4, [along=Theta | Rfter], V6Graph);
 	  V6Graph = GraphicalInfo), */
-	foreach( GAttribute=GValue, GraphicalInfo,    
-		RealNode has_new_graphical_attribute GAttribute of GValue ).
+	foreach(GAttribute=GValue, GraphicalInfo,    
+		image><set_shape(RealNode, GAttribute, GValue)).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % arc inserts a new arc and any info known about it. 
