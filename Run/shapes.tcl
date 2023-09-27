@@ -1673,7 +1673,7 @@ proc AdjustWidth {winId object factor} {
     } else {
         $winId dtag $object $tag
     }
-    if {[string match *bg_blob* $tagList]} {
+    if {[string match *bg_blob* $tagList] && [NoStipple $winId]} {
 	set width [expr $oldWidth*$factor+$::borderSpread*(1-$factor)]
     } else {
 	set width [expr $oldWidth*$factor]
