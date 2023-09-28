@@ -968,7 +968,6 @@ proc PositionBowtie {w ptz} {
 }
 
 proc DrawBlob {w startX startY outer inner switches} {
-    puts [info level 0]
     set width [expr {($outer-$inner)/2.0}]
     set rad [expr {($outer+$inner)/4.0}]
     if {![NoStipple $w]} {
