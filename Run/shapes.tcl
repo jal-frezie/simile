@@ -272,23 +272,38 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 # make a whole quadrant a curve its shape is scrappy, so build the quadrant  
 # from a curve and a polygon...numbers are trial and error  
 	    set p1 [DrawBlob $w $hm $vm $overall 0 $blobSws]
-	    set curve [list \
-		   [expr {$hm-$rad*177.0/300}] [expr {$vm-$rad*177.0/300}] \
-		       [expr {$hm-$rad*109.0/300}] [expr {$vm-$rad*250.0/300}] \
-		       [expr {$hm+$rad*109.0/300}] [expr {$vm-$rad*250.0/300}] \
-		       [expr {$hm+$rad*177.0/300}] [expr {$vm-$rad*177.0/300}]]
+	    # ok lets get some science in here
+	    set splurge 0.16
+	    set cRad [expr {$underall/2.0*(1-$splurge/2)}]
+	    set octRad [expr {$cRad*1.075}]
+	    set point [expr {$cRad/sqrt(2)}]
+	    set flat [expr {$octRad*cos(3.14159/8)}]
+	    set sharp [expr {$octRad*sin(3.14159/8)}]
+	    set curve [list [expr {$hm-$point}] [expr {$vm-$point}] \
+			   [expr {$hm-$sharp}] [expr {$vm-$flat}] \
+			   [expr {$hm+$sharp}] [expr {$vm-$flat}] \
+			   [expr {$hm+$point}] [expr {$vm-$point}]]
+#	    set curve [list \
+#		   [expr {$hm-$rad*177.0/300}] [expr {$vm-$rad*177.0/300}] \
+#		       [expr {$hm-$rad*109.0/300}] [expr {$vm-$rad*250.0/300}] \
+#		       [expr {$hm+$rad*109.0/300}] [expr {$vm-$rad*250.0/300}] \
+#		       [expr {$hm+$rad*177.0/300}] [expr {$vm-$rad*177.0/300}]]
 	    eval {$w create polygon $hm $vm} $curve $fuzz {-fill $fCol -tags \
 							     "$tagSet has_info"}
-	    eval {$w create line} $curve $fuzz {-width [expr {0.16*$rad}] \
+	    eval {$w create line} $curve $fuzz {-width [expr {$splurge*$rad}] \
 		       -smooth 1 -fill $fCol -tags "$tagSet has_info noflash"}
-	    set curve [list \
-		   [expr {$hm-$rad*177.0/300}] [expr {$vm+$rad*177.0/300}] \
-		       [expr {$hm-$rad*109.0/300}] [expr {$vm+$rad*250.0/300}] \
-		       [expr {$hm+$rad*109.0/300}] [expr {$vm+$rad*250.0/300}] \
-		       [expr {$hm+$rad*177.0/300}] [expr {$vm+$rad*177.0/300}]]
+	    set curve [list [expr {$hm-$point}] [expr {$vm+$point}] \
+			   [expr {$hm-$sharp}] [expr {$vm+$flat}] \
+			   [expr {$hm+$sharp}] [expr {$vm+$flat}] \
+			   [expr {$hm+$point}] [expr {$vm+$point}]]
+#	    set curve [list \
+#		   [expr {$hm-$rad*177.0/300}] [expr {$vm+$rad*177.0/300}] \
+#		       [expr {$hm-$rad*109.0/300}] [expr {$vm+$rad*250.0/300}] \
+#		       [expr {$hm+$rad*109.0/300}] [expr {$vm+$rad*250.0/300}] \
+#		       [expr {$hm+$rad*177.0/300}] [expr {$vm+$rad*177.0/300}]]
 	    eval {$w create polygon $hm $vm} $curve $fuzz {-fill $fCol -tags \
 							     "$tagSet has_info"}
-	    eval {$w create line} $curve $fuzz {-width [expr {0.16*$rad}] \
+	    eval {$w create line} $curve $fuzz {-width [expr {$splurge*$rad}] \
 		       -smooth 1 -fill $fCol -tags "$tagSet has_info noflash"}
 	}
     }
@@ -979,8 +994,6 @@ proc DrawBlob {w startX startY outer inner switches} {
 
 	set octRad [expr {$rad*1.075}]
 	set point [expr {$octRad/sqrt(2)}]
-	set flat [expr {$octRad*cos(3.14159/16)}]
-	set sharp [expr {$octRad*sin(3.14159/16)}]
 	set roll [list $startX [expr {$startY+$octRad}] \
 		      [expr {$startX+$point}] [expr {$startY+$point}] \
 		      [expr {$startX+$octRad}] $startY \
