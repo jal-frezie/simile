@@ -144,7 +144,7 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
                    ModelRefinements ),
 */
 	any_setof( Attribute=Value,
-		   Node has_graphical_attribute Attribute of Value,
+		   image><get_shape(Node, Attribute, Value),
 		   GraphicalAttributeValuePairs ),
 	export_with_breaks( Stream,
 		    node( Node, Class, Children,
@@ -717,7 +717,7 @@ posn_if_needed(Prim, Pt) :-
 	    \+ Prim has_graphical_attribute bounding_box of _;
 	member(Type, [variable, cloud]),
 	    \+ Prim has_graphical_attribute centre of _),
-	Prim has_new_graphical_attribute centre of Pt,
+	image><set_shape(Prim, centre, Pt),
 	m_update><change_class(Prim, Type, border).
 
 	    
