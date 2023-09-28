@@ -227,6 +227,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #    scan [GetPoints $mb -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 
     set overall [expr {2*$rad+$width}] 
+    set underall [expr {2*$rad-$width}] 
     if {$style} {
 	set outer [expr {3*$overall/5.0}]
 	set inner [expr {$overall/5.0}]
@@ -252,9 +253,9 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
 #		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
-	set p1 [DrawBlob $w $hm $vm $overall [expr 2*$rad-$width] $blobSws]
 	if {[NoStipple $w]} {
-	    set diam [expr {(2*$rad-$width)/4.0}]
+	    set p1 [DrawBlob $w $hm $vm $overall $underall $blobSws]
+	    set diam [expr {$underall/4.0}]
 	    set sliceBounds [list [expr {$hm-$diam}] [expr {$vm-$diam}] \
 				 [expr {$hm+$diam}] [expr {$vm+$diam}]]
 	    set generic [concat [string map {-stipple -outlinestipple} $fuzz] \
@@ -270,6 +271,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 # on Windows the only curved shapes that stipple are splines, but if we try to
 # make a whole quadrant a curve its shape is scrappy, so build the quadrant  
 # from a curve and a polygon...numbers are trial and error  
+	    set p1 [DrawBlob $w $hm $vm $overall 0 $blobSws]
 	    set curve [list \
 		   [expr {$hm-$rad*177.0/300}] [expr {$vm-$rad*177.0/300}] \
 		       [expr {$hm-$rad*109.0/300}] [expr {$vm-$rad*250.0/300}] \
@@ -966,17 +968,34 @@ proc PositionBowtie {w ptz} {
 }
 
 proc DrawBlob {w startX startY outer inner switches} {
+    puts [info level 0]
+    set width [expr {($outer-$inner)/2.0}]
+    set rad [expr {($outer+$inner)/4.0}]
     if {![NoStipple $w]} {
-	eval {$w create line $startX $startY $startX $startY -width $outer \
-		  -capstyle round} $switches
+#	eval {$w create line $startX $startY $startX $startY -width $outer \
+#		  -capstyle round} $switches
 # above fails to dash for MacOS stipple substitute (cross-platform TclTk bug)
 # also no hole but superposition should look ok with real stipple...
+#...problem is it gets rounded to nearest integer canvas posn
+
+	set octRad [expr {$rad*1.075}]
+	set point [expr {$octRad/sqrt(2)}]
+	set flat [expr {$octRad*cos(3.14159/16)}]
+	set sharp [expr {$octRad*sin(3.14159/16)}]
+	set roll [list $startX [expr {$startY+$octRad}] \
+		      [expr {$startX+$point}] [expr {$startY+$point}] \
+		      [expr {$startX+$octRad}] $startY \
+		      [expr {$startX+$point}] [expr {$startY-$point}] \
+		      $startX [expr {$startY-$octRad}] \
+		      [expr {$startX-$point}] [expr {$startY-$point}] \
+		      [expr {$startX-$octRad}] $startY \
+		      [expr {$startX-$point}] [expr {$startY+$point}] \
+		      $startX [expr {$startY+$octRad}]]
+	eval {$w create line} $roll {-width $width -smooth 1} $switches
     } else {
-	set width [expr {($outer-$inner)/2.0}]
 	if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
 	    set width [expr $width+$::borderSpread]
 	}
-	set rad [expr {($outer+$inner)/4.0}]
 	eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
 		  [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
 		  -width $width -extent 359.999} \
