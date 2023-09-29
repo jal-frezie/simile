@@ -27,7 +27,7 @@ if {!$headless} {
     switch [tk windowingsystem] {
 	x11 {
 	    set hideTinies 40
-	    set borderSpread 0
+	    set borderSpread 1
 	} win32 {
 	    set hideTinies 6
 	    set borderSpread 2
@@ -985,6 +985,9 @@ proc PositionBowtie {w ptz} {
 proc DrawBlob {w startX startY outer inner switches} {
     set width [expr {($outer-$inner)/2.0}]
     set rad [expr {($outer+$inner)/4.0}]
+    if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
+	set width [expr $width+$::borderSpread]
+    }
     if {![NoStipple $w]} {
 #	eval {$w create line $startX $startY $startX $startY -width $outer \
 #		  -capstyle round} $switches
@@ -992,22 +995,29 @@ proc DrawBlob {w startX startY outer inner switches} {
 # also no hole but superposition should look ok with real stipple...
 #...problem is it gets rounded to nearest integer canvas posn
 
-	set octRad [expr {$rad*1.075}]
-	set point [expr {$octRad/sqrt(2)}]
-	set roll [list $startX [expr {$startY+$octRad}] \
-		      [expr {$startX+$point}] [expr {$startY+$point}] \
-		      [expr {$startX+$octRad}] $startY \
-		      [expr {$startX+$point}] [expr {$startY-$point}] \
-		      $startX [expr {$startY-$octRad}] \
-		      [expr {$startX-$point}] [expr {$startY-$point}] \
-		      [expr {$startX-$octRad}] $startY \
-		      [expr {$startX-$point}] [expr {$startY+$point}] \
-		      $startX [expr {$startY+$octRad}]]
+#	set octRad [expr {$rad*1.075}]
+#	set point [expr {$octRad/sqrt(2)}]
+#	set roll [list $startX [expr {$startY+$octRad}] \
+#		      [expr {$startX+$point}] [expr {$startY+$point}] \
+#		      [expr {$startX+$octRad}] $startY \
+#		      [expr {$startX+$point}] [expr {$startY-$point}] \
+#		      $startX [expr {$startY-$octRad}] \
+#		      [expr {$startX-$point}] [expr {$startY-$point}] \
+#		      [expr {$startX-$octRad}] $startY \
+#		      [expr {$startX-$point}] [expr {$startY+$point}] \
+#		      $startX [expr {$startY+$octRad}]]
+	set sharp [expr {$rad*tan(3.14159/8)}]
+	set roll [list [expr {$startX+$sharp}] [expr {$startY-$rad}] \
+		      [expr {$startX+$rad}] [expr {$startY-$sharp}] \
+		      [expr {$startX+$rad}] [expr {$startY+$sharp}] \
+		      [expr {$startX+$sharp}] [expr {$startY+$rad}] \
+		      [expr {$startX-$sharp}] [expr {$startY+$rad}] \
+		      [expr {$startX-$rad}] [expr {$startY+$sharp}] \
+		      [expr {$startX-$rad}] [expr {$startY-$sharp}] \
+		      [expr {$startX-$sharp}] [expr {$startY-$rad}] \
+		      [expr {$startX+$sharp}] [expr {$startY-$rad}]]
 	eval {$w create line} $roll {-width $width -smooth 1} $switches
     } else {
-	if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
-	    set width [expr $width+$::borderSpread]
-	}
 	eval {$w create arc [expr {$startX-$rad}] [expr {$startY-$rad}] \
 		  [expr {$startX+$rad}] [expr {$startY+$rad}] -style arc \
 		  -width $width -extent 359.999} \
@@ -1704,7 +1714,7 @@ proc AdjustWidth {winId object factor} {
     } else {
         $winId dtag $object $tag
     }
-    if {[string match *bg_blob* $tagList] && [NoStipple $winId]} {
+    if {[string match *bg_blob* $tagList]} {
 	set width [expr $oldWidth*$factor+$::borderSpread*(1-$factor)]
     } else {
 	set width [expr $oldWidth*$factor]
