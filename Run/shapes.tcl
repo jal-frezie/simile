@@ -27,13 +27,10 @@ if {!$headless} {
     switch [tk windowingsystem] {
 	x11 {
 	    set hideTinies 40
-	    set borderSpread 1
 	} win32 {
 	    set hideTinies 6
-	    set borderSpread 2
 	} aqua {
 	    set hideTinies 10
-	    set borderSpread 1
 	}
     }
 }
@@ -219,7 +216,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set fCol $::looks($::window_info($w,top_node),$look,fill)
     set width [GetLineSize $w $look $fatness]
     set fuzz [FuzzFor $w $density]
-    set blobSws [concat $fuzz [list -fill $oCol -tags "$tagSet has_info bg_blob"]]
+    set blobSws [concat $fuzz [list -fill $oCol -tags "$tagSet has_info"]]
     # second approximation to fill
 #    scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
 #    scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
@@ -233,7 +230,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	set inner [expr {$overall/5.0}]
 	set p1 [DrawBlob $w $hm $vm $overall $outer $blobSws]
 	DrawBlob $w $hm $vm $outer $inner \
-	    [concat $fuzz [list -fill $fCol -tags "$tagSet has_info bg_blob noflash"]]
+	    [concat $fuzz [list -fill $fCol -tags "$tagSet has_info noflash"]]
 	DrawBlob $w $hm $vm $inner 0 \
 	    [concat $fuzz [list -fill $oCol -tags "$tagSet has_info"]]
 	# needs zero width to print/copy nice on Windows so avoid generic
@@ -254,7 +251,6 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
 	if {[NoStipple $w]} {
-	    set p1 [DrawBlob $w $hm $vm $overall $underall $blobSws]
 	    set diam [expr {$underall/4.0}]
 	    set sliceBounds [list [expr {$hm-$diam}] [expr {$vm-$diam}] \
 				 [expr {$hm+$diam}] [expr {$vm+$diam}]]
@@ -271,17 +267,15 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 # on Windows the only curved shapes that stipple are splines, but if we try to
 # make a whole quadrant a curve its shape is scrappy, so build the quadrant  
 # from a curve and a polygon...numbers are trial and error  
-	    set p1 [DrawBlob $w $hm $vm $overall 0 $blobSws]
+	    DrawBlob $w $hm $vm [expr {2*$rad}] 0 $blobSws
 	    # ok lets get some science in here
 	    set splurge 0.16
-	    set cRad [expr {$underall/2.0*(1-$splurge/2)}]
-	    set octRad [expr {$cRad*1.075}]
+	    set cRad [expr {$rad*(1-$splurge/2)}]
 	    set point [expr {$cRad/sqrt(2)}]
-	    set flat [expr {$octRad*cos(3.14159/8)}]
-	    set sharp [expr {$octRad*sin(3.14159/8)}]
+	    set sharp [expr {$cRad*tan(3.14159/8)}]
 	    set curve [list [expr {$hm-$point}] [expr {$vm-$point}] \
-			   [expr {$hm-$sharp}] [expr {$vm-$flat}] \
-			   [expr {$hm+$sharp}] [expr {$vm-$flat}] \
+			   [expr {$hm-$sharp}] [expr {$vm-$rad}] \
+			   [expr {$hm+$sharp}] [expr {$vm-$rad}] \
 			   [expr {$hm+$point}] [expr {$vm-$point}]]
 #	    set curve [list \
 #		   [expr {$hm-$rad*177.0/300}] [expr {$vm-$rad*177.0/300}] \
@@ -293,8 +287,8 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	    eval {$w create line} $curve $fuzz {-width [expr {$splurge*$rad}] \
 		       -smooth 1 -fill $fCol -tags "$tagSet has_info noflash"}
 	    set curve [list [expr {$hm-$point}] [expr {$vm+$point}] \
-			   [expr {$hm-$sharp}] [expr {$vm+$flat}] \
-			   [expr {$hm+$sharp}] [expr {$vm+$flat}] \
+			   [expr {$hm-$sharp}] [expr {$vm+$rad}] \
+			   [expr {$hm+$sharp}] [expr {$vm+$rad}] \
 			   [expr {$hm+$point}] [expr {$vm+$point}]]
 #	    set curve [list \
 #		   [expr {$hm-$rad*177.0/300}] [expr {$vm+$rad*177.0/300}] \
@@ -306,6 +300,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	    eval {$w create line} $curve $fuzz {-width [expr {$splurge*$rad}] \
 		       -smooth 1 -fill $fCol -tags "$tagSet has_info noflash"}
 	}
+	set p1 [DrawBlob $w $hm $vm $overall $underall $blobSws]
     }
     set generic [concat "-width $width -fill $oCol" $fuzz \
 		     [list -tags "$tagSet size_on_this realwidth($width) has_info"]]
@@ -985,9 +980,6 @@ proc PositionBowtie {w ptz} {
 proc DrawBlob {w startX startY outer inner switches} {
     set width [expr {($outer-$inner)/2.0}]
     set rad [expr {($outer+$inner)/4.0}]
-    if {[string match *bg_blob* $switches] && $w ne "ToSVG"} {
-	set width [expr $width+$::borderSpread]
-    }
     if {![NoStipple $w]} {
 #	eval {$w create line $startX $startY $startX $startY -width $outer \
 #		  -capstyle round} $switches
@@ -1714,11 +1706,7 @@ proc AdjustWidth {winId object factor} {
     } else {
         $winId dtag $object $tag
     }
-    if {[string match *bg_blob* $tagList]} {
-	set width [expr $oldWidth*$factor+$::borderSpread*(1-$factor)]
-    } else {
-	set width [expr $oldWidth*$factor]
-    }
+    set width [expr $oldWidth*$factor]
     $winId addtag realwidth($width) withtag $object
     return $width
 }
