@@ -274,8 +274,8 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	    set point [expr {$cRad/sqrt(2)}]
 	    set sharp [expr {$cRad*tan(3.14159/8)}]
 	    set curve [list [expr {$hm-$point}] [expr {$vm-$point}] \
-			   [expr {$hm-$sharp}] [expr {$vm-$rad}] \
-			   [expr {$hm+$sharp}] [expr {$vm-$rad}] \
+			   [expr {$hm-$sharp}] [expr {$vm-$cRad}] \
+			   [expr {$hm+$sharp}] [expr {$vm-$cRad}] \
 			   [expr {$hm+$point}] [expr {$vm-$point}]]
 #	    set curve [list \
 #		   [expr {$hm-$rad*177.0/300}] [expr {$vm-$rad*177.0/300}] \
@@ -287,8 +287,8 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	    eval {$w create line} $curve $fuzz {-width [expr {$splurge*$rad}] \
 		       -smooth 1 -fill $fCol -tags "$tagSet has_info noflash"}
 	    set curve [list [expr {$hm-$point}] [expr {$vm+$point}] \
-			   [expr {$hm-$sharp}] [expr {$vm+$rad}] \
-			   [expr {$hm+$sharp}] [expr {$vm+$rad}] \
+			   [expr {$hm-$sharp}] [expr {$vm+$cRad}] \
+			   [expr {$hm+$sharp}] [expr {$vm+$cRad}] \
 			   [expr {$hm+$point}] [expr {$vm+$point}]]
 #	    set curve [list \
 #		   [expr {$hm-$rad*177.0/300}] [expr {$vm+$rad*177.0/300}] \
@@ -340,14 +340,16 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #		$h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
 #                $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 \
 #	        $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10] $generic]
-	set stackSide \
-	    [eval {$w create arc} [ShiftAll $stackDistance $ml $mt $mr $mb] \
-		 {-style arc -start 225 -extent 180} \
-		 [string map {-fill -outline -stipple -outlinestipple} $generic]]
-	if {$stackDepth} {
-            $w lower $stackSide $p1
-            set p1 $stackSide
-        }
+	    set point [expr {$rad/sqrt(2)}]
+	    set sharp [expr {$rad*tan(3.14159/8)}]
+	    set curve [list [expr {$hm-$point}] [expr {$vm+$point}] \
+			   [expr {$hm-$sharp}] [expr {$vm+$rad}] \
+			   [expr {$hm+$sharp}] [expr {$vm+$rad}] \
+			   [expr {$hm+$rad}] [expr {$vm+$sharp}] \
+			   [expr {$hm+$rad}] [expr {$vm-$sharp}] \
+			   [expr {$hm+$point}] [expr {$vm-$point}]]
+	set stackSide [eval {$w create line} $curve {-smooth 1} $generic]
+	$w move $stackSide $stackDistance $stackDistance
         incr stackDepth
     }
 #    ResetColours $w $look $density $colourScheme [lindex $tagSet 0]
