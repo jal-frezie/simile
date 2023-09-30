@@ -251,7 +251,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
 	if {[NoStipple $w]} {
-	    set diam [expr {$underall/4.0}]
+	    set diam [expr {$rad/2.0}]
 	    set sliceBounds [list [expr {$hm-$diam}] [expr {$vm-$diam}] \
 				 [expr {$hm+$diam}] [expr {$vm+$diam}]]
 	    set generic [concat [string map {-stipple -outlinestipple} $fuzz] \
