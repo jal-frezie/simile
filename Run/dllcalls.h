@@ -105,7 +105,7 @@ typedef unsigned char BOOLEAN;
 // Identifier
 #define MDL_OBJ_VERS 7.0091
 
-#define SIMILE_VERSION	"7.0"
+#define SIMILE_VERSION	"7.1"
 #define NEST 32
 
 #ifdef _WIN32 // note underscore, without is only defined in uSoft c
@@ -333,11 +333,15 @@ EXTDEC void* fetch_top_instance(void*, void*);
 EXTDEC void* fetch_group_member(void*, void*);
 EXTDEC void delete_instance(void*);
 
-EXTDEC void reset(void*, void*, double, int, int);
+EXTDEC void go_reset(void*, void*, double, int, int);
 EXTDEC void repeat_reset(void*, void*, double);
-EXTDEC void execute(void*, void*, int, double, double, double, 
+EXTDEC void go_execute(void*, void*, int, double, double, double, 
 			 BOOLEAN, BOOLEAN);
 EXTDEC excpData* check_action(void*, void*, int, int);
+EXTDEC excpData* reset(void*, void*, double, int, int);
+EXTDEC excpData* execute(void*, void*, int, double, double, double, 
+			 BOOLEAN, BOOLEAN);
+
 EXTDEC int setstep(void*, double, int);
 EXTDEC char* myexit(void*, void*);
 

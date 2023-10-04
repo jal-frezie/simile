@@ -1065,7 +1065,7 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  reset(modelType, modelHandle, t0, how_int, phase);
+  go_reset(modelType, modelHandle, t0, how_int, phase);
   return TCL_OK;
 }
 
@@ -1142,7 +1142,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   }
   evt_pause = (BOOLEAN)notBool;
   
-  execute(modelType, modelHandle, how_int, starttime, endtime, 
+  go_execute(modelType, modelHandle, how_int, starttime, endtime, 
 		     errlim, lmt_pause, evt_pause);
   return TCL_OK;
 }

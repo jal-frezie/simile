@@ -3067,8 +3067,8 @@ nodeValues* get_raw_values(char* nodeId, void* instance_id) {
   return ((ExecutingModel*)instance_id)->GetRawValues(nodeNum);
 }
 
-void reset(void* modelType, void* modelHandle, double t0, int how_int,
-		int top_phase) {
+void go_reset(void* modelType, void* modelHandle, double t0, int how_int,
+	      int top_phase) {
   xmList topList;
   topList.next = NULL;
   ExecutingModel* convenience = (ExecutingModel*)modelHandle;
@@ -3091,9 +3091,9 @@ void repeat_reset(void* modelType, void* modelHandle, double t0) {
   ((ExecutingModel*)modelHandle)->RepeatReset(t0);
 }
 
-void execute(void* modelType, void* modelHandle, int how_int,
-		  double starttime, double endtime, double errlim,
-		  BOOLEAN lmt_pause, BOOLEAN evt_pause) {
+void go_execute(void* modelType, void* modelHandle, int how_int,
+		double starttime, double endtime, double errlim,
+		BOOLEAN lmt_pause, BOOLEAN evt_pause) {
   ExecutingModel* convenience = (ExecutingModel*)modelHandle;
 
   convenience->initTime = starttime;
@@ -3111,6 +3111,20 @@ void execute(void* modelType, void* modelHandle, int how_int,
 excpData* check_action(void* modelType, void* modelHandle,
 		       int cancel, int max_wait) {
   return ((ExecutingModel*)modelHandle)->check_thread(cancel, max_wait);
+}
+
+// single-threaded versions for external clients
+excpData* reset(void* modelType, void* modelHandle, double t0, int how_int,
+	      int top_phase) {
+  return ((ExecutingModel*)modelHandle)->ResetInstance(t0, how_int, top_phase);
+}
+
+excpData* execute(void* modelType, void* modelHandle, int how_int,
+		  double starttime, double endtime, double errlim,
+		  BOOLEAN lmt_pause, BOOLEAN evt_pause) {
+  return ((ExecutingModel*)modelHandle)->ExecuteInstance(how_int, starttime, 
+							 endtime, errlim,
+							 lmt_pause, evt_pause);
 }
 
 // This deletes a model instance and/or a class -- both when used in Simile
