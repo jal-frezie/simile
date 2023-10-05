@@ -1730,7 +1730,7 @@ uses_as(const_int, int).
 uses_as(const_int, const_ratio).
 uses_as(const_ratio, 1).
 uses_as(int, 1).
-uses_as(real, 1).
+uses_as(real, const_int).
 
 /* this one interprets the unit specs in fragment names (more later?) */
 describes_unit(Spec, Actual) :-
