@@ -5,7 +5,7 @@
 
 Name:		simile
 Version:	7.1
-Release:	11%{?dist}
+Release:	0%{?dist}
 Summary:	Multi-paradigm graphical modelling environment
 
 License:	Proprietary
