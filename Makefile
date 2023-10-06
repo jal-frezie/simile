@@ -1,5 +1,5 @@
 MAJREL = 7
-MINREL = 0
+MINREL = 1
 MACH = $(shell $(CC) -dumpmachine)
 MY_CPU = $(firstword $(subst -, ,$(MACH)))
 
