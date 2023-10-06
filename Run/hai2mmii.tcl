@@ -63,7 +63,14 @@ proc TransValue {curLevel val} {
 }
 
 proc IsPretty {bride} {
-    expr {[string first [string index $bride 0] \{\[]+1}
+    set type [expr {[string first [string index $bride 0] \{\[]+1}]
+    if {[string first , $bride]==-1} {
+	return 0 ;# members not comma separated
+    }
+    if {$type==2 && [string first : $bride]==-1} {
+	return 0 ;# keys and values not separated by colons
+    }
+    return $type
 }
 
 proc PrettifyValList {ugly txtVals} {
@@ -81,10 +88,8 @@ proc PrettifyValList {ugly txtVals} {
 	    } else {
 		set result \{
 	    }
-	    if {[llength $indx]!=1} {
-		set indx \"$indx\"
-	    }
-	    append result $indx:\ [PrettifyValList $val $txtVals]
+	    append result \
+		[EnquoteIfNonNumeric $indx]:\ [PrettifyValList $val $txtVals]
 	}
 	if {[string length $result]} {
 	    append result \}
