@@ -1374,19 +1374,22 @@ proc CanvasEditBind { c } {
 proc FixBackBox {c textItem} {
 #    set nid [ExtractPrologName $c $textItem]
 # above no longer needed due to change below
-    if {[scan [$c bbox $textItem] "%g %g %g %g" l t r b]==4} {
-#	foreach backBox [$c find withtag $nid] {
+    set shows [scan [$c bbox $textItem] "%g %g %g %g" l t r b]
+#	foreach backBox [$c find withtag $nid]
 # for some reason that is very slow, and we know where they are...
-	foreach backBox [list [expr $textItem-2] [expr $textItem-1]] {
+    foreach backBox [list [expr $textItem-2] [expr $textItem-1]] {
+	if {$shows==4} {
 	    if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
+		$c itemconfigure $backBox -state normal
 		if {[string equal line [$c type $backBox]]} {
 		    $c coords $backBox $r $t $l $t $l $b $r $b $r $t
 		} else {
 		    $c coords $backBox $l $t $r $b
 		}
 	    }
+	} else {
+	    $c itemconfigure $backBox -state hidden
 	}
-#	}
     }
 }
 
