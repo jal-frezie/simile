@@ -64,13 +64,13 @@ proc TransValue {curLevel val} {
 
 proc IsPretty {bride} {
     set type [expr {[string first [string index $bride 0] \{\[]+1}]
-    if {[string first , $bride]==-1} {
-	return 0 ;# members not comma separated
+    if {$type==2 && [string first , $bride]==-1} {
+	return 0 ;# members not comma separated (single mem array not allowed)
     }
-    if {$type==2 && [string first : $bride]==-1} {
-	return 0 ;# keys and values not separated by colons
+    if {$type==1 && [string first : $bride]==-1} {
+	return 0 ;# keys/values not separated by colons (single pair allowed)
     }
-    return $type
+    return $type ;# 1 for object, 2 for array
 }
 
 proc PrettifyValList {ugly txtVals} {
