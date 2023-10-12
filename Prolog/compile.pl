@@ -508,7 +508,8 @@ used when entering file parameters */
 	  % check for limit events also goes in sub-step
 	all(compile, mark_limit_checks,
 	    [build(NewForm), append(CondsInSubStep, Marked)]),
-	  % this puts everything in the longest possible time step
+	% this puts everything in the longest possible time step
+	retractall(could_trip_on(_)),
 	check_functions(NewForm, Phases, CondsInSubStep),
 	/* first off, unify all matching vm level specs in the two lists so
 	that those that are completed when ordering their condition nodes
@@ -731,6 +732,9 @@ mark_unstepped(Cond, Set, Add, Do) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % check_functions tests for circularity, then puts each function
 % evaluation into the slowest time step in which it needs to be updated
+tag_warn(PotentialHitch) :-
+    assertz(could_trip_on(PotentialHitch)),
+    safe_tcl_eval([puts, br(write(PotentialHitch))], _).
 
 check_functions(Functions, Steps, Updates) :-
 /*	tk_update_infobox("Checking for circularity in model assignment order"),
@@ -773,9 +777,9 @@ as well to stop rand_vars being changed in the R-K subphase */
 	    Out = make(Xefct, _, APath, [_,_, AStep | _], _),
 	    (remove_non_loopers(APath, PureAPath),
 		\+ suffix(PurePath, PureAPath),
-		raise_exception(condition_outside_loop(LoopEnd, LoopStart,
+		tag_warn(condition_outside_loop(LoopEnd, LoopStart,
 						       Xefct));
-	     raise_exception(mixed_phase_loop(LoopEnd, Xefct, Step, AStep)));
+	     tag_warn(mixed_phase_loop(LoopEnd, Xefct, Step, AStep))), fail;
 	!).
 /*
 reachable(P, Trail) :-
@@ -1065,8 +1069,9 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	    find_circle([Forgotten], Proc, Loop, Tail),
 	    (Loop = [] ->
 		 % unfinished_in(Forgotten, Tail),
-	% pick act because raising exception with self-ref term crashes GNU
-		 raise_exception(ordering_failure(Tail));
+		 % pick act because raising exception with self-ref term crashes GNU
+		 (retract(could_trip_on(Excp)); Excp = ordering_failure(Tail)),
+		 raise_exception(Excp);
 	       all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	         raise_exception(circular_evaluation(CircSet)));
 	true),
@@ -2343,7 +2348,8 @@ phases, the instructions have an extra argument to say which phase they go in,
 allowing there to be more than two. */
 
 order_assignments(Phase, Path, EndPts, All, Assign) :-
-	EndPts = make_level(_Cur, Items, Subs),
+	EndPts =.. [make_level, _Cur, Items, Subs],
+    % works round SWI bug that deassembles pred if 1st clause is X=Y
 	% (Path = [sm(Capt, _,_,_) | _];
 	%     Path = [set(_, loop(Capt, _)) | _];
 	%     Path = [], Capt = top),
@@ -2400,12 +2406,12 @@ order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign) :
 	    \+ SubPass = [],
 
 	    % Check for incomplete single-loop chains before exiting loop
-	    % (open_separately(SmLevel) -> % this makes some take too long...
+	    (open_separately(SmLevel) -> % this may make some take too long...
 	    \+ (member(make(_, Conds-_, _,_,_), SubPass),
 		nonvar(Conds), % filter dummy instructions from d_c_s
 		member(later(Hanger), Conds),
-		not_yet_ordered(Hanger)),
-	    
+		not_yet_ordered(Hanger));
+	    true),
 	    /* If this line uncommented, do not do anything that would use the
 	    check-member feature */
 	    % \+ (number(TestPhase), TestPhase < Phase),
@@ -3080,7 +3086,7 @@ open_separately(Level) :-
 	loops(Level);
 	Level = sm(_,_,_, fm_loop(Inds, _, Alarm, _)),
 	(member(I, Inds),
-	\+ I = glob(_,_);
+	\+ I = glob(_,_), fail; % allow random array access
 	    nonvar(Alarm)).
 
 generate_graph_handlers([], []).

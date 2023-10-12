@@ -1514,6 +1514,7 @@ match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, I0, Array) :-
 	(((NeedType = boolean; \+ NeedType = a(_), I0 = 'Yes'),
 		% first index is 1 in model, 0 in code
 	        UseIndxRef = TryIndxRef;
+	      UseIndxRef+1 = TryIndxRef;
 	      UseIndxRef = TryIndxRef-1),
 	  member(IntIndxRef, [UseIndxRef, glob(_, UseIndxRef)]));
 	    % only reason this might fail is if taking element of a made array;
