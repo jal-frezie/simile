@@ -2406,12 +2406,12 @@ order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign) :
 	    \+ SubPass = [],
 
 	    % Check for incomplete single-loop chains before exiting loop
-	    (open_separately(SmLevel) -> % this may make some take too long...
+	    % (open_separately(SmLevel) -> % this makes some take too long...
 	    \+ (member(make(_, Conds-_, _,_,_), SubPass),
 		nonvar(Conds), % filter dummy instructions from d_c_s
 		member(later(Hanger), Conds),
-		not_yet_ordered(Hanger));
-	    true),
+		not_yet_ordered(Hanger)),
+
 	    /* If this line uncommented, do not do anything that would use the
 	    check-member feature */
 	    % \+ (number(TestPhase), TestPhase < Phase),
