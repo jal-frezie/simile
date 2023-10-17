@@ -913,6 +913,7 @@ proc PutItThere {t parent} {
 	wm transient $t $parent
     } else {
 	wm transient $t
+	puts "$t orphan"
     }
     if [string match Darwin $tcl_platform(os)] {
 	::tk::unsupported::MacWindowStyle style $t moveableModal resizable
@@ -925,7 +926,7 @@ proc PutItThere {t parent} {
 	    [winfo toplevel $parent] configure -menu [. cget -menu]
 	}
     }
-    if {![string eq x11 [tk windowingsystem]]} {
+    if {[tk windowingsystem] ne "x11"} {
 	wm geometry $t +0+[winfo screenheight $t]
     }
 # supposed to reduce flicker but stuffs placement under Gnome
