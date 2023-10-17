@@ -2054,18 +2054,20 @@ connect_params(AllInsts, Insts) :-
 		 !); % same if in association
 	       % SafePath = [_RetroLevel | CommonPath],
 	       % suffix(SafePath, Path),
-	       append(ValDims, SafePathPlus, PathPlus),
-	       SafePathPlus = [sm(_,_,_,_) | _],
-	       \+ member(sm(_,_,_,_), ValDims),
+	       suffix(SafePathPlus, PathPlus),
+	       append(RetroLevels, CommonPathPlus, SafePathPlus),
+	       remove_non_loopers(CommonPathPlus, CommonPath),
+	       RetroLevels = [sm(_,_,_, RetroSpec) | RetroLoops],
+	       \+ member(sm(_,_,_,_), RetroLoops),
+	       (RetroSpec = vm_loop(_,_,_,_); RetroLoops = [_|_]),
 	       remove_non_loopers(SafePathPlus, SafePath),
-	       suffix([_RetroLevel | CommonPath], SafePath),
 	       !; % stay inside loop using vals
 	       % UsingLast = 1, use later to sidestep ordering constraints
 	       query(using_own_value(Deferred), silent, top, [ok], _));
 	     Param = OrigParam,
 	     SafePath = CommonPath),
 							   
-	    (SafePath = Path, % or OrigPath?
+	    (SafePath = Path, % or OrigPath? Breaks order fragment
 	        % var(UsingLast), not like this
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
@@ -2803,7 +2805,8 @@ hang_on_tree(Inst, Using, make_level(_Cur, Insts, SubTrees)) :-
 	% second disjunct in following moves instructions without actions
 	% outside any boring submodels they are in, as that can mess up
 	% sequencing for intermediates in in_preceding() of array values
-	((Tail = []; Act = [], \+ (member(Useful, Tail),
+	% (2023-10-17: not if its done properly, that just slows ordering)
+	((Tail = []; fail, Act = [], \+ (member(Useful, Tail),
 				   \+ (Useful = sm(_,_,_, fm_loop([], _, A, _)),
 				   var(A)))) ->
 	      member(Inst, Insts);
