@@ -913,7 +913,6 @@ proc PutItThere {t parent} {
 	wm transient $t $parent
     } else {
 	wm transient $t
-	puts "$t orphan"
     }
     if [string match Darwin $tcl_platform(os)] {
 	::tk::unsupported::MacWindowStyle style $t moveableModal resizable
