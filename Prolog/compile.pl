@@ -2046,9 +2046,9 @@ connect_params(AllInsts, Insts) :-
 	    MatchPath == CommonPath, !,
 	    (member(OrigParam, [this_loop(Deferred), later(Deferred)]),
 	     Param = later(Deferred), !,
-	      (SafePath = CommonPath,
+	      (suffix(SafePath, CommonPath),
                 \+ OrigParam = this_loop(Deferred),
-                (member(sm(_,_,_, fm_loop(_,_, Al, _)), SafePath),
+                (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
 		 nonvar(Al), !; % if in alarm let other loops exit
 		 SafePath = [sm(_,_,_, vm_loop(_,_, [_B1, _B2 |_], _)) | _],
 		 !); % same if in association
