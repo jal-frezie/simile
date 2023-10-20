@@ -917,6 +917,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
             set needsETs 1
             set dimtyFromData 1
         } "(data determines dimensions)" {
+	    set arrayDims [lrepeat 7 0] ;# used for view/edit, should be enough
             set dimtyFromData 1
         } default {
             foreach {dimVal sep} [string range $dims 1 end-1] { ;# dequote
