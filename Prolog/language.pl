@@ -1282,10 +1282,9 @@ make_evaluation_routine(
 	Expr = is_new_instance(Ptr), !,
 	    make_new_check(Language, Ptr, Term);
 	number(Expr), !,
-	    Term=Expr; /* I think not...
-	    this goes num -> chars -> atom -> chars -> atom
-	    print_to_codes(TermStr, Expr),
-	    sicstus_atom_chars(Term, TermStr); */
+	    (trim_float(Expr, TermStr) ->
+		 sicstus_atom_chars(Term, TermStr); % float
+	      Term=Expr); % integer
 	member(Expr-Arr-Idx, [time(P)-ts-P, ind_time(P)-ts-P, dt(P)-dts-P,
 			      cur_step-dts-0, cur_phase-ts-0]),
 	    (Language = c,
