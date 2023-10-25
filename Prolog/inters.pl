@@ -948,11 +948,20 @@ make_intermediates(
 	(Source = place_in(IndN), !,
 	    make_inds_for(_, DestBounds, BuildingArrays, DestInds),
 	    all(inters, members_of_type, [build(DestBounds), build(DestDims)]);
-	  Source = index(IndN), !,
-	    reverse(DestPath, BackDP),
+	 Source = index(IndN), !,
+	 (BackSwap = values_from_base(_) -> % jam context swap 
+	      UsePath = DestPath;
+	  swap_back(DestPath, BackSwap, UsePath, _)),
+	    reverse(UsePath, BackDP),
 	    all(inters, indices_for,
-		[build(BackDP), append(DestInds, []), append(DestDims, [])]),
-	    BackSwap = values_from_base(_)), % jam context swap 
+		[build(BackDP), append(SrcInds, []), append(SrcDims, []),
+		append(Origins, [])])),
+	(BackSwap = values_from_base(_) ->
+	     [DestInds, DestDims] = [SrcInds, SrcDims];
+	 all(inters, filter_applicable, [build(SrcInds), build(Origins),
+					 unify(DestPath), append(DestInds, [])]),
+	 all(inters, filter_applicable, [build(SrcDims), build(Origins),
+					 unify(DestPath), append(DestDims, [])])),
 	(integer(IndN), !;
 	    throw(bad_index_number(IndN, index, 32))),
 	    length(DestInds, AvailInds),
@@ -1672,7 +1681,7 @@ keep_name_in_context(TgtLangName, instance(_, ISpec, _,_,_)) :-
 
 trim_one_multi_instance(DestPath, InterPath) :-
 	suffix([MultiInst | DestTail], DestPath),
-	indices_for(MultiInst, [_Some | _], _), !,
+	indices_for(MultiInst, [_Some | _], _, _), !,
 	get_model(DestTail, InterPath);
 	throw(no_preceding_instance).
 
@@ -1972,22 +1981,50 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	N is M+1.
 
 /* Returns expressions for a model's indices, those for outer loops first */
-indices_for(Level, [], []) :-
+indices_for(Level, [], [], []) :-
     member(Level, [set(_, loop(_,_)), separate(_)]).
 
-indices_for(sm(_,_, Ptr, Spec), Inds, Dims) :-
-	Spec = fm_loop(Inds, Dims,_,_);
-	Spec = vm_loop(N, Dims,_,_),
-	(N == pop, !,
-	    Inds = [ind(Ptr, pop)];	  
-	 (Dims = [], !,
-		Inds = [];
-	    Dims = [_Dim | More],
-		length(More, IndCt),
-		indices_for(sm(_,_, Ptr, vm_loop(N, More,_,_)), Rest, _),
-		/* Inds = [ind(Ptr, IndCt) | Rest].  for inner first */
-		append(Rest, [ind(Ptr, IndCt)], Inds))).
+indices_for(Sm, Inds, Dims, Origins) :-
+    Sm = sm(_,_, Ptr, Spec),
+    (Spec = fm_loop(Inds, Dims,_,_),
+     length(Dims, N),
+     list_of(Sm, N, Origins);
+     Spec = vm_loop(N, Dims, Bases,_),
+     (N == pop, !,
+      Inds = [ind(Ptr, pop)],
+      Origins = [Sm];
+     length(Dims, Dimty),
+      make_ind_exprs(Ptr, Dimty, Inds),
+      append(Bases, FlatBases),
+      get_origins(FlatBases, RemOrigins),
+      length(RemOrigins, Origty),
+      LocalDimty is Dimty - Origty,
+      list_of(Sm, LocalDimty, LocalOrigins),
+      append(RemOrigins, LocalOrigins, Origins))).
 
+make_ind_exprs(_, 0, []) :- !.
+make_ind_exprs(Ptr, N, Inds) :-
+    M is N-1,
+    make_ind_exprs(Ptr, M, MoreInds),
+    append(MoreInds, [ind(Ptr, M)], Inds).
+
+get_origins(Bases, Origins) :-
+    suffix([sm(A1, A2, A3, Spec) | MoreSMs], Bases),
+    Spec =.. [LoopType, _, [_OD1 | ODims], _,_], !,
+        Origin = sm(A1, A2, A3, _),
+	(ODims = [], !,
+	    RemBases = MoreSMs;
+	 ShortSpec =.. [LoopType, _, ODims, _,_],
+	    RemBases = [sm(A1, A2, A3, ShortSpec) | MoreSMs]),
+	get_origins(RemBases, MOs),
+	append(MOs, [Origin], Origins);
+    Origins = [].
+
+filter_applicable(Item, Origin, Allowed, Checked) :-
+    member(Origin, Allowed) ->
+	Checked = [Item];
+    Checked = [].
+    
 revert_bound(n(Type), Type) :- !.
 
 /* might do better to get submodel and use g_a_s to convert */

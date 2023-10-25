@@ -2478,7 +2478,8 @@ do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
 		    [build([D1, D1 | AllLoops]), build([D2, D2 | OpenLoops]),
 		     build(LastStepTail)]),
 		all(inters, indices_for,
-		    [build(AllLoops), append(LoopInds, []), append(_Ts, [])]),
+		    [build(AllLoops), append(LoopInds, []), append(_Ts, []),
+		    append(_Origins, [])]),
 		append(LoopInds, LocalInds, Inds),
 
 		/* At this point we need to replace the innermost loop with an
