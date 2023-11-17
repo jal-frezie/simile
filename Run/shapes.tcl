@@ -151,6 +151,7 @@ proc PutShape {w l t r b file fatness colourScheme title} {
 # use Inner...we don't need hourglass and the refresh may allow customization
 # dialogue to get its threads in a twist
     $w addtag has_info withtag unscaled
+    InnerZoomImage $w unscaled 1 ;# make ? in cond come out right if scale 1
     EndGroup $w $xoff $yoff $scale    
 #    ResetColours $w channel {} $colourScheme [lindex $title 0]
 }
