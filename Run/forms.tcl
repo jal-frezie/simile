@@ -2020,10 +2020,11 @@ proc ShowAbout {winId} {
 
 proc GetLatestVers {} {
     package require http
-    return 0 ;# will not work without https, bundled tls etc
+    # return 0 ;# will work without https, bundled tls etc as I have symlinked
+    # it from insecure site
 # catch everything -- failure to connect, unexpected sign-in web page, etc.
     if {[catch {
-	set token [::http::geturl http://www.simulistics.com/cgi-bin/products/current-version.php -timeout 1000]
+	set token [::http::geturl http://buckaroo.simulistics.com/current-version.php -timeout 1000]
 	upvar #0 $token versReq
 	array set versInfo $versReq(body)
 	set latest $versInfo(simileVerNo)
