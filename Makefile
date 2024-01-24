@@ -416,18 +416,15 @@ install:
 	mkdir -p "$(DESTDIR)"$(INSTALL_TGT); \
 	tar cf "$(DESTDIR)"$(INSTALL_TGT)/payload.tar \
 		eula.txt \
-		Examples/BallBerry4a.shf \
 		Examples/BallBerry4a.sml \
-		Examples/control.shf \
 		Examples/control.sml \
-		Examples/forest.shf \
 		Examples/forest.sml \
 		Examples/forestV4FP.spf \
 		Examples/forestV4FPb.spf \
 		Examples/forestV4FP.sml \
 		Examples/forestV4IP.sml \
-		Examples/spiro.shf \
 		Examples/spiro.sml \
+		Examples/trajectory.sml \
 		Examples/bat.spf \
 		Examples/dancer.spf \
 		Examples/ant.cnv \
