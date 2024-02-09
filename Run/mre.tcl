@@ -56,6 +56,7 @@ namespace eval RunEnv {
    [list \
         [list graph.gif "Create plotter" "::RunEnv::InsertHelperWindow plotter1_dot_25 {}"] \
         [list table.gif "Create table" "::RunEnv::InsertHelperWindow tabular11510 {}"] \
+        [list grid.gif "Create spatial grid" "::RunEnv::InsertHelperWindow grid005 {}"] \
         [list multi.gif "Create layered view" "::RunEnv::InsertHelperWindow Layers20131022 {}"] \
         [list 3d_objects.png "Create 3-D scene" "::RunEnv::InsertHelperWindow Shapes3D20141208 {}"] \
         [list slider.gif "Create input sliders" "::RunEnv::InsertHelperWindow slide139 {}"] \
