@@ -29,7 +29,6 @@ DEFNS=-DSIM_BUILT=$(shell date $(DATESPEC) +%s)
 # default *nix variables overwritten in special cases
 GCCCMD = $(CC)
 GPPCMD = $(CXX)
-MA2ASM = ma2asm
 PL_PATH=/usr
 
 ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
@@ -76,7 +75,6 @@ endif
 HOST = $(shell gcc -dumpmachine)
 TGT = $(shell $(CC) -dumpmachine)
 ifneq ($(TGT),$(HOST))
-	MA2ASM = $(TGT)-ma2asm
 	PL_PATH=/usr/local/$(TGT)-gprolog
 endif
 ifeq ($(PLATFORM),Darwin)
@@ -281,7 +279,7 @@ $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
 $(PROLOG_OBJ): $(PROLOG_AS)
 	$(GCCCMD) -c -o $(PROLOG_OBJ) $(PROLOG_AS)
 $(PROLOG_AS): $(PROLOG_MA)
-	$(MA2ASM) -o $(PROLOG_AS) $(PROLOG_MA)
+	$(PL_PATH)/bin/ma2asm -o $(PROLOG_AS) $(PROLOG_MA)
 $(PROLOG_MA): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 #	cd Prolog; gplc -o ../$(PROLOG_MA) -M gmain.pl; cd ..
 	$(PL_PATH)/bin/pl2wam -o gmain.wam Prolog/gmain.pl

@@ -1,4 +1,4 @@
-package ifneeded gdal 1.0  [list gdal::gdal_load $dir]
+package ifneeded gdal 1.1  [list gdal::gdal_load $dir]
 
 namespace eval gdal {
     proc gdal_load {dir} {

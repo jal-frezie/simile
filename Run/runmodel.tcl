@@ -808,12 +808,12 @@ proc GetShortVals {topNode plName limit} {
 	    set loseZeros [expr {[lsearch {EVENT SQUIRT} \
 			     [GetCompProperty $topNode Class $plName]]>-1}]
 	    set count [CountCValues $hdl $loseZeros]
-	    if {$count<$limit/5 || $showMatrix} {
+	    if {$count<$limit/5 || $showMatrix || [llength $hdl]>1} {
 		set text [ExtractCList $hdl 16777216 $loseZeros]
 	    } else {
 		set tail [expr {$limit/10}]
-		set text [concat [ExtractCList [lrange $hdl 0 1] $tail $loseZeros] \
-			      [ExtractCList [lrange $hdl end-1 end] -$tail $loseZeros]]
+		set text [concat [ExtractCList $hdl $tail $loseZeros] \
+			      [ExtractCList $hdl -$tail $loseZeros]]
 	    }
 	    ReleaseHandle $topNode $hdl
 	}
