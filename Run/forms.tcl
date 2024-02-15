@@ -1452,10 +1452,10 @@ proc DoUserDialogue {} {
     grid [label $t.head.cmess -text Organization:] [entry $t.head.centry -width 40] -sticky w
     grid [label $t.head.lmess -text "License code:"] [frame $t.head.lfield] -sticky w
     # put in old details if we have them
-    pack [entry $t.head.lfield.entryl -width 5 -validate key \
+    pack [entry $t.head.lfield.entryl -width 5 -font TkFixedFont -validate key \
 	      -validatecommand [list LimitChars %W %P]] -side left
     pack [label $t.head.lfield.hyphen -text {-}] -side left
-    pack [entry $t.head.lfield.entryr -width 5 -validate key \
+    pack [entry $t.head.lfield.entryr -width 5 -font TkFixedFont -validate key \
 	      -validatecommand [list LimitChars %W %P]] -side left
     pack [label $t.head.lfield.free -text [tr. {(not required for evaluation edition)}]] -side left -fill x
 

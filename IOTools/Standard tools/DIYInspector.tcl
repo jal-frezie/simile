@@ -117,7 +117,7 @@ itcl::class similescript::$newHelperClass {
 		}
 		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
 			   {} 0]
-		bind $f <Button-1> [list ProdFromHelper $winId $component \
+		bind $f <Button-1> [::itcl::code ProdIfComp %W $winId $component \
 					[string range $fullCapt $chop end]]
 		bind $f <Button-2> {puts "Behold the %W"}
 		if {$type eq "SUBMODEL"} {
@@ -165,6 +165,12 @@ itcl::class similescript::$newHelperClass {
 	    array unset ::widgetNames /[GetNode]_expt/*
 	}
 	destroy .expt_context
+    }
+
+    proc ProdIfComp {widg winId component capEnd} {
+	if {[winfo name $widg] ne "vis"} { ;# dropdown arrow
+	    ProdFromHelper $winId $component $capEnd
+	}
     }
 
     proc OnElementContext {path X Y} {
