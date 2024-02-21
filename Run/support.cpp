@@ -448,11 +448,14 @@ int get_client_indices(TSPOUT where, int sm_graph_id, int destIdcs[]) {
     if (curDim <= ENUM_BASE) { // enumerated type dimension, rock'n'roll
       get_chars_from_pipe(where, instName);
       destIdcs[destPlace] = find_member(instName, types[ENUM_BASE-curDim]);
-     if (destIdcs[destPlace] == -1) return 78; // none match, raise issue
+      if (destIdcs[destPlace] == -1) {
+	printf("%s not member of required enumerated type\n", instName);
+	return 78; // none match, raise issue
+      }
     } else { // numerical dimension
       get_int_from_pipe(where, destIdcs + destPlace);
     }
-    ++destIdcs[destPlace]; // convert to treehugger convention
+    // ++destIdcs[destPlace]; convert to treehugger convention, no need in v7
     ++destPlace;
   }
   return 0;
