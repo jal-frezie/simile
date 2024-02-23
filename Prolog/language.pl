@@ -534,7 +534,7 @@ do_assignment(L, [init_connects(Ptr, Skt, NewSkt, CkRem, CkOff, RemDay)
     do_assign_list(L, Clauses, I1, Used, Stm).
 
 do_assignment(L, [access_pipe(GraphId, Way, NewPtr, RemDay, CkOff, CkRem, Skt,
-			      Params, UnDs, Clear) | Clauses],
+			      GIs, Params, UnDs, Clear) | Clauses],
 	      Indent, Used, Stm) :-
     make_indexed_reference(L, ts, [1], Now),
     make_struct_reference(L, NewPtr, Skt, _, InstSkt),
@@ -564,7 +564,7 @@ do_assignment(L, [access_pipe(GraphId, Way, NewPtr, RemDay, CkOff, CkRem, Skt,
      excrete(L, assignment, InstSkt=0, I2, Stm)),
     excrete(L, else_clause, TimeFail, I1, Stm),
     all(language, pipe_action_for, [build(UnDs), unify(Way), unify(InstSkt),
-				    unify(GraphId), build(ParamRefs),
+				    build(GIs), build(ParamRefs),
 				    build(PrCalls)]),
     all(render, excrete, [unify(L), unify(procedure_call), build(PrCalls),
 			  unify(I2), unify(Stm)]),
@@ -1035,10 +1035,9 @@ pipe_action_for(Unit-Dims, Way, Socket, GraphId, Tgt, Spec) :-
     member([Way,V,P,TgtRef], [[send,put,in,Tgt], [recv,get,from,TgtPtr]]),
     (Dims = [] ->
 	 make_pointer(c, Tgt, TgtPtr),
-	 (Unit = a(EnumType) ->
+	 (Unit = a(_EnumType) ->
 	      Variant = member,
-	      append_atoms(['"', EnumType, '"'], EnumLit),
-	      Args = [Socket, GraphId, EnumLit, TgtRef];
+	      Args = [Socket, GraphId, TgtRef];
 	 Variant = Type,
 	 Args = [Socket, TgtRef]);
      Variant = array,

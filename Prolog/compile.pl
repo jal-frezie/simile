@@ -1522,8 +1522,8 @@ nodes.
 	\+ Inc = none, !,
 	% May have stored it relative to model locn! Restore abs path
 	    suffix([instance(submodel, TopModel, _,_,_)], Tree),
-	    list_params_from("input", 1, Functions, ParamsIn, UnDsIn),
-	    list_params_from("output", 1, Functions, DirParamsOut, UnDsOut),
+	    list_params_from("input", 1, Functions, Used, ParamsIn, UnDsIn, GIsIn),
+	    list_params_from("output", 1, Functions, Used, DirParamsOut, UnDsOut, GIsOut),
 	    delay_params_out_made([ext_done_for(Name)], DirParamsOut,
 	                          AssignList0, AssignList1, Goals, ParamsOut),
 	    append(ParamsIn, Goals, AllConds),
@@ -1559,10 +1559,11 @@ nodes.
 		  RemActs = [start_remote_model(FlagLocn, Proc)]),
 		 ClrRemChk = make(rem_chk_cleared(Name), [on_reset], [], 0, [assign(FlagLocn, 0)]),
 		 StartRem = make(rem_start(Name), [svr_init(Name), rem_chk_cleared(Name)],
-				 ConLoops, 0, RemActs),
-		 abracadabra(LocalPath, ConLoops, SetPath, SetInds, Len),
-		 AcceptCons = make(con_acpt(Name), [rem_start(Name)], ConLoops, 0, [accept_connects(GraphId, SrvSkt, NewSkt, Len, SetInds)]),
-		 append(SetPath, ConLoops, InitPath),
+				 Path, 0, RemActs),
+		 abracadabra(Level, ConLoops, SetPath, SetInds, Len),
+		 append(ConLoops, Path, ConPath),
+		 AcceptCons = make(con_acpt(Name), [rem_start(Name)], ConPath, 0, [accept_connects(GraphId, SrvSkt, NewSkt, Len, SetInds)]), wake,
+		 append(SetPath, ConPath, InitPath),
 		 InitCons = make(con_init(Name), [con_acpt(Name)], InitPath, 0, [init_connects(NewPtr, Skt, NewSkt, CkRem, CkOff, RemDay)]),
 		 ClearInst = make(accums_clrd(Name), [on_reset], LocalPath,
 				   Step, ClearAccums),
@@ -1571,10 +1572,10 @@ nodes.
 		 IncrInst = make(accums_incd(Name),
 				 [accums_clrd(Name) | AllConds], LocalPath,
 				 Step, AccumPass),
-		 SendInputs = make(input_send(Name), [con_init(Name), accums_incd(Name), time], LocalPath, Step, [access_pipe(GraphId, send, NewPtr, RemDay, CkOff, CkRem, Skt, ParamsSwpd, UnDsIn, ClearAccums)]),
+		 SendInputs = make(input_send(Name), [con_init(Name), accums_incd(Name), time], LocalPath, Step, [access_pipe(GraphId, send, NewPtr, RemDay, CkOff, CkRem, Skt, GIsIn, ParamsSwpd, UnDsIn, ClearAccums)]),
 		 Whistle = made_for(Name, inputs_sent),
 		 InputsSent = make(Whistle, [input_send(Name)], [], Step, []),
-		 RecvOutputs = make(ext_done_for(Name), [Whistle], LocalPath, Step, [access_pipe(GraphId, recv, NewPtr, RemDay, CkOff, CkRem, Skt, DirParamsOut, UnDsOut, [])]),
+		 RecvOutputs = make(ext_done_for(Name), [Whistle], LocalPath, Step, [access_pipe(GraphId, recv, NewPtr, RemDay, CkOff, CkRem, Skt, GIsOut, DirParamsOut, UnDsOut, [])]),
 		 AssignList2 = [InitSvr, ClrRemChk, StartRem, AcceptCons, InitCons,
 				ClearInst, IncrInst, SendInputs, InputsSent,
 				RecvOutputs | AssignList1];
@@ -1610,7 +1611,7 @@ abracadabra([Level | Rest], ConLoops, ModelOpens, SetInds, N) :-
 	 length(OldLoops, Dimty),
 	 length(NewLoops, Dimty),
 	 ConLoops = MoreLoops,
-	 ModelOpens = [sm(A,B,C, fm_loop(NewLoops, _,_,_)) | MoreOpens],
+	 ModelOpens = [sm(A,B,C, fm_loop(NewLoops, [],_,_)) | MoreOpens],
 	 append(MoreInds, NewLoops, SetInds),
 	 N is M+Dimty;
      ConLoops = [Level | MoreLoops],
@@ -1675,7 +1676,7 @@ maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel, Rule) :-
 	  make(Effect, [culled(Name), on_step], Path, Step, [Action])]).
 */
 
-list_params_from(BaseStr, N, Fns, List, UDList) :-
+list_params_from(BaseStr, N, Fns, Used, List, UDList, GIList) :-
 	sicstus_write_to_chars(N, NStr),
 	append(BaseStr, NStr, HeaderStr),
 	member(instance(_,_,_, elt(_, Tgt, UnitDims), _), Fns),
@@ -1683,9 +1684,11 @@ list_params_from(BaseStr, N, Fns, List, UDList) :-
 	append(HeaderStr, TailStr, TgtStr),
 	\+ (TailStr = [Next | _], \+ [Next] = "_"), !,
 	M is N+1,
-	list_params_from(BaseStr, M, Fns, More, MoreUDs),
+	nth(GraphId, Used, Tgt),
+	list_params_from(BaseStr, M, Fns, Used, More, MoreUDs, MoreGIs),
 	List = [Tgt | More],
-	UDList = [UnitDims | MoreUDs];
+	UDList = [UnitDims | MoreUDs],
+	GIList = [GraphId | MoreGIs];
 	List = [],
         UDList = [].	
 

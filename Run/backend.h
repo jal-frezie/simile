@@ -187,11 +187,11 @@ int get_int_from_pipe(TSPOUT, int*);
 int get_double_from_pipe(TSPOUT, double*);
 int get_array_from_pipe(TSPOUT, void*, int);
 int get_chars_from_pipe(TSPOUT, char*);
-int get_member_from_pipe(TSPOUT, int, const char*, int*);
+int get_member_from_pipe(TSPOUT, int, int*);
 int put_BOOLEAN_in_pipe(TSPOUT, BOOLEAN);
 int put_int_in_pipe(TSPOUT, int);
 int put_double_in_pipe(TSPOUT, double);
 int put_array_in_pipe(TSPOUT, void*, int);
-int put_member_in_pipe(TSPOUT, int, const char*, int);
+int put_member_in_pipe(TSPOUT, int, int);
 
 void exit_sighandler(int);

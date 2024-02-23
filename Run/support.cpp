@@ -378,15 +378,16 @@ int get_chars_from_pipe(TSPOUT where, char* what) {
   // printf("Recvd %s\n", what);
   return length;
 }
-int get_member_from_pipe(TSPOUT where, int graph, const char* ETid, int* what) {
+int get_member_from_pipe(TSPOUT where, int graph, int* what) {
   int mdDims[32], nTypes, curType;
   enum_type_data *types[32];
   char instName[BUFSIZE];
 
   int nodeLine = find_graph(graph);
   nTypes = make_full_caption(nodeLine, instName, mdDims, types);
-  for (curType=0; curType<nTypes; ++curType)
-    if (strcmp(types[curType]->name, ETid)==0) break;
+  //  for (curType=0; curType<nTypes; ++curType)
+  //  if (strcmp(types[curType]->name, ETid)==0) break;
+  curType = ENUM_BASE-nodedata[nodeLine].datatype;
   get_chars_from_pipe(where, instName);
   *what = find_member(instName, types[curType])+1;
   return 1;
@@ -419,15 +420,16 @@ int put_chars_in_pipe(TSPOUT where, char* what) {
   // printf("Sent %s\n", what);
   return length;
 }
-int put_member_in_pipe(TSPOUT where, int graph, const char* ETid, int what) {
+int put_member_in_pipe(TSPOUT where, int graph, int what) {
   int mdDims[32], nTypes, curType;
   enum_type_data *types[32];
   char instName[BUFSIZE];
 
   int nodeLine = find_graph(graph);
   nTypes = make_full_caption(nodeLine, instName, mdDims, types);
-  for (curType=0; curType<nTypes; ++curType)
-    if (strcmp(types[curType]->name, ETid)==0) break;
+  //  for (curType=0; curType<nTypes; ++curType)
+  //    if (strcmp(types[curType]->name, ETid)==0) break;
+  curType = ENUM_BASE-nodedata[nodeLine].datatype;
   return put_chars_in_pipe(where, types[curType]->members[what-1]);
 }
 
