@@ -182,6 +182,7 @@ void run_external(BOOLEAN*, const char*);
 int getClientPipe(TSPOUT, TSPOUT*);
 int get_client_indices(TSPOUT, int, int[]);
 int exchPipe(TSPOUT, char*, int, int);
+int get_BOOLEAN_from_pipe(TSPOUT, BOOLEAN*);
 int get_int_from_pipe(TSPOUT, int*);
 int get_double_from_pipe(TSPOUT, double*);
 int get_array_from_pipe(TSPOUT, void*, int);
