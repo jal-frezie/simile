@@ -1591,7 +1591,7 @@ proc DoWelcomeDialog {dtId} {
     set links [GetFrame .register.links]
     
     frame $links.m1
-    if {$newVers > $userinfo(old_version)} {
+    if {$newVers > $::env(SIMILE_VERSION)} {
 	pack [frame $links.m0] -anchor w
         pack [label $links.m0.left -text " * " -font {-family helvetica -size 12}] \
                 -anchor w -side left

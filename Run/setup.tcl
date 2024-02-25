@@ -60,13 +60,13 @@ proc Newer {is than t} {
 
 #if {[Newer $installedCreds $creds m]}
 if {$tcl_platform(platform) eq "windows"} {
-    set creds [file join $SIMILE_PATH Run mdlrinfo.txt]
+    set installedCreds [file join $SIMILE_PATH Run mdlrinfo.txt]
 } else {
     set installedCreds [file join $SIMILE_PATH Run mdlrinfo.tpl]
-    set creds [file join $custom(prefDir) mdlrinfo.txt]
-    if {![file exists $creds]} {
-	file copy -force $installedCreds $creds
-    }
+}
+set creds [file join $custom(prefDir) mdlrinfo.txt]
+if {![file exists $creds]} {
+    file copy -force $installedCreds $creds
 }
 
 set UserStream [open $creds r]
