@@ -16,7 +16,7 @@
 # When cleaning, also clean the included packages
 # (dummy configure as set out in bug #570503)
 override_dh_auto_clean:
-	dh_auto_clean -- -C Extensions/tkdnd
+#	dh_auto_clean -- -C Extensions/tkdnd
 	dh_auto_clean -- -C Extensions/tcl-gdal
 	dh_auto_clean --
 

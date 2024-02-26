@@ -686,7 +686,7 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	     all(language, make_evaluation_routine,
 		 [unify(L), build(Inds), unify(Used), build([CX, RX])]),
 	     CallSpec = make_fixed_nbr_list(Ptr, Shp, CB, RB, CX, RX);
-	SpecialOp = start_remote_model(FlagLocn, Cmd), !,
+	SpecialOp = start_remote_model(FlagLocn, Cmd, Path, CmdParms, CmdUnDs, CmdGIs), !, wake,
 	     append_atoms(Cmd, ' &', CmdN),
 	     render><templatify(L, CmdN, '', [_,_,_, CmdQ]),
 	     make_scalar(L, FlagLocn, Used, Flag),

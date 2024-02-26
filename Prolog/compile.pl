@@ -1556,7 +1556,8 @@ nodes.
 		 InitSvr = make(svr_init(Name), [], [], -2, [init_server_skt(GraphId, Inc, this, SrvSkt)]),
 		 FlagLocn = arr(this, CmdedFlag, []),
 		 (Proc = none -> RemActs = [];
-		  RemActs = [start_remote_model(FlagLocn, Proc)]),
+		  list_params_from("param", 1, ParentFns, Used, CmdParms, CmdUnDs, CmdGIs),
+		  RemActs = [start_remote_model(FlagLocn, Proc, Path, CmdParms, CmdUnDs, CmdGIs)]),
 		 ClrRemChk = make(rem_chk_cleared(Name), [on_reset], [], 0, [assign(FlagLocn, 0)]),
 		 StartRem = make(rem_start(Name), [svr_init(Name), rem_chk_cleared(Name)],
 				 Path, 0, RemActs),
