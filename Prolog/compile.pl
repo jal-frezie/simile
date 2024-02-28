@@ -1545,21 +1545,18 @@ nodes.
 		 % add internal to parent to hold pipe
 		 all(utility, append_atoms,
 		     [unify(Name),
-		      build(['_cmded', '_svr', '_skt', '_ckOff', '_ckRem']),
-		      build([CmdedFlag, SrvSkt, Skt, CkOff, CkRem])]),
+		      build(['_svr', '_skt', '_ckOff', '_ckRem']),
+		      build([SrvSkt, Skt, CkOff, CkRem])]),
 		 XCInters =
-		    [instance(internal, inter([], _,_), _, CmdedFlag, boolean-[]),
-		     instance(internal, inter([], _,_), _, SrvSkt, 'TSPOUT'-[]),
+		    [instance(internal, inter([], _,_), _, SrvSkt, 'TSPOUT'-[]),
 		     instance(internal, inter(LocalPath, _,_), _, Skt, 'TSPOUT'-[]),
 		     instance(internal, inter(LocalPath, _,_), _, CkOff, double-[]),
 		     instance(internal, inter(LocalPath, _,_), _, CkRem, double-[]) | AccumInters],
 		 InitSvr = make(svr_init(Name), [], [], -2, [init_server_skt(GraphId, Inc, this, SrvSkt)]),
-		 FlagLocn = arr(this, CmdedFlag, []),
-		 (Proc = none -> RemActs = [];
-		  list_params_from("param", 1, ParentFns, Used, CmdParms, CmdUnDs, CmdGIs),
-		  RemActs = [start_remote_model(FlagLocn, Proc, Path, CmdParms, CmdUnDs, CmdGIs)]),
-		 ClrRemChk = make(rem_chk_cleared(Name), [on_reset], [], 0, [assign(FlagLocn, 0)]),
-		 StartRem = make(rem_start(Name), [svr_init(Name), rem_chk_cleared(Name)],
+		 (Proc = none -> CmdParams = [], RemActs = [];
+		  list_params_from("param", 1, ParentFns, Used, CmdParams, CmdUnDs, CmdGIs),
+		  RemActs = [start_remote_model(Proc, Path, CmdParams, CmdUnDs, CmdGIs)]),
+		  StartRem = make(rem_start(Name), [svr_init(Name) | CmdParams],
 				 Path, 0, RemActs),
 		 abracadabra(Level, ConLoops, SetPath, SetInds, Len),
 		 append(ConLoops, Path, ConPath),
@@ -1577,7 +1574,7 @@ nodes.
 		 Whistle = made_for(Name, inputs_sent),
 		 InputsSent = make(Whistle, [input_send(Name)], [], Step, []),
 		 RecvOutputs = make(ext_done_for(Name), [Whistle], LocalPath, Step, [access_pipe(GraphId, recv, NewPtr, RemDay, CkOff, CkRem, Skt, GIsOut, DirParamsOut, UnDsOut, [])]),
-		 AssignList2 = [InitSvr, ClrRemChk, StartRem, AcceptCons, InitCons,
+		 AssignList2 = [InitSvr, StartRem, AcceptCons, InitCons,
 				ClearInst, IncrInst, SendInputs, InputsSent,
 				RecvOutputs | AssignList1];
 	    (state><get_model_file(TopModel, Locn) ->

@@ -283,16 +283,13 @@ int setServerPipe (const char* pipeName, TSPOUT* service) {
   return 0;
 }
 
-void run_external(BOOLEAN *doneFlag, const char* cmd) {
+void run_external(const char* cmd) {
   // needed because just calling system() complains return value is not used
   // even though command ends in '&' so always always always returns 0
   char subbedCmd[BUFSIZE];
-  if (!*doneFlag) {
-    sub_pid(cmd, subbedCmd);
-    // printf("About to run %s\n", subbedCmd);
-    if (system(subbedCmd)) {}
-    *doneFlag = 1;
-  }
+  sub_pid(cmd, subbedCmd);
+  // printf("About to run %s\n", subbedCmd);
+  if (system(subbedCmd)) {}
 }
 
 int getClientPipe (TSPOUT service, TSPOUT* data_socket) {
@@ -346,6 +343,19 @@ int find_member(char* member, enum_type_data *dimType) {
   for (ordinal=0; ordinal<dimType->count;++ordinal)
     if (strcmp(member, dimType->members[ordinal])==0) return ordinal;
   return -1;
+}
+
+char* member_name(int graph, int what) {
+  int mdDims[32], nTypes, curType;
+  enum_type_data *types[32];
+  char instName[BUFSIZE];
+
+  int nodeLine = find_graph(graph);
+  nTypes = make_full_caption(nodeLine, instName, mdDims, types);
+  //  for (curType=0; curType<nTypes; ++curType)
+  //    if (strcmp(types[curType]->name, ETid)==0) break;
+  curType = ENUM_BASE-nodedata[nodeLine].datatype;
+  return types[curType]->members[what-1];
 }
 
 int get_BOOLEAN_from_pipe(TSPOUT where, BOOLEAN* what) {
@@ -445,7 +455,7 @@ int get_client_indices(TSPOUT where, int sm_graph_id, int destIdcs[]) {
   nTypes = make_full_caption(nodeLine, instName, mdDims, types);
   // instName set to submodel caption path -- not used
 
-  while ((curDim = mdDims[srcPlace++])) { // assignment
+  while ((curDim = nodedata[nodeLine].dims[srcPlace++])) { // assignment
     if (curDim == START_VM || curDim == END_VM) continue;
     if (curDim <= ENUM_BASE) { // enumerated type dimension, rock'n'roll
       get_chars_from_pipe(where, instName);

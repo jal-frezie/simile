@@ -459,36 +459,36 @@ do_assignment(L, [call_proc_for(Sm, Path, Loop, [Td, Tk, Tr]) | Clauses],
 
 do_assignment(L, [init_server_skt(GraphId, URelInc, Ptr, SrvSkt)
 		  | Clauses], I1, Used, Stm) :-
-    generate_name(L, scratch, Scratch, Used),
-    excrete(L, variable_declaration, [int, Scratch, []], I1, Stm),
+    generate_name(L, retVal, RetVal, Used),
+    excrete(L, variable_declaration, [int, RetVal, []], I1, Stm),
     append_atoms(['"', URelInc, '"'], Locn),
     make_struct_reference(L, Ptr, SrvSkt, Skt, _),
     make_pointer(L, Skt, SktPtr),
     make_procedure_call_chars(L, [setServerPipe, Locn, SktPtr], SSPStr),
     name(SSP, SSPStr),
-    excrete(L, assignment, Scratch=SSP, I1, Stm),
-    excrete(L, if_start, Scratch, I1, Stm),
+    excrete(L, assignment, RetVal=SSP, I1, Stm),
+    excrete(L, if_start, RetVal, I1, Stm),
     deepen_indent(I1, I2),
-    excrete(L, procedure_call, stop_on_id(GraphId, Scratch), I2, Stm),
+    excrete(L, procedure_call, stop_on_id(GraphId, RetVal), I2, Stm),
     excrete(L, function, "return", I2, Stm),
     excrete(L, end(if), SSP, I1, Stm),
     do_assign_list(L, Clauses, I1, Used, Stm).
 
 do_assignment(L, [accept_connects(GraphId, SrvSkt, NewSkt, NDim, RefExprs)
 		  | Clauses], I1, Used, Stm) :-
-    generate_name(L, scratch, Scratch, Used),
+    generate_name(L, retVal, RetVal, Used),
+    excrete(L, variable_declaration, [int, RetVal, []], I1, Stm),
     generate_name(L, newDataSocket, NewSkt, Used),
-    excrete(L, variable_declaration, [int, Scratch, []], I1, Stm),
     excrete(L, variable_declaration, ['TSPOUT', NewSkt, []], I1, Stm),
     make_struct_reference(L, this, SrvSkt, _, SvrSktRef),
     make_pointer(L, NewSkt, NewSktPtr),
     make_procedure_call_chars(L, [getClientPipe, SvrSktRef, NewSktPtr],
 			      GCPStr),
     name(GCP, GCPStr),
-    excrete(L, assignment, Scratch=GCP, I1, Stm),
-    excrete(L, if_start, Scratch, I1, Stm),
+    excrete(L, assignment, RetVal=GCP, I1, Stm),
+    excrete(L, if_start, RetVal, I1, Stm),
     deepen_indent(I1, I2),
-    excrete(L, procedure_call, stop_on_id(GraphId, Scratch), I2, Stm),
+    excrete(L, procedure_call, stop_on_id(GraphId, RetVal), I2, Stm),
     excrete(L, function, "return", I2, Stm),
     excrete(L, end(if), GCP, I1, Stm),
 
@@ -686,12 +686,21 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	     all(language, make_evaluation_routine,
 		 [unify(L), build(Inds), unify(Used), build([CX, RX])]),
 	     CallSpec = make_fixed_nbr_list(Ptr, Shp, CB, RB, CX, RX);
-	SpecialOp = start_remote_model(FlagLocn, Cmd, Path, CmdParms, CmdUnDs, CmdGIs), !, wake,
-	     append_atoms(Cmd, ' &', CmdN),
-	     render><templatify(L, CmdN, '', [_,_,_, CmdQ]),
-	     make_scalar(L, FlagLocn, Used, Flag),
-	     make_pointer(L, Flag, FlagPtr),
-	     CallSpec = run_external(FlagPtr, CmdQ)),
+	 SpecialOp = start_remote_model(Cmd, [sm(_,_, Ptr, _) | _],
+					CmdParms, CmdUnDs, CmdGIs), !, wake,
+	     generate_name(L, scratch, Scratch, Used),
+	     excrete(L, variable_declaration, [char, Scratch, [256]], Indent,
+		     Stream),
+	     all(language, field_specifier_and_arg_for,
+		 [unify(L), unify(Ptr), build(CmdParms), build(CmdUnDs),
+		  build(CmdGIs), build(ArgList), append_atoms(Format, ' &"')]),
+	     render><make_constant_string(L, Cmd, EscdCmd),
+	     append_atoms('"%s', Format, QuotedFormat),
+	     BuilderSpec =.. [sprintf, scratch, QuotedFormat, EscdCmd | ArgList],
+	     excrete(L, procedure_call, BuilderSpec, Indent, Stream),
+%	     append_atoms(Cmd, ' &', CmdN),
+%	     render><templatify(L, CmdN, '', [_,_,_, CmdQ]),
+	     CallSpec = run_external(scratch)),
 	excrete(L, procedure_call, CallSpec, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 % have to render after instantiating CollectId
@@ -1045,6 +1054,15 @@ pipe_action_for(Unit-Dims, Way, Socket, GraphId, Tgt, Spec) :-
      Args = [Socket, Tgt, Tail]),
     append_atoms([V, '_', Variant, '_', P, '_pipe'], Action),
     Spec =.. [Action | Args].
+
+field_specifier_and_arg_for(L, Ptr, CmdParam, Unit-_, GraphId, Arg, Spec) :-
+    make_struct_reference(L, Ptr, CmdParam, NumArg, _),
+    (Unit = a(_) ->
+	 Spec = ' %s',
+	 make_procedure_call_chars(L, [member_name, GraphId, NumArg], ArgStr),
+	 name(Arg, ArgStr);
+     Arg = NumArg,
+         member(Unit-Spec, ['BOOLEAN'-' %hhd', int-' %d', 1-' %lf'])).
 
 product(_L, [], 1).
 product(L, [H | T], N) :-
