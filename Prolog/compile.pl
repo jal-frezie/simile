@@ -1556,7 +1556,7 @@ nodes.
 		 (Proc = none -> CmdParams = [], RemActs = [];
 		  list_params_from("param", 1, ParentFns, Used, CmdParams, CmdUnDs, CmdGIs),
 		  RemActs = [start_remote_model(Proc, Path, CmdParams, CmdUnDs, CmdGIs)]),
-		  StartRem = make(rem_start(Name), [svr_init(Name) | CmdParams],
+		  StartRem = make(rem_start(Name), [on_reset, svr_init(Name) | CmdParams],
 				 Path, 0, RemActs),
 		 abracadabra(Level, ConLoops, SetPath, SetInds, Len),
 		 append(ConLoops, Path, ConPath),
