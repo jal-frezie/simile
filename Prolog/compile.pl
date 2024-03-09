@@ -213,7 +213,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 		safe_tcl_eval(['ReuseShareLib', br(WCheckDir), Language, 
 			       OldTgt], "1"), % succeeds if old sharelib found
 		Tgt = OldTgt;
-	    
+	     (safe_tcl_eval(['CheckCompilerPresent'], "1") -> true;
+	      throw(aborted)),
 		(\+ ChangeTop == 1, % no change to model; reuse source?
 		    Language = c,
 		    safe_tcl_eval(['ReuseSourceCode', br(WCheckDir), OldTgt],

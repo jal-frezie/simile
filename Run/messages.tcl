@@ -1005,7 +1005,10 @@ set msgs(extn_bug_full) [tr. {The error message was:
 set msgs(no_compiler_title) [tr. {Problem with c++ compiler setup}]
 set msgs(no_compiler_message) [tr. {c++ compiler preference set to %1$s but no executable %2$s found.}]
 set msgs(no_compiler_full) [tr. {The following directories were checked:
-%3$s}]
+    %3$s}]
+set msgs(compiler_install_needed_title) [tr. {Compiler install needed}]
+set msgs(compiler_install_needed_message) [tr. {This operation requires a c++ compiler to be installed on your computer. You should have a popup window somewhere on your desktop offering to install the command line developer tools, which include the compiler. Find this window (it may be behind the Simile desktop) and select Install, then press OK here to continue with model execution.}]
+set msgs(compiler_install_needed_detail) [tr. {If you are not using MacOS, then this means that something has gone wrong with your intallation, or you have selected a non-default compiler in Preferences which is not actually present. In this case you will need to consult your sysadmin.}]
 
 set msgs(get_graphics_failed_title) [tr. {Problem copying graphics}]
 set msgs(get_graphics_failed_message) [tr. {Simile failed to get graphics from the canvas to put on the clipboard, so it will not be possible to paste them into another application.}]

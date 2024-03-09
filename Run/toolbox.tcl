@@ -949,24 +949,24 @@ proc ControlDraw {prologVersion} {
     
     # set up to compile stub and models with same bitness as tcltk
     set sendvars(arflags) [list -std=c++11 -Wno-trigraphs] ;# [list -O3]
-    if {!$::headless && ![string equal [tr. Default] \
-			    [PrefValue custom(compChoice) compChoice]]} {
+#    if {!$::headless && ![string equal [tr. Default] \
+#			    [PrefValue custom(compChoice) compChoice]]} {
 # using local compiler, check if we have to tell it our bitnesss
-	set gccBitness 32
-	catch {exec g++ -v} gppInfo
-	set relevant [string first host= $gppInfo]
-	if {$relevant==-1} {
-	    set relevant [string first arget $gppInfo]
-	}
-	set mentions64 [string first 64 $gppInfo $relevant]
-	if {$relevant>-1 && $mentions64>-1 && \
-		$mentions64<$relevant+16} {
-	    set gccBitness 64
-	} ;# assume any 64-bit gcc will be proud enough to proclaim itself
-	if {$tclBitness != $gccBitness} {
-	    lappend sendvars(arflags) -m$tclBitness
-	}
-    }
+#	set gccBitness 32
+#	catch {exec g++ -v} gppInfo
+#	set relevant [string first host= $gppInfo]
+#	if {$relevant==-1} {
+#	    set relevant [string first arget $gppInfo]
+#	}
+#	set mentions64 [string first 64 $gppInfo $relevant]
+#	if {$relevant>-1 && $mentions64>-1 && \
+#		$mentions64<$relevant+16} {
+#	    set gccBitness 64
+#	} ;# assume any 64-bit gcc will be proud enough to proclaim itself
+#	if {$tclBitness != $gccBitness} {
+#	    lappend sendvars(arflags) -m$tclBitness
+#	}
+#    }
 
     # no longer have a separate floating toolbar
     
@@ -1385,6 +1385,16 @@ proc FixSize {c} {
     if {[string match $::OPEN_MODEL {}]} {
         DoWelcomeDialog $win
     }
+}
+
+proc CheckCompilerPresent {} {
+    catch {exec g++ -dumpversion} reported
+    if {[catch {package vcompare $reported 1.0}]} {
+	if {[Query compiler_install_needed warning top {} {ok cancel}] ne "ok"} {
+	    return 0
+	}
+    }
+    return 1	
 }
 
 proc AlterModel {topNode} {
