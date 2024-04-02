@@ -183,7 +183,7 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   }
   snf[1] = 0;
   for (i=0; i<nTask; ++i) {
-    snf[0] = snf[1]+1;
+    snf[0] = snf[1];
     snf[1] = endPts[i];
     PIPEWRITE(go[1], (char*)snf, 2*sizeof(int))==0;
   }
