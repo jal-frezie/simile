@@ -108,13 +108,7 @@ typedef unsigned char BOOLEAN;
 #define SIMILE_VERSION	"7.1"
 #define NEST 32
 
-#ifdef _WIN32 // note underscore, without is only defined in uSoft c
-    #ifdef _WIN64
-//        #define SIM_PAR_EXEC 1
-    #endif
-#else
-//    #define SIM_PAR_EXEC 1
-#endif
+#define SIM_PAR_EXEC 1
 #ifdef SIM_PAR_EXEC
     #include <pthread.h>
 #endif

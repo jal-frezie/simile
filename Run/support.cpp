@@ -144,8 +144,8 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
 
     endPts = (int*)malloc(nTask*sizeof(int));
     
-    PIPENEW(go);
-    PIPENEW(come);
+    PIPENEW(go)==0;
+    PIPENEW(come)==0;
     amWorker = 0;
     // pipe ends used by worker thread
     homeCalling = go[0];
@@ -185,11 +185,11 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   for (i=0; i<nTask; ++i) {
     snf[0] = snf[1]+1;
     snf[1] = endPts[i];
-    PIPEWRITE(go[1], (char*)snf, 2*sizeof(int));
+    PIPEWRITE(go[1], (char*)snf, 2*sizeof(int))==0;
   }
   
   for (i=1; i<=nTask; ++i) {
-    PIPEREAD(come[0], (char*)snf, sizeof(int));
+    PIPEREAD(come[0], (char*)snf, sizeof(int))==0;
     if (*snf == WORKER_QUERY_GUI) { // thread not finished, checking interrupt
       if (stat_check(partner))
 	throw -101;

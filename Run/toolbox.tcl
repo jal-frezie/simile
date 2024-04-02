@@ -103,7 +103,9 @@ font configure TkIconFont -size $niceSize ;# for file selector dialogue
 font configure TkFixedFont -size $niceSize ;# for entering licence code
 # Now here's one of my own...
 eval font create EquationFont [font actual TkTextFont]
-set eqnSize [expr {[font configure EquationFont -size]*5/4}]
+#set eqnSize [expr {[font configure EquationFont -size]*5/4}]
+#linux gets it in pixels, sets it in points so above dodgy
+set eqnSize [expr {$niceSize*5/4}]
 font configure EquationFont -size $eqnSize
 
 # Set vertical spacing of treeview according to font height (should do this itself!)
