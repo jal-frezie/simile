@@ -50,7 +50,8 @@ void crash (Tcl_Interp *interp, const char *cause) {
 }	 
 
 int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
-  char interpCmd[] = "::md5"; // uses Trf version (compiled)
+  //  char interpCmd[] = "::md5"; // uses Trf version (compiled)
+  char interpCmd[] = "::md5::md5"; // uses Tcllib version (interpreted)
   // except on Mac where tcllib version (scripted) is copied over this
 
   Tcl_Obj* argv[3];
@@ -97,13 +98,15 @@ int my_hash(Tcl_Interp *interp, Tcl_Obj *textObj) {
   if (my_md5(interp, textObj) == TCL_ERROR) {
     return TCL_ERROR;
   }
-  md5Target = Tcl_NewStringObj("::hex -mode encode -- ", -1);
+  //  md5Target = Tcl_NewStringObj("::hex -mode encode -- ", -1);
+  md5Target = Tcl_NewStringObj("binary encode hex ", -1);
   Tcl_ListObjAppendElement(interp, md5Target, Tcl_GetObjResult(interp));
   if (Tcl_EvalObjEx(interp, md5Target, 0) == TCL_ERROR) {
     return TCL_ERROR;
   }
-  return Tcl_VarEval(interp, "string tolower ",
-	      Tcl_GetStringResult(interp), NULL);
+  //  return Tcl_VarEval(interp, "string tolower ",
+  //	      Tcl_GetStringResult(interp), NULL);
+  return TCL_OK;
 }
       
 int my_hmac(Tcl_Interp *interp, const char* key, const char* text) {

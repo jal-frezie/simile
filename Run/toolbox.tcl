@@ -154,8 +154,9 @@ if {[string match windows $tcl_platform(platform)]} {
     # ::md5 dummy
     # cd $oldDir
     # ...removed, as loading libcrypto now crashes it. Substitute with script v
-    package require md5
-    proc md5 {args} {return [eval md5::md5 $args]}
+    #package require md5
+    #proc md5 {args} {return [eval md5::md5 $args]}
+    #Trf now avoided altogether as risc-v version flaky
     
     if {[package vcompare [info patchlevel] 8.6.9]<0} {
     # problem was fixed in 8.6.9
