@@ -33,7 +33,7 @@ proc ::mime::copymessage {token channel} {
 }
     
 }
-
+package require md5 ;# mime will not load it if Trf available
 set itclVers [package require Itcl]
 if {!$headless} {
 if {![info exists simplify]} {
