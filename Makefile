@@ -158,8 +158,8 @@ endif
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
 	EXECEXTN = .exe
+	SUPP = $(RESDIR)/support$(ARCHEXTN).o
 	MAIN = $(EXECDIR)/Simile.exe
-	SCRIPT = $(EXECDIR)/SimileScript.exe
 endif
 
 PROLOGSTATE = $(EXECDIR)/xssimile$(EXECEXTN)
@@ -175,13 +175,12 @@ UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBE
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 INSTLIB = $(SHAREDLIBPREFX)install$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
-# SUPP = $(RESDIR)/support$(ARCHEXTN).o
 
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
-simile: $(PROLOGSTATE) $(RELAY) \
-	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN) $(SCRIPT)
+simile: $(PROLOGSTATE) $(RELAY) $(SUPP) \
+	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
 
 vpath %.pl Prolog
 
@@ -355,7 +354,7 @@ $(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 		$(MAKEPIC) $(MAKESL) \
 		-o ../$(SLDIR)/$(INSTLIB) install_adv.c $(CRYPTOBJ); cd ..
 
-#$(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
+$(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
 #	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
 #		-o ../${SUPP} support.cpp; cd ..
 #
@@ -378,12 +377,6 @@ $(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile$(BITEXTN).rc
 	cd Interp; $(RESCMD) -o rc$(BITEXTN).o Simile$(BITEXTN).rc; \
 	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
 		-o ../$(EXECDIR)/Simile.exe Simile.c rc$(BITEXTN).o -I$(TCLINC) \
-		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
-
-$(SCRIPT): Interp/script.c Interp/script$(BITEXTN).rc
-	cd Interp; $(RESCMD) -o scriptrc$(BITEXTN).o script$(BITEXTN).rc; \
-	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
-		-I$(TCLINC) -o ../$(SCRIPT) script.c scriptrc$(BITEXTN).o -I$(TCLINC) \
 		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
 #else
 
@@ -417,10 +410,6 @@ install:
 		Examples/BallBerry4a.sml \
 		Examples/control.sml \
 		Examples/forest.sml \
-		Examples/forestV4FP.spf \
-		Examples/forestV4FPb.spf \
-		Examples/forestV4FP.sml \
-		Examples/forestV4IP.sml \
 		Examples/spiro.sml \
 		Examples/trajectory.sml \
 		Examples/bat.spf \
@@ -736,5 +725,5 @@ endif
 
 # call clean after changing license info in this file
 clean: clean_prolog
-	rm -f $(RELAY) Run/$(CRYPTOBJ) \
-		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN) $(SCRIPT)
+	rm -f $(RELAY) Run/$(CRYPTOBJ) $(SUPP) \
+		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
