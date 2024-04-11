@@ -163,7 +163,7 @@ namespace eval grid005 {
 	    while {[string is integer -strict \
 			[set imgNo [lindex $state [incr imgBase]]]]} {
 		set imgData [lindex $state [incr imgBase]]
-		set useNodes($winId,i$imgNo) [image create photo -data [base64 -mode decode $imgData]]
+		set useNodes($winId,i$imgNo) [image create photo -data [base64::decode $imgData]]
 		PutSize $useNodes($winId,i$imgNo)
 	    }
 	}
@@ -304,7 +304,7 @@ namespace eval grid005 {
 	    set thei [string last i $possImg]
 	    set indx [string range $possImg [incr thei] end]
 	    if {[string is integer -strict $indx]} {
-		lappend state $indx [base64 -mode encode [$useNodes($possImg) data -format png]]
+		lappend state $indx [base64::encode [$useNodes($possImg) data -format png]]
 	    }
 	}
 	lappend state aspect [expr {$useNodes($winId,nswatches)-1}] \
