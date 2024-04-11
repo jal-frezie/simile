@@ -209,7 +209,7 @@ proc GetBinaryValuesById  {iHandle outputNode minVal maxVal nswat isHex} {
     ReleaseHandle dummy $raw
 
     append stac [binary format cc 0 0x3b]
-    return [base64 -mode encode -- $stac]    
+    return [base64::encode $stac]    
 }
 # 
 # lifted from hai2mmii.tcl v5.9
