@@ -13,7 +13,6 @@ randseed [clock seconds]
 cd $oldWD
 
 package require Unpacker
-package require Trf
 c_testlicense ;# sets edition 
 loadcommands ;# for unpacker -- edition checked here
 
@@ -209,7 +208,7 @@ proc GetBinaryValuesById  {iHandle outputNode minVal maxVal nswat isHex} {
     ReleaseHandle dummy $raw
 
     append stac [binary format cc 0 0x3b]
-    return [base64 -mode encode -- $stac]    
+    return [binary encode base64 -maxlen 79 $stac]    
 }
 # 
 # lifted from hai2mmii.tcl v5.9
