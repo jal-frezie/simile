@@ -5,6 +5,7 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
+package require base64
 set mimeVers [package require mime]
 if {![package vcompare $mimeVers 1.7.0]} {
     # work around bug that causes saved files to be broken
