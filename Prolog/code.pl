@@ -28,11 +28,9 @@ tk_code(Model, CompOrBuild, _Tgt) :-
 	abs_path_name(Base, root, Path),
 	    append_atoms([Temp, '/', Path], CompDir)),
 	(\+ rebuild_code(c, Model, CompDir, Action), !;
-	 (m_update><get_av_pair(Model, 1, c_new, Serial), !,
-	  (Serial = 0 -> Gen = ''; Gen = Serial); Gen = 1),
 	  caption_for(Model, Capt),
 	  
-	  utility><append_atoms([CompDir, '/', Capt, '/model', Gen, Ident],
+	  utility><append_atoms([CompDir, '/', Capt, '/model', 1, Ident],
 				  Top),
 	  output><safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
 

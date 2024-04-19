@@ -1452,9 +1452,7 @@ do_save(Win, Model, New_name) :-
 	
         start_progress_dialogue(Win),
 	/* Remove any old executables (and make sure dirs exist) */
-	(get_av_pair(Model, 1, c_new, LocalNew) -> true;
-	 LocalNew = 1), % executable unchanged since loading with model
-	output><shift_dll(Point, Dir, Model, LocalNew),
+	output><shift_dll(Point, Dir, Model, 1),
 	% save executable whether up-to-date or not
 
 	/* save prolog data */

@@ -253,8 +253,6 @@ build_instances(Language, DestDir, Parent, TopNode,
 		compile_c_program(CheckDir, ExtDefns, ExtLibs, Fuss, Tgt),
 		 (Tgt = -1, !, fail;
 		  Tgt > 0,
-		  (Parent has_changed_model_refinement c_new of Tgt;
-		      Parent has_new_model_refinement c_new of Tgt),
 		    % adjust old fn count to stop eqn limit warning here
 		    backup><(retract(counted_fns(OldCt)),
 			       assert(counted_fns(9999)),

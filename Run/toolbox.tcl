@@ -773,6 +773,12 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 	file rename -force model.cpp model$serial.cpp
 	file delete [lindex $objs end] ;# if reusable, so is executable
 	# puts [exec otool -L $TARGET]
+	#  now remove out-of-date executables for other archs
+	foreach possExt {.dll .so .dylib} {
+	    if {$possExt ne $shLibExt} {
+		file delete -force model$serial$possExt
+	    }
+	}
     }
     # do not allow an old dcf to be saved with a new model
     cd $oldDir
