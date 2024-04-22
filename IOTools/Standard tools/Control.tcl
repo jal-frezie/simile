@@ -313,7 +313,7 @@ namespace eval runcontrol33857 {
 	if {[info exists runState($node,busy)] && $runState($node,busy)} {
 	    set hideQuery $action
 	} else {
-	    ScrubRun $node 1
+	    ScrubRun $node 0
 	    eval $action
 	}
     }

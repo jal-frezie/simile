@@ -1422,7 +1422,7 @@ proc StartWebService {node scratch inst {runParams {}}} {
 }
 
 # this could be more efficient
-proc ExScrubRun {node times} {
+proc ExScrubRun {node} {
     global model_id instance_id
     #    if {![string match ok [ShowMess debug info Scrubbing okcancel]]} {
     #	error Bombed

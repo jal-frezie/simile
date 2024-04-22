@@ -442,6 +442,11 @@ proc CeaseRun {node times} {
 proc ScrubRun {node times} {
     global runState execThread execInterp
 
+    if {$times} {
+	# remove all execution parameters
+	array unset runState ${node},*
+	set runState($node,updated) 0 ;# otherwise error if model run next
+    }
     if {![info exists execThread($node,id)] && \
 	    ![info exists execInterp($node,id)]} {
 	# exec code not loaded, or threaded but no exec for this node
@@ -449,7 +454,7 @@ proc ScrubRun {node times} {
     }
 
     set runState($node,modelRunning) 0
-    ExScrubRun $node $times
+    ExScrubRun $node
     if {[info exists execThread($node,id)]} {
 	thread::release $execThread($node,id)
 	unset execThread($node,id)
