@@ -433,7 +433,7 @@ proc CeaseRun {node times} {
 
     if {[info exists runState($node,helperId)]} {
 	RunEnv::InMreFor $node
-	RunEnv::WindUp
+	RunEnv::WindUp $times
     } else {
 	ScrubRun $node $times
     }

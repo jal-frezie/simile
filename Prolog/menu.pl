@@ -312,7 +312,7 @@ menu_handle(CurWin, file, OpenAct) :-
 	    menu_handle(Win, Mode, Name);
 	(is_toplevel(Parent), !,
             \+ check_if_already_open(Name),
-	    close_exec(Parent),
+	    close_exec(Parent, 0),
 	    scrub_autosave(Parent);   
 	 check_deletable(Win, Parent),
 	    remove_model(Win, Parent)),
@@ -1344,14 +1344,14 @@ check_deletable(Win, Parent) :-
 	    backup><autosave_suspended(Parent), !;
 	    ok_to_delete(Win, Parent)).
 
-close_exec(Parent) :-
+close_exec(Parent, Time) :-
 	kill_helpers(Parent),
-	scrub_run(Parent, 1),
+	scrub_run(Parent, Time),
 	scrub_autosave(Parent).
 	
 remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
-	    close_exec(Parent),
+	    close_exec(Parent, 1),
 	    superfast_delete(Parent),
 	    (get_av_pair(Parent, 0, ToClear, _),
 	        \+ ToClear = name,
@@ -1405,7 +1405,7 @@ off_window(Win, ExitIfKilled) :-
 	    (ExitIfKilled = 1, !,
 		/* do not bother to delete model if closing down afterwards --
 		just do the minimum to exit cleanly */
-		close_exec(Model),
+		close_exec(Model, 1),
 		delete_window(Win);
 	    output><tk_certain_death(Win));
 /* ...which calls the class destructor, which calls rule below. */

@@ -677,12 +677,12 @@ namespace eval RunEnv {
 	array unset helperTable $currentNode,stateName
     }
 
-    proc WindUp {} {
+    proc WindUp {{times 0}} {
 	global helperTable
         variable currentNode
 
 	if {[ExDestroyHelpers $currentNode]} {
-	    ScrubRun $currentNode 1
+	    ScrubRun $currentNode $times
 	}
     }
 
