@@ -315,7 +315,7 @@ proc RestoreSketch {t node} {
     set graph($t,increment) \
             [expr $graph($t,width)/([llength $graph($t,points)] - 1.0)]
     # above must be set so AttackShape gets current one right
-    set grid [GetFrame $t.gph].gridf.canvas
+    set grid [GetFrame $t.wrapper.gph].gridf.canvas
     AttackShape $grid [winfo width $grid] [winfo height $grid]
 }
 
@@ -402,13 +402,13 @@ proc AddLine {c section} {
                 [expr [lindex $graph($t,points) $section]+$miss] \
                 [expr round($graph($t,increment)*$section)+$miss] \
                 [expr [lindex $graph($t,points) $section]+$miss] \
-                -tags "graph section$section"
+                -fill blue -tags "graph section$section"
     } else {
         $c create line [expr round($graph($t,increment)*($section-1))+$miss] \
                 [expr [lindex $graph($t,points) [expr $section - 1]]+$miss] \
                 [expr round($graph($t,increment)*$section)+$miss] \
                 [expr [lindex $graph($t,points) $section]+$miss] \
-                -tags "graph section$section"
+                -fill blue -tags "graph section$section"
     }
 }
 
