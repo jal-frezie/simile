@@ -5,7 +5,9 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
-package require base64
+catch {package require Trf} ;# make sure it gets forgotten properly
+package forget Trf ;# in case loaded eg by client5d in R package
+# package require base64 ; will now be done by mime
 set mimeVers [package require mime]
 if {![package vcompare $mimeVers 1.7.0]} {
     # work around bug that causes saved files to be broken
@@ -34,7 +36,7 @@ proc ::mime::copymessage {token channel} {
 }
     
 }
-package require md5 ;# mime will not load it if Trf available
+# package require md5 ;# mime will now load it as Trf not available
 set itclVers [package require Itcl]
 if {!$headless} {
 if {![info exists simplify]} {
