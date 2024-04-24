@@ -1,5 +1,7 @@
 MAJREL = 7
 MINREL = 1
+# botch to make Windows work
+CC = gcc 
 MACH = $(shell $(CC) -dumpmachine)
 MY_CPU = $(firstword $(subst -, ,$(MACH)))
 
@@ -121,6 +123,7 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	SYSDIR = System$(BITEXTN)
 ifeq ($(MY_CPU),x86_64)
 	TCLDIR =  /usr/local
+	PL_PATH = /c/gnu-prolog-64
 	SWIPLDIR = "/c/Program files/swipl"
 	GCCCMD = x86_64-w64-mingw32-gcc
 	GPPCMD = x86_64-w64-mingw32-g++
@@ -130,6 +133,9 @@ else
 # Actually, use local TclTk as above dir not exist on 32bit machines --
 #	TCLDIR = "$(shell pwd)/$(SYSDIR)"
 	TCLDIR = /usr/local32
+	PL_PATH = /c/gnu-prolog
+	GCCCMD = gcc
+	GPPCMD = g++
 	RESCMD = windres
 	# MSI = /c/MinGW-w64/v49j32/mingw32/opt
 # must be 32-bit because installer is
@@ -355,9 +361,9 @@ $(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 		-o ../$(SLDIR)/$(INSTLIB) install_adv.c $(CRYPTOBJ); cd ..
 
 $(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
-#	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
-#		-o ../${SUPP} support.cpp; cd ..
-#
+	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
+		-o ../${SUPP} support.cpp; cd ..
+
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
 #Run/install.dll: Run/install.c Makefile
