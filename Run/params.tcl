@@ -6,6 +6,11 @@
 # This file contains procedures for reading and editing tables of data at run-time.
 #
 
+if {[info exists loadedFromR]} {
+    set msgs(fce) [tr. {From component equation}]
+    # others are in R package client5d.tcl
+}
+
 proc FileParamDialogue {topNode topWin mustShow} {
     global paramData widgetNames myNode
 
@@ -838,7 +843,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		ColourCaptions $box red
 	    }
 	    if {[string equal abort $boredom]} {
-		focus $chking
+		if {!$::headless} {focus $chking}
 		return 0
 	    }
         } else { ;# all went well

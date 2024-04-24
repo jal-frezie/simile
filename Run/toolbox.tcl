@@ -5,8 +5,16 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
-catch {package require Trf} ;# make sure it gets forgotten properly
+
 package forget Trf ;# in case loaded eg by client5d in R package
+# now make sure it stays forgotten, or mime will try to use it
+proc filterPackages {wrappedCall args} {
+#puts $args ;# for debugging only
+uplevel 1 [list {*}$wrappedCall {*}$args]
+package forget Trf
+}
+package unknown [list filterPackages [package unknown]]
+
 # package require base64 ; will now be done by mime
 set mimeVers [package require mime]
 if {![package vcompare $mimeVers 1.7.0]} {
