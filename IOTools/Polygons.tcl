@@ -399,8 +399,12 @@ namespace eval ::polygon375 {
 	    if {[lsearch {.dxf .DXF} \
 		     [file extension $useNodes($winId,sourcefile)]] != -1} {
 		set coordSource 2
+		$winId.viewport.c addtag old all
 		::dxf::AddMap $useNodes($winId,sourcefile) $winId.viewport.c
-	    } else {
+		$winId.viewport.c addtag map all
+		$winId.viewport.c dtag old map
+		$winId.viewport.c dtag all old
+ 	    } else {
 		set coordSource 1		
 		set chxy [open $useNodes($winId,sourcefile) r]
 		set useNodes($winId,xys) [read $chxy]
