@@ -844,7 +844,7 @@ proc newInt {} {
 }
 
 proc UpdateExecution {node action} {
-    ScrubRun $node 1
+    ScrubRun $node 0
     Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
 
