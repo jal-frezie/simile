@@ -78,7 +78,7 @@ proc AnyValue {iH itm max} {
 		set stac [extract_gif_tail $hdl $bits(bottom) $bits(top) \
 			      [string is true $bits(hex)]]
 		append stac [binary format cc 0 0x3b]
-		set resp [base64 -mode encode -- $stac]
+		set resp [base64::encode $stac]
 	    } distinct {
 		set resp [llength [lrange [distinct_values $hdl] 1 end]]
 	    }
@@ -135,7 +135,7 @@ proc ResponseTo {paramList} {
 	} CreateSocket {
 	    package require json
 	    package require can2svg
-	    package require Trf ;# for native code base64
+	    package require base64
 
 	    set result "Direct SIMILE Connection"
 	} WaitSocket {
