@@ -159,7 +159,7 @@ namespace eval slide139 {
                     set spacing 1
 		    set gap [expr {max($gap, $spacing)}]
                 } else {
-                    set spacing [expr $gap/100.0]
+                    set spacing [expr {pow(10,floor(log10($gap)-2.5))}]
                 }
             }
         }
@@ -256,12 +256,12 @@ namespace eval slide139 {
                         
                     pack [entry $f.entry -textvariable widgetSeln($node) \
 			      -width 8] -padx 1 -pady 1
-		    if {$live} {
-			$newBag.scale configure -command [namespace code \
-					  [list SetArrayIfUsed $node $fixed {}]]
-			bind $f.entry <KeyRelease> \
-                            [namespace code [list WidgetSelnToC $node $fixed]]
-		    }
+#		    if {$live} {
+#			bind $f.entry <KeyRelease> \
+#                            [namespace code [list WidgetSelnToC $node $fixed]]
+#		    }
+		    set cmd [list SliderAction $node $live $fixed {} $spacing]
+		    $newBag.scale configure -command [namespace code $cmd]
 		    GrowCaptionsTo [winfo parent $f]
                 }
 	    }
@@ -348,7 +348,7 @@ namespace eval slide139 {
                         pack [label $f.elt$index.id -text $slTitle -bg $lbg \
 				  -width 4] -side left
                     } default {
-                        pack [frame $f.elt$index] -fill x -expand true
+                        pack [frame $f.elt$index -bg $lbg] -fill x -expand true
                         pack [label $f.elt$index.id -text $slTitle \
 			      -bg $lbg -width 4] -side left
                         pack [entry $f.elt$index.val \
@@ -368,11 +368,9 @@ namespace eval slide139 {
 #			    -variable widgetSeln($node,$index)
 			ttk::scale $newScale -variable widgetSeln($node,$index)\
 			    -style $scaleStyle  -from $min -to $max
-			if {$live} {
-			$newScale configure \
-			    -command [namespace code [list SetArrayIfUsed \
-							  $node $fixed $index]]
-			}
+			set cmd [list SliderAction $node $live $fixed \
+				     $index $spacing]
+			$newScale configure -command [namespace code $cmd]
                         pack $newScale -fill x -expand true
                         # only put legend on bottom one
                         if {$count==$index} {
@@ -410,7 +408,7 @@ namespace eval slide139 {
 
     proc InsertNumerals {f min max gap prec lbg} {
 	set tick 0
-	while {$min < $max + $gap/2} {
+	while {$min < $max + $gap/2.0} {
 	    incr tick
 	    pack [label $f.mid$tick -bg $lbg -anchor w \
 		      -text [::DisplayFormat::General $min $prec]] \
@@ -419,6 +417,10 @@ namespace eval slide139 {
 	    set min [expr {$min+$gap}]
 	}
 	pack $f.mid$tick -expand 0 ;# no gap at end
+    }
+
+    proc SnapVal {tgt step chc} {
+	set ::$tgt [expr {$step*round($chc/$step)}]
     }
     
     proc FindUseDim {nodeDims} {
@@ -501,6 +503,14 @@ namespace eval slide139 {
 	# formula for hold determined experimentally
     }
 
+    proc SliderAction {node live fixed indices resolve value} {
+	set sub [join [concat [list {}] $indices] ,]
+	SnapVal widgetSeln($node$sub) $resolve $value
+	if {$live} {
+	    SetArrayIfUsed $node $fixed $indices $value
+	}
+    }
+    
     proc SetArrayIfUsed {node fixed indices value} {
         global paramData runState myNode widgetSeln
 	set sub [join [concat [list {}] $indices] ,]

@@ -617,7 +617,7 @@ proc ::graphtools::settings_axis { w} {
 # Jonathan Massheder, IERM, University of Edinburgh
 # xaxis true if x-axis false if y. NB x-axis setting gives less ticks - usually too few - use y-axis
 proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval numInt minorInterval numMinorInt\
-            decimalPlaces } {
+				   decimalPlaces } {
     upvar 1 $axisMin rmin $axisMax rmax $interval inter $numInt nint \
             $minorInterval minorInt $numMinorInt NminorInt $decimalPlaces decmlPos
     global graphtools::karray
