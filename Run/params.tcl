@@ -606,6 +606,7 @@ proc SeparateCase {topNode compName} {
 
 proc AcceptAll {topNode compNames notInput complain} {
     foreach compName $compNames {
+	if {[string first /$topNode $compName]} continue
 	if {![AcceptData $topNode $compName $notInput $complain]} {
 	    break
 	}

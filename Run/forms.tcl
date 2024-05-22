@@ -1162,7 +1162,7 @@ proc FillProgressBox {key lits {fract 0}} {
     global msgs
 
     set word [eval [list format $msgs($key)] $lits]
-    if {$::headless} {
+    if {$::headless || ![winfo exists .progress.message]} {
 	puts "Progress message: $word ($fract\% complete)"
     } else {
 	.progress.message configure -text [eval [list format $msgs($key)] $lits]
