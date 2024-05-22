@@ -154,7 +154,7 @@ namespace eval slide139 {
                 #		set max [GetMaxValue $node]
                 #		set magnitude [expr $max - $min]
                 ::graphtools::AxisRound [GetMinValue $node] \
-                        [GetMaxValue $node] 0 min max gap s1 s2 s3 s4
+		    [GetMaxValue $node] 0 min max gap s1 s2 s3 s4
                 if {[string match INTEGER $type]} {
                     set spacing 1
 		    set gap [expr {max($gap, $spacing)}]
@@ -178,7 +178,8 @@ namespace eval slide139 {
 		set fbg [Gradient $lbg $f -50]
                 $f configure -bg $lbg
 		SetState $winId [concat [GetState $winId] \
-                        [list [StripCrs $title]]]
+				     [list [StripCrs $title]]]
+		set scaleStyle [ScaleStyleFor $f $dbg]
             }
         } else {
             set f $winId
@@ -237,19 +238,26 @@ namespace eval slide139 {
 			      -width 12]
                 } default {
 		    array unset widgetSeln $node ;# bad value crashes Tcl
-                    scale $f.scale -length 120 -orient h -showvalue false \
-			-sliderlength 10 -from $min -to $max \
-			-tickinterval $gap -resolution $spacing \
-			-bg $lbg -troughcolor $dbg -activebackground $fbg \
-			-variable widgetSeln($node)
-                    pack $f.scale -side right -fill x -expand true
+#                    scale $f.scale -length 120 -orient h -showvalue false \
+#			-sliderlength 10 -from $min -to $max \
+#			-tickinterval $gap -resolution $spacing \
+#			-bg $lbg -troughcolor $dbg -activebackground $fbg \
+#			-variable widgetSeln($node)
+		    set newBag [ttk::frame $f.bag]
+		    ttk::scale $newBag.scale -from $min -to $max \
+			-style $scaleStyle -variable widgetSeln($node)
+		    ttk::frame $newBag.nums
+		    InsertNumerals $newBag.nums $min $max $gap $s4 $lbg
+		    pack $newBag -side right -fill x -expand true
+                    pack $newBag.scale -fill x -expand true
+                    pack $newBag.nums -fill x -expand true
                     pack [label $f.caption -text [lindex $levels end] \
 			      -bg $lbg -width 12]
                         
                     pack [entry $f.entry -textvariable widgetSeln($node) \
 			      -width 8] -padx 1 -pady 1
 		    if {$live} {
-			$f.scale configure -command [namespace code \
+			$newBag.scale configure -command [namespace code \
 					  [list SetArrayIfUsed $node $fixed {}]]
 			bind $f.entry <KeyRelease> \
                             [namespace code [list WidgetSelnToC $node $fixed]]
@@ -352,12 +360,14 @@ namespace eval slide139 {
                         set newScale $f.elt$index.scale
 			array unset widgetSeln $node,$index
 			# bad value crashes Tcl
-                        scale $newScale -length 180 \
-			    -orient horizontal -showvalue false \
-			    -sliderlength 10 -from $min -to $max \
-			    -resolution $spacing \
-			    -bg $lbg -troughcolor $dbg -activebackground $fbg \
-			    -variable widgetSeln($node,$index)
+#                        scale $newScale -length 180 \
+#			    -orient horizontal -showvalue false \
+#			    -sliderlength 10 -from $min -to $max \
+#			    -resolution $spacing \
+#			    -bg $lbg -troughcolor $dbg -activebackground $fbg \
+#			    -variable widgetSeln($node,$index)
+			ttk::scale $newScale -variable widgetSeln($node,$index)\
+			    -style $scaleStyle  -from $min -to $max
 			if {$live} {
 			$newScale configure \
 			    -command [namespace code [list SetArrayIfUsed \
@@ -366,7 +376,10 @@ namespace eval slide139 {
                         pack $newScale -fill x -expand true
                         # only put legend on bottom one
                         if {$count==$index} {
-                            $newScale configure -tickinterval $gap
+#                            $newScale configure -tickinterval $gap
+			    pack [ttk::frame $f.elt$index.nums] -fill x -expand 1
+			    InsertNumerals $f.elt$index.nums $min $max $gap \
+				$s4 $lbg
                         }
                     }
                 }
@@ -382,6 +395,30 @@ namespace eval slide139 {
             BindPopup $f.caption "[lindex $levels end] ($dimList)" $comment
 	}
 	return $allVals
+    }
+
+    proc ScaleStyleFor {f col} {
+	set style scaleStyle$f
+	if {![llength [ttk::style configure $style]]} {
+	    eval [list ttk::style configure $style] [ttk::style configure TScale]
+	    ttk::style layout Horizontal.$style [ttk::style layout Horizontal.TScale]
+	    ttk::style configure $style -background $col -troughcolor $col \
+		-borderwidth 2
+	}
+	return $style
+    }
+
+    proc InsertNumerals {f min max gap prec lbg} {
+	set tick 0
+	while {$min < $max + $gap/2} {
+	    incr tick
+	    pack [label $f.mid$tick -bg $lbg -anchor w \
+		      -text [::DisplayFormat::General $min $prec]] \
+		-side left -fill x -expand 1
+#			pack [ttk::label $newBag.nums.gap$tick] -side left -fill x -expand 1
+	    set min [expr {$min+$gap}]
+	}
+	pack $f.mid$tick -expand 0 ;# no gap at end
     }
     
     proc FindUseDim {nodeDims} {
