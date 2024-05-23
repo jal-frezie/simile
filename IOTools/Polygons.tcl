@@ -153,7 +153,7 @@ namespace eval ::polygon375 {
         variable useNodes
         
         set ms $winId.intro
-        set testResult [GetModelValue $node]
+        set testResult [GetModelValue $node 1 1]
         
         # This tests for the user having clicked on a suitable element
         # of the model diagram
@@ -290,7 +290,7 @@ namespace eval ::polygon375 {
         variable useNodes
 	set useNodes($winId,datamin) 1e100
 	set useNodes($winId,datamax) -1e100
-        set values [lindex [GetModelValue $hs] 0]
+        set values [lindex [GetModelValue $hs 1 1] 0]
         set quadlist {}
         GetQuadList {} $values
         array set quadarray $quadlist

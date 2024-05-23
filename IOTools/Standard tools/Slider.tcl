@@ -138,9 +138,14 @@ namespace eval slide139 {
             return {}
         }
         set initVal [lindex [GetModelValue $node] 0]
+	set includesExpts [expr {[llength $initVal]>1 && ![lindex $initVal 0]}]
         #ShowMess debug info $def ok
         set levels [split $title /]
         set trans [GetTransTable $node]
+	if {$includesExpts} {
+	    set initVal [lindex $initVal 1]  ;# defaults only
+	    set trans [lrange $trans 1 end]
+	}
         set type [GetModelType $node]
 	set class [GetModelClass $node]
 	set sliderDoes($title,type) $type
@@ -247,7 +252,7 @@ namespace eval slide139 {
 		    ttk::scale $newBag.scale -from $min -to $max \
 			-style $scaleStyle -variable widgetSeln($node)
 		    ttk::frame $newBag.nums
-		    InsertNumerals $newBag.nums $min $max $gap $s4 $lbg
+		    InsertNumerals $newBag.nums $min $max $gap $spacing $lbg
 		    pack $newBag -side right -fill x -expand true
                     pack $newBag.scale -fill x -expand true
                     pack $newBag.nums -fill x -expand true
@@ -256,10 +261,10 @@ namespace eval slide139 {
                         
                     pack [entry $f.entry -textvariable widgetSeln($node) \
 			      -width 8] -padx 1 -pady 1
-#		    if {$live} {
-#			bind $f.entry <KeyRelease> \
-#                            [namespace code [list WidgetSelnToC $node $fixed]]
-#		    }
+		    if {$live} {
+			bind $f.entry <KeyRelease> \
+                            [namespace code [list WidgetSelnToC $node $fixed]]
+		    }
 		    set cmd [list SliderAction $node $live $fixed {} $spacing]
 		    $newBag.scale configure -command [namespace code $cmd]
 		    GrowCaptionsTo [winfo parent $f]
@@ -354,9 +359,11 @@ namespace eval slide139 {
                         pack [entry $f.elt$index.val \
                                 -textvariable widgetSeln($node,$index) \
                                 -width 8] -side left -padx 1 -pady 1
-                        bind $f.elt$index.val <KeyRelease> \
+			if {$live} {
+			    bind $f.elt$index.val <KeyRelease> \
                                 [namespace code [list WidgetSelnToC $node \
 						     $fixed $index]]
+			}
                         set newScale $f.elt$index.scale
 			array unset widgetSeln $node,$index
 			# bad value crashes Tcl
@@ -377,7 +384,7 @@ namespace eval slide139 {
 #                            $newScale configure -tickinterval $gap
 			    pack [ttk::frame $f.elt$index.nums] -fill x -expand 1
 			    InsertNumerals $f.elt$index.nums $min $max $gap \
-				$s4 $lbg
+				$spacing $lbg
                         }
                     }
                 }
@@ -410,8 +417,8 @@ namespace eval slide139 {
 	set tick 0
 	while {$min < $max + $gap/2.0} {
 	    incr tick
-	    pack [label $f.mid$tick -bg $lbg -anchor w \
-		      -text [::DisplayFormat::General $min $prec]] \
+#	    if {$prec>=1} {set min [expr {round($min)}]}
+	    pack [label $f.mid$tick -bg $lbg -anchor w -text [format %g $min]] \
 		-side left -fill x -expand 1
 #			pack [ttk::label $newBag.nums.gap$tick] -side left -fill x -expand 1
 	    set min [expr {$min+$gap}]
@@ -419,10 +426,6 @@ namespace eval slide139 {
 	pack $f.mid$tick -expand 0 ;# no gap at end
     }
 
-    proc SnapVal {tgt step chc} {
-	set ::$tgt [expr {$step*round($chc/$step)}]
-    }
-    
     proc FindUseDim {nodeDims} {
         set useDim -1
         set outerDims 0
@@ -505,9 +508,10 @@ namespace eval slide139 {
 
     proc SliderAction {node live fixed indices resolve value} {
 	set sub [join [concat [list {}] $indices] ,]
-	SnapVal widgetSeln($node$sub) $resolve $value
+	set roundVal [format %g [expr {$resolve*round($value/$resolve)}]]
+	set ::widgetSeln($node$sub) $roundVal
 	if {$live} {
-	    SetArrayIfUsed $node $fixed $indices $value
+	    SetArrayIfUsed $node $fixed $indices $roundVal
 	}
     }
     
@@ -709,7 +713,7 @@ namespace eval slide139 {
             } else {
                 set f {}
             }
-            set data [lindex [GetModelValue $node] 0]
+            set data [lindex [GetModelValue $node 0 1] 0]
 	    if {$data eq "novalue"} {
 		error "Component $title has been deleted"
 	    }

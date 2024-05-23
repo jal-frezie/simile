@@ -239,7 +239,7 @@ proc ExtractJList {dH count loseZeros} {
 # the node is an array or list, and 'novalue' if it does not have one, e.g., a
 # cloud or submodel.
 
-proc GetModelValue { node {keepEvtZeros 0}} {
+proc GetModelValue { node {keepEvtZeros 0} {defCaseOnly 0}} {
     global subbedPlots
 
     if {[info exists subbedPlots($node)]} {
@@ -247,20 +247,25 @@ proc GetModelValue { node {keepEvtZeros 0}} {
 	    set loseZeros [expr {!$keepEvtZeros && \
 		 [lsearch {EVENT SQUIRT} [lindex $subbedPlots($node) 1]]>-1}]
 	    # G_M_C horribly slow, keep node class with handle
-	    return [list [ExtractCList [lindex $subbedPlots($node) 2] \
-			      16777216 $loseZeros]] ;# enough I hope
+	    set hdl [lindex $subbedPlots($node) 2]
+	    if {$defCaseOnly} {
+		set hdl [DefFrom $hdl]
+	    }
+	    return [list [ExtractCList $hdl 16777216 $loseZeros]] ;# enough I hope
 	} else { # from tcl model or measured value from pest interface
 	    return [list $subbedPlots($node)]
 	}
     } 
     AddToWatched $node
-    return [SetModelValue $node {}]
+    return [SetModelValue $node {} $defCaseOnly]
 }
 
-proc SetModelValue { node newVals } {
+proc SetModelValue { node newVals {defCaseOnly 0}} {
     global myNode
-    
-    return [GetCompExecData $myNode Value $node $newVals]
+
+    set getWhat Value
+    if {$defCaseOnly} {set getWhat DefVal}
+    return [GetCompExecData $myNode $getWhat $node $newVals]
 }
 
 proc DefFrom {hdlList} {
@@ -434,6 +439,8 @@ proc GetCompExecData {topNode prop args} {
 	switch -regexp $prop {
 	    Value {
 		set result [list [ExtractCList $hdl 16777216 0]]
+	    } DefVal {
+		set result [list [ExtractCList [DefFrom $hdl] 16777216 0]]
 	    } Binary {
 		set result [eval extract_binary [DefFrom $hdl] \
 				[lrange $args 1 end]]
