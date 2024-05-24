@@ -1590,13 +1590,13 @@ proc DoWelcomeDialog {dtId} {
     
     frame $links.m1
     if {$newVers > $::env(SIMILE_VERSION)} {
-	pack [frame $links.m0] -anchor w
-        pack [label $links.m0.left -text " * " -font {-family helvetica -size 12}] \
+	pack [ttk::frame $links.m0] -anchor w
+        pack [ttk::label $links.m0.left -text " * " -font {-family helvetica -size 12}] \
                 -anchor w -side left
-	pack [set www0 [label $links.m0.centre -text "Simile v$newVers" \
-                -font {-underline true -family helvetica -size 12} -fg blue \
-                -cursor hand2]] -anchor w -side left
-	pack [label $links.m0.right -text " is available" -font {-family helvetica -size 12}]\
+	pack [set www0 [ttk::label $links.m0.centre -text "Simile v$newVers" \
+			    -font {-underline true -family helvetica -size 12} \
+			    -foreground blue  -cursor hand2]] -anchor w -side left
+	pack [ttk::label $links.m0.right -text " is available" -font {-family helvetica -size 12}]\
 	    -anchor w -side left
 	bind $www0 <Button-1> {VisitUrl http://simulistics.com/products/simile.php}
     }
