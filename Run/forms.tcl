@@ -1534,18 +1534,16 @@ proc DoWelcomeDialog {dtId} {
     wopen read "../Images/Toolbar/open.gif"
     image create photo wnew
     wnew read "../Images/Toolbar/new.gif"
-    pack [label .register.welcome -image welcome] -anchor w
+    pack [ttk::label .register.welcome -image welcome] -anchor w
     
     TitleFrame .register.create -text "Creating a model: "
     set create [GetFrame .register.create]
-    set msgtxt "Select compartments and flows from the toolbar\
-                to add to the diagram. Use the select (pointer) tool to edit captions\
-                and values. Run your model using the Run command of the Model menu."
+    set msgtxt $::msgs(intro)
     switch [tk windowingsystem] {
         win32 {
-            pack [message $create.m -text $msgtxt -width 400 -font {-family helvetica -size 8}]
+            pack [ttk::label $create.m -text $msgtxt -wraplength 400 -font {-family helvetica -size 8}]
         } default {
-            pack [message $create.m -text $msgtxt -width 400]
+            pack [ttk::label $create.m -text $msgtxt -wraplength 400]
         }
     }
     pack $create -expand on -fill x
@@ -1558,27 +1556,27 @@ proc DoWelcomeDialog {dtId} {
     TitleFrame .register.tasks -text "Choose a model: "
     set tasks [GetFrame .register.tasks]
     
-    frame $tasks.b
+    ttk::frame $tasks.b
     # MacVersion does not display compound (image + text) buttons at all well.
     switch [tk windowingsystem] {
         aqua {
-            pack [button $tasks.b.new -text "New" -width 10  \
+            pack [ttk::button $tasks.b.new -text "New" -width 10  \
                 -command {set userinfo(done) $welcomeDone}] \
                 -padx 8 -pady 8 -side left
-            pack [button $tasks.b.open -text "Open..." -width 10 \
+            pack [ttk::button $tasks.b.open -text "Open..." -width 10 \
                 -command "MenuSelect $dtId.canvas local open_all; set userinfo(done) \$welcomeDone" ] \
                 -padx 8 -pady 8 -side left
-            pack [button $tasks.b.reopen -text "Recent..." -width 10 \
+            pack [ttk::button $tasks.b.reopen -text "Recent..." -width 10 \
                 -command "PopReopen $dtId"] \
                 -padx 8 -pady 8 -side left
         } default  {
-            pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
+            pack [ttk::button $tasks.b.new -text "New" -compound left -image wnew \
                 -command {set userinfo(done) $welcomeDone}] \
                 -padx 8 -pady 8 -side left
-            pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
+            pack [ttk::button $tasks.b.open -text "Open..." -compound left -image wopen \
                 -command "MenuSelect $dtId.canvas local open_all; set userinfo(done) \$welcomeDone" ] \
                 -padx 8 -pady 8 -side left
-            pack [button $tasks.b.reopen -text "Recent..." -width 10 \
+            pack [ttk::button $tasks.b.reopen -text "Recent..." \
                 -command "PopReopen $dtId"] \
                 -padx 8 -pady 8 -side left
         }
@@ -1604,20 +1602,20 @@ proc DoWelcomeDialog {dtId} {
     }
     switch [tk windowingsystem] {
         win32 {
-            pack [label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
+            pack [ttk::label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
                 -anchor w -side left
-            pack [set www1 [label $links.m1.centre -text "Getting Started" \
-                -font {-underline true -family helvetica -size 8} -fg blue \
+            pack [set www1 [ttk::label $links.m1.centre -text "Getting Started" \
+                -font {-underline true -family helvetica -size 8} -foreground blue \
                 -cursor hand2]] -anchor w -side left
-            pack [label $links.m1.right -text " help pages" -font {-family helvetica -size 8}]\
+            pack [ttk::label $links.m1.right -text " help pages" -font {-family helvetica -size 8}]\
                 -anchor w -side left
         } default {
-            pack [label $links.m1.left -text " *  Show " ] \
+            pack [ttk::label $links.m1.left -text " *  Show " ] \
                 -anchor w -side left
-            pack [set www1 [label $links.m1.centre -text "Getting Started" \
-                -fg blue \
+            pack [set www1 [ttk::label $links.m1.centre -text "Getting Started" \
+                -foreground blue \
                 -cursor hand2]] -anchor w -side left
-            pack [label $links.m1.right -text " help pages" ] \
+            pack [ttk::label $links.m1.right -text " help pages" ] \
                 -anchor w -side left
         }
     }
@@ -1649,7 +1647,7 @@ proc DoWelcomeDialog {dtId} {
     pack [frame .register.checkframe] -padx 4 -pady 4
     pack [ttk::checkbutton .register.checkframe.cb -variable welcomeDone] \
 	-side left
-    pack [label .register.checkframe.l -text "Do not show this welcome screen again"] \
+    pack [ttk::label .register.checkframe.l -text "Do not show this welcome screen again"] \
             -side left
     #    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
     LetItShow .register userinfo(done)

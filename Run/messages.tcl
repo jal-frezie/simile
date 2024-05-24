@@ -92,6 +92,7 @@ set msgs(exit) [tr. {Exit Simile}]
 set msgs(runenv) [tr. {Go to the Run Environment window}]
 set msgs(snap) [tr. {Inspect model variable}]
 
+set msgs(intro) [tr. {Select compartments and flows from the toolbar to add to the diagram. Use the select (pointer) tool to edit captions and values. Run your model using the Run command of the Model menu.}]
 set msgs(eqnbar) [tr. {Enter equation for the selected component here. Use pull-down menu to retrieve previous entries, up-arrow key to cycle through completions, and tab or enter keys to accept completion.}]
 set msgs(events) [tr. {Use pulldown menu to select event upon which the equation entered will apply}]
 set msgs(tick) [tr. {Apply new equation to component}]
