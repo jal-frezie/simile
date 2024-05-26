@@ -379,6 +379,7 @@ itcl::class similescript::$newHelperClass {
 	variable clickPath
 	variable preSelected
 	variable filling
+	variable skip_this
 	
 	array set attrs $avPairs
 	if {[info exists attrs(case)]} {
@@ -390,13 +391,19 @@ itcl::class similescript::$newHelperClass {
 	switch $type {
 	    sxf {
 		set clickPath [GetNode]_expt
+		set skip_this 0
 	    } value {
 		$filling.e insert end " [list $attrs(index) $attrs(value)]"
 	    } default {
 		InsertLevel $type
 		if {[info exists attrs(tgt)]} {
 		    # will be awaiting a click, so supply one
-		    Click /$attrs(tgt)
+		    if {![Click /$attrs(tgt)]} {
+			Query [list missing_expt_param $attrs(tgt)] warning \
+			    expt_setup {} ok
+			set skip_this 1
+			return
+		    }
 		}
 		if {$type eq "plist" || [info exists attrs(val)]} {
 		    set f [MakeSubFrames $this $topFrame $clickPath \
@@ -422,7 +429,12 @@ itcl::class similescript::$newHelperClass {
     public method FinishElement {type} {
 	variable clickPath
 	variable filling
+	variable skip_this
 	
+	if {$skip_this} {
+	    set skip_this 0
+	    return
+	}
 	if {$type eq "plist"} {
 	    $filling.e delete 0 1 ;# trim initial space
 	    $filling.tick invoke
@@ -577,9 +589,9 @@ itcl::class similescript::$newHelperClass {
 	variable listStrings
 
 	set node [IdFromTail $myNode $path -1]
-	if {[GetModelClass $node] eq "SUBMODEL" || \
+	if {$node eq "nomatch" || [GetModelClass $node] eq "SUBMODEL" || \
 		[lsearch {INPUT TABLE} [GetModelEval $node]] == -1} {
-	    return
+	    return 0
 	}
 	set action [lindex $clickPath end]
 	set clickPath [lrange $clickPath 0 end-1]
@@ -618,6 +630,7 @@ itcl::class similescript::$newHelperClass {
 	lappend clickPath [$f.caption cget -text]
 	CrossPlatformBind $f.caption \
 	    [namespace code [list OnElementContext  $clickPath %X %Y]]
+	return 1
     }
 
     public method Display {time dispInt step} {
