@@ -1352,7 +1352,7 @@ proc EditTableData {startLine capt dims trans} {
 	AcquireTableData 0 $startLine
     } elseif {$values eq {}} {
 	# No file data selected, fill table with empties unless values there
-	if {$dims eq {} || [lsearch $dims RECORDS]>-1} {
+	if {$dims eq [lrepeat 7 0] || [lsearch $dims RECORDS]>-1} {
 	    set dims \
 		[GetDimOrTimePtList .table [tr. {Dimensions for new table}] \
 		   [tr. {Enter dimensions for new table, separated by commas:}]]
