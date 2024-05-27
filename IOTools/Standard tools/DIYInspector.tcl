@@ -492,7 +492,7 @@ itcl::class similescript::$newHelperClass {
     proc SaveLevel {topF pStr indent} {
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]
-	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} continue
+	    if {[lsearch {head body tree caption label tick cross} $lvl]>-1} continue
 	    set type [TypeFromLevel $lvl]
 	    if {[lsearch {compound perm} $type]>-1} {
 		if {$type eq "compound"} {
