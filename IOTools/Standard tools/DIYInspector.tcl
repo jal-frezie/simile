@@ -432,6 +432,7 @@ itcl::class similescript::$newHelperClass {
 	variable skip_this
 	
 	if {$skip_this} {
+	    # also need to remove lost param's cases somehow
 	    set skip_this 0
 	    return
 	}
@@ -588,6 +589,8 @@ itcl::class similescript::$newHelperClass {
 	variable clickPath
 	variable listStrings
 
+	$modelInst ReleaseClicks
+	
 	set node [IdFromTail $myNode $path -1]
 	if {$node eq "nomatch" || [GetModelClass $node] eq "SUBMODEL" || \
 		[lsearch {INPUT TABLE} [GetModelEval $node]] == -1} {
@@ -596,8 +599,6 @@ itcl::class similescript::$newHelperClass {
 	set action [lindex $clickPath end]
 	set clickPath [lrange $clickPath 0 end-1]
 
-	$modelInst ReleaseClicks
-	
 	if {$action eq "plist"} {
 	    set listStrings($path) {}
 	    set compCases($myNode,$path) {}
