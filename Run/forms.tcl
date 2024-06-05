@@ -1509,7 +1509,7 @@ proc DoWelcomeDialog {dtId} {
     # available...
 
     set newVers [GetLatestVers]
-    if {$newVers == 0} {set newVers $userinfo(old_version)}
+    if {$newVers == 0} {set newVers $userinfo(Version)}
     if {$newVers==$userinfo(old_version) && $userinfo(done)} {
 	return
     } else {

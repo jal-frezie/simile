@@ -164,8 +164,9 @@ strings_to_atoms(StNest, ANest) :-
 get_load_file(Parent, FileName) :-
 	get_file_name('untitled.sml', 'Open file:', 0, Parent, FileName).
 
-get_save_file(Model, FileName) :-
-	get_file_name('untitled.sml', 'Save as:', 1, Model, FileName).
+get_save_file(Model, FileName, First) :-
+    (First = 1 -> Title = 'Save as'; Title = 'Write failed. Save elsewhere:'),
+	get_file_name('untitled.sml', Title, 1, Model, FileName).
 
 get_import_file(Preferred, Model, FileName) :-
 	get_file_name(Preferred, 'Import from:', 0, Model, FileName),

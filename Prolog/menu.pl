@@ -1478,7 +1478,7 @@ do_save(Win, Model, New_name) :-
         finish_progress_dialogue, /* Allow file selector to take focus */
 	(New_name = false,
 	    get_model_file(Model, Name);
-	try_save_files(Model, Name)),
+	try_save_files(Model, Name, 1)),
 
 	/* Starts dialogue, but if backtracking, finishes again before
 	retrying dialogue */
@@ -1546,11 +1546,11 @@ check_save_canvas(SaveDir, Model, Date) :-
 /* try_save_files will keep prompting the user for save files each time it is
 retried, but fail when the user cancels the request */
 
-try_save_files(Model, Name) :-
-	get_save_file(Model, TestName),
+try_save_files(Model, Name, First) :-
+	get_save_file(Model, TestName, First),
 	\+ TestName = '',
 	(Name = TestName;
-	try_save_files(Model, Name)).
+	try_save_files(Model, Name, 0)).
 
 save_isolated(Name, Part, Date, SelnOnly, MakeCompat) :-
 /*	(SelnOnly = yes, !,
