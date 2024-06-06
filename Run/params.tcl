@@ -787,8 +787,19 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	    # accept empty field for saving data
 	    set result {} ;# handle as error
 	} else {
-	    set result [ListToArray $topNode $caseId $node {} {} $trans $recordDims \
-			    $newData $readMany($compName) $useCppArray]
+	    if {$complain==-1 && [lindex $newData 0] eq "NOW"} {
+		# make NOW from slider table a current change rather than
+		# overwriting previous timepoints with it
+		set timed 0
+		set trans [lrange $trans 1 end]
+		set recordDims [lrange $recordDims 1 end]
+		set toLoad [lindex $newData 1]
+		upvar 0 toLoad newData
+	    } else {
+		set timed $readMany($compName)
+	    }		
+	    set result [ListToArray $topNode $caseId $node {} {} $trans \
+			    $recordDims $newData $timed $useCppArray]
 	    # now add to all permutations containing this case
 	    if {![string is integer -strict $result]} { # list of errors
 		set action [lindex {none load check} $complain]
@@ -858,8 +869,9 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
                 ColourCaptions $box black
             }
             set suppliedData(needed) [purge $suppliedData(needed) $compName]
-	    if {![info exists runState($topNode,reloadParams)] || \
-		    $result<$runState($topNode,reloadParams)} {
+	    if {$timed == $readMany($compName) && \
+		    (![info exists runState($topNode,reloadParams)] || \
+		    $result<$runState($topNode,reloadParams))} {
 # do not set if we already found an update needing a bigger reset than this one
 		set runState($topNode,reloadParams) $result
 	    }
@@ -1760,8 +1772,10 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 		    }
                 }
             }
-            if {$interactive} {
-                #$widgetNames($restoredComp).e
+#            if {$interactive} {}
+	    if {[info exists outNames($restoredComp)] && \
+		    [lindex $suppliedData($restoredComp) 0] ne "NOW"} {
+		#$widgetNames($restoredComp).e
                 FillIfSmall $outNames($restoredComp).e \
 		    $suppliedData($restoredComp) $trans
             }
