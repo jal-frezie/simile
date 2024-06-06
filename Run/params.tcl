@@ -1773,7 +1773,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
                 }
             }
 #            if {$interactive} {}
-	    if {[info exists outNames($restoredComp)] && \
+	    if {$interactive || [info exists outNames($restoredComp)] && \
 		    [lindex $suppliedData($restoredComp) 0] ne "NOW"} {
 		#$widgetNames($restoredComp).e
                 FillIfSmall $outNames($restoredComp).e \
