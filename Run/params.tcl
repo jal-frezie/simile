@@ -791,7 +791,6 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		# make NOW from slider table a current change rather than
 		# overwriting previous timepoints with it
 		set timed 0
-		set trans [lrange $trans 1 end]
 		set recordDims [lrange $recordDims 1 end]
 		set toLoad [lindex $newData 1]
 		upvar 0 toLoad newData

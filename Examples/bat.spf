@@ -11,6 +11,7 @@ start/h offset=literal=NOW 0
 start/ring=literal=NOW 96
 start/wheel=literal=NOW 32
 start/hole=literal=NOW 8
+start/Wheel outside?=literal=NOW false
 increment/start tooth=literal=NOW -0.50
 increment/h offset=literal=NOW 2.00
 increment/hole=literal=NOW 0
