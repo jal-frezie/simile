@@ -54,19 +54,18 @@ proc Newer {is than t} {
     }
     file stat $is foo
     file stat $than bar
-#    puts "$foo(${t}time) > $bar(${t}time)"
+    #tk_messageBox -message "$is $foo(${t}time) > $than $bar(${t}time)"
     return [expr {$foo(${t}time) > $bar(${t}time)}]
 }
 
-#if {[Newer $installedCreds $creds m]}
+set creds [file join $custom(prefDir) mdlrinfo.txt]
 if {$tcl_platform(platform) eq "windows"} {
     set installedCreds [file join $SIMILE_PATH Run mdlrinfo.txt]
+    if {[Newer $installedCreds $creds m]} {
+	file copy -force $installedCreds $creds
+    }
 } else {
     set installedCreds [file join $SIMILE_PATH Run mdlrinfo.tpl]
-}
-set creds [file join $custom(prefDir) mdlrinfo.txt]
-if {![file exists $creds]} {
-    file copy -force $installedCreds $creds
 }
 
 set UserStream [open $creds r]
