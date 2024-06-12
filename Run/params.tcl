@@ -629,8 +629,11 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 
     if {!$::headless} {
 	set box $outNames($compName)
-	if {[lsearch [list $box.cross $box.b] [focus]]>-1} {return 0}
-	# tick invoked by clicking on cross or settings, not what user wanted
+	set goneTo [focus]
+	if {[lsearch [list $box.cross $box.b [winfo toplevel $box].shortDlg] \
+		 [focus]] >-1} {return 0}
+	# tick invoked by clicking on cross or settings, or by error appearing
+	# after hiting return, not what user wanted
 	set chking $box.e
     }
     set node [IdFromTail $topNode $compLocal -1]
