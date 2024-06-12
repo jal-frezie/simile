@@ -662,7 +662,6 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	    }
 	    set suppliedData($compName) $preload
 	} elseif {![string equal $newData [UglifyValList $suppliedData($compName) $readMany($compName)]]} {
-	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
 	    #                set suppliedData($compName) $newData
 	    # will do that later _if_ it is error free
@@ -865,6 +864,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		set result -1 ;# ...so reload time series
 	    }
 	    if {[info exists entryChanged]} {
+		set msgs(param_source_$compName) [tr. Unsaved]
 		set suppliedData($compName) $newData
 	    }
             if {$complain>-1 && $newData ne ""} { ;# leave eqned variables blue
@@ -910,7 +910,8 @@ proc RevertData {winId compName notInput valTrans} {
 	set oldData $worked
     }
     $outNames($compName).e delete 0 end
-    if {[info exists suppliedData($compName)]} {
+    if {[info exists suppliedData($compName)] && \
+	    $::msgs(param_source_$compName) ne $::msgs(fce)} {
         $outNames($compName).e insert 0 \
 	    [PrettifyValList $suppliedData($compName) $valTrans]
 	set suppliedData($compName) $oldData
