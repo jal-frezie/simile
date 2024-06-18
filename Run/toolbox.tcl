@@ -943,7 +943,7 @@ proc WriteCreds {} {
 
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo OPEN_MODEL simtmpdir
-    global regularActs tclBitness looks
+    global regularActs tclBitness looks msgs
 
     if {$::headless} {
 	# still need colours defined for direct svg exports
