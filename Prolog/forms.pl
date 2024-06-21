@@ -5,7 +5,7 @@ Code for putting up dialogue boxes, progress boxes, etc */
 sicstus_module(forms, [pick_equation/2, eqn_for/2, do_equation_dialog/2,
 		       do_disag_dialog/4, do_relation_dialog/9,
 		       do_text_item_dialog/5,
-		       get_load_file/2, get_save_file/2,
+		       get_load_file/2, get_save_file/3,
 		       get_program_file/3, get_import_file/3,
 		       start_progress_dialogue/1,
 		       finish_progress_dialogue/0, reassure_user/2]).

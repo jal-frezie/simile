@@ -598,12 +598,15 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    all(draw, tag_movable, [build(Movers)]),
 	    assert(currently_moving_set(Movers)),
 	    advance_phase_to(moving);
-	local_ends(Moving_obj, Start, Finish),
-	    (MovingEnd = moving_finish,
-		EndBox = Finish;
-	    MovingEnd = moving_start,
-		EndBox = Start),
-	    get_drawing_form(EndBox, border, [EX, EY, EX, EY]),
+%	local_ends(Moving_obj, Start, Finish),
+%	    (MovingEnd = moving_finish,
+%		EndBox = Finish;
+%	    MovingEnd = moving_start,
+%		EndBox = Start),
+%	    get_drawing_form(EndBox, border, [EX, EY, EX, EY]),
+	 member(End, [start, finish]),
+	    get_end_pt(Moving_obj, End, _, [EX, EY], _),
+	    append_atoms('moving_', End, MovingEnd),
 	    near([EX, EY], [Xpt, Ypt, Xpt, Ypt]), !,
 	    advance_phase_to(MovingEnd);
 	Moving_obj is_of_sort has_bowtie,
@@ -1393,11 +1396,17 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	get_phase(Phase),
 	local_ends(Moving_obj, Start, Finish),
 	(Phase = moving_start,
-	    (continues_from(Moving_obj, Box), !;
-		Box = Start);
+	    continues_from(Moving_obj, Box),
+	    m_class><Moving_obj follows Other,
+	    (Box = Start, !,
+		local_ends(Other, _, Border);
+	     Border = Start);
 	Phase = moving_finish,
-	    (continues_in(Moving_obj, Box), !;
-		Box = Finish)),
+	    continues_in(Moving_obj, Box),
+	    (Box = Finish, !,
+	        m_class><Other follows Moving_obj,
+		local_ends(Other, Border, _);
+	      Border = Finish)),
 	find_type(Box, EType),
 	/* find drag point in parent model */
 	find_all_comps(Parent, Moving_obj),
@@ -1419,14 +1428,13 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 %	crossing_point([Xc, Yc], [Xout, Yout], EType, ParentBox,
 %			0, NewEndPt),
 	get_posn_around([Xout, Yout], ParentBox, Theta),
+	change_shape(Border, along, Theta),
 	(Phase = moving_start,
-	    change_shape(Start, along, Theta),
-	    m_class><Moving_obj follows Prev;
+	    Prev = Other;
 	Phase = moving_finish,
-	    change_shape(Finish, along, Theta),
 	    Prev = Moving_obj),
-	(m_class><Other follows Prev,
-	    move_link(Other),
+	(m_class><Subs follows Prev,
+	    move_link(Subs),
 	    fail;
 	move_link(Prev)),
 	move_something.
