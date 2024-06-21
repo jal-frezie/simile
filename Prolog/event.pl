@@ -1551,14 +1551,14 @@ find_space([TgtL, TgtH], [DoneL, DoneH], [NewL, NewH],
 		UsedH = TgtH.
 		
 /* tweak_endpoint/3: adjusts shape of line when endpoint is moved, currently
-resets middle as well if it is a flow, not otherwise! */
+resets middle as well if it is a flow, not otherwise!
 
 tweak_endpoint(Moving_obj, End, NewPt) :-
 	local_ends(Moving_obj, Source, Dest),
 	member([End, Comp], [[start, Source], [finish, Dest]]),
 	change_shape(Comp, centre, NewPt),
 	move_link(Moving_obj).
-
+*/
 scale_difference([X1, Y1], [X2, Y2], Sc, [X, Y]) :-
 	X is (X2 - X1)/Sc,
 	Y is (Y2 - Y1)/Sc.

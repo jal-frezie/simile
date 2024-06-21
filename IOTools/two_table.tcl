@@ -87,7 +87,7 @@ namespace eval $keyValue {
     set format(Angle)  {DMS "Rad in DMS"}
     set format(Time)   { HHMM HHMMSS YYYYMMDDHHMMSS}
     set format(Date)   { YYYYMMDD YYYYMMDDHHMMSS DDMMYYYY}
-    set format(Boolean) Boolean
+#    set format(Boolean) Boolean
     
     proc identify {} {
         return "Data table"
@@ -1222,7 +1222,7 @@ namespace eval $keyValue {
     proc SetCatListboxSelection {listbox formatSpec} {
         variable format
         
-        set category ""
+        set category Number ;# default in case current not recognized
         $listbox selection clear 0 end
         foreach cat [array names format] {
             if {[lsearch $format($cat) $formatSpec]>=0} {

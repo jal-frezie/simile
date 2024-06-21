@@ -75,7 +75,6 @@ proc TweakIndexList {inds ofset} {
 }    
 
 proc ExplainError {myNode errList origError} {
-    puts [info level 0]
     global introspect
     
     set severity -2
