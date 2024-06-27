@@ -165,6 +165,7 @@ proc Pref_Dialog {} {
             set popupTF [TitleFrame $cf.popuptTF -text [tr. "Popups over model components:"]]
             set popupF $popupTF
 	    pack [::ttk::frame $popupF.line2] -side bottom -fill x -expand 1
+	    pack [::ttk::frame $popupF.line3] -side bottom -fill x -expand 1
 	    set eqListTF [TitleFrame $cf.eqListTF -text [tr. "Equation listings show:"]]
 	    set eqListF $eqListTF
         set ef [::ttk::frame $notebook.edit]
@@ -242,6 +243,7 @@ proc Pref_Dialog {} {
 		eqList* {set frame $eqListF}
 		maxPopupSize {set frame $popupF.line2}
 		dispMatrix {set frame $popupF.line2}
+		flashHovered {set frame $popupF.line3}
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
                 tlPopups {set frame $barF}

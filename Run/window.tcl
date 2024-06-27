@@ -55,7 +55,7 @@ proc FindObj { winId x y } {
     set canx [Scale $winId $x]
     set cany [Scale $winId $y]
     
-    return [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 6]]
+    return [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 5]]
 }
 
 # New to 4.8: get nodular component overlaps from GUI, in a list
@@ -92,6 +92,10 @@ proc canvasTLDistance {winId x y} {
     } else {
         return [list $x $y]
     }
+}
+
+proc UnFlash {winId target} {
+    ColorSymbol $winId $target generic unchanged passive
 }
 
 # This is used when Tcl wants to get a result from Prolog, e.g., for the
@@ -172,7 +176,11 @@ proc ClickObj { x y winId X Y action} {
     
     #puts "$action it!"
     
-    RemovePopup
+    if {$action eq "hover"} {
+	if {![PrefValue custom(flashHovered) flashHovered]} return
+    } else {
+	RemovePopup
+    }
     set window_info($winId,lastx) [expr $x/$looks(scrollIncr)]
     set window_info($winId,lasty) [expr $y/$looks(scrollIncr)]
     switch $action {
@@ -222,9 +230,18 @@ proc ClickObj { x y winId X Y action} {
 #   set looks(lastXnode) $xco
 #   set looks(lastYnode) $yco
 #    }
-    set target [GetClickedObj $winId $canx $cany 6]
+    set topNode $window_info($winId,top_node)
+    set target [GetClickedObj $winId $canx $cany 5]
     if {!$target} {
         # a background click
+	if {$action eq "hover"} {
+	    set flashed looks($topNode,over)
+	    if {[info exists $flashed]} {
+		UnFlash $winId [set $flashed]
+		unset $flashed
+	    }
+	    return
+	}
 	focus $winId
         $winId select clear
         $winId focus {}
@@ -239,8 +256,22 @@ proc ClickObj { x y winId X Y action} {
     }
     # Prolog ID of canvas objects is translated along with model if needed
     set node [ExtractPrologName $winId $target]
+    set obj [GetCaptionItem $winId $node]
+    if {$action eq "hover"} {
+	set flashed looks($topNode,over)
+	if {[info exists $flashed] && [set $flashed] ne $node} {
+	    UnFlash $winId [set $flashed]
+	}
+	set $flashed $node
+	if {$target eq $obj} {
+	    set newScheme activetext
+	} else {
+	    set newScheme activebody
+	}
+	ColorSymbol $winId $node generic unchanged $newScheme
+	return
+    }
     set context [GetClickCapt $winId $canx $cany $node]
-    set topNode $window_info($winId,top_node)
     if {[ProdObj $topNode $node $context]} {
 	return
     }
@@ -250,8 +281,6 @@ proc ClickObj { x y winId X Y action} {
     } else {
 	set window_info(lastClickCapt) $context
         if {[string equal click $action]} {
-            set obj [GetCaptionItem $winId $node]
-            
             # This bit used to start a drag selecting some caption text
             if {[string compare $obj {}]} {
                 set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
@@ -552,7 +581,7 @@ proc DragObj {winId xco yco} {
                 [expr int($yco-$window_info($winId,height))/$sloth] units
     }
 
-#    set draggedObj [GetClickedObj $winId $canx $cany 6]
+#    set draggedObj [GetClickedObj $winId $canx $cany 5]
 #    if {[lsearch [$winId gettags $draggedObj] /handle/] == -1} {
 	prolog [list tk_drag( $virtx , $virty )] ;# no cursor change
 #    } else {
@@ -1108,6 +1137,7 @@ proc BindMouseWheel {tgt ctrl cmd} {
 proc AddCanvasBindings { c topNode } {
     global tcl_platform
 
+    bind $c <Motion> {ClickObj %x %y %W %X %Y hover}
     KoreanClick $c 1 {ClickObj %x %y %W %X %Y click}
     bind $c <Double-1> {ClickObj %x %y %W %X %Y doubleclick}
     bind $c <B1-Motion> {DragObj %W %x %y}
@@ -1133,6 +1163,7 @@ proc AddCanvasBindings { c topNode } {
     
     # Stuff to put a popup help window on a canvas item
     # (could use tag 'has_info' for this)
+    $c configure -closeenough 5
     $c bind has_info <Enter> [list QueuePopup AddEqnPopup $topNode \
             %x %y %W %X %Y]
     $c bind has_info <B1-Enter> RemovePopup ;# make sure it does nothing
@@ -2541,7 +2572,7 @@ proc DragComponentIn {winId button x y addOne} {
 #   set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
 #    }
     focus $winId
-    set target [GetClickedObj $winId $canx $cany 6]
+    set target [GetClickedObj $winId $canx $cany 5]
 
     # Now simulate what Prolog would get from an add component menu selection
     if {$target} {
@@ -2582,7 +2613,7 @@ proc GetClickedObj { winId canx cany range} {
 #    }
 #    return 0
     
-    for {set halo 1} {$halo < $range} {incr halo 2} {
+    for {set halo 1} {$halo <= $range} {incr halo 2} {
         set tgt1 [set target [$winId find closest $canx $cany $halo]]
 	set looped 0
 	while {!$looped} {

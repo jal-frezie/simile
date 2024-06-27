@@ -1127,40 +1127,62 @@ proc ColorSymbol { w name type density colorSpec } {
     if {[string equal influence $type] && [string equal gray50 $density]} {
 	set type ghost_link
     }
-    if {[string compare $colorSpec normal]} {
-	if {$type eq "image"} {set type text}
-        set outlineColor $looks($n,$type,$colorSpec)
-        set textColor $outlineColor
-    } else {
-	set outlineColor $looks($n,$type,outline)
-	set textColor $looks($n,$type,text)
-	if {$type eq "text"} {set outlineColor $textColor}
+    switch $colorSpec {
+	activebody {
+	    set outlineColor $looks($n,$type,target)
+	    set textColor unchanged
+	} activetext {
+	    set outlineColor unchanged
+	    set textColor $looks($n,$type,target)
+	} passive {
+	    set outlineColor unchanged
+	    set textColor unchanged
+	} normal {	    
+	    set outlineColor $looks($n,$type,outline)
+	    set textColor $looks($n,$type,text)
+	    if {$type eq "text"} {set outlineColor $textColor}
+	} default {
+	    if {$type eq "image"} {set type text}
+	    set outlineColor $looks($n,$type,$colorSpec)
+	    set textColor $outlineColor
+	}
     }
-    FlashAndStippleSymbol $w $name $outlineColor $textColor $density $colorSpec
+    FlashSymbol $w $name $outlineColor $textColor $colorSpec
 }
 
-proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
+proc FlashSymbol {w name outlineColor textColor selected} {
     foreach object [$w find withtag $name] {
 	if {[string match */background/* [$w gettags $object]] || \
 		[string match *noflash* [$w gettags $object]]} continue
+	set field none
         switch -regexp [$w type $object] {
-            text {$w itemconfigure $object -fill $textColor}
-            line {
-#		if {[string match */*_text/* [$w gettags $object]]} {
-#		    $w itemconfigure $object -fill $textColor
-		#		} else
-		$w itemconfigure $object -fill $outlineColor
-            } oval {
-# clouds have separate arcs too now
-#                if {![string match */background/* [$w gettags $object]]} {
-#		    $w itemconfigure $object -outline $outlineColor
-#		}
-            } arc {
+            text {
+		set field fill
+		set flower $textColor
+	    } line {
+		set field fill
+		set flower $outlineColor
+	    } arc {
 		if {[string equal arc [$w itemcget $object -style]]} {
-		    $w itemconfigure $object -outline $outlineColor
+		    set field outline
+		    set flower $outlineColor
 		}
 	    }
-        }
+	}
+	if {$field ne "none"} {
+	    if {$flower eq "unchanged"} {
+		set flower [$w itemcget $object -disabled$field]
+		$w itemconfig $object -disabled$field {}
+	    } elseif {$selected eq "activebody" || $selected eq "activetext"} {
+		set isNow [$w itemcget $object -$field]
+		if {$flower ne $isNow} {
+		    $w itemconfig $object -disabled$field $isNow
+		}
+	    }
+	    if {$flower ne {}} {
+		$w itemconfig $object -$field $flower
+	    }
+	}
 
 	switch -regexp $selected {
 	    highlight {
@@ -1170,40 +1192,12 @@ proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
 	    } select {
 		$w itemconfigure $object -tags \
 		    [concat tocopy selected [$w gettags $object]]
+	    } activebody|activetext|passive {
 	    } default {
 		$w dtag $object selected
 		$w dtag $object tocopy
 	    }
 	}
-	if {1 || [string equal unchanged $density]} {
-	    continue
-	}
-	if {[string equal dashed $density]} {
-	    $w itemconfigure $object -dash {-}
-	} elseif  {![string match *no_stipple* [$w gettags $object]]} {
-	    if {[string equal aqua [tk windowingsystem]]} {
-# stippling doesn't work, and crashes PostScript generation, so dash instead
-		if {[lsearch {line rectangle arc polygon} \
-			 [$w type $object]]>-1} {
-		    if {[llength $density]} {
-			$w itemconfigure $object -dash {1 1}
-#		    } else {
-#			$w itemconfigure $object -dash {}
-# un-dashing messes up decorations on discrete influemce
-		    }
-		}
-	    } else {
-		switch -regexp [$w type $object] {
-		    line {
-			$w itemconfigure $object -stipple $density
-		    }
-		    rectangle|arc|oval|polygon {
-			$w itemconfigure $object -outlinestipple $density \
-			    -stipple $density
-		    }
-		}
-	    }
-        }
     }
 }
 

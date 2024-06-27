@@ -1152,6 +1152,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(gridD) gridD {10 -100 100} [tr. "Depth"]] \
 		  [list custom(maxPopupSize) maxPopupSize {500 10 10000} [tr. "Size limit"]] \
 		  [list custom(dispMatrix) dispMatrix OFF [tr. "Show 2-D values as matrices"]] \
+		  [list custom(flashHovered) flashHovered ON [tr. "Highlight component showing popup"]] \
 		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
 		  [list custom(widgetTheme) widgetTheme [concat CHOICE $themes] [tr. "Widget theme:"]] \
 		  [list custom(textSize) textSize {12 4 36} [tr. "Text size (pts):"]] \
