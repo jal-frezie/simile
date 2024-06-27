@@ -112,7 +112,7 @@ proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
     pack $gph.xentry.leftentry -side left -padx 2
     ::ttk::label $gph.xentry.xmin -text [tr. "X min"]
     pack $gph.xentry.xmin -side left -padx 2
-    ::ttk::label $gph.xentry.arg -text [tr. "Argument"]
+    ::ttk::label $gph.xentry.arg -anchor c -text [tr. "Argument"]
     pack $gph.xentry.arg  -side left -fill x -expand true
     ::ttk::label $gph.xentry.rightlabel -text [tr. "X max"]
     pack $gph.xentry.rightlabel -side left -padx 2
@@ -493,10 +493,10 @@ proc GStick {c zone y} {
 	} else {
             AddLine $c [expr $zone + 1]
         }
+	set xvalue [expr $graph($t,lowx) + \
+			($graph($t,highx)-$graph($t,lowx))*$zone/([llength $graph($t,points)]-1.0)]
+	set yvalue [PointToYValue $t $y]
     }
-    set xvalue [expr $graph($t,lowx) + \
-            ($graph($t,highx)-$graph($t,lowx))*$zone/([llength $graph($t,points)]-1.0)]
-    set yvalue [PointToYValue $t $y]
 }
 
 proc PointToYValue {t y} {
