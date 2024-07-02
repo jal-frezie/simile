@@ -1124,7 +1124,7 @@ Obj is_class_of_sort Class :-
 		reproduction-[regular_box, box, rectangle, channel, rate,
 				has_function, level, pop_only, generator],
 		loss-[regular_box, box, rectangle, channel, has_function,
-		      pop_only]]),
+		      pop_only, destroyer]]),
 	member(Class, SortList).
 
 Obj is_of_sort Sort :-

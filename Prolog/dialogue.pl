@@ -694,8 +694,8 @@ check_bound(Eqn_st, FieldName, Function, Needed,
 
 source_compat(id(Arc, _, _), Compat) :-
     m_class><initiates(Arc, Src),
-    Src is_of_sort generator ->
-	Compat = generator;
+    member(Compat, [generator, destroyer]),
+    Src is_of_sort Compat, !;
     Compat = none.
 
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 

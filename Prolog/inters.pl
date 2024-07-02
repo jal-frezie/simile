@@ -926,6 +926,9 @@ make_intermediates(
 	      SourceRef = (phase<=0)),
 	    Units = boolean,
 	    Args = [on_step];
+	Source = dies_of(ChannelName), wake, !, % parsing if we see that here
+	(ChannelName = param(_,_,_, destroyer, _) -> Args = [], Units = boolean;
+	 throw(needs_loss_parameter(ChannelName)));
 	Source =.. [Op, N],
 	    name(Op, OpStr),
 	    lower(OpStr, LopStr),
