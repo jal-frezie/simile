@@ -90,7 +90,7 @@ proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
     pack $gph.yentry.topentry -side top -pady 2
     ::ttk::label $gph.yentry.toplabel -text [tr. "Y max"]
     pack $gph.yentry.toplabel -side top -pady 2
-    ::ttk::label $gph.yentry.label -text [tr. "Value"]
+    ::ttk::label $gph.yentry.label -text [tr. "Result"]
     pack $gph.yentry.label -side top -fill y -expand true
     ::ttk::label $gph.yentry.bottomlabel -text [tr. "Y min"]
     pack $gph.yentry.bottomlabel -side top -pady 2

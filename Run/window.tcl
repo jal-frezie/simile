@@ -95,7 +95,9 @@ proc canvasTLDistance {winId x y} {
 }
 
 proc UnFlash {winId target} {
-    ColorSymbol $winId $target generic unchanged passive
+    if {[PrefValue custom(flashHovered) flashHovered]} {
+	ColorSymbol $winId $target generic unchanged passive
+    }
 }
 
 # This is used when Tcl wants to get a result from Prolog, e.g., for the
@@ -176,9 +178,7 @@ proc ClickObj { x y winId X Y action} {
     
     #puts "$action it!"
     
-    if {$action eq "hover"} {
-	if {![PrefValue custom(flashHovered) flashHovered]} return
-    } else {
+    if {$action ne "hover"} {
 	RemovePopup
     }
     set window_info($winId,lastx) [expr $x/$looks(scrollIncr)]
@@ -233,11 +233,12 @@ proc ClickObj { x y winId X Y action} {
     set topNode $window_info($winId,top_node)
     set target [GetClickedObj $winId $canx $cany 5]
     if {!$target} {
-        # a background click
+        # a background click or motion
 	if {$action eq "hover"} {
 	    set flashed looks($topNode,over)
 	    if {[info exists $flashed]} {
 		UnFlash $winId [set $flashed]
+		RemovePopup
 		unset $flashed
 	    }
 	    return
@@ -261,14 +262,18 @@ proc ClickObj { x y winId X Y action} {
 	set flashed looks($topNode,over)
 	if {[info exists $flashed] && [set $flashed] ne $node} {
 	    UnFlash $winId [set $flashed]
+	    RemovePopup
 	}
 	set $flashed $node
-	if {$target eq $obj} {
-	    set newScheme activetext
-	} else {
-	    set newScheme activebody
+	if {[PrefValue custom(flashHovered) flashHovered]} {
+	    if {$target eq $obj} {
+		set newScheme activetext
+	    } else {
+		set newScheme activebody
+	    }
+	    ColorSymbol $winId $node generic unchanged $newScheme
 	}
-	ColorSymbol $winId $node generic unchanged $newScheme
+	QueuePopup AddEqnPopup $topNode $winId $node $X $Y
 	return
     }
     set context [GetClickCapt $winId $canx $cany $node]
@@ -1163,11 +1168,11 @@ proc AddCanvasBindings { c topNode } {
     
     # Stuff to put a popup help window on a canvas item
     # (could use tag 'has_info' for this)
-    $c configure -closeenough 5
-    $c bind has_info <Enter> [list QueuePopup AddEqnPopup $topNode \
-            %x %y %W %X %Y]
-    $c bind has_info <B1-Enter> RemovePopup ;# make sure it does nothing
-    $c bind has_info <Leave> RemovePopup
+#    $c configure -closeenough 5
+#    $c bind has_info <Enter> [list QueuePopup AddEqnPopup $topNode \
+#            %x %y %W %X %Y]
+#    $c bind has_info <B1-Enter> RemovePopup ;# make sure it does nothing
+#    $c bind has_info <Leave> RemovePopup
 }
 
 proc WheelZoom {win change x y} {
@@ -1175,7 +1180,7 @@ proc WheelZoom {win change x y} {
     DoZoom $win [expr 1+$change/100.0] $x $y
 }
 
-proc AddEqnPopup {node x y winId X Y} {
+proc AddEqnPopup {node winId plName X Y} {
     global pushedbutton errorInfo runState
     set doDesc [PrefValue custom(compDescPop) compDescPop]
     set doVal [expr [HaveValues $node]>1 && \
@@ -1185,15 +1190,15 @@ proc AddEqnPopup {node x y winId X Y} {
                 !$doDesc && !$doVal && !$doCmt} {
         return
     }
-    set canx [$winId canvasx $x]
-    set cany [$winId canvasy $y]
-    set target [$winId find withtag current]
+    #set canx [$winId canvasx $x]
+    #set cany [$winId canvasy $y]
+    #set target [$winId find withtag current]
     # set target [GetClickedObj $winId $canx $cany 2]
     #puts "Adding for $target"
     #    set target [$winId find closest $canx $cany 1]
     #puts "targeting $target"
-    if {$target ne ""} {
-        set plName [ExtractPrologName $winId $target]
+#    if {$target ne ""} {
+#        set plName [ExtractPrologName $winId $target]
 	if {$plName eq ""} return
  #       if {$doVal} {
  #           if {[catch {GetCompProperty $node Value $plName} value]} {
@@ -1234,7 +1239,7 @@ proc AddEqnPopup {node x y winId X Y} {
             AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName
 	    
 	}
-    }
+#    }
 }
 
 # BWidget::bindMouseWheel --
