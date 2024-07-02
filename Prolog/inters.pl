@@ -909,7 +909,8 @@ make_intermediates(
 	source context is dest path because channel_is "individuates". */
 
 	((Source = channel_is(ChannelName), !,
-	    (ChannelName = param(arr(_, ChannelVar,_),_, ChanPath,_,_);
+	    (ChannelName = param(arr(_, ChannelVar,_),_, ChanPath, Compat, _),
+	        (Step = dummy -> Compat = generator; true);
 	    throw(needs_channel_parameter(ChannelName))),
 	    nth(ChannelNum, Used, ChannelVar), !,
 	    suffix(ChanPath, DestPath),

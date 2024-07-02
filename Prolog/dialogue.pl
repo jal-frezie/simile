@@ -691,7 +691,13 @@ check_bound(Eqn_st, FieldName, Function, Needed,
 		 Error = field_not_scalar(FieldName));
 		true);
 	    Error = bad_syntax(FieldName, ParseError)).
-	
+
+source_compat(id(Arc, _, _), Compat) :-
+    m_class><initiates(Arc, Src),
+    Src is_of_sort generator ->
+	Compat = generator;
+    Compat = none.
+
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
 now
 includes full type checking, it can be used to make sure the 
@@ -799,7 +805,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	        length(Dims, L),
 	        list_of(x, L, DimB),
 	        append(DimB, _, DimL),
-	        DoneExpr = param(arr(_, Param, Inds), Type, PLoops, _, []);
+		source_compat(Link, Compat),
+	        DoneExpr = param(arr(_, Param, Inds), Type, PLoops, Compat, []);
 	    raise_exception(undefined_parameter(Param)));
 	Param = (_ExpInt=_Defn), !, % '=' subexp not arg of ',' --
 	% complain now or missing parameter error may be raised instead

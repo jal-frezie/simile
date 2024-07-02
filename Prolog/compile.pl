@@ -418,8 +418,10 @@ defines_membership(SmByRec, Fp) :-
 % model, and then working out bit by bit what the program has to be.
 
 protected_build(Language, Stream, TopStep, FullModel, LocalIncs, ExtDefns) :-
-	FullModel = model(_Channels,
-			  [instance(submodel, Top, xrefs(_,_,_), _,_)]), 
+	FullModel =.. [model, _Channels,
+		       [instance(submodel, Top, xrefs(_,_,_), _,_)]], 
+	% works round SWI bug that deassembles pred if 1st clause is X=Y
+	
 	/* Parent of top level model is not specified, so set it empty */
 	
 	% then, traverse it in a sensible order, and make up names for the
