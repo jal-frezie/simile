@@ -687,7 +687,7 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 		 [unify(L), build(Inds), unify(Used), build([CX, RX])]),
 	     CallSpec = make_fixed_nbr_list(Ptr, Shp, CB, RB, CX, RX);
 	 SpecialOp = start_remote_model(Cmd, [sm(_,_, Ptr, _) | _],
-					CmdParms, CmdUnDs, CmdGIs), !, wake,
+					CmdParms, CmdUnDs, CmdGIs), !,
 	     generate_name(L, scratch, Scratch, Used),
 	     excrete(L, variable_declaration, [char, Scratch, [256]], Indent,
 		     Stream),

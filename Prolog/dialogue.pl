@@ -692,11 +692,13 @@ check_bound(Eqn_st, FieldName, Function, Needed,
 		true);
 	    Error = bad_syntax(FieldName, ParseError)).
 
-source_compat(id(Arc, _, _), Compat) :-
+source_compat(Id, Compat) :-
+    nonvar(Id),
+    Id = id(Arc, _,_), % seems to affect later code even if backtracked through
     m_class><initiates(Arc, Src),
     member(Compat, [generator, destroyer]),
     Src is_of_sort Compat, !;
-    Compat = none.
+    true.
 
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
 now

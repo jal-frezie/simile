@@ -1561,7 +1561,7 @@ nodes.
 				 Path, 0, RemActs),
 		 abracadabra(Level, ConLoops, SetPath, SetInds, Len),
 		 append(ConLoops, Path, ConPath),
-		 AcceptCons = make(con_acpt(Name), [rem_start(Name)], ConPath, 0, [accept_connects(GraphId, SrvSkt, NewSkt, Len, SetInds)]), wake,
+		 AcceptCons = make(con_acpt(Name), [rem_start(Name)], ConPath, 0, [accept_connects(GraphId, SrvSkt, NewSkt, Len, SetInds)]),
 		 append(SetPath, ConPath, InitPath),
 		 InitCons = make(con_init(Name), [con_acpt(Name)], InitPath, 0, [init_connects(NewPtr, Skt, NewSkt, CkRem, CkOff, RemDay)]),
 		 ClearInst = make(accums_clrd(Name), [on_reset], LocalPath,
