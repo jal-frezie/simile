@@ -101,8 +101,6 @@ namespace eval ::$keyValue {
         set plot($w,ystep_Ylabels) 12
         set plot($w,x_Xlabel) 100
         set plot($w,y_Xlabel) 10
-        set plot($w,canvas_colour) #e0e0e0
-        set plot($w,grapharea_colour) white
         set plot($w,pointer) 1
         set plot($w,X_scalestep) 0
         set plot($w,Y_min_scalestep) 0
@@ -351,7 +349,7 @@ namespace eval ::$keyValue {
 			$plot($w,xborder_right)] \
 	    -height [expr $plot($w,yborder_bottom)+$plot($w,ylength)+ \
 			 $plot($w,yborder_top)] \
-	    -bg $plot($w,canvas_colour) -relief solid
+	    -bg $::looks(buttonColor) -relief solid
 	$w.canvas bind graph <Enter> \
 	    [concat [namespace code [list TracePopup $w %X %Y]]]
 	$w.canvas bind graph <Leave> RemovePopup
@@ -473,7 +471,7 @@ namespace eval ::$keyValue {
 	    
 	    ### Make the graph area
 	    $w.canvas create rectangle $x0 $y0 $x1 $y1 \
-                -fill $plot($w,grapharea_colour) \
+                -fill $::looks(windowColor) \
                 -outline {} -tags {scalable grapharea}
 	    
 	    ### Draw the X axis
