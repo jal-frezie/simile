@@ -137,7 +137,7 @@ namespace eval runcontrol33857 {
             ::ttk::entry $rcf.editBoxes.$name.num \
                     -textvar runState($node,$var) -width 8
             pack $rcf.editBoxes.$name.num -side left -expand on -fill x -anchor nw
-            label $rcf.editBoxes.$name.unit -textvar runState($node,timeUnit)
+            ttk::label $rcf.editBoxes.$name.unit -textvar runState($node,timeUnit)
             pack $rcf.editBoxes.$name.unit -side left
             pack $rcf.editBoxes.$name  -anchor nw -pady 2 -fill x
         }
