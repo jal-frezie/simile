@@ -88,8 +88,6 @@ namespace eval ::$keyValue {
         set plot($w,ystep_Ylabels) 12
         set plot($w,x_Xlabel) 100
         set plot($w,y_Xlabel) 10
-        set plot($w,canvas_colour) $::looks(buttonColor)
-        set plot($w,grapharea_colour) white
         set plot($w,pointer) 1
         set plot($w,X_scalestep) 0
         set plot($w,Y_min_scalestep) 0
@@ -307,7 +305,7 @@ namespace eval ::$keyValue {
 	pack $w.mess -side top
         
         # create canvas for graph
-        canvas $w.canvas -bg $plot($w,canvas_colour) -relief solid
+        canvas $w.canvas -bg $::looks(buttonColor) -relief solid
 	MakeCanvasAnnotatable $w.canvas
         if {![string match [winfo toplevel $w] $w]} {
             pack $w -fill both -expand true -side bottom
@@ -477,7 +475,7 @@ namespace eval ::$keyValue {
         
         ### Make the graph area
         $w.canvas create rectangle $x0 $y0 $x1 $y1 \
-                -fill $plot($w,grapharea_colour) \
+                -fill $::looks(windowColor) \
                 -outline {} -tags {scalable /background/}
         
         ### Draw the X axis
