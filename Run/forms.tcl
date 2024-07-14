@@ -2902,17 +2902,17 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     set ack1 -1
     set defButton [lindex $opts 0]
     set defCapt $::msgs(${defButton}_button)
-    pack [button $buttons.bn$defButton -text $defCapt -width 20 \
+    pack [ttk::button $buttons.bn$defButton -text $defCapt -width 20 \
 	    -default active -command [list set dialogues(ack) [incr ack1]]] \
             -side left -padx 4 -pady 4
 # global option invokes button with focus
 #    bind $ProbWin <Return> [list $buttons.bn$defButton invoke]
     foreach extra [lrange $opts 1 end] {
-        pack [button $buttons.bn$extra -text $::msgs(${extra}_button) \
+        pack [ttk::button $buttons.bn$extra -text $::msgs(${extra}_button) \
 	      -width 20 -command [list set dialogues(ack) [incr ack1]]] \
 	    -side left -padx 4 -pady 4
     }
-    pack [button $buttons.help -text Help -width 10 \
+    pack [ttk::button $buttons.help -text Help -width 10 \
            -command "ContextSensitiveHelp $ProbWin $help($context)"] \
            -side right -padx 4 -pady 8
     pack $buttons -fill x
