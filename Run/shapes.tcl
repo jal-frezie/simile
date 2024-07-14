@@ -660,6 +660,9 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	    set hInterval [expr [PrefValue custom(gridH) gridH]*$inFat/100.0]
 	    set vInterval [expr [PrefValue custom(gridV) gridV]*$inFat/100.0]
 	}
+	if {$bgColour eq "clear"} {
+	    set bgColour $looks(windowColor)
+	}
 	set nCol [Gradient $bgColour $w $swing]
 	set gTagSet "$tagSet /background/ /grid/"
 

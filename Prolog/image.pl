@@ -59,7 +59,7 @@ get_window_colour(Submodel, Colour, Images) :-
     (TopColour = clear, !,
         (Parent has_part Submodel,
         get_window_colour(Parent, Colour, BaseImages), !;
-        Colour = white,
+        Colour = clear,
         BaseImages = []),
         append(BaseImages, AddImages, Images);
     Colour = TopColour,
