@@ -542,7 +542,8 @@ proc RemovePopup {args} {
 
 proc AddPopupMessage {text colour args} {
 # note the model editor still processes events while waiting for the executable
-
+    global looks
+    
     # so check window is still there
     set popup $::popper(cur).popup
     if {![winfo exists $popup]} return
@@ -557,17 +558,17 @@ proc AddPopupMessage {text colour args} {
     set bag $popup.message$colour
     set colour [VaryColour $::looks(outlineColor) $colour $popup]
     if {[EndsOnly text $count $limit]==-1} {
-	pack [text $bag -bd 0 -bg $colour -width 4 -height 1 -wrap none] \
+	pack [text $bag -bd 0 -bg $colour -fg $looks(outlineColor) -width 4 -height 1 -wrap none] \
 	    -fill both -expand 1
 	$bag insert 1.0 $text
 	$bag config -xscroll "Rebag $bag width $count" \
 	    -yscroll "Rebag $bag height 0"
 	# config was done after idle but that blew up if window gone
     } elseif {[string length $text]<20} {
-	pack [label $bag -text $text -bg $colour] -fill x -expand true
+	pack [label $bag -text $text -bg $colour -fg $looks(outlineColor)] -fill x -expand true
     } else {
 	pack [message $bag -aspect 400 \
-		  -text $text -bg $colour] -fill x -expand true
+		  -text $text -bg $colour -fg $looks(outlineColor)] -fill x -expand true
     }
 }
 
