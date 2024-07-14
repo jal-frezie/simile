@@ -951,13 +951,18 @@ proc ControlDraw {prologVersion} {
 	set looks(windowColor) \#ffffff
 	set looks(outlineColor) \#000000
     } else {
-	button .b
-	entry .sampleTheme
-	set looks(buttonColor) [Desystematize [.b cget -bg]]
-	set looks(windowColor) [Desystematize [.sampleTheme cget -bg]]
-	set looks(outlineColor) [Desystematize [.sampleTheme cget -fg]]
-	destroy .sampleTheme
-	destroy .b
+#	button .b
+#	entry .sampleTheme
+#	set looks(buttonColor) [Desystematize [.b cget -bg]]
+#	set looks(windowColor) [Desystematize [.sampleTheme cget -bg]]
+#	set looks(outlineColor) [Desystematize [.sampleTheme cget -fg]]
+#	puts [array get looks *Color]
+	set looks(buttonColor) [ttk::style lookup TButton -background]
+	set looks(windowColor) [ttk::style lookup TEntry -fieldbackground]
+	set looks(outlineColor) [ttk::style lookup TEntry -foreground]
+#	puts [array get looks *Color]
+#	destroy .sampleTheme
+#	destroy .b
 	LoadIconImages
     }
     # Defaults to use if debugging
