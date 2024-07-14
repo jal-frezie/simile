@@ -723,7 +723,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
 
 proc ModelWindow {winName} {
     global tcl_platform looks SimileAutoObjLoaded SIMILE_PATH
-    menu ${winName}top
+    menu ${winName}top -bg $looks(buttonColor) -fg $looks(outlineColor)
     toplevel $winName
     if {[info exists SimileAutoObjLoaded]} {
 	wm state $winName withdrawn
@@ -737,7 +737,7 @@ proc ModelWindow {winName} {
 
     wm iconphoto $winName splash
     # Create a scrollable canvas
-    set c [canvas $winName.canvas -bg $looks(windowColor) -confine 1 \
+    set c [canvas $winName.canvas -bg $looks(windowColor) -selectbackground $looks(windowColor) -confine 1 \
 	       -xscrollcommand "AdjustCanvas $winName toolSlot x" \
 	       -yscrollcommand "AdjustCanvas $winName canvas y" \
 	       -xscrollincrement $looks(scrollIncr) \

@@ -71,7 +71,7 @@ namespace eval RunEnv {
     
     # A top level window to contain the helpers
     proc Create { node } {
-        global helperTable tcl_platform defScaling
+        global helperTable tcl_platform defScaling looks
         variable runControlFrame
         variable sliderControlFrame;
         variable variableListFrame;
@@ -154,7 +154,7 @@ namespace eval RunEnv {
 #			       -progressvar  RunEnv::prgindic]
 #...err, what for?
 #            $mainframe showstatusbar none
-	    menu $mreMenu
+	    menu $mreMenu -bg $looks(buttonColor) -fg $looks(outlineColor)
 	    foreach {header tags id tear spec} $descmenu {
 		set sub [menu $mreMenu.$id -tearoff $tear]
 		$mreMenu add cascade -label [tr. $header] -menu $sub
