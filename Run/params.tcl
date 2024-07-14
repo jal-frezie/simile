@@ -535,9 +535,9 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		}
 		$nextLevel.head configure -bg $fColour
 		$nextLevel.head.label configure -bg $fColour ;# -style bStyle if ttk
-#		ttk::style map $bStyle -background \
-#		    [list pressed [Gradient $fColour $nextLevel 15] \
-#			 active [Gradient $fColour $nextLevel -75] {} $fColour]
+		ttk::style map $bStyle -background \
+		    [list pressed [Gradient $fColour $nextLevel 15] \
+			 active [Gradient $fColour $nextLevel -75] {} $fColour]
 		$nextLevel.head.vis configure -highlightbackground $fColour
 	    }
 	    if {$nextPt>2 && $ns ne "fileparams"} {
