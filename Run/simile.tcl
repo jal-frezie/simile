@@ -459,6 +459,9 @@ if {!$headless} {
 #    if {$niceSize<=0} {
 #	set niceSize 12 ;# otherwise is -12 on Buckaroo
 #    }
+     if {[tk windowingsystem] ne "aqua"} {
+	 source $SIMILE_PATH/Run/darkonic.tcl
+     }
      if {[info exists custom(layout,theme)] && \
 	   [lsearch -exact [ttk::style theme names] $custom(layout,theme)]>-1} {
 	ttk::style theme use $custom(layout,theme)
