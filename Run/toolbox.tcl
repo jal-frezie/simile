@@ -957,8 +957,13 @@ proc ControlDraw {prologVersion} {
 #	set looks(windowColor) [Desystematize [.sampleTheme cget -bg]]
 #	set looks(outlineColor) [Desystematize [.sampleTheme cget -fg]]
 #	puts [array get looks *Color]
+	if {[tk windowingsystem] eq "aqua"} {
+	    set fieldForWinCol background
+	} else {
+	    set fieldForWinCol fieldbackground
+	}
 	set looks(buttonColor) [ttk::style lookup TButton -background]
-	set looks(windowColor) [ttk::style lookup TEntry -fieldbackground]
+	set looks(windowColor) [ttk::style lookup TEntry -$fieldForWinCol]
 	set looks(outlineColor) [ttk::style lookup TEntry -foreground]
 #	puts [array get looks *Color]
 #	destroy .sampleTheme
