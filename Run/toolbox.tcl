@@ -963,7 +963,11 @@ proc ControlDraw {prologVersion} {
 	    set fieldForWinCol fieldbackground
 	}
 	set looks(buttonColor) [ttk::style lookup TButton -background]
+	set looks(windowColor) [ttk::style lookup TEntry -fieldbackground]
 	set looks(windowColor) [ttk::style lookup TEntry -$fieldForWinCol]
+	if {$looks(windowColor) eq ""} {
+	    set looks(windowColor) white
+	}
 	set looks(outlineColor) [ttk::style lookup TEntry -foreground]
 #	puts [array get looks *Color]
 #	destroy .sampleTheme
@@ -2310,8 +2314,9 @@ proc FillReopen {winId} {
             .openrecent add command -label [file tail $hottie] -command $cmd
 	    if {$n<1} { ;# only cmd-0 binds on Mac
 		.openrecent entryconfigure last -accelerator "$accKey+$n"
-		bind $winId <$accSym-$n> [list .openrecent invoke $n]
-		# cannot just call cmd because %s get subsitiuted
+		bind $winId <$accSym-$n> $cmd
+		# cannot just call cmd because %s get subsitiuted --
+		# but have to somehow to use right winId (sub % with %%?)
 	    }
             lappend posted $hottie
         }
