@@ -463,6 +463,7 @@ if {!$headless} {
 	 source $SIMILE_PATH/Run/darkonic.tcl
      }
      if {[info exists custom(layout,theme)] && \
+	   $custom(layout,theme) ne [ttk::style theme use] && \
 	   [lsearch -exact [ttk::style theme names] $custom(layout,theme)]>-1} {
 	ttk::style theme use $custom(layout,theme)
 }
