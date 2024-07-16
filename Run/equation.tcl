@@ -64,7 +64,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 #    ScrolledWindow $fnFrame
     frame $fnFrame
 #    set lbf [Tree $fnFrame.table -showlines yes]
-    scrollbar $fnFrame.bar -command "$fnFrame.table yview"
+    ttk::scrollbar $fnFrame.bar -command "$fnFrame.table yview"
     pack $fnFrame.bar -side right -fill y
     set lbf [::ttk::treeview $fnFrame.table -show tree \
 		 -yscrollcommand "$fnFrame.bar set"]
@@ -121,7 +121,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     set lbp [listbox $paramsf.list.ilist \
             -height 8 -width 16 \
             -yscrollcommand [list $paramsf.list.scrolli set]]
-    scrollbar $paramsf.list.scrolli -command [list $lbp yview]
+    ttk::scrollbar $paramsf.list.scrolli -command [list $lbp yview]
     pack $paramsf.list.ilist -side left -fill both -expand true
     pack $paramsf.list.scrolli -side left -fill y
     pack $paramsf.list -anchor nw -expand true -fill both
@@ -282,7 +282,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     # Safer bet: use math input toool. Problem, produces wrong kind of MathML
     # bind $en <<Paste>> {CheckForMathInput %W}
     
-    scrollbar $equation(actzone).scroll -orient vert -command "$en yview"
+    ttk::scrollbar $equation(actzone).scroll -orient vert -command "$en yview"
     $en configure -yscrollcommand "$equation(actzone).scroll set"
     pack $equation(actzone).scroll -side right -fill y
     pack $en -side right -expand true -fill both
@@ -330,7 +330,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     foreach indx $indices {
         $lbx insert end $indx
     }
-    scrollbar $indicesf.list.scrolli -command [list $lbx yview]
+    ttk::scrollbar $indicesf.list.scrolli -command [list $lbx yview]
     pack $indicesf.list.ilist -side left -fill both -expand true
     pack $indicesf.list.scrolli -side left -fill y
     pack $indicesf.list -anchor nw -expand true -fill both
@@ -350,7 +350,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     DIYMakeFrames $influencesf
 #    frame $influencesf.lists
-#    scrollbar $influencesf.lists.yscroll -orient v \
+#    ttk::scrollbar $influencesf.lists.yscroll -orient v \
 #            -command [list $influencesf.lists.f yview]
 #    pack $influencesf.lists.yscroll -side right -fill y
 #    ScrollableFrame $influencesf.lists.f -constrainedwidth true \
@@ -387,7 +387,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     text $frm.text -height 3 -width 40 -wrap word -relief sunken -bd 2 \
 	-highlightthickness 0 -yscrollcommand "$frm.scrly set"
     AllowTextDrags $frm.text
-    scrollbar $frm.scrly -orient vert -command "$frm.text yview"
+    ttk::scrollbar $frm.scrly -orient vert -command "$frm.text yview"
     pack $frm.text -side left -fill both -expand true
     pack $frm.scrly -side right -fill y
     
@@ -423,8 +423,8 @@ proc create_equation {parent purpose comp indices enum_types} {
 	close $stream
     } else {
 # they do not place themselves properly ont' Mac
-	$middleF sash place 0 [expr {round($::niceSize*$::textBigness*12)}] 0
-	$middleF sash place 1 [expr {round($::niceSize*$::textBigness*24)}] 0
+	$middleF sash place 0 [expr {round($::niceSize*$::textBigness*16)}] 0
+	$middleF sash place 1 [expr {round($::niceSize*$::textBigness*32)}] 0
     }
 }
 
@@ -713,7 +713,7 @@ proc RealForUnity {show} {
     }
 }
 
-# Scrolls all listboxes in response to scrollbar
+# Scrolls all listboxes in response to ttk::scrollbar
 
 proc ScrollAll {widgetList args} {
     

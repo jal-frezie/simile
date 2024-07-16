@@ -752,9 +752,9 @@ proc ModelWindow {winName} {
     frame $winName.toolSlot
     pack $winName.toolSlot -fill x
     
-    scrollbar $winName.xscroll -orient horizontal \
+    ttk::scrollbar $winName.xscroll -orient horizontal \
             -command [list AdjustScroll $c xview]
-    scrollbar $winName.yscroll -orient vertical \
+    ttk::scrollbar $winName.yscroll -orient vertical \
             -command [list AdjustScroll $c yview]
     
     pack $c -fill both -expand true
