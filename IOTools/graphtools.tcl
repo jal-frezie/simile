@@ -213,13 +213,14 @@ proc ::graphtools::draw_Xaxis { w } {
     set value $Xmin_axis
     set y [expr {$y0+2}]
     #    ShowMess debug info "Maj $Xmajorstep min $Xminorstep -- Going from $x0 up to $x1 in steps of $step" ok
+    set sCol $::looks(outlineColor)
     for {set x $x0} {$x<=$x1} {set x [expr $x+$step]} {
-        $w.canvas create line $x $y0 $x [expr $y0-6] \
+        $w.canvas create line $x $y0 $x [expr $y0-6] -fill $sCol \
                 -tags {scalable axis_line xaxis_item xtick markable \
                     xaxis_movable}
         $w.canvas create text $x $y \
                 -text [::DisplayFormat::General $value $precision] \
-                -font $plot($w,fontValues) \
+                -font $plot($w,fontValues) -fill $sCol \
                 -tags {scalable axis_value xaxis_item xaxis_movable xtick \
                     toplevel markable} -anchor n
         set value [expr $value+$Xmajorstep]
@@ -229,7 +230,7 @@ proc ::graphtools::draw_Xaxis { w } {
     #            / ($Xmax_axis-$Xmin_axis)]
     #ShowMess debug info "Going from $x0 up to $x1 in steps of $step" ok
     for {set x $x0} {$x<$x1} {set x [expr $x+$step]} {
-        $w.canvas create line $x $y0 $x [expr $y0-4] \
+        $w.canvas create line $x $y0 $x [expr $y0-4] -fill $sCol \
                 -tags {scalable axis_line xaxis_item xtick markable \
                     xaxis_movable}
     }
@@ -264,13 +265,14 @@ proc ::graphtools::draw_Yaxis { w} {
     set value $Ymin_axis
     set x [expr $x0-2]
     #ShowMess debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
+    set sCol $::looks(outlineColor)
     for {set y $y0} {$y>=[expr $y1-2]} {set y [expr $y-$step]} {
-        $w.canvas create line $x0 $y [expr $x0+6] $y \
+        $w.canvas create line $x0 $y [expr $x0+6] $y -fill $sCol \
                 -tags {scalable axis_line yaxis_item ytick markable \
                     yaxis_movable}
         $w.canvas create text $x [expr $y-1] \
                 -text [::DisplayFormat::General $value $precision] \
-                -font $plot($w,fontValues) \
+                -font $plot($w,fontValues) -fill $sCol \
                 -tags {scalable  axis_value yaxis_item yaxis_movable ytick \
                     toplevel markable} -anchor e -angle 60
         set value [expr $value+$Ymajorstep]
@@ -280,7 +282,7 @@ proc ::graphtools::draw_Yaxis { w} {
     #            / ($Ymax_axis-$Ymin_axis)]
     #ShowMess debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
     for {set y $y0} {$y>=$y1} {set y [expr $y-$step]} {
-        $w.canvas create line $x0 $y [expr $x0+4] $y \
+        $w.canvas create line $x0 $y [expr $x0+4] $y -fill $sCol \
                 -tags {scalable axis_line yaxis_item ytick markable \
                     yaxis_movable}
     }

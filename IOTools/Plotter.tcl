@@ -472,6 +472,7 @@ namespace eval ::$keyValue {
         set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
         set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]
         set y1 $plot($w,yborder_top)
+	set sCol $::looks(outlineColor)
         
         ### Make the graph area
         $w.canvas create rectangle $x0 $y0 $x1 $y1 \
@@ -479,28 +480,26 @@ namespace eval ::$keyValue {
                 -outline {} -tags {scalable /background/}
         
         ### Draw the X axis
-        $w.canvas create line $x0 $y0 $x1 $y0 \
+        $w.canvas create line $x0 $y0 $x1 $y0 -fill $sCol \
                 -tags {axis_line scalable markable xslidable}
         draw_Xaxis $w
         
         ### Draw the Y axis
-        $w.canvas create line $x0 $y0 $x0 $y1 \
+        $w.canvas create line $x0 $y0 $x0 $y1 -fill $sCol \
                 -tags {axis_line scalable markable yslidable}
         draw_Yaxis $w
         
         ### Draw the top and right edges of the graph area
         if {$plot($w,topright)} {
-            $w.canvas create line $x0 $y1 $x1 $y1 \
-                    -tags {scalable topright}
-            $w.canvas create line $x1 $y0 $x1 $y1 \
+            $w.canvas create line $x0 $y1 $x1 $y1 $x1 $y0 -fill $sCol \
                     -tags {scalable topright}
         }
         
         ### Label the two axes
         $w.canvas create text [expr $x0+$plot($w,xlength)/2.0] $y0 \
-                -text "\nTime" -anchor n \
+                -text "\nTime" -fill $sCol -anchor n \
                 -tags {movable scalable xaxis_label markable toplevel}
-        $w.canvas create text $x0 [expr $y0-$plot($w,ylength)/2.0] \
+        $w.canvas create text $x0 [expr $y0-$plot($w,ylength)/2.0] -fill $sCol \
                 -tags {movable scalable yaxis_label markable toplevel}
 	if {[package vcompare [info tclversion] 8.5]>0} {
 	    $w.canvas itemconfigure yaxis_label -anchor s -angle 90
@@ -663,6 +662,7 @@ namespace eval ::$keyValue {
                     [font measure $plot($w,fontLabels) -displayof $w.canvas $longestlbl]}]
         set j 0
         set k 0
+	set sCol $::looks(outlineColor)
         for {set i 0} {$i<$nYlabel} {incr i} {
             set x [expr $plot($w,x_Ylabels)+$k*$plot($w,xstep_Ylabels)]
             set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
@@ -677,7 +677,7 @@ namespace eval ::$keyValue {
                     -tags [list $vartag legend markable toplevel]
             $w.canvas create text $x ${y}p \
 		-text [string map {\n { }} [lindex $plot($w,Ylabels) $i]] \
-                    -anchor nw -font $plot($w,fontLabels)\
+                    -fill $sCol -anchor nw -font $plot($w,fontLabels)\
                     -tags [list $vartag legend markable toplevel]
             incr j
             if {$j==2} {
