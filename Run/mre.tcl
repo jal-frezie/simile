@@ -9,7 +9,6 @@ if {$inCocoa} {
     ttk::style configure TNotebook -padding {-10 0 -10 -10}
 }
 
-ttk::style configure TPanedwindow 
 namespace eval RunEnv {
     global helperTable
 
@@ -223,20 +222,24 @@ namespace eval RunEnv {
 	    UnderlineUniquely $mreMenu
 
             # Add a PanedWindow for the hierrachical/run control view and main display window
-            set mainpw [panedwindow $mainframe.mainpw  -orient horizontal \
-			    -sashrelief raised -showhandle 1]
-            set controlPane [AddPane $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
-            set dp0 [AddPane $mainpw.mainDisplayPane]
+            set mainpw [PanedWindow $mainframe.mainpw horizontal]
+            set controlPane $mainpw.controlPane; # made by runmodel.tcl AddHelperSublist
+	    AddPane $controlPane; # made by runmodel.tcl AddHelperSublist
+            set dp0 $mainpw.mainDisplayPane
+	    AddPane $dp0
             set dp0s($node) $dp0
             
             
             # Add a panedwindow to split the hier/contol pane into hierrachical pane and control pane
-            set hiercontrolpw [panedwindow $controlPane.panedwindow -orient \
-				   vertical -sashrelief raised -showhandle 1]
-            set runcontrolpane [AddPane $hiercontrolpw.runcontrolPane]
-            set explorerPane [AddPane $hiercontrolpw.explorerPane]
+	    $controlPane configure -highlightthickness 0
+            set hiercontrolpw [PanedWindow $controlPane.panedwindow vertical]
+            set runcontrolPane $hiercontrolpw.runcontrolPane
+	    AddPane $runcontrolPane
+            set explorerPane $hiercontrolpw.explorerPane
+	    AddPane $explorerPane
             
             # Add notebook for controls, explorer etc
+	    $explorerPane configure -highlightthickness 0
 	    set xn $explorerPane.notebook
 	    ::ttk::notebook $xn
 	    foreach {role title} {out Outputs: params Parameters:} {
@@ -248,8 +251,8 @@ namespace eval RunEnv {
             set variableListFrame($node) $xn.out
             set paramFrame($node) $xn.params
             #pack $variableListFrame($node) -fill both -expand yes
-            set runControlFrame($node) [frame $runcontrolpane.variables]
-            pack $runControlFrame($node) -fill both -expand yes
+            set runControlFrame($node) $runcontrolPane
+#            pack $runControlFrame($node) -fill both -expand yes
             
 	    array unset helperTable $currentNode,keepSetup
 # it was set by adding explorer etc panes but we do not want save dialogue here
@@ -315,7 +318,8 @@ namespace eval RunEnv {
         destroy $containerId.bbox
         destroy $containerId.belowbox
         
-        ::ttk::notebook $containerId.notebook
+        $containerId configure -highlightthickness 0 ;# no longer a leaf
+	::ttk::notebook $containerId.notebook
 	bind $containerId.notebook <<NotebookTabChanged>> \
 	    [list ::RunEnv::PageRaiseCmd $containerId.notebook]
         
@@ -373,7 +377,7 @@ namespace eval RunEnv {
 	set ParentContainer [FindParentNotebook $containerId]
 	set pageId [UniqueId $ParentContainer.fpage [$ParentContainer tabs]]
 	set pageIndex [expr {[llength [$ParentContainer tabs]]+1}]
-	set newContainer [frame $pageId]
+	set newContainer [ttk::frame $pageId]
 	$ParentContainer add $newContainer \
 	    -text [format [tr. {Page %1$d}] $pageIndex]
 	set parentPath [Addpanedwindow $newContainer vertical]
@@ -471,10 +475,9 @@ namespace eval RunEnv {
         } else {
 	    set parentPath [FindParentpanedwindowOrNotebook $containerId]
 	    set parentType [winfo class $parentPath]
-            switch $parentType {
-                Notebook {DeleteNotebookPage $parentPath $page}
-                Panedwindow {DeletePane $parentPath $containerId}
-            }
+            switch $parentType \
+                Notebook {DeleteNotebookPage $parentPath $page
+                } [PanedWClass] {DeletePane $parentPath $containerId}
         }
 	PreserveSetup 1
         if {[winfo exists $containerId]} {SetCurrentContainer $containerId }
@@ -519,18 +522,27 @@ namespace eval RunEnv {
     }
 
     proc AddPane {paneId {containerId {}}} {
-	frame $paneId -highlightcolor black -highlightthickness 1
+	global looks
+	frame $paneId -bg $looks(buttonColor) -highlightthickness 2 \
+	    -highlightbackground $looks(buttonColor) \
+	    -highlightcolor $looks(outlineColor)
+	# cannot use ttk::frame as no highlight
 	bind $paneId <Button-1> "+::RunEnv::SetCurrentContainer %W"
 	CrossPlatformBind $paneId "+::RunEnv::SetCurrentContainer %W;
                                    tk_popup .pageContextMenu %X %Y"
 	set parentPath [winfo parent $paneId]
+	set current [$parentPath panes]
 	if {[string length $containerId]} {
-	    $parentPath add $paneId -after $containerId
+	    set sash [lsearch $current $containerId]
+	    set idx [expr {$sash+1}]
+	    if {$idx==[llength $current]} {set idx end}
+	    $parentPath insert $idx $paneId
+	    return $sash
 	} else {
 	    $parentPath add $paneId ;# at end
+	    return [llength $current]
 	}
 	PreserveSetup 1
-	return $paneId
     }
     
     proc DeletePane {parentPath containerId} {
@@ -575,30 +587,29 @@ namespace eval RunEnv {
             # now it's a pane to be split in the same orientation
             # add a new pane
 	set paneId [UniqueId $parentPath.pane [$parentPath panes]]
-	AddPane $paneId $containerId
+	set sash [AddPane $paneId $containerId]
 	###############################################################################
-	set sash [expr {[lsearch [$parentPath panes] $containerId]}]
-	set sashCoord [$parentPath sash coord $sash]
+#	set sashCoord [$parentPath sash coord $sash]
 	set contx [winfo x $containerId]
 	set conty [winfo y $containerId]
 	# new settings
 	switch $orientation {
 	    vertical {
 		set height [expr {int(0.9*$pheight/2)}]
-		set sashx [lindex $sashCoord 0]
-		set sashy [expr {$conty+$height}]
+#		set sashx [lindex $sashCoord 0]
+		set sashp [expr {$conty+$height}]
 	    }
 	    horizontal {
 		set width [expr {int(0.9*$pwidth/2)}]
-		set sashx [expr {$contx+$width}]
-		set sashy [lindex $sashCoord 1]
+		set sashp [expr {$contx+$width}]
+#		set sashy [lindex $sashCoord 1]
 	    }
 	}
             ###############################################################################
             
 #puts "$parentPath sash place $sash $sashx $sashy"
 	UpdateByOS ;# needed for sash place to work
-	$parentPath sash place $sash $sashx $sashy
+	PosnSash $parentPath $sash $sashp
 	SetCurrentContainer $paneId
     }
     
@@ -719,7 +730,7 @@ namespace eval RunEnv {
 #ShowMess debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
         #        pwidth $pwidth; pheight $pheight" ok; ################
 	set pwId $containerId.panedwindow
-	panedwindow $pwId -orient $orientation -sashrelief raised -showhandle 1
+	PanedWindow $pwId $orientation
         pack $pwId -expand yes -fill both
 	AddPane [UniqueId $pwId.pane [$pwId panes]]
 
@@ -737,15 +748,14 @@ namespace eval RunEnv {
         if {[lsearch [list {} $widget.container] $collection]>=0} {
 	    SetCurrentContainer $widget
 	} else {
-	    switch [winfo class $collection] {
+	    switch [winfo class $collection] \
 		TNotebook {
 		    SetLeafCurrent [$collection select] ;# use current page
-		} Panedwindow {
+		} [PanedWClass] {
 		    SetLeafCurrent [lindex [$collection panes] 0]
 		} default {
-		    puts "Found unexpected widget $collection"
+		    puts "Found unexpected [winfo class $collection] widget $collection"
 		}
-	    }
 	}
     }
     
@@ -864,10 +874,10 @@ namespace eval RunEnv {
 	set pw2 [winfo parent $win2]
 	if {[string equal $dp0 $win] && ![winfo exists $win.container]} {
 	    set killability disabled ;# it's the last pane
-	} elseif {[string equal Panedwindow [winfo class $pw2]] && \
+	} elseif {[string equal [PanedWClass] [winfo class $pw2]] && \
 		[llength [$pw panes]]==1 && ![winfo exists $win.container]} {
 	    destroy $pw ;# redundant orientation change
-	    $win2 configure -highlightthickness 1
+	    $win2 configure -highlightthickness 2 ;# a leaf again?
 	    SetCurrentContainer $win2
 	    return
 	} else {
@@ -1046,7 +1056,7 @@ namespace eval RunEnv {
 	    puts $metaStream {<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>}
 	    puts $metaStream "<shf simile_version=\"$::env(SIMILE_VERSION)\">"
 	    puts $metaStream "<external x=\"[winfo x $mreId]\" y=\"[winfo y $mreId]\" w=\"[expr {[winfo width $mreId]*$denom/$num}]\" h=\"[expr {[winfo height $mreId]*$denom/$num}]\"/>"
-	    puts $metaStream "<std_tool_layout left_panel_width=\"[expr {[lindex [[GetFrame $mreId].mainpw sash coord 0] 0]*$denom/$num}]\" run_control_height=\"[expr {[lindex [[GetFrame $mreId].mainpw.controlPane.panedwindow sash coord 0] 1]*$denom/$num}]\"/>"
+	    puts $metaStream "<std_tool_layout left_panel_width=\"[expr {[lindex [SeekSash [GetFrame $mreId].mainpw 0] 0]*$denom/$num}]\" run_control_height=\"[expr {[lindex [SeekSash [GetFrame $mreId].mainpw.controlPane.panedwindow 0] 1]*$denom/$num}]\"/>"
 
             SaveChildrenConfig $dp0 {} $num $denom
             
@@ -1056,14 +1066,12 @@ namespace eval RunEnv {
     
     proc SaveChildrenConfig {page indent num denom} {
 	upvar 1 metaStream metaStream
-	switch [winfo class $page] {
-	    Panedwindow {
+	switch [winfo class $page] \
+	    [PanedWClass] {
 		SavePanedwindowConfig $page $indent $num $denom
-	    }
-	    TNotebook {
+	    } TNotebook {
 		SaveNotebookConfig $page $indent $num $denom
-	    }
-	    default {
+	    } default {
 		#lappend metaList "Unhandled Notebook page child: $child"
 		if {[string equal container [winfo name $page]]} {
 		    SaveContainer $page $indent
@@ -1073,7 +1081,6 @@ namespace eval RunEnv {
                     }
                 }
 	    }
-	}
     }
 
     proc SaveNotebookConfig {notebook indent num denom} {
@@ -1100,7 +1107,7 @@ namespace eval RunEnv {
             puts $metaStream "  $indent</pane>"
 
 	    if {$sashCount>-1} {
-		set sashPt [$panedwindow sash coord $sashCount]
+		set sashPt [SeekSash $panedwindow $sashCount]
 		puts $metaStream "  $indent<sash index=\"$sashCount\" xposn=\"[expr {[lindex $sashPt 0]*$denom/$num}]\" yposn=\"[expr {[lindex $sashPt 1]*$denom/$num}]\"/>"
 	    }
 	    incr sashCount
@@ -1187,7 +1194,8 @@ namespace eval RunEnv {
 	}
 	set ::helperTable($currentNode,stateName) $oldPath
 	# little tweak for oddities like Aqua
-	[winfo parent [winfo parent $runControlFrame($currentNode)]] sash place 0 0 [winfo reqheight $runControlFrame($currentNode)]
+	PosnSash [winfo parent $runControlFrame($currentNode)] \
+	    0 [winfo reqheight $runControlFrame($currentNode)]
 	return 1
     }
 
@@ -1211,12 +1219,13 @@ namespace eval RunEnv {
 		}
 	    } std_tool_layout {
 		set topFrame [GetFrame $win].mainpw 
-		$topFrame sash place 0 \
-		    [expr $attVals(left_panel_width)*$parseStatus(mapScale)] 1
-		$topFrame.controlPane.panedwindow sash place 0 1 \
+		PosnSash $topFrame 0 \
+		    [expr $attVals(left_panel_width)*$parseStatus(mapScale)]
+		PosnSash $topFrame.controlPane.panedwindow 0 \
 		    [expr $attVals(run_control_height)*$parseStatus(mapScale)]
 		set parseStatus(currentPath) $topFrame.mainDisplayPane
 	    } notebook {
+		$parseStatus(currentPath) configure -highlightthickness 0
 		set path $parseStatus(currentPath).notebook
 		::ttk::notebook $path
 		bind $path <<NotebookTabChanged>> \
@@ -1237,15 +1246,15 @@ namespace eval RunEnv {
 		set parseStatus(currentPath) $pageId
 	    } panedwindow {
 		set pwId $parseStatus(currentPath).panedwindow
-		panedwindow $pwId -orient $attVals(orient) -sashrelief raised \
-		    -showhandle 1
+		PanedWindow $pwId $attVals(orient)
 		$parseStatus(currentPath) configure -highlightthickness 0
 		pack $pwId  -expand yes -fill both
 		set parseStatus(currentPath) $pwId
 	    } pane {
 		set paneId [UniqueId $parseStatus(currentPath).pane \
 				[$parseStatus(currentPath) panes]]
-		set parseStatus(currentPath) [AddPane $paneId]
+		set parseStatus(currentPath) $paneId
+		AddPane $paneId
 	    } sash {
 		# the page this pane is in must be raised and update called!
 		# or $panedwindow sash place won't work
@@ -1254,9 +1263,10 @@ namespace eval RunEnv {
 		    [winfo parent $pageId] select $pageId
 		}
 		UpdateByOS
-		$parseStatus(currentPath) sash place $attVals(index) \
-		    [expr $attVals(xposn)*$parseStatus(mapScale)] \
-		    [expr $attVals(yposn)*$parseStatus(mapScale)]
+		set sashp [RealSashPos $parseStatus(currentPath) \
+			       $attVals(xposn) $attVals(yposn)]
+		PosnSash $parseStatus(currentPath) $attVals(index) \
+		    [expr $sashp*$parseStatus(mapScale)]
 	    } container {
 		set parseStatus(hType) $attVals(type)
 	    } default {
@@ -1387,7 +1397,7 @@ namespace eval RunEnv {
         PullMember line
         scan $line "%i %i" x y
 	set y [expr {$y*$num/$denom}]
-        [GetFrame $mainframe].mainpw.controlPane.panedwindow sash place  0 $x $y
+        PosnSash [GetFrame $mainframe].mainpw.controlPane.panedwindow 0 $y
 
         set newNotebooks {}
         while {[PullMember line] >= 0} {
@@ -1411,8 +1421,7 @@ namespace eval RunEnv {
                     if {$origVersion<4.0} {
                         set path [LoseTLRef $path]
                     }
-                    panedwindow $dp0.$path -orient $orient -sashrelief raised \
-			-showhandle 1
+                    PanedWindow $dp0.$path $orient
 		    [winfo parent $dp0.$path] configure -highlightthickness 0
                     pack $dp0.$path -expand yes -fill both
                 }
@@ -1441,9 +1450,9 @@ namespace eval RunEnv {
                     #ShowMess debug info "$panedwindow sash place $index $sashx $sashy \n\
                     #        page [$notebook pages]\n\
                     #        FindParentNotebook $notebook \n\
-                    #        FindParentNotebookPage $pageId" ok
-                    $panedwindow sash place $index [expr {$sashx*$num/$denom}] \
-			[expr {$sashy*$num/$denom}]
+			#        FindParentNotebookPage $pageId" ok
+		    set sashp [RealSashPos $panedwindow $sashx $sashy]
+                    PosnSash $panedwindow $index [expr {$sashp*$num/$denom}]
                 }
                 notebook {
                     #lappend metaList "notebook $notebook"

@@ -1495,13 +1495,13 @@ proc StartRun {node} {
     #	    unset ::RunEnv::sliderControlFrame
     #	}
     set ::RunEnv::CurrentContainer $RunEnv::dp0 ;# back to default
-    set ctrlPane [winfo parent [winfo parent $::RunEnv::runControlFrame($node)]]
+    set ctrlPane [winfo parent $::RunEnv::runControlFrame($node)]
     UpdateByOS ;# so reqheight works next
     #	tkwait visibility $runState($node,helperId)
     set aimPane [expr {[winfo reqheight $ctrlPane.runcontrolPane]+10}]
     # this sometimes fails to work, so keep trying till it does!
-    while {[lindex [$ctrlPane sash coord 0] 1]!=$aimPane} {
-	$ctrlPane sash place 0 10 $aimPane
+    while {[lindex [SeekSash $ctrlPane 0] 1]!=$aimPane} {
+	PosnSash $ctrlPane 0 $aimPane
 	UpdateByOS
     }
     ::RunEnv::InMreFor $node ;# in case it has been focussed since creation

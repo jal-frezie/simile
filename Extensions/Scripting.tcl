@@ -297,7 +297,7 @@ itcl::class similescript::Helper {
 	    return
 	} else {
 	    set winId ${::RunEnv::CurrentContainer}.container
-	    pack [frame $winId] -fill both -expand true
+	    pack [ttk::frame $winId] -fill both -expand true
 	    bind $winId <Destroy>  "itcl::delete object $this"
 # needed because gui can remove parent widget
 	}
