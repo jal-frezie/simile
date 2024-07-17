@@ -65,6 +65,7 @@ namespace eval ttk::theme::darkonic {
 	    [$styleCmd theme settings $parentTheme \
 		 [list $styleCmd map $mapable]]
     }
+    $styleCmd configure TLabelframe -relief groove
     $styleCmd configure TEntry \
         -fieldbackground $colors(-frame) -foreground $colors(-selectfg)
     $styleCmd configure TCombobox \
@@ -72,6 +73,7 @@ namespace eval ttk::theme::darkonic {
     $styleCmd configure TSpinbox \
         -fieldbackground $colors(-frame) -foreground $colors(-selectfg)
 
+    $styleCmd configure TNotebook.Tab -padding {8 4}
     $styleCmd map TNotebook.Tab -background [list \
         selected $colors(-lighter)]
 
