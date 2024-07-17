@@ -26,12 +26,9 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     set notebook [::ttk::notebook $t.notebook]
     set mainF $notebook.main
-    $notebook add [panedwindow $mainF -orient vertical \
-		       -sashrelief raised -showhandle 1] -text [tr. Main]
+    $notebook add [PanedWindow $mainF vertical] -text [tr. Main]
     set paramF $notebook.params
-    $notebook add [panedwindow $paramF -orient vertical \
-		       -sashrelief raised -showhandle 1] \
-	-text [tr. "Parameters etc."]
+    $notebook add [PanedWindow $paramF vertical] -text [tr. "Parameters etc."]
     set docF $notebook.documentation
     $notebook add [::ttk::frame $docF] -text [tr. Documentation]
     set equation(notebook) $notebook
@@ -56,8 +53,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     # Middle frame has the functions, indices and keypad
     # created variable middleF to point to the Middle frame makes moving the frame in
     # the widget hierrachy easier Jonathan 22 Aug 2002
-    $mainF add [set middleF [panedwindow $mainF.middle -orient horizontal \
-			    -sashrelief raised -showhandle 1]]
+    $mainF add [set middleF [PanedWindow $mainF.middle horizontal]]
     $middleF add [TitleFrame $middleF.functions -text "[tr. Functions]: "]
     BindPopup $middleF.functions function
     set fnFrame [GetFrame $middleF.functions].fnFrame
@@ -417,14 +413,14 @@ proc create_equation {parent purpose comp indices enum_types} {
 	    set widget [lindex $posnData 1]
 	    if {[string equal sash [lindex $posnData 0]] && \
 		    ![string first .equation.notebook.main. $widget]} {
-		eval [list $widget sash place] [lrange $posnData 2 end]
+		PosnSash $widget [lindex $posnData 2] [lindex $posnData 3]
 	    }
 	}
 	close $stream
     } else {
 # they do not place themselves properly ont' Mac
-	$middleF sash place 0 [expr {round($::niceSize*$::textBigness*16)}] 0
-	$middleF sash place 1 [expr {round($::niceSize*$::textBigness*32)}] 0
+	PosnSash $middleF 0 [expr {round($::niceSize*$::textBigness*16)}]
+	PosnSash $middleF 1 [expr {round($::niceSize*$::textBigness*32)}]
     }
 }
 
@@ -688,7 +684,7 @@ proc destroy_equation {} {
     foreach {parent count} {main 1 main.middle 2 params 1} {
 	for {set i 0} {$i<$count} {incr i} {
 	    set pw $equation(top).notebook.$parent
-	    catch {puts $lStm "sash $pw $i [$pw sash coord $i]"}
+	    catch {puts $lStm "sash $pw $i [SeekSash $pw $i]"}
 	}
     }
 #    RunEnv::SaveChildrenConfig $equation(top).notebook 0 ;# creates metaList
