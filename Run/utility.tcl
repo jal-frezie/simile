@@ -1084,6 +1084,33 @@ proc GetFrame {special} {
     return $special
 }
 
+proc PanedWindow {w splits} {
+#    return [panedwindow $w -orient $splits -sashrelief raised -showhandle 1]
+    return [ttk::panedwindow $w -orient $splits]
+}
+
+proc PosnSash {w index newPos} {
+#    $w sash place $index $newPos $newPos
+    $w sashpos $index $newPos
+}
+
+proc SeekSash {w index} {
+    #    return [RealSashPos $w {*}[$w sash coord $index]]
+    return [lrepeat 2 [$w sashpos $index]]
+}
+
+proc PanedWClass {} {
+#    return Panedwindow
+    return TPanedwindow
+}
+
+proc RealSashPos {pw shx shy} {
+    if {[$pw cget -orient] eq "vertical"} {
+	return $shy
+    } else {
+	return $shx
+    }
+}
 #proc TranslateFormatting {key params} {
 #    eval [list format [tr. $key]] $params
 #}
