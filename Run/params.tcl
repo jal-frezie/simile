@@ -528,18 +528,20 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 
 # take advantage to have header pop submodel comment
 	    set fColour [GetFromProlog tk_get_info($node,colour)]
-	    if {[lsearch {white clear} $fColour]<0} {
-		$nextLevel configure -bg $fColour
-		if {$pt} {
-		    $nextLevel.tree configure -bg $fColour
-		}
-		$nextLevel.head configure -bg $fColour
-		$nextLevel.head.label configure -bg $fColour ;# -style bStyle if ttk
-		ttk::style map $bStyle -background \
-		    [list pressed [Gradient $fColour $nextLevel 15] \
-			 active [Gradient $fColour $nextLevel -75] {} $fColour]
-		$nextLevel.head.vis configure -highlightbackground $fColour
+	    if {$fColour eq "clear"} {
+		set fColour $::looks(windowColor)
 	    }
+	    $nextLevel configure -bg $fColour
+	    if {$pt} {
+		$nextLevel.tree configure -bg $fColour
+	    }
+	    $nextLevel.head configure -bg $fColour
+	    $nextLevel.head.label configure -bg $fColour ;# -style bStyle if ttk
+	    ttk::style map $bStyle -background \
+		[list pressed [Gradient $fColour $nextLevel 15] \
+		     active [Gradient $fColour $nextLevel -75] {} $fColour]
+	    $nextLevel.head.vis configure -highlightbackground $fColour
+
 	    if {$nextPt>2 && $ns ne "fileparams"} {
 		Compand $nextLevel
 	    }
