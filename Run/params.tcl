@@ -133,7 +133,7 @@ proc DIYMakeFrames {windowId} {
     # above somehow prevents spurious configure event to width 1 being sent
     # from canvas if dialogue is redone after cancel without defocusing parent
     # (Mac only, report it some time)
-    set canId [canvas $windowId.c.canvas \
+    set canId [canvas $windowId.c.canvas -bg $::looks(buttonColor) \
 		   -yscrollcommand [list $windowId.c.yscroll set]]
     pack [ttk::scrollbar $windowId.c.yscroll -orient vertical \
 	      -command [list $canId yview]] -side right -fill y
@@ -529,7 +529,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 # take advantage to have header pop submodel comment
 	    set fColour [GetFromProlog tk_get_info($node,colour)]
 	    if {$fColour eq "clear"} {
-		set fColour $::looks(windowColor)
+		set fColour $::looks(buttonColor)
 	    }
 	    $nextLevel configure -bg $fColour
 	    if {$pt} {

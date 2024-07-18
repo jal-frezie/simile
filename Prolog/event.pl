@@ -99,8 +99,9 @@ get_info(Comp, enum_type_defns, ETDefns) :-
 	    get_all_enum_types(MotherShip, ETDefns)).
 
 get_info(Comp, colour, ColorSpec) :-
-	get_av_pair(Comp, 0, fill_colour, ColorSpec), !;
-	ColorSpec = white.
+%	get_av_pair(Comp, 0, fill_colour, ColorSpec), !;
+%	ColorSpec = clear.
+    draw><get_window_colour(Comp, ColorSpec, _).
 
 get_info(selection, Dir, Ends) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = '').
