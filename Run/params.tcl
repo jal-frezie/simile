@@ -251,7 +251,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     $slot configure -bg $lbg
 
     pack [label $slot.caption -text [lindex $levels end] \
-	      -background $lbg] -side left
+	      -background $lbg -foreground $::looks(outlineColor)] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
     set paramMetadata($compName,dimList) $dimList
     if {![info exists msgs(param_source_$compName)]} {
@@ -321,7 +321,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     # note whether we need to enter a parameter here...
     if {$mustShow} {
         if {[lsearch $suppliedData(needed) $compName]==-1} {
-            ColourCaptions $slot black
+            ColourCaptions $slot $::looks(outlineColor)
         }
     } elseif {$caseId ne "s"} { ;# list of cases not a real one
         AcceptData $topNode $compName $notInput 0 $caseId
@@ -492,7 +492,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
             set path [join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
 	    set node [IdFromTail $topNode /$path 0]
-            pack [label $nextLevel.head.label -text $level:] -side left \
+            pack [ttk::label $nextLevel.head.label -text $level:] -side left \
 		-expand 1
 	    if {[llength $ns]} {
 		foreach {cmd act img} {Save Save save Open Load open \
@@ -536,7 +536,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		$nextLevel.tree configure -bg $fColour
 	    }
 	    $nextLevel.head configure -bg $fColour
-	    $nextLevel.head.label configure -bg $fColour ;# -style bStyle if ttk
+	    $nextLevel.head.label configure -style $bStyle
 	    ttk::style map $bStyle -background \
 		[list pressed [Gradient $fColour $nextLevel 15] \
 		     active [Gradient $fColour $nextLevel -75] {} $fColour]
@@ -870,7 +870,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		set suppliedData($compName) $newData
 	    }
             if {$complain>-1 && $newData ne ""} { ;# leave eqned variables blue
-                ColourCaptions $box black
+                ColourCaptions $box $::looks(outlineColor)
             }
             set suppliedData(needed) [purge $suppliedData(needed) $compName]
 	    if {$timed == $readMany($compName) && \

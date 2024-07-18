@@ -965,7 +965,6 @@ proc ControlDraw {prologVersion} {
 	    set fieldForWinCol fieldbackground
 	}
 	set looks(buttonColor) [ttk::style lookup TButton -background]
-	set looks(windowColor) [ttk::style lookup TEntry -fieldbackground]
 	set looks(windowColor) [ttk::style lookup TEntry -$fieldForWinCol]
 	if {$looks(windowColor) eq ""} {
 	    set looks(windowColor) white
