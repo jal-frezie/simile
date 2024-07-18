@@ -130,15 +130,15 @@ itcl::class similescript::$newHelperClass {
 		    }
 		} else {
 		    set beeGee [[winfo parent $f].head cget -bg]
-#		    set bStyle [[winfo parent $f].head.new cget -style]
+		    set bStyle [[winfo parent $f].head.label cget -style]
 		    $f configure -bg $beeGee
 		    set label $f.caption
 		    if {$paramEdits} {
 		    } else {
-#			pack [ttk::label $f.caption -text $capt \
-#				  -style $bStyle] -side left
-			pack [label $label -text $capt -bg $beeGee \
-				  -fg $::looks(outlineColor)] -side left
+			pack [ttk::label $f.caption -text $capt \
+				  -style $bStyle] -side left
+#			pack [label $label -text $capt -bg $beeGee \
+#				  -fg $::looks(outlineColor)] -side left
 		    }
 		    $label configure -image $iconImages([string tolower $type]) -compound left
 		    bindtags $label [linsert [bindtags $label] 0 $f]
