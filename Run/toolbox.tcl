@@ -119,12 +119,18 @@ eval font create EquationFont [font actual TkTextFont]
 set eqnSize [expr {$niceSize*5/4}]
 font configure EquationFont -size $eqnSize
 
-# Set vertical spacing of treeview according to font height (should do this itself!)
-proc FixTreeView {} {
+# Fix some deficiencies in default themes (should do this itself!)
+proc SortOutTheme {} {
+    # Set vertical spacing of treeview according to font height
     ttk::style configure Treeview \
 	-rowheight [expr {[font metrics TkDefaultFont -linespace] + 2}]
+    # Make sure panedwindow sashes are visible and not too big
+    if {[lsearch {classic darkonic} [ttk::style theme use]]<0} {
+	ttk::style configure TPanedwindow -background grey
+	ttk::style configure Sash -sashthickness 2
+    }
 }
-FixTreeView
+SortOutTheme
 # Now add the focus level to the toolbutton style so we can see when one is 
 # selected by keyboard traversal (on Mac this is unnecessary and makes the 
 # buttons the wrong shape)

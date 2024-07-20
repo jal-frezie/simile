@@ -235,6 +235,7 @@ namespace eval RunEnv {
             set hiercontrolpw [PanedWindow $controlPane.panedwindow vertical]
             set runcontrolPane $hiercontrolpw.runcontrolPane
 	    AddPane $runcontrolPane
+	    $runcontrolPane configure -highlightthickness 0
             set explorerPane $hiercontrolpw.explorerPane
 	    AddPane $explorerPane
             

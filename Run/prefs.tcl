@@ -324,7 +324,7 @@ proc PrefEntrySet { varName resName } {
     upvar #0 $varName var
     if {$resName eq "widgetTheme"} {
 	ttk::style theme use $var
-	FixTreeView
+	SortOutTheme
     }
     PrefValueSet $resName $var
 }
