@@ -2150,6 +2150,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack $bt -side left -padx 2 -pady 2
 	    FixDisabledImgBug $bt
             BindPopup $bt add_$mode
+	    bind $bt <B1-Motion> "DragComponentIn $c $bt %X %Y maybe" 
             bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y yes"
         }
     }
@@ -2161,6 +2162,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	pack $bt -side left -padx 2 -pady 2
 	FixDisabledImgBug $bt
         BindPopup $bt $mode
+	bind $bt <B1-Motion> "DragComponentIn $c $bt %X %Y maybe"
 	bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y no"
     }
     if {![HaveValues $topNode]} {
@@ -2555,7 +2557,10 @@ proc DragComponentIn {winId button x y addOne} {
     #    }
     set x [expr $x-[winfo rootx $winId]]
     set y [expr $y-[winfo rooty $winId]]
-    
+    if {$addOne eq "maybe"} {
+	ClickObj $x $y $winId 0 0 hover
+	return
+    }
     if {$x<0 || $x>[winfo width $winId] || \
 	    $y<-[winfo y $winId] || $y>[winfo height $winId]} {
         # not in canvas or parent, ignore
