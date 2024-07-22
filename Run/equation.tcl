@@ -515,14 +515,22 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     global equation
     global equationbar
 
+    # pre-edit the comment field
+    if {$isParam==0 && $current_equation eq {} && $desc eq {} && \
+	    $comment eq {}} {
+	set action added_by
+    } else {
+	set action edited_by
+    }
+    set datePart [clock format [clock seconds] -format "%d %b %Y"]
+    append comment [format $::msgs($action) $::tcl_platform(user) $datePart]
+
     set equationbar(units) $units
     set equationbar(isParam) $isParam
     set equationbar(desc) $desc
     set equationbar(comment) $comment
     set equationbar(min) $min
     set equationbar(max) $max
-
-    
     ### Formula bar section
     if {[lsearch {click tick} $equationbar(current_action)]>=0} {
         return

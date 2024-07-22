@@ -49,6 +49,9 @@ set msgs(align) [tr. {Align}]
 set msgs(reroute) [tr. {Reroute}]
 
 # simile basics -- for eqn dialogue
+set msgs(added_by) [tr. {Added by %1$s on %2$s}]
+set msgs(edited_by) [tr. {
+Edited by %1$s on %2$s}]
 set msgs(equation_for) [tr. {Equation for %1$s}]
 set msgs(init_val_for) [tr. {Initial value for %1$s}]
 set msgs(cause_for) [tr. {Cause for %1$s}]
