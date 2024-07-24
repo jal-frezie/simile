@@ -1206,6 +1206,8 @@ proc ControlDraw {prologVersion} {
 		  [list custom(eqListWhere) eqListWhere ON [tr. "Parameter origins"]] \
 		  [list custom(eqListETDefns) eqListETDefns ON [tr. "Enumerated type definitions"]] \
 		  [list custom(eqListComments) eqListComments ON [tr. "Comments"]] \
+		  [list custom(autoTag) autoTag ON [tr. "Append user/date"]] \
+		  [list custom(clockFmt) clockFmt "%d %b %Y" [tr. "Date format (tcl clock)"]] \
 		 ]
     CheckCompilerLocation
     MakeHelperMenu

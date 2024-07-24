@@ -168,7 +168,9 @@ proc Pref_Dialog {} {
 	    pack [::ttk::frame $popupF.line3] -side bottom -fill x -expand 1
 	    set eqListTF [TitleFrame $cf.eqListTF -text [tr. "Equation listings show:"]]
 	    set eqListF $eqListTF
-        set ef [::ttk::frame $notebook.edit]
+ 	    set autoCmtTF [TitleFrame $cf.autoCmtTF -text [tr. "Source attribution in comment:"]]
+	    set autoCmtF $autoCmtTF
+       set ef [::ttk::frame $notebook.edit]
         $notebook add $ef -text [tr. Edit]
             set genericTF [TitleFrame $ef.genericTF -text [tr. "All components:"]]
             set genericF $genericTF
@@ -204,8 +206,8 @@ proc Pref_Dialog {} {
             set occurrenceTF [TitleFrame $rf.occurrenceTF -text [tr. "Occurrences during execution"]]
             set occurrenceF $occurrenceTF
        # $notebook select View
-        pack $initWinTF $displayTF $gridTF $popupTF $eqListTF $barTF \
-	    $genericTF $linkTF $flowTF $submodelTF $oneWinTF \
+        pack $initWinTF $displayTF $gridTF $popupTF $eqListTF $autoCmtTF \
+	    $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF \
 	    $precisTF $occurrenceTF $compTF $canvasTF $recentTF $abandonTF \
 	    $csvTF $notebook -fill x -padx 4 -pady 4
         set bbox [::ttk::frame $dlg.bbox] 
@@ -241,6 +243,8 @@ proc Pref_Dialog {} {
                 grid* {set frame $gridF}
                 comp* {set frame $popupF}
 		eqList* {set frame $eqListF}
+		autoTag {set frame $autoCmtF}
+		clockFmt {set frame $autoCmtF}
 		maxPopupSize {set frame $popupF.line2}
 		dispMatrix {set frame $popupF.line2}
 		flashHovered {set frame $popupF.line3}
