@@ -286,6 +286,7 @@ proc ClickObj { x y winId X Y action} {
     } else {
 	set window_info(lastClickCapt) $context
         if {[string equal click $action]} {
+	    UnFlash $winId $node ;# in case changing its colour
             # This bit used to start a drag selecting some caption text
             if {[string compare $obj {}]} {
                 set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
