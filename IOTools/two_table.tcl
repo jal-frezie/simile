@@ -106,6 +106,7 @@ namespace eval $keyValue {
         set displayUpdate($winId) 1
         variable displayFormat
 	set displayFormat($winId,-1) {General 4 0}; # format dp Neg_in_red
+	set displayFormat($winId,-2) {General 4 0}; # time
         variable editMode
         
         menu $winId.formatMenu -tearoff 0 -postcommand \
@@ -602,6 +603,7 @@ namespace eval $keyValue {
         variable lastDisplay
         variable varNamePosns
         variable editMode
+	variable displayFormat
         
         variable values
         variable rowNames
@@ -646,6 +648,9 @@ namespace eval $keyValue {
 			$depth $varIndex
                 }
             } else {
+#		set cellFmt $displayFormat($winId,-2)
+#		set prettyTime [FormatValue [lindex $valDims 2] \
+#				    [lindex $cellFmt 0] [lindex $cellFmt 1]]
                 GrabIndices $winId 0 {} {} [lindex $valDims 2] \
                         [list $varIndex $dataStore($valId)] $depth $varIndex
             }
@@ -808,9 +813,15 @@ namespace eval $keyValue {
                     # For header columns, put in duplicate values that are spanned over
                     # so saved files can be used for file parameters
                 }
-                if {[string match rows $translateSide] && \
+		if {$headerCol==0 && [lindex $orientList($winId) 0] eq "rows"} {
+		    set cellFmt $displayFormat($winId,-2) ;# time format
+		    set headerElt [FormatValue $headerElt \
+				       [lindex $cellFmt 0] [lindex $cellFmt 1]]
+                } elseif {[string match rows $translateSide] && \
                             $headerCol==$translateLevel} {
-                    set headerElt [lindex $displayList($winId,paths) $headerElt]
+		    set headerElt \
+			[lindex [split [lindex $displayList($winId,paths) \
+					    $headerElt] /] end]
                     if {!$headerCol} {
                         lappend varNamePosns($winId) $count
                     }
@@ -821,8 +832,7 @@ namespace eval $keyValue {
                 }
 #                set data${winId}($count,$headerCol) \
 #                        [lindex [split $headerElt /] end]
-		FillCellPixels $winId $count $headerCol \
-		    [lindex [split $headerElt /] end]
+		FillCellPixels $winId $count $headerCol $headerElt
                 incr headerCol
             }
             incr count
@@ -852,7 +862,8 @@ namespace eval $keyValue {
                     if {[string match cols $translateSide] && \
                                 $headerRow==$translateLevel} {
                         set headerElt \
-			    [lindex $displayList($winId,paths) $headerElt]
+			    [lindex [split [lindex $displayList($winId,paths) \
+						$headerElt] /] end]
                         if {!$headerRow} {
                             lappend varNamePosns($winId) $count
                         }
@@ -863,8 +874,7 @@ namespace eval $keyValue {
                     }
 #                    set data${winId}($headerRow,$count) \
 #                            [lindex [split $headerElt /] end]
-		    FillCellPixels $winId $headerRow $count \
-			[lindex [split $headerElt /] end]
+		    FillCellPixels $winId $headerRow $count $headerElt
                 }
                 incr headerRow
             }
@@ -977,8 +987,16 @@ namespace eval $keyValue {
 	#puts "values: [array get values] newValues: [array get newValues]"
         return [ArrayToList newValues]
     }
-    
+
     proc ReComp {l1 l2} {
+	if {[catch {set way [expr {($l2<$l1)-($l2>$l1)}]} boglar]} {
+	    puts "Unexpected text comparison: $boglar"
+	    return [string compare $l1 $l2]
+	}
+	return $way
+    }
+    
+    proc OldReComp {l1 l2} {
         if {[string match $l1 $l2]} {
             return 0
         }
@@ -999,6 +1017,7 @@ namespace eval $keyValue {
         if {[catch {expr ($l2<$l1)-($l2>$l1)} math]} {
             return [string compare $l1 $l2]
         }
+	puts "[info level 0] gives $math"
         return $math
     }
     
@@ -1120,7 +1139,7 @@ namespace eval $keyValue {
         
         set varL [label $varF.label -text Variable]
         set varCB [ttk::combobox $varF.comboBox -state readonly \
-		       -values [concat All... $displayList($winId,paths)]]
+		       -values [concat All... Time $displayList($winId,paths)]]
 	$varCB current 0
         pack $varL $varCB -side left
         
@@ -1293,6 +1312,10 @@ namespace eval $keyValue {
         variable displayFormat
 
 	set selected [$varCB get]
+	if {$selected eq "Time"} {
+	    lset displayFormat($winId,-2) $posn $val
+	    return
+	}
 	set varIndex 0
 	foreach varId $displayList($winId,paths) {
 	    if {[string equal $varId $selected]} {
