@@ -814,9 +814,7 @@ namespace eval $keyValue {
                     # so saved files can be used for file parameters
                 }
 		if {$headerCol==0 && [lindex $orientList($winId) 0] eq "rows"} {
-		    set cellFmt $displayFormat($winId,-2) ;# time format
-		    set headerElt [FormatValue $headerElt \
-				       [lindex $cellFmt 0] [lindex $cellFmt 1]]
+		    set headerElt [FormatTime $winId $headerElt]
                 } elseif {[string match rows $translateSide] && \
                             $headerCol==$translateLevel} {
 		    set headerElt \
@@ -859,7 +857,9 @@ namespace eval $keyValue {
                     set lastEntry($headerRow) $headerElt
                     set lastEntry([expr $headerRow+1]) none
                     set lastLine($headerRow) $count
-                    if {[string match cols $translateSide] && \
+		    if {$headerRow==0 && [lindex $orientList($winId) 0] eq "cols"} {
+			set headerElt [FormatTime $winId $headerElt]
+		    } elseif {[string match cols $translateSide] && \
                                 $headerRow==$translateLevel} {
                         set headerElt \
 			    [lindex [split [lindex $displayList($winId,paths) \
@@ -901,6 +901,19 @@ namespace eval $keyValue {
 	foreach varId $dummied {
 	    array unset dataStore $winId,$varId,$dummyTime
 	}
+    }
+
+    proc FormatTime {winId val} {
+	variable displayFormat
+	variable format
+	
+	set cellFmt $displayFormat($winId,-2) ;# time format
+	set formatFn [lindex $cellFmt 0]
+	# if using a date or time format, convert time value to days
+	if {[lsearch [concat $format(Date) $format(Time)] $formatFn]>-1} {
+	    set val [expr {$val*[InDays $::runState([GetTopNode $winId],timeUnit)]}]
+	}
+	return [FormatValue $val $formatFn [lindex $cellFmt 1]]
     }
     
     proc RestoreFromMirror {winId} {
