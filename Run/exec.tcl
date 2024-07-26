@@ -169,6 +169,8 @@ proc ExecuteTo {node current pause unitLength display \
 		} 0 {
 		    set currentMode stop
 		    set displayNow $display
+		} 1 { ;# successful run to display point
+		    set timedDisp 1
 		} 2 { ;# event
 		    if {$evtDisp} {
 			set displayNow 1
@@ -190,7 +192,7 @@ proc ExecuteTo {node current pause unitLength display \
 		}
 	    } ;# default: keep going
 	    set current [expr {$scaled_current/$unitLength}]
-	    set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
+	    # set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
 	    set payload {}
 	    foreach point $foci class $ptClasses {
 		if {[catch {GetPayload $node $point $class} dataHand]} {
