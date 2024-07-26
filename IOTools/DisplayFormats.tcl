@@ -76,8 +76,8 @@ namespace eval DisplayFormat {
     
     set datevar(ERA) CE
 
-    proc JulianDayToUnixEra {JD} {
-	return [expr {86400*int(floor($JD-2440588))}]
+    proc JulianDateToUnixEra {JD} {
+	return [expr {round(86400*($JD-2440587.5))}]
     }
     
     proc YYYYMMDD {val dp} {
@@ -87,11 +87,11 @@ namespace eval DisplayFormat {
 #        return [format %.4d/%.2d/%.2d  $datevar(YEAR) $datevar(MONTH) $datevar(DAY_OF_MONTH)]
 
 # redone using clock command to reduce baroquity and package count --JAT
-	return [clock format [JulianDayToUnixEra $val] -format %Y/%m/%d] 
+	return [clock format [JulianDateToUnixEra $val] -format %Y/%m/%d] 
     }
 
     proc DDMMYYYY {val dp} {
-	return [clock format [JulianDayToUnixEra $val] -format %d/%m/%Y] 
+	return [clock format [JulianDateToUnixEra $val] -format %d/%m/%Y] 
     }
     
     proc HHMM {val dp} {
@@ -112,8 +112,7 @@ namespace eval DisplayFormat {
     }
     
     proc YYYYMMDDHHMMSS {val dp} {
-        set time [expr {$val-int($val)}]
-        return "[YYYYMMDD $val $dp] [HHMMSS $time $dp]"
+	return [clock format [JulianDateToUnixEra $val] -format "%Y/%m/%d %T"]
     }
     
     proc Boolean {val dp} {
