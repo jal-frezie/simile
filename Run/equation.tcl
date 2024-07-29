@@ -525,6 +525,9 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
 	}
 	set datePart [clock format [clock seconds] \
 			  -format [PrefValue custom(clockFmt) clockFmt]]
+	if {[string length $comment] && ![string match *\n $comment]} {
+	    append comment \n
+	}
 	append comment [format $::msgs($action) $::tcl_platform(user) $datePart]
     }
 

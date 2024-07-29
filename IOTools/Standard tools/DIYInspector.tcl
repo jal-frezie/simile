@@ -129,16 +129,16 @@ itcl::class similescript::$newHelperClass {
 			Compand $f ;# initially closed
 		    }
 		} else {
-		    set beeGee [[winfo parent $f].head cget -bg]
-		    set bStyle [[winfo parent $f].head.label cget -style]
-		    $f configure -bg $beeGee
+		    set bGnd [[winfo parent $f].head cget -bg]
+#		    set bStyle [[winfo parent $f].head.label cget -style]
+		    $f configure -bg $bGnd
 		    set label $f.caption
 		    if {$paramEdits} {
 		    } else {
-			pack [ttk::label $f.caption -text $capt \
-				  -style $bStyle] -side left
-#			pack [label $label -text $capt -bg $beeGee \
-#				  -fg $::looks(outlineColor)] -side left
+#			pack [ttk::label $f.caption -text $capt \
+#				  -style $bStyle] -side left
+			pack [ttk::label $label -text $capt -background $bGnd \
+				  -foreground $::looks(outlineColor)] -side left
 		    }
 		    $label configure -image $iconImages([string tolower $type]) -compound left
 		    bindtags $label [linsert [bindtags $label] 0 $f]
@@ -749,8 +749,8 @@ itcl::class similescript::$newHelperClass {
 	if {!$add} {return} ;# is already gone
 	set neWidg [UniqueId hlpr]
 	#	set bStyle [[winfo parent $f].head.vis cget -style]
-	set beeGee [[winfo parent $f].head.vis cget -bg]
-	pack [button $f.$neWidg -bg $beeGee -image $::iconImages($img) \
+	set bGnd [[winfo parent $f].head cget -bg]
+	pack [button $f.$neWidg -bg $bGnd -image $::iconImages($img) \
 		  -command [list ::RunEnv::FocusTool $hlpr]] \
 	    -side right -padx 1p
 	BindPopup $f.$neWidg $id

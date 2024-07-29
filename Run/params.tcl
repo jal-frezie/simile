@@ -250,7 +250,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     set colStyle style$holder
     $slot configure -bg $lbg
 
-    pack [label $slot.caption -text [lindex $levels end] \
+    pack [ttk::label $slot.caption -text [lindex $levels end] \
 	      -background $lbg -foreground $::looks(outlineColor)] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
     set paramMetadata($compName,dimList) $dimList
@@ -537,11 +537,13 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		$nextLevel.tree configure -bg $fColour
 	    }
 	    $nextLevel.head configure -bg $fColour
-	    $nextLevel.head.label configure -style $bStyle
+#	    $nextLevel.head.label configure -style $bStyle
 	    ttk::style map $bStyle -background \
 		[list pressed [Gradient $fColour $nextLevel 15] \
 		     active [Gradient $fColour $nextLevel -75] {} $fColour]
 	    $nextLevel.head.vis configure -highlightbackground $fColour
+	    $nextLevel.head.label configure -background $fColour \
+		-foreground $::looks(outlineColor)
 
 	    if {$nextPt>2 && $ns ne "fileparams"} {
 		Compand $nextLevel
