@@ -1087,7 +1087,7 @@ namespace eval $keyValue {
         variable editMode
         variable dataStore
         
-        set t [PutItThere $winId.propertiesDlg $winId]
+        set t [PutItThere .zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzztablePropsDlg $winId]
         wm title $t "Table properties"
 
         set ::${t}l1 [lindex $orientList($winId) 0]

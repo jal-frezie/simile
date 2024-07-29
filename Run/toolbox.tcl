@@ -125,7 +125,7 @@ proc SortOutTheme {} {
     ttk::style configure Treeview \
 	-rowheight [expr {[font metrics TkDefaultFont -linespace] + 2}]
     # Make sure panedwindow sashes are visible and not too big
-    if {[lsearch {classic darkonic} [ttk::style theme use]]<0} {
+    if {[lsearch {classic darkonic aqua} [ttk::style theme use]]<0} {
 	ttk::style configure TPanedwindow -background grey
 	ttk::style configure Sash -sashthickness 2
     }

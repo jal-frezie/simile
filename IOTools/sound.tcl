@@ -69,7 +69,7 @@ itcl::class similescript::$newHelperClass {
 			   [expr {128+round(127*[lindex $wav 3])}]]
 	}
 	if {[string length $flash]==7} {
-	    $winId configure -bg $flash
+#	    $winId configure -bg $flash
 	}
     }
 }
