@@ -478,11 +478,12 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	if {!$leaf} {
 # now create a style for this level which we will use for the buttons
 # to set their background colour to that of the appropriate submodel
+	    set srcStyle Toolbutton
 	    set bStyle style$nextLevel
 	    eval [list ttk::style configure $bStyle] \
-		[ttk::style configure Toolbutton]
-	    eval [list ttk::style map $bStyle] [ttk::style map Toolbutton]
-	    ttk::style layout $bStyle [ttk::style layout Toolbutton]
+		[ttk::style configure $srcStyle]
+	    eval [list ttk::style map $bStyle] [ttk::style map $srcStyle]
+	    ttk::style layout $bStyle [ttk::style layout $srcStyle]
 
             pack [frame $nextLevel.head] -fill x -expand true
             pack [frame $nextLevel.body] -fill x -expand true
