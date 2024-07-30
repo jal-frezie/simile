@@ -222,7 +222,7 @@ proc ExecuteTo {node current pause unitLength display \
 	}
 
 	if {!$first} {
-	    if {[ShiftDisplays $node $payload [format %.8g $current] \
+	    if {[ShiftDisplays $node $payload [format %.15g $current] \
 		     $display [expr {$timedDisp || $displayNow}]]} {
 		CJoinExecution $node $scaled_next 1
 		set currentMode stop
