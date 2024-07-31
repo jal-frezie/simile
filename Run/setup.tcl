@@ -67,7 +67,7 @@ if {$tcl_platform(platform) eq "windows"} {
     set refreshCreds {![file exists $creds]}
 }
 if $refreshCreds {
-    file copy $installedCreds $creds
+    file copy -force $installedCreds $creds
 }
 
 set UserStream [open $creds r]

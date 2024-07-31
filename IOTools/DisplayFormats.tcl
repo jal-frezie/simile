@@ -96,7 +96,7 @@ namespace eval DisplayFormat {
     }
     
     proc HHMM {val dp} {
-        set val [expr {24*$val}]
+        set val [expr {24*$val+1.0/7200}]
         set hours_int [expr {int($val)}]
         set minutes [expr {($val-$hours_int)*60}]
         set minutes_int [expr {int($minutes)}]
@@ -104,7 +104,7 @@ namespace eval DisplayFormat {
     }
     
     proc HHMMSS {val dp} {
-        set val [expr {24*$val}]
+        set val [expr {24*$val+1.0/7200}]
         set hours_int [expr {int($val)}]
         set minutes [expr {($val-$hours_int)*60}]
         set minutes_int [expr {int($minutes)}]

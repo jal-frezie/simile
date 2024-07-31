@@ -105,7 +105,7 @@ typedef unsigned char BOOLEAN;
 // Identifier
 #define MDL_OBJ_VERS 7.0091
 
-#define SIMILE_VERSION	"7.1"
+#define SIMILE_VERSION	"7.2"
 #define NEST 32
 
 #define SIM_PAR_EXEC 1

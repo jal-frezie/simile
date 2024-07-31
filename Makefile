@@ -1,5 +1,5 @@
 MAJREL = 7
-MINREL = 1
+MINREL = 2
 # botch to make Windows work
 CC = gcc 
 MACH = $(shell $(CC) -dumpmachine)
