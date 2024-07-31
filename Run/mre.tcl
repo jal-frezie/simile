@@ -1393,7 +1393,7 @@ namespace eval RunEnv {
         PullMember line
         scan $line "%i %i" x y;
 	set x [expr {$x*$num/$denom}]
-        [GetFrame $mainframe].mainpw sash place  0 $x $y
+        PosnSash [GetFrame $mainframe].mainpw 0 $x
         
         PullMember line
         scan $line "%i %i" x y

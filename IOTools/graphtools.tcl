@@ -185,7 +185,7 @@ proc ::graphtools::gridOnOff {  w } {
     drawGraph $w
 }
 
-proc ::graphtools::draw_Xaxis { w } {
+proc ::graphtools::draw_Xaxis { w {format General}} {
     global ::graphtools::plot
     
     if {$plot($w,Xmax_axis)<$plot($w,Xmin_axis)} {
@@ -219,10 +219,10 @@ proc ::graphtools::draw_Xaxis { w } {
                 -tags {scalable axis_line xaxis_item xtick markable \
                     xaxis_movable}
         $w.canvas create text $x $y \
-                -text [::DisplayFormat::General $value $precision] \
+                -text [::DisplayFormat::$format $value $precision] \
                 -font $plot($w,fontValues) -fill $sCol \
                 -tags {scalable axis_value xaxis_item xaxis_movable xtick \
-                    toplevel markable} -anchor n
+                    toplevel markable} -angle -30 -anchor nw
         set value [expr $value+$Xmajorstep]
     }
     set step [expr $step/2]
