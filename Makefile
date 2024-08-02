@@ -636,6 +636,7 @@ install:
 		Run/6d.h \
 		Run/backend.h \
 		Run/client5d.tcl \
+		Run/darkonic.tcl \
 		Run/dllcalls.h \
 		Run/equation.tcl \
 		Run/exec.tcl \
