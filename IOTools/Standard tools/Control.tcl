@@ -564,7 +564,8 @@ namespace eval runcontrol33857 {
 		set runState($node,modelRunning) 2
 	    }
 	} else {
-	    if {abs($current-$finish)<1e-6} { ;# allow for min freq overshoot
+	    if {abs($current-$finish)<max(abs($finish),1e-6)*5e-8} {
+		# allow for min freq overshoot
 		set exec $runState($node,run_length)
 		SetupBar $node $finish [expr $finish+$exec]
 	    } else {
