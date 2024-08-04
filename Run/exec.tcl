@@ -155,7 +155,7 @@ proc ExecuteTo {node current pause unitLength display \
     
     while {$currentMode eq "start"} {
 	if {($current-$pause)*$forward > -1e-12} {
-	    set currentMode stop
+	    set currentMode finish
 	}
 
 	if {!$first} {

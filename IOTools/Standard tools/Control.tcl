@@ -545,14 +545,11 @@ namespace eval runcontrol33857 {
 	    set maxErr 0
 	}
 	if {[string equal start $runState($node,currentMode)]} {
-	    set modelAct \
+	    set runState($node,currentMode) \
 		[ExecuteTo $node $current $pause $runState($node,unitLength) \
 		     $display $runState($node,intMethod) \
 		     $maxErr $runState($node,lmtpause) \
 		     $runState($node,evtpause) $runState($node,evtDisp)]
-	    if {[string equal start $runState($node,currentMode)]} {
-		set runState($node,currentMode) $modelAct
-	    }
 #	    switchMode $node
 # don't know what the above was for, it caused spurious display updates
 	}
@@ -564,8 +561,10 @@ namespace eval runcontrol33857 {
 		set runState($node,modelRunning) 2
 	    }
 	} else {
-	    if {abs($current-$finish)<max(abs($finish),1e-6)*5e-8} {
+#	    if {abs($current-$finish)<max(abs($finish),1e-6)*5e-8} {...}
 		# allow for min freq overshoot
+	    if {$runState($node,currentMode) eq "finish"} {
+		set runState($node,currentMode) stop
 		set exec $runState($node,run_length)
 		SetupBar $node $finish [expr $finish+$exec]
 	    } else {
