@@ -1418,9 +1418,9 @@ proc ParamsFromGUI {inst} {
 
 proc StartWebService {node scratch inst {runParams {}}} {
     array set ::web_service [list local $scratch node $::nodeId]
-    start_server localhost 7464 similive.simulistics.com {} $inst $runParams
-#    start_server localhost 7464 hotwheels /SimiLive $inst $runParams
-    VisitUrl http://localhost:7464/load_tools.html
+#    start_server localhost 7464 similive.simulistics.com {} $inst $runParams
+    start_server localhost 7464 hotwheels /SimiLive $inst $runParams
+#    VisitUrl http://localhost:7464/load_tools.html
 }
 
 # this could be more efficient
