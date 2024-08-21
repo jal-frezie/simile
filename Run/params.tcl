@@ -929,9 +929,14 @@ proc FillIfSmall {entry text trans} {
     $entry configure -state normal
     $entry delete 0 end
     set limit 500
+    set fromBytes [string match ,bytes [lindex $text 1]]
     set count [ShrinkValueList text $limit]
-    set text [PrettifyValList $text [lindex $trans end]]
-    
+    if {$count>-1} {
+	if {$fromBytes} {
+	    set text [TransEnums $trans $text]
+	}
+	set text [PrettifyValList $text [lindex $trans end]]
+    }
     set shrunken [EndsOnly text $count $limit]
     $entry insert 0 $text
     if {$shrunken} {
