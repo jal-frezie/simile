@@ -30,7 +30,15 @@ Layers2D.prototype.addLayer = function (type, state) {
 	for (var i=0; i<state[0].length;i++) {
 	    entry = state[0][i];
 	    possCapt = tclListOfDimty(entry,1);
-	    if (possCapt[0][0] == "/") { // its a capt path
+	    if (possCapt[0] == ",colours") {
+		entry = idFromCapt(possCapt[1]);
+		this.tgts.push(entry);
+		layerSpec.legend = [];
+		for (var j=2; j<possCapt.length;j++) {
+		    var colBytes = BytesFromHex(possCapt[j]);
+		    layerSpec.legend.push(65536*colBytes.R+256*colBytes.G+colBytes.B);
+		}
+	    } else if (possCapt[0][0] == "/") { // its a capt path
 		entry = idFromCapt(possCapt.join(" "));
 		this.tgts.push(entry);
 	    } else if (possCapt[0][0] == "#") { // it's a fixed colour
@@ -327,7 +335,11 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 	defns = flattenAll("c", allDefns, 0);
 
 	for (var bg in defns) {
-	    var hexColor = defns[bg].color.toString(16);
+	    if (layerSpec.legend == undefined) {
+		hexColor = defns[bg].color.toString(16);
+	    } else {
+		hexColor = layerSpec.legend[Math.floor(defns[bg].color)].toString(16);
+	    }
 	    layerSpec.gLayer.append("circle").attr("cx",defns[bg].x_axis)
 		.attr("cy",defns[bg].y_axis)
 		.attr("r",defns[bg].radius)
