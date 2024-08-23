@@ -31,19 +31,18 @@ Layers2D.prototype.addLayer = function (type, state) {
 	    entry = state[0][i];
 	    possCapt = tclListOfDimty(entry,1);
 	    if (possCapt[0] == ",colours") {
-		entry = idFromCapt(possCapt[1]);
+		possCapt = tclListOfDimty(entry,2); // everything nested deeper
+		entry = idFromCapt(possCapt[1].join(" "));
 		this.tgts.push(entry);
 		layerSpec.legend = [];
 		for (var j=2; j<possCapt.length;j++) {
-		    var colBytes = BytesFromHex(possCapt[j]);
-		    layerSpec.legend.push(65536*colBytes.R+256*colBytes.G+colBytes.B);
+		    layerSpec.legend.push(ShortenColour(possCapt[j][0]));
 		}
 	    } else if (possCapt[0][0] == "/") { // its a capt path
 		entry = idFromCapt(possCapt.join(" "));
 		this.tgts.push(entry);
 	    } else if (possCapt[0][0] == "#") { // it's a fixed colour
-		var colBytes = BytesFromHex(possCapt[0]);
-		entry = 65536*colBytes.R+256*colBytes.G+colBytes.B;
+		entry = ShortenColour(possCapt[0]);
 	    }
 	    layerSpec.setup.push(entry);
 	}
@@ -336,15 +335,15 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 
 	for (var bg in defns) {
 	    if (layerSpec.legend == undefined) {
-		hexColor = defns[bg].color.toString(16);
+		hexColor = defns[bg].color;
 	    } else {
-		hexColor = layerSpec.legend[Math.floor(defns[bg].color)].toString(16);
+		hexColor = layerSpec.legend[Math.floor(defns[bg].color)];
 	    }
 	    layerSpec.gLayer.append("circle").attr("cx",defns[bg].x_axis)
 		.attr("cy",defns[bg].y_axis)
 		.attr("r",defns[bg].radius)
 		.attr("pointer-events", "none")
-		.attr("fill", "#" + "000000".slice(hexColor.length) + hexColor);
+		.attr("fill", hexColor);
 	}
 	break;
     case "Lines20171122":
@@ -356,13 +355,17 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 	defns = flattenAll("l", allDefns, 0);
 
 	for (var bg in defns) {
-	    var hexColor = defns[bg].color.toString(16);
+	    if (layerSpec.legend == undefined) {
+		hexColor = defns[bg].color;
+	    } else {
+		hexColor = layerSpec.legend[Math.floor(defns[bg].color)];
+	    }
 	    layerSpec.gLayer.append("line").attr("x1",defns[bg].startx)
 		.attr("y1",defns[bg].starty)
 		.attr("x2",defns[bg].endx)
 		.attr("y2",defns[bg].endy)
 		.attr("pointer-events", "none")
-		.attr("style", "stroke:#" + "000000".slice(hexColor.length) + hexColor + ";stroke-width:" + defns[bg].width);
+		.attr("style", "stroke:" + hexColor + ";stroke-width:" + defns[bg].width);
 	}
     }
 }

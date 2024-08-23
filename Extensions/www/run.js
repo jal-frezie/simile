@@ -1641,6 +1641,14 @@ function BytesFromHex (hex) {
     return {"R":R,"G":G,"B":B};
 }
 
+function ShortenColour (longColour) {
+    if (longColour.length > 12) {
+	return longColour.substr(0,3) + longColour.substr(5,2) + longColour.substr(9,2);
+    } else {
+	return longColour;
+    }
+}
+
 function ColorMapFromPoints (n, bot, mid, top) {
     specials = ["black", "red", "green", "white", "gray20", "gray80"];
 
