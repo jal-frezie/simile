@@ -486,9 +486,9 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	    ttk::style layout $bStyle [ttk::style layout $srcStyle]
 
             pack [frame $nextLevel.head] -fill x -expand true
-            pack [frame $nextLevel.body] -fill x -expand true
+            frame $nextLevel.body ;# only pack if dropped
 	    pack [button $nextLevel.head.vis \
-		      -image $iconImages(drop) \
+		      -image $iconImages(rerun) \
 		      -command [list Compand $nextLevel]] -side left
             set path [join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
@@ -545,7 +545,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	    $nextLevel.head.label configure -background $fColour \
 		-foreground $::looks(outlineColor)
 
-	    if {$nextPt>2 && $ns ne "fileparams"} {
+	    if {$nextPt<=2 || $ns eq "fileparams"} {
 		Compand $nextLevel
 	    }
 	}
