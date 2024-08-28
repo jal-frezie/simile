@@ -954,7 +954,8 @@ represents(Function, Source, Pairs, Var) :-
     (Ref = Var; Ref = usr(Var)),
     member(var_pair(Var, _), Pairs),
     get_link_source_data(Source, Function, _, FoundUnit, _,_,_),
-    check_unit(FoundUnit, SoughtUnit, 2, []).
+    (check_unit(FoundUnit, SoughtUnit, 2, []);
+     FoundUnit = 1/day, SoughtUnit = 1). % likely legacy of pre-6.0 flows
     
 line_dir_change_radius_is(8).
 

@@ -259,7 +259,7 @@ namespace eval runcontrol33857 {
 	pack [scrollbar $log.scroll -orient vert -command "$log.text yview"] \
 	    -side right -fill y
 	pack [text $log.text -yscrollcommand "$log.scroll set" -state disabled \
-		  -height 10] -fill both
+		  -width 40 -height 8] -fill both
 
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         

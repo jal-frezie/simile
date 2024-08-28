@@ -31,9 +31,10 @@ units_for(Comp, UnitStr) :-
 	    analyze_array(Units, Base, Dims)),
 	to_text_prefix(Dims, Pref),
 	(member(Base, [1, 1/1]), !, append(Pref, "real", UnitStr);
-	 Base = 1/day, applies_in(Comp, eqn_units, 'No'), !,
-	     append(Pref, "1/time", UnitStr);
-	sicstus_format_to_chars("~s~w", [Pref, Base], UnitStr)).
+%	 Base = 1/day, applies_in(Comp, eqn_units, 'No'), !,
+%	     append(Pref, "1/time", UnitStr);
+	 % What was above for, 1/time is dimensions not units
+	 sicstus_format_to_chars("~s~w", [Pref, Base], UnitStr)).
 
 to_text_prefix([], "").
 to_text_prefix([Solo], Text) :-

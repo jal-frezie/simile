@@ -95,10 +95,11 @@ do_equation_dialog(Win, Part) :-
 	    all(forms, list_evt_efct_pairs,
 		[unify(Equation), build(EvtCapts), append(ToPass, [])]);
 	 ToPass = Equation),
-	(Base = 1/day,
-	 m_update><applies_in(Parent, eqn_units, 'No') -> UseBase = 1/time;
-	 UseBase = Base),
-	fill_equation(ToPass, UseBase, Dims, Is_P, Desc, Comment, Min, Max),
+%	(Base = 1/day,
+%	 m_update><applies_in(Parent, eqn_units, 'No') -> UseBase = 1/time;
+%	 UseBase = Base),
+% OK so we do not care about actual time unit but show unit not dimension
+	fill_equation(ToPass, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_table(Part, TableList, TableVals), % calls interaction from tcl
 	destroy_equation.
 
