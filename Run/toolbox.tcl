@@ -970,12 +970,12 @@ proc ControlDraw {prologVersion} {
 	} else {
 	    set fieldForWinCol fieldbackground
 	}
-	set looks(buttonColor) [ttk::style lookup TButton -background]
-	set looks(windowColor) [ttk::style lookup TEntry -$fieldForWinCol]
+	set looks(buttonColor) [Desystematize [ttk::style lookup TButton -background]]
+	set looks(windowColor) [Desystematize [ttk::style lookup TEntry -$fieldForWinCol]]
 	if {$looks(windowColor) eq ""} {
 	    set looks(windowColor) white
 	}
-	set looks(outlineColor) [ttk::style lookup TEntry -foreground]
+	set looks(outlineColor) [Desystematize [ttk::style lookup TEntry -foreground]]
 #	puts [array get looks *Color]
 #	destroy .sampleTheme
 #	destroy .b
