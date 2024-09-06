@@ -133,19 +133,27 @@ proc DIYMakeFrames {windowId} {
     # above somehow prevents spurious configure event to width 1 being sent
     # from canvas if dialogue is redone after cancel without defocusing parent
     # (Mac only, report it some time)
-    set canId [canvas $windowId.c.canvas -bg $::looks(buttonColor) \
-		   -yscrollcommand [list $windowId.c.yscroll set]]
+
+    set canId [canvas $windowId.c.canvas -bg $::looks(buttonColor)]
+# alternative version using text rather than canvas as scrollable host widget
+#    set canId [text $windowId.c.canvas -state disabled]
+
+    $canId configure -yscrollcommand [list $windowId.c.yscroll set]
     pack [ttk::scrollbar $windowId.c.yscroll -orient vertical \
 	      -command [list $canId yview]] -side right -fill y
     pack $canId -fill both -expand 1
     pack $windowId.c -side top -fill both -expand 1
-    set sf [$canId create window 0 0 -anchor nw \
-		-window [frame $canId.frame]]
+    set f [ttk::frame $canId.frame]
+
+    set sf [$canId create window 0 0 -anchor nw -window $f]
     bind $canId <Configure> [list $canId itemconfigure $sf -width %w]
     bind $canId.frame <Configure> \
 	[list $canId configure -scrollregion {0 0 %w %h}]
+#    $canId window create 1.0 -window $f
+#    bind $canId <Configure> [list $canId.frame configure -width %w]
+
     # pack [frame $canId.frame.body] -fill x -expand 1
-    return $canId.frame
+    return $f
 }
 
 # with a normal scrollable widget you can 'see' an embedded widget, but this 

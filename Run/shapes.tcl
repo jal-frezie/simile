@@ -1442,8 +1442,11 @@ proc InjectGraphics {c canvasFile} {
     # be displayed.
     # $c delete withtag /base/ ;# these may be deleted and re-created
     UpdateByOS
-    CanvasSee $c [ExtractPrologName $c [lindex [$c find all] end]] \
-	[expr $window_info($c,width)/2] [expr $window_info($c,height)/2]
+    set lastIn [ExtractPrologName $c [lindex [$c find all] end]]
+    if {$lastIn ne ""} {
+	CanvasSee $c $lastIn \
+	    [expr $window_info($c,width)/2] [expr $window_info($c,height)/2]
+    }
 # view topmost item
 #puts "Rolling back to 0 0 $window_info($c,width) $window_info($c,height)"
     RollBack $c 1 0 0 $window_info($c,width) $window_info($c,height)

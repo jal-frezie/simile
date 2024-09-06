@@ -959,6 +959,7 @@ proc ControlDraw {prologVersion} {
 	set looks(windowColor) \#ffffff
 	set looks(outlineColor) \#000000
     } else {
+	LoadIconImages
 #	button .b
 #	entry .sampleTheme
 #	set looks(buttonColor) [Desystematize [.b cget -bg]]
@@ -971,15 +972,15 @@ proc ControlDraw {prologVersion} {
 	    set fieldForWinCol fieldbackground
 	}
 	set looks(buttonColor) [Desystematize [ttk::style lookup TButton -background]]
-	set looks(windowColor) [Desystematize [ttk::style lookup TEntry -$fieldForWinCol]]
+	set looks(windowColor) [ttk::style lookup TEntry -$fieldForWinCol]
 	if {$looks(windowColor) eq ""} {
 	    set looks(windowColor) white
 	}
+	set looks(windowColor) [Desystematize $looks(windowColor)]
 	set looks(outlineColor) [Desystematize [ttk::style lookup TEntry -foreground]]
 #	puts [array get looks *Color]
 #	destroy .sampleTheme
 #	destroy .b
-	LoadIconImages
     }
     # Defaults to use if debugging
 #    if {![info exists env(SIMILE_VERSION)]} {
@@ -1047,13 +1048,13 @@ proc ControlDraw {prologVersion} {
 	    }
 	}
     }
-    cd $oldDir
 
     set userinfo(done) 1
-
+    cd $::execDir
     if {[catch {package require -exact Unpacker $env(SIMILE_VERSION)} dummy]} {
 	error "Could not find an unpacker for Simile -- $dummy"
     }
+    cd $oldDir
 
     if {[string match windows $tcl_platform(platform)]} {
 	c_testlicense
@@ -2087,7 +2088,7 @@ proc SaveProjectFile {topNode path tgt} {
 	fileparams::Save $topNode $topNode
 
 	set ::preSelect [file join $path model.sxf]
-	similescript::$::helperTable(VariableList)::Save \
+	similescript::$::helperTable(ParamEditor)::Save \
 	    $runState($topNode,parmsId) ${topNode}_expt
     }
 

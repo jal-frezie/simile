@@ -30,6 +30,8 @@ proc MakeHelperMenu {} {
     set oldDir [pwd]
     cd $SIMILE_PATH/IOTools
     AddHelperSublist $fm $lm "Add tool" 2
+#    set ::helperTable(VariableList) $::helperTable(ParamEditor) ;# unbotch
+# -- switching also requires change to AddToWatched
     set ioDir [file join $custom(prefDir) IOTools]
 #do_in_editor puts "locals in $ioDir"
 # test for version file tells us if user dir is same as installation dir --
@@ -210,10 +212,12 @@ proc AddHelperSublist {fm lm title ct} {
 	if {[info exists newHelperClass]} {
 	    set action [similescript::${newHelperClass}::Identify]
 	    set actions [list {Run control} {Explorer (DIY version)} \
-		    {PEST interface} {Plotter} {Slider control} {Data table}]
+			     {PEST interface} {Plotter} {Slider control} \
+			     {Data table} {Explorer (Tile version)}]
 	    if {[set posn [lsearch $actions $action]]>-1} {
-		set classIdx [lindex {RunControl VariableList pestInterface \
-			       Plotter SliderControl TableViewer} $posn]
+		set classIdx \
+		    [lindex {RunControl ParamEditor pestInterface Plotter \
+				 SliderControl TableViewer VariableList} $posn]
 		set helperTable($classIdx) $newHelperClass
 	    }
 	    lappend fentries [list $newHelperClass $action [tr. $action]]
@@ -1471,12 +1475,14 @@ proc StartRun {node} {
     set hlp [UniqueId helper]
     $helperId $hlp $runClass outputs
     set runState($node,inspId) $hlp
+
     
     set ::RunEnv::CurrentContainer $RunEnv::paramFrame($node)
     set oldInsp helperTable($::RunEnv::CurrentContainer.container,whichInstance)
     if {[info exists $oldInsp]} {
 	itcl::delete object [set $oldInsp] ;# model components may have changed
     }
+    set helperId similescript::$helperTable(ParamEditor)
     set hlp [UniqueId helper $hlp]
     $helperId $hlp $runClass explorer
     set runState($node,parmsId) $hlp
