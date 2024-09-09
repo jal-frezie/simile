@@ -40,7 +40,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
     # Insert an instance of the inspector helper
     set ::RunEnv::CurrentContainer $t
     set hlp [UniqueId helper]
-    set helperId $::helperTable(VariableList)
+    set helperId $::helperTable(ParamEditor)
     set runClass $::classTable(run,$topNode)
     array unset widgetNames /$topNode/*
     do_for_node $topNode similescript::$helperId $hlp $runClass parameters
