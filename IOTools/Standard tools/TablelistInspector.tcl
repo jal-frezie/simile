@@ -49,11 +49,11 @@ itcl::class similescript::$newHelperClass {
 	scrollbar $tableframe.bar -command "$tableframe.table yview"
 	pack $tableframe.bar -side right -fill y
 	set tbl [tablelist::tablelist $tableframe.table \
-		     -columns {0 "Component" 0 "Helper icons"} -stretch all \
-		     -yscrollcommand "$tableframe.bar set"]
-        pack $tbl -fill both -expand true
-#        $tableframe setwidget [::ttk::treeview $tbl]
-        pack $tableframe -expand true -fill both
+		     -columns {0 C left 0 H right} -showlabels 0 \
+		     -stretch all -yscrollcommand "$tableframe.bar set"]
+	$tbl columnconfig 0 -maxwidth 32
+        pack $tbl -fill both -expand 1
+        pack $tableframe -fill both -expand 1
 
 	set context [GetState $winId] ;# caption path of submodel to go at top
 	set chop [string length $context]
@@ -90,12 +90,21 @@ itcl::class similescript::$newHelperClass {
 		    set parent $submodel($parentLabel)
 		}
 		set submodel($path) $component
-		set new [$tbl insertchild $parent end [list [BlankCrs [lindex $path end]]]]
-		$tbl rowconfig $new -name $component
+		set bkgnd $parent
+		if {$makeTree} {
+		    set bkgnd $component
+		}
+		set fColour [GetFromProlog tk_get_info($bkgnd,colour)]
+		if {$fColour eq "clear"} {set fColour {}}
+		set capt [BlankCrs [lindex $path end]]
+		set new [$tbl insertchild $parent end [list $capt]]
+		$tbl rowconfig $new -name $component -bg $fColour
 		$tbl cellconfig $new,0 -image $image
 	    }
 	}
 	bind [$tbl bodytag] <Button-1> [::itcl::code ProdIfComp %W %x %y]
+	bind [$tbl bodytag] <Motion> [::itcl::code MoveInInsp %W %X %Y %x %y]
+	bind [$tbl bodytag] <Leave> RemovePopup
     }
 
     public method Display {time dispInt step} {
@@ -132,7 +141,48 @@ itcl::class similescript::$newHelperClass {
 	set row [$tbl containing $y]
 	ProdFromHelper [winfo parent [winfo parent $tbl]] \
 	    [$tbl rowcget $row -name] [lindex [$tbl rowcget $row -text] 0]
-    }    
+    }
+    
+    proc DoInspPopup {winId X Y x y} {
+	global helperTable runState myNode
+
+	set plName $helperTable($winId,whatPopped)
+	if {![llength $plName]} {
+	    return
+	}
+	if {$runState($myNode,modelRunning)>1} {
+	    PostPopup $winId $X $Y
+#	    set trans [GetTransTable $plName]
+#	    if {[catch {GetModelValue $plName} mVal]} {
+##		set missing [lindex [split $mVal \"] 1]
+##		set value \
+##		    "Missing value: [lindex [DescribeComponent $missing] 0]"
+#		set value no_value
+#	    } else {
+#		set value [lindex $mVal 0]
+#		#puts "trans $trans value $value"
+#	    }
+	    AddPopupMessage novalue \#ffffc0 GetShortVals $myNode $plName
+	}
+    }
+    
+    proc MoveInInsp {w X Y x y} {
+	global helperTable
+	foreach {tbl x y} [tablelist::convEventFields $w $x $y] {}
+	set row [$tbl containing $y]
+	if {$row<0} return
+
+	set plName [$tbl rowcget $row -name]
+	if {[info exists helperTable($tbl,whatPopped)]} {
+	    if {[string equal $plName $helperTable($tbl,whatPopped)]} {
+		return; #; it's already queueued
+	    }
+	}
+	set helperTable($tbl,whatPopped) $plName
+	    # changed row; renew popup
+	RemovePopup
+	eval QueuePopup [namespace code DoInspPopup] $tbl $X $Y $x $y
+    }
 
     proc PreparePath {context SubbedComp} {
 	# substitute " " for <cr>s so entry goes on one line # no - need the crs
