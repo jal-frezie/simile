@@ -213,7 +213,7 @@ proc AddHelperSublist {fm lm title ct} {
 	    set action [similescript::${newHelperClass}::Identify]
 	    set actions [list {Run control} {Explorer (DIY version)} \
 			     {PEST interface} {Plotter} {Slider control} \
-			     {Data table} {Explorer (Tile version)}]
+			     {Data table} {Explorer (Tablelist version)}]
 	    if {[set posn [lsearch $actions $action]]>-1} {
 		set classIdx \
 		    [lindex {RunControl ParamEditor pestInterface Plotter \

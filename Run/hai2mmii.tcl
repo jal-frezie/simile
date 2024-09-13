@@ -177,8 +177,8 @@ proc AddToWatched {node} {
 
     if {$helperTable(beingCalled) eq ""} return
     lappend helperTable($helperTable(beingCalled),foci) $node
-    $helperTable(VariableList)::AddHelperLeaf $RunEnv::variableListFrame($myNode).container $node $helperTable(beingCalled)
-#    $::runState($myNode,inspId) HelperLeaf $node $helperTable(beingCalled) 1
+#    $helperTable(VariableList)::AddHelperLeaf $RunEnv::variableListFrame($myNode).container $node $helperTable(beingCalled)
+    $::runState($myNode,inspId) HelperLeaf $node $helperTable(beingCalled) 1
 }
 
 proc ListFoci {node} {

@@ -23,7 +23,7 @@ itcl::class similescript::$newHelperClass {
 		set typesToShow {INPUT TABLE BLOCK POPULATION GRID HONEYCOMB}
 	    } submodel {
 		set typesToShow {BLOCK GRID HONEYCOMB}
-#		set showTopLevel 1
+		set showTopLevel 1
 #		$tableframe.table insert {} end -id $::myNode -open 1 \
 #		    -text "TOP LEVEL" -image $iconImages(new)
 		# probably no need to nest others in here, just put at top
@@ -54,9 +54,14 @@ itcl::class similescript::$newHelperClass {
 	$tbl columnconfig 0 -maxwidth 32
         pack $tbl -fill both -expand 1
         pack $tableframe -fill both -expand 1
-
+	if {[info exists showTopLevel]} {
+	    set new [$tbl insertchild root end [list "TOP LEVEL"]]
+	    $tbl rowconfig $new -name [GetNode]
+	    $tbl cellconfig $new,0 -image $iconImages(new)
+	}
 	set context [GetState $winId] ;# caption path of submodel to go at top
 	set chop [string length $context]
+	set universe {}
         foreach component [GetObjectList] {
 	    set fullCapt [GetCaptionPathFromId $component]
 	    if {(![string length $state] || \
@@ -151,7 +156,7 @@ itcl::class similescript::$newHelperClass {
 	    ::RunEnv::FocusTool $curHelpers($node)
 	} else {
 	    ProdFromHelper [winfo parent [winfo parent $tbl]] \
-		[$tbl rowcget $row -name] [lindex [$tbl rowcget $row -text] 0]
+		[$tbl rowcget $row -name] [GetCaptionPathFromId $node]
 	}
     }
     
