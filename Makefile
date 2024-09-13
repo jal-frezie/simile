@@ -630,6 +630,7 @@ install:
 		IOTools/Standard\ tools/Sketch.tcl \
 		IOTools/Standard\ tools/Slider.tcl \
 		IOTools/Standard\ tools/DIYInspector.tcl \
+		IOTools/Standard\ tools/TablelistInspector.tcl \
 		IOTools/Standard\ tools/pestlink.tcl \
 		IOTools/two_table.tcl \
 		README \
