@@ -114,6 +114,8 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method HelperLeaf {node hlpr add} {
+	variable curHelpers
+    
 	set id [[$hlpr info class]::Identify]
 	array set hlprIcons {Plotter graph \
 				 "XY Plotter" plotxy \
@@ -131,16 +133,26 @@ itcl::class similescript::$newHelperClass {
 	set tbl $winId.inspFrame.table
 	if {$add} {
 	    $tbl cellconfigure $node,1 -image $::iconImages($img)
+	    set curHelpers($node) $hlpr
 	} else {
 	    $tbl cellconfigure $node,1 -image {}
+	    unset curHelpers($node)
 	}
     }
     
     proc ProdIfComp {w x y} {
+	variable curHelpers
+    
 	foreach {tbl x y} [tablelist::convEventFields $w $x $y] {}
-	set row [$tbl containing $y]
-	ProdFromHelper [winfo parent [winfo parent $tbl]] \
-	    [$tbl rowcget $row -name] [lindex [$tbl rowcget $row -text] 0]
+	set pair [$tbl containingcell $x $y]
+	foreach {row col} [split $pair ,] {}
+	set node [$tbl rowcget $row -name]
+	if {$col==1 && [info exists curHelpers($node)]} {
+	    ::RunEnv::FocusTool $curHelpers($node)
+	} else {
+	    ProdFromHelper [winfo parent [winfo parent $tbl]] \
+		[$tbl rowcget $row -name] [lindex [$tbl rowcget $row -text] 0]
+	}
     }
     
     proc DoInspPopup {winId X Y x y} {
