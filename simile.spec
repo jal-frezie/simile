@@ -56,7 +56,7 @@ make DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir}/%{name}-%{version}/System/lib/Stu
 # rm %{_mandir}/mann/tkTable.n.gz
 # path too long and 64 not xplat -- keep in Extensions?
 cd ..
-cp -R tablelist* %{_libdir}/%{name}-%{version}/System/lib/Stubs
+cp -R tablelist* ${RPM_BUILD_ROOT}%{_libdir}/%{name}-%{version}/System/lib/Stubs
 cd -
 
 %files
