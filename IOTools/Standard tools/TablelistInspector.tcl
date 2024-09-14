@@ -9,14 +9,14 @@ itcl::class similescript::$newHelperClass {
     proc Identify {} {
 	return "Explorer (Tablelist version)"
     }
-    
+
     constructor {modelInst winTitle {state {}}} {
 # perverse extra body because base class constructor has args
 	Helper::constructor $modelInst $winTitle
     } {
 	global iconImages
 
-	package require tablelist
+	package require tablelist 5-
 	switch -glob $winTitle {
 	    "file parameter" {
 #	        check if relocating param or measurement data
