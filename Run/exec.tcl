@@ -657,10 +657,6 @@ if {[info exists masterId]} { ;# we are in separate thread
 	return [PullAction $nodeId]
     }
  
-    proc AddLogEntry {nodeId args} {
-	InMaster [info level 0] dummy
-    }
- 
 # This one needs to wait till previous call finished    
     proc ShiftDisplays {nodeId args} {
 	global dispDone

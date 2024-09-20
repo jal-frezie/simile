@@ -132,7 +132,7 @@ proc ExplainError {myNode errList origError} {
 	    set problem "it found there was no instance with these indices. This may mean that you have specified a base model instance by an index which is out of range"
 	} "User-defined interruption code *" {
 	    set code [lindex $whoopsie end]
-	    set problem "there was a user-defined interruption: $code"
+	    set problem $code
 	    set severity 0
 	} "abort request from the user" {
 	    set problem "the user chose to abort a long operation"
@@ -203,8 +203,7 @@ proc ExplainError {myNode errList origError} {
 	    set icon info
 	}
     }
-    AddLogEntry $myNode $specifics
-    ExecQuery $specifics $icon top {} ok
+    ExecQuery $myNode $specifics $icon
     # do it after idle so this process is not hung till user responds
 #    RaiseModelWindow $myNode
     return $severity

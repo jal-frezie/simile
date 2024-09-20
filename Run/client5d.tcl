@@ -47,12 +47,8 @@ proc Query {act level topic win opts} {
     return $response
 }
 
-proc ExecQuery {args} {
-    eval Query $args
-}
-
-proc AddLogEntry {top msg} {
-    lappend execLog $msg
+proc ExecQuery {node specifics icon} {
+    Query $specifics $icon top {} ok
 }
 
 # ignore GUI updates by default

@@ -1325,7 +1325,7 @@ proc InitExecThread {node} {
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
 	# callback cmds will need adjusting to include global nodeid
-	foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached AddLogEntry ExecQuery TransEnums InDays VisitUrl FileParamDialogue ListFoci ReportParams extract_list extract_json extract_gif_tail distinct_values} {
+	foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached ExecQuery TransEnums InDays VisitUrl FileParamDialogue ListFoci ReportParams extract_list extract_json extract_gif_tail distinct_values} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }
@@ -1912,14 +1912,23 @@ proc FinishExecThen {win act} {
     $helperTable(RunControl)::AbortFromMenu $node $act
 }
 
-proc ExecQuery {specifics icon helpRef parent opts} {
+proc ExecQuery {node specifics icon} {
+    set thrown [lindex $specifics end]
+    if {[string is integer -strict $thrown]} {
+	if {[info exists ::msgs($thrown)]} {
+	    lset specifics end $::msgs($thrown)
+	} else {
+	    lset specifics end "model-specific stop condition $thrown occurred"
+	}
+    }
+    AddLogEntry $node $specifics
     if {[PrefValue custom(showPauseInfo) showPauseInfo] eq \
 	    [tr. "In log tab only"] && \
 	    $icon eq "info" || [info exists ::hideQuery]} {
 	return ok
 # rely on log entry
     } else {
-	return [Query $specifics $icon $helpRef $parent $opts]
+	return [Query $specifics $icon top {} ok]
     }
 }
 

@@ -151,6 +151,7 @@ itcl::class similescript::$newHelperClass {
 	foreach {tbl x y} [tablelist::convEventFields $w $x $y] {}
 	set pair [$tbl containingcell $x $y]
 	foreach {row col} [split $pair ,] {}
+	if {$row<0} return
 	set node [$tbl rowcget $row -name]
 	if {$col==1 && [info exists curHelpers($node)]} {
 	    ::RunEnv::FocusTool $curHelpers($node)
