@@ -24,9 +24,11 @@ set splinePts [expr {2*$cornerPts+1}]
 #lappend arcPts [expr 1-$expansion*(1-[lindex $arcPts end])/[lindex $arcPts 0]]
 
 if {!$headless} {
+    set preloadFont [expr {$niceSize/12.0}]
     switch [tk windowingsystem] {
 	x11 {
 	    set hideTinies 40
+	    set preloadFont 1.0
 	} win32 {
 	    set hideTinies 6
 	} aqua {
@@ -2172,7 +2174,7 @@ proc ExtractFontData {font} {
     }
     # already a new style one, do not pass Tk in case headless
     return [list $fontAttrs(-family) $fontAttrs(-weight) \
-		$fontAttrs(-slant) [expr $fontAttrs(-size)*12.0/$::niceSize]]
+		$fontAttrs(-slant) [expr {$fontAttrs(-size)/$::preloadFont}]]
 }
 
 proc CopyLooks {t n object nta} {
@@ -2435,7 +2437,7 @@ proc ResetFont { top } {
 
 proc AssembleFont {family weight style textsize} {
     set newFont [list -family $family -weight $weight -slant $style \
-		     -size [expr {round($textsize*$::niceSize/12.0)}]]
+		     -size [expr {round($textsize*$::preloadFont)}]]
     return $newFont
 }
 
