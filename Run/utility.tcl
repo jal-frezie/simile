@@ -824,18 +824,34 @@ proc LoadIconImages {} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Control/${fn}.gif"]
     }
-    foreach fn {tick cross function} {
-	set iconImages($fn) \
-	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
+    foreach fn {tick cross function inputs} {
+	$rawImg read "../Images/Eqnbar/${fn}.gif" -shrink
+	set iconImages($fn) [image create photo]
+	$iconImages($fn) copy $rawImg -zoom $growth
     }
-    foreach fn {display graph grid plotxy table slider multi new open save edit reel noreel text zap
-		drop rerun} {
-	set iconImages($fn) \
-	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+    foreach fnImg [glob "../Images/Toolbar/Large/*.gif"] {
+	set fn [file rootname [file tail $fnImg]]
+	set normalImg [eval file join [lreplace [file split $fnImg] \
+					    end-1 end-1]]
+	$rawImg read $normalImg -shrink
+	set iconImages($fn) [image create photo]
+	$iconImages($fn) copy $rawImg -zoom $growth
+	$rawImg read $fnImg -shrink
+	set iconImages(lrg_$fn) [image create photo]
+	$iconImages(lrg_$fn) copy $rawImg -zoom $growth
+    }
+    foreach fn {display grid plotxy slider multi edit noreel zap
+	drop copyc splithoriz splitvert notebookpage notebook
+	clear add remove property mainwin input file list less greater
+	pause refresh} {
+	$rawImg read "../Images/Toolbar/${fn}.gif" -shrink
+	set iconImages($fn) [image create photo]
+	$iconImages($fn) copy $rawImg -zoom $growth
     }
     foreach fn {polys 3d_objects flask globe caselist compfact permut} {
-	set iconImages($fn) \
-	    [image create photo -file "../Images/Toolbar/${fn}.png"]
+	$rawImg read "../Images/Toolbar/${fn}.png" -shrink
+	set iconImages($fn) [image create photo]
+	$iconImages($fn) copy $rawImg -zoom $growth
     }
     # images for fake ttk radio/check buttons in menu entries --
     # real ones are too theme-dependent to emulate
@@ -844,12 +860,6 @@ proc LoadIconImages {} {
 #         set iconImages($fn) [image create photo]
 # 	$iconImages($fn) copy $rawImg -zoom $growth
     # }
-    foreach fn {submodel compartment flow variable input file list condition \
-		    creation reproduction immigration loss alarm} {
-	$rawImg read "../Images/Toolbar/${fn}.gif" -shrink
-        set iconImages($fn) [image create photo]
-	$iconImages($fn) copy $rawImg -zoom $growth
-    }
     if {[info exists ::do_events]} {
 	foreach fn {event state squirt} {
 	    $rawImg read "../Images/Toolbar/${fn}.gif" -shrink

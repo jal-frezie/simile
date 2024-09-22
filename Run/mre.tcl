@@ -70,7 +70,7 @@ namespace eval RunEnv {
     
     # A top level window to contain the helpers
     proc Create { node } {
-        global helperTable tcl_platform defScaling looks
+        global helperTable tcl_platform defScaling looks iconImages
         variable runControlFrame
         variable sliderControlFrame;
         variable variableListFrame;
@@ -192,7 +192,7 @@ namespace eval RunEnv {
                     set gif [lindex $item 0]
                     set helptext [lindex $item 1]
                     set command [lindex $item 2]
-                    set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image [image create photo  -file "$::SIMILE_PATH/Images/Toolbar/$gif"] \
+                    set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image $iconImages([file rootname $gif]) \
 				       -command $command]
 		    FixDisabledImgBug $newButton
                     pack $newButton -padx 1 -pady 1  -side left -anchor w

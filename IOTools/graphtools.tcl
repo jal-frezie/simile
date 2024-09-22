@@ -65,8 +65,7 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
 # to set button abilities by name instead of number (which they should anyway)
 	set newButton \
 	    [ttk::button $f.[file rootname $gif] -style Toolbutton \
-		 -image [image create photo \
-			     -file "$::SIMILE_PATH/Images/Toolbar/$gif"] \
+		 -image $::iconImages([file rootname $gif]) \
 		 -takefocus 0 -command $command]
 	pack $newButton -side left
 	FixDisabledImgBug $newButton

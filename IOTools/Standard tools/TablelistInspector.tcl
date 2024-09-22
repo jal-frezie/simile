@@ -186,11 +186,23 @@ itcl::class similescript::$newHelperClass {
     
     proc MoveInInsp {w X Y x y} {
 	global helperTable
+	variable curHelpers
+	
 	foreach {tbl x y} [tablelist::convEventFields $w $x $y] {}
-	set row [$tbl containing $y]
-	if {$row<0} return
+	set pair [$tbl containingcell $x $y]
+	foreach {row col} [split $pair ,] {}
+	if {$row<0} {
+	    RemovePopup
+	    return
+	}
 
 	set plName [$tbl rowcget $row -name]
+	if {$col==1 && [info exists curHelpers($plName)]} {
+	    set toShow [[$curHelpers($plName) info class]::Identify]
+	    RemovePopup
+	    eval QueuePopup AddWidgetPopup $tbl $X $Y [list $toShow]
+	    return
+	}
 	if {[info exists helperTable($tbl,whatPopped)]} {
 	    if {[string equal $plName $helperTable($tbl,whatPopped)]} {
 		return; #; it's already queueued

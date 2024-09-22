@@ -900,16 +900,18 @@ proc AddGrid {c onCol wl wt wr wb} {
 }
 
 proc FixDisabledImgBug {ttkButton} {
-    # we shall use this as a convenient spot to enlarge all button images  for hidpi
+    # we shall use this as a convenient spot to enlarge all button
+    # images for hidpi -- actually not, because we use the images all
+    # over the place so enlarge them when we load
 
-    set growth [expr {int($::defScaling)}]
-    set origImg [$ttkButton cget -image]
-    if {$growth>1} {
-        set fatImg [image create photo]
-	$fatImg copy $origImg -zoom $growth
-	set origImg $fatImg
-	$ttkButton config -image $origImg
-    }
+#    set growth [expr {int($::defScaling)}]
+#    set origImg [$ttkButton cget -image]
+#    if {$growth>1} {
+#        set fatImg [image create photo]
+#	$fatImg copy $origImg -zoom $growth
+#	set origImg $fatImg
+#	$ttkButton config -image $origImg
+#    }
 
 # Only do for Cocoa so disabled images greyed elsewhere
     if {$::inCocoa} {
@@ -2069,8 +2071,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack [ttk::separator $nb.afterSeparator -orient horizontal] \
 	-fill x -side bottom
     set buttonImages $SIMILE_PATH/Images/Toolbar
+    set imgPre {}
     if {[PrefValue custom(bigButtons) bigButtons]} {
         append buttonImages /Large
+	set imgPre lrg_
     }
     foreach navCmd {{new {local empty}} {open {local open_all}} \
                 {save {file save}}  {print {local print}} {separator1}\
@@ -2086,34 +2090,32 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [ttk::separator $nb.$handle -orient vertical] \
 		-fill y -side left
         } else  {
-            set testImg [image create photo -file $buttonImages/${handle}.gif]
-            pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
+            pack [::ttk::button $nb.$handle -image $iconImages($imgPre$handle) \
+		      -style Toolbutton \
                     -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
-                    -side left -padx 2 -pady 2
+		-side left -padx 2 -pady 2
 	    FixDisabledImgBug $nb.$handle
             BindPopup $nb.$handle $handle
         }
     }
-    set testImg [image create photo -file $buttonImages/tog_grid.gif]
-    pack [::ttk::checkbutton $nb.tog_grid -image $testImg -style Toolbutton \
-           -command [concat "MenuSelect $c" {local tog_grid}]] \
-           -side left -padx 2 -pady 2
+    pack [::ttk::checkbutton $nb.tog_grid -image $iconImages(${imgPre}tog_grid) -style Toolbutton \
+	      -command [concat "MenuSelect $c" {local tog_grid}]] \
+	-side left -padx 2 -pady 2
     if {[PrefValue custom(initGrid) initGrid]} {
       $nb.tog_grid state selected
     }
     BindPopup $nb.tog_grid tog_grid
     
     foreach navCmd {{rerun {local rerun}} {separator6} \
-                {find {local newfind}} {findmore {local findnext}} {separator7}} {
+                {find {local newfind}} {findmore {local findnext}} {separator7} {runenv {local raiseMRE}}} {
         set handle [lindex $navCmd 0]
         if {[string match separator* $handle]} {
             pack [ttk::separator $nb.$handle -orient vertical] \
 		-fill y -side left
         } else  {
-            set testImg [image create photo -file $buttonImages/${handle}.gif]
-            pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
-                    -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
-                    -side left -padx 2 -pady 2
+            pack [::ttk::button $nb.$handle -image $iconImages($imgPre$handle) -style Toolbutton \
+		      -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
+		-side left -padx 2 -pady 2
 	    FixDisabledImgBug $nb.$handle
             BindPopup $nb.$handle $handle
         }
@@ -2121,14 +2123,13 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $nb.findmore configure -state disabled
     
     # button to raise single-window run env (ready for more tools in this section)
-    foreach navCmd {{runenv {local raiseMRE}}} {
+    foreach navCmd {} {
         set handle [lindex $navCmd 0]
         if {[string match separator* $handle]} {
             pack [ttk::separator $nb.$handle -orient vertical] \
 		-fill y -side left
         } else  {
-            set testImg [image create photo -file $buttonImages/${handle}.gif]
-            pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
+            pack [::ttk::button $nb.$handle -image $iconImages($imgPre$handle) -style Toolbutton \
                     -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
 	    FixDisabledImgBug $nb.$handle
@@ -2145,9 +2146,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             
             pack [ttk::separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
-            set testImg [image create photo -file $buttonImages/${mode}.gif]
             set bt [::ttk::radiobutton $tb.$mode -command "ItemSelect $mode"  \
-                -variable MIpushedbutton -value $mode -image $testImg -style Toolbutton]
+                -variable MIpushedbutton -value $mode -image $iconImages($imgPre$mode) -style Toolbutton]
             pack $bt -side left -padx 2 -pady 2
 	    FixDisabledImgBug $bt
             BindPopup $bt add_$mode
@@ -2158,8 +2158,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack [ttk::separator $tb.spacer -orient vertical] -fill y -side left
     
     foreach mode {select move ghost snap} {
-        set testImg [image create photo -file $buttonImages/${mode}.gif]
-        set bt [::ttk::button $tb.$mode -image $testImg -command "ModeSelect $mode" -style Toolbutton]
+        set bt [::ttk::button $tb.$mode -image $iconImages($imgPre$mode) -command "ModeSelect $mode" -style Toolbutton]
 	pack $bt -side left -padx 2 -pady 2
 	FixDisabledImgBug $bt
         BindPopup $bt $mode
@@ -2235,8 +2234,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     frame $eb.padding2 -width 3
     pack $eb.padding2 -side left
     
-    set image [image create photo -file "$SIMILE_PATH/Images/Eqnbar/inputs.gif"]
-    ::ttk::menubutton $eb.inputs -state disabled -image $image
+    ::ttk::menubutton $eb.inputs -state disabled -image $iconImages(inputs)
     FixDisabledImgBug $eb.inputs
     pack $eb.inputs -side left
     BindPopup $eb.inputs inputs
