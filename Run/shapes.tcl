@@ -1058,7 +1058,7 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
 #        set closeFont [expr round($realFont)]
 #    }
     set useFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
-            [lindex $fontData 2] $realFont]
+            [lindex $fontData 2] -$realFont]
     set textX [Scale $w [expr [lindex $ptz 0] + $looks($n,$type,xoffset)*$fatness/100]]
     set textY [Scale $w [expr [lindex $ptz 1] + $looks($n,$type,yoffset)*$fatness/100]]
 # experimental background box for text
@@ -1606,11 +1606,10 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	    if {$newTextSize < $hideTinies} {
 		$winId itemconfigure $object -state hidden
 	    } else {
-		$winId itemconfigure $object -font \
+		$winId itemconfigure $object -state normal -font \
 		    [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
 			 [lindex $fontData 2] \
-			 [expr {round($newTextSize/12.0)}]]
-		$winId itemconfigure $object -state normal
+			 [expr {-$newTextSize/12.0}]]
 	    }
 	    set oldWidth [$winId itemcget $object -width]
 	    $winId itemconfigure $object -width [expr {$fontor*$oldWidth}]
@@ -1626,8 +1625,7 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 		if {$hideTinies && $newWidth<$minWidth} {
 		    $winId itemconfigure $object -state hidden
 		} else {
-		    $winId itemconfigure $object -width $newWidth
-		    $winId itemconfigure $object -state normal
+		    $winId itemconfigure $object -state normal -width $newWidth
 		}
 		AdjustArrow $winId $object $factor
 	    }
@@ -1672,8 +1670,7 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	    if {$hideTinies && $newWidth<$minWidth} {
 		$winId itemconfigure $object -state hidden
 	    } else {
-		$winId itemconfigure $object -width $newWidth
-		$winId itemconfigure $object -state normal
+		$winId itemconfigure $object -state normal -width $newWidth
 	    }
 	}
 	}
@@ -2113,7 +2110,6 @@ proc LoadLooks {t n object} {
     global looks
     
     if {[string compare $object influence]} {
-#        puts "ExtractFontData looks($n,$object,font) [ExtractFontData $looks($n,$object,font)]"
 	set fontData [ExtractFontData $looks($n,$object,font)]
 	set looks(family) [lindex $fontData 0]
 	set looks(weight) [lindex $fontData 1]
@@ -2176,7 +2172,7 @@ proc ExtractFontData {font} {
     }
     # already a new style one, do not pass Tk in case headless
     return [list $fontAttrs(-family) $fontAttrs(-weight) \
-		$fontAttrs(-slant) [expr -$fontAttrs(-size)*12.0/$::niceSize]]
+		$fontAttrs(-slant) [expr $fontAttrs(-size)*12.0/$::niceSize]]
 }
 
 proc CopyLooks {t n object nta} {
@@ -2439,8 +2435,7 @@ proc ResetFont { top } {
 
 proc AssembleFont {family weight style textsize} {
     set newFont [list -family $family -weight $weight -slant $style \
-		     -size [expr {-round($textsize*$::niceSize/12.0)}]]
-
+		     -size [expr {round($textsize*$::niceSize/12.0)}]]
     return $newFont
 }
 
