@@ -738,11 +738,12 @@ proc ModelWindow {winName} {
 
     wm iconphoto $winName splash
     # Create a scrollable canvas
-    set c [canvas $winName.canvas -bg $looks(windowColor) -selectbackground $looks(windowColor) -confine 1 \
+    set c [canvas $winName.canvas -bg $looks(windowColor) -confine 1 \
 	       -xscrollcommand "AdjustCanvas $winName toolSlot x" \
 	       -yscrollcommand "AdjustCanvas $winName canvas y" \
 	       -xscrollincrement $looks(scrollIncr) \
 	       -yscrollincrement $looks(scrollIncr)]
+    #  -selectbackground $looks(windowColor) removed they did not show in Windoz
     # scrollincrements set the only way we can get precise scrolling...
     
     # this rectangle will be resized to fill the scrollable area and coloured to
