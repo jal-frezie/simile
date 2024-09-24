@@ -24,11 +24,11 @@ set splinePts [expr {2*$cornerPts+1}]
 #lappend arcPts [expr 1-$expansion*(1-[lindex $arcPts end])/[lindex $arcPts 0]]
 
 if {!$headless} {
-    set preloadFont [expr {$niceSize/12.0}]
+    set preloadFont [expr {-$niceSize/12.0}]
     switch [tk windowingsystem] {
 	x11 {
 	    set hideTinies 40
-	    set preloadFont 1.0
+	    set preloadFont -1.0
 	} win32 {
 	    set hideTinies 6
 	} aqua {
@@ -1060,7 +1060,7 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
 #        set closeFont [expr round($realFont)]
 #    }
     set useFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
-            [lindex $fontData 2] -$realFont]
+		     [lindex $fontData 2] [expr {round($::preloadFont*$realFont)}]]
     set textX [Scale $w [expr [lindex $ptz 0] + $looks($n,$type,xoffset)*$fatness/100]]
     set textY [Scale $w [expr [lindex $ptz 1] + $looks($n,$type,yoffset)*$fatness/100]]
 # experimental background box for text
@@ -1611,7 +1611,7 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 		$winId itemconfigure $object -state normal -font \
 		    [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
 			 [lindex $fontData 2] \
-			 [expr {-$newTextSize/12.0}]]
+			 [expr {round($::preloadFont*$newTextSize/12.0)}]]
 	    }
 	    set oldWidth [$winId itemcget $object -width]
 	    $winId itemconfigure $object -width [expr {$fontor*$oldWidth}]
@@ -2174,7 +2174,7 @@ proc ExtractFontData {font} {
     }
     # already a new style one, do not pass Tk in case headless
     return [list $fontAttrs(-family) $fontAttrs(-weight) \
-		$fontAttrs(-slant) [expr {$fontAttrs(-size)/$::preloadFont}]]
+		$fontAttrs(-slant) $fontAttrs(-size)]
 }
 
 proc CopyLooks {t n object nta} {
@@ -2437,7 +2437,7 @@ proc ResetFont { top } {
 
 proc AssembleFont {family weight style textsize} {
     set newFont [list -family $family -weight $weight -slant $style \
-		     -size [expr {round($textsize*$::preloadFont)}]]
+		     -size $textsize]
     return $newFont
 }
 
