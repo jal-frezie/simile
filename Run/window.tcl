@@ -906,7 +906,7 @@ proc FixDisabledImgBug {ttkButton} {
     # over the place so enlarge them when we load
 
 #    set growth [expr {int($::defScaling)}]
-#    set origImg [$ttkButton cget -image]
+    set origImg [$ttkButton cget -image]
 #    if {$growth>1} {
 #        set fatImg [image create photo]
 #	$fatImg copy $origImg -zoom $growth
