@@ -24,11 +24,10 @@ set splinePts [expr {2*$cornerPts+1}]
 #lappend arcPts [expr 1-$expansion*(1-[lindex $arcPts end])/[lindex $arcPts 0]]
 
 if {!$headless} {
-    set preloadFont [expr {-$niceSize/12.0}]
+#    set preloadFont [expr {$niceSize/12.0}]
     switch [tk windowingsystem] {
 	x11 {
-	    set hideTinies 40
-	    set preloadFont -1.0
+	    set hideTinies 4
 	} win32 {
 	    set hideTinies 6
 	} aqua {

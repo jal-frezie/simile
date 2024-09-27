@@ -489,6 +489,14 @@ set scalRat [ChooseIntegerRatio $textBigness 0.9]
 set defScaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
 tk scaling $defScaling
 
+pack [canvas .hidden_c]
+.hidden_c create text 200 125 -text "compvarsubmodel0123456789" \
+    -font "-size $niceSize"
+foreach {qTextL qTextT qTextR qTextB} [.hidden_c bbox 1] {}
+set preloadFont [expr {$niceSize*20.0/($qTextR-$qTextL)}]
+#puts $preloadFont
+# this will be used for sizing text items on canvas
+
 set sphXdiam 400
 set sphYdiam 316
 set iconDiam [expr {round(30*$textBigness)}]
@@ -571,11 +579,7 @@ if {[info exists SimileAutoObjLoaded]} {
     update ;# UpdateByOS not loaded yet, hope this is OK on Mac
 }
 
-# now before we put up any regular Simile windows, reset the scaling, because
-# a change in monitor layout may cause it to be reset for us, resulting in bad
-# screen coordinates
-tk scaling $defScaling
-
+#after 1000
 wm withdraw . ;# already withdrawn if not Linux
 # after 5000 ;# pause to admire
 } ;# matches if {!$headless}
