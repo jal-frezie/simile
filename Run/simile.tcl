@@ -490,7 +490,7 @@ set defScaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
 tk scaling $defScaling
 
 pack [canvas .hidden_c]
-.hidden_c create text 200 125 -text "compvarsubmodel0123456789" \
+.hidden_c create text 200 125 -text "compvarstateeventsubmodel_0123456789" \
     -font "-size $niceSize"
 foreach {qTextL qTextT qTextR qTextB} [.hidden_c bbox 1] {}
 set preloadFont [expr {$niceSize*20.0/($qTextR-$qTextL)}]
