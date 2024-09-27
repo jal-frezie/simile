@@ -487,8 +487,9 @@ pack .hidden_e
 set textBigness [expr {$defScaling*[winfo reqwidth .hidden_e]/288}]
 set scalRat [ChooseIntegerRatio $textBigness 0.9]
 set defScaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
-tk scaling $defScaling
-
+if {$tcl_platform(platform) ne "windows"} {
+    tk scaling $defScaling
+}
 pack [canvas .hidden_c]
 .hidden_c create text 200 125 -text "compvarstateeventsubmodel_0123456789" \
     -font "-size $niceSize"
