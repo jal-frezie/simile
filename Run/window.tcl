@@ -1842,7 +1842,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add separator
     AddCmdAndAccel $winid edit "Properties..." "MenuSelect $c edit properties"
     if ![string match "Darwin" $tcl_platform(os)] {
-      $fm add command -label [tr. Preferences...] -command Pref_Dialog
+      $fm add command -label [tr. Preferences...] -command Pref_Dialog -accelerator "$accKey+?"
+    AddAccelerator $winid edit [tr. Preferences...] "<$accSym-question>"
     }
     UnderlineUniquely $fm
     
