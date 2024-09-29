@@ -1062,21 +1062,6 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
 		     [lindex $fontData 2] [expr {round($::preloadFont*$realFont)}]]
     set textX [Scale $w [expr [lindex $ptz 0] + $looks($n,$type,xoffset)*$fatness/100]]
     set textY [Scale $w [expr [lindex $ptz 1] + $looks($n,$type,yoffset)*$fatness/100]]
-# experimental background box for text
-    if {$looks($n,$type,txtbg)} {
-	set txtbg \#ffffc0
-    } else {
-	set txtbg {}
-    }
-    set backBox [$w create rectangle 0 0 1 1 -outline {} -fill $txtbg \
-		     -tags "$tagSet /${type}_text/"]
-    $w dtag $backBox editable
-    $w dtag $backBox currently_editable
-    if {$looks($n,$type,txtbd)} {
-	set width [Scale $w [expr {$fatness/100}]]
-	$w create line 0 0 1 1 -fill $textColor -width $width \
-	    -tags "[$w gettags $backBox] realwidth($width)"
-    }
     set ankh $looks($n,$type,textanchor)
 # rotate clockwise for horizontal flow
     if {![string equal $type $ptype] && ![string equal c $ankh]} {
@@ -1090,6 +1075,50 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     } else {
 	set tjust center ;# Blooaaargh! Spell it right dudes!
     }
+    set tWid 0
+    set tHgt 0
+    foreach subCapt [split $capt \n] {
+	set tWid [expr {max($tWid, [font measure $useFont $subCapt])}]
+	set tHgt [expr {$tHgt+[font metrics $useFont -linespace]}]
+    }
+# ankh seems always to be n at the moment...
+    if {[string match s* $ankh]} {
+	set tt [expr {$textY-$tHgt}]
+	set tb $textY
+    } elseif {[string match n* $ankh]} {
+	set tt $textY
+	set tb [expr {$textY+$tHgt}]
+    } else {
+	set tt [expr {$textY-$tHgt/2}]
+	set tb [expr {$textY+$tHgt/2}]
+    }
+    switch $tjust {
+	right {
+	    set tl [expr {$textX-$tWid}]
+	    set tr $textX
+	} left {
+	    set tl $textX
+	    set tr [expr {$textX+$tWid}]
+	} center {
+	    set tl [expr {$textX-$tWid/2}]
+	    set tr [expr {$textX+$tWid/2}]
+	}
+    }
+# experimental background box for text
+    if {$looks($n,$type,txtbg)} {
+	set txtbg \#ffffc0
+    } else {
+	set txtbg {}
+    }
+    set backBox [$w create rectangle $tl $tt $tr $tb -outline {} -fill $txtbg \
+		     -tags "$tagSet /${type}_text/"]
+    $w dtag $backBox editable
+    $w dtag $backBox currently_editable
+    if {$looks($n,$type,txtbd)} {
+	set width [Scale $w [expr {$fatness/100}]]
+	$w create line $tr $tt $tl $tt $tl $tb $tr $tb $tr $tt -width $width \
+	-fill $textColor -tags "[$w gettags $backBox] realwidth($width)"
+    }
     set textItem [$w create text $textX $textY -text $capt -fill $textColor \
 		      -width [expr {$realFont*[lindex $specials 0]}] \
 		      -font $useFont -anchor $ankh -justify $tjust \
@@ -1097,7 +1126,9 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     if {$w ne "ToSVG" && $realFont*12.0 < $::hideTinies} {
 	$w itemconfigure $textItem -state hidden
     }
-    FixBackBox $w $textItem
+    # have done clever to get backbox right before displaying text so it does
+    # not need to be lowered or sized after creation hence works on svg
+#    FixBackBox $w $textItem
 }
 
 # This is called when a new node with a caption is added. The caption should be
