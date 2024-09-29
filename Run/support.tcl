@@ -203,7 +203,7 @@ proc ExplainError {myNode errList origError} {
 	    set icon info
 	}
     }
-    ExecQuery $myNode $specifics $icon
+    ExecQuery $myNode $specifics $icon [info exists ::web_service(node)]
     # do it after idle so this process is not hung till user responds
 #    RaiseModelWindow $myNode
     return $severity

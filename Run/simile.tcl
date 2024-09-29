@@ -488,6 +488,7 @@ set textBigness [expr {$defScaling*[winfo reqwidth .hidden_e]/288}]
 set scalRat [ChooseIntegerRatio $textBigness 0.9]
 set defScaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
 if {$tcl_platform(platform) ne "windows"} {
+    package require Tablelist 5- ;# will mess scaling in Asahi Fedora so do it now
     tk scaling $defScaling
 }
 pack [canvas .hidden_c]
@@ -495,7 +496,7 @@ pack [canvas .hidden_c]
     -font "-size $niceSize"
 foreach {qTextL qTextT qTextR qTextB} [.hidden_c bbox 1] {}
 set preloadFont [expr {$niceSize*20.0/($qTextR-$qTextL)}]
-#puts $preloadFont
+#puts "dS $defScaling pF $preloadFont"
 # this will be used for sizing text items on canvas
 
 set sphXdiam 400

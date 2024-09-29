@@ -1912,7 +1912,7 @@ proc FinishExecThen {win act} {
     $helperTable(RunControl)::AbortFromMenu $node $act
 }
 
-proc ExecQuery {node specifics icon} {
+proc ExecQuery {node specifics icon inBrowser} {
     set thrown [lindex $specifics end]
     if {[string is integer -strict $thrown]} {
 	if {[info exists ::msgs($thrown)]} {
@@ -1921,7 +1921,9 @@ proc ExecQuery {node specifics icon} {
 	    lset specifics end "model-specific stop condition $thrown occurred"
 	}
     }
-    AddLogEntry $node $specifics
+    if {!$inBrowser} {
+	AddLogEntry $node $specifics
+    }
     if {[PrefValue custom(showPauseInfo) showPauseInfo] eq \
 	    [tr. "In log tab only"] && \
 	    $icon eq "info" || [info exists ::hideQuery]} {

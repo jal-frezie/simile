@@ -1442,6 +1442,8 @@ proc InjectGraphics {c canvasFile} {
     # a tcl bug that if the scrollregion is smaller than the window it may not all
     # be displayed.
     # $c delete withtag /base/ ;# these may be deleted and re-created
+    ZoomImage $c is_caption 1 ;# font of saved text is context dependent, reset
+    ZoomImage $c shape_text 1
     UpdateByOS
     set lastIn [ExtractPrologName $c [lindex [$c find all] end]]
     if {$lastIn ne ""} {
