@@ -198,7 +198,6 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
 # outline sections will be stippled. Let's hope 8.5 is better.
 
 proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
-
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set rad [expr ($mr-$ml)/2.0]
     set hm [expr $ml+$rad]
@@ -220,7 +219,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set fCol $::looks($::window_info($w,top_node),$look,fill)
     set width [GetLineSize $w $look $fatness]
     set fuzz [FuzzFor $w $density]
-    set blobSws [concat $fuzz [list -fill $oCol -tags "$tagSet has_info"]]
+    set blobSws [concat $fuzz [list -fill $oCol -tags "$tagSet has_info size_on_this"]]
     # second approximation to fill
 #    scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
 #    scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
@@ -1063,8 +1062,8 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     set textX [Scale $w [expr [lindex $ptz 0] + $looks($n,$type,xoffset)*$fatness/100]]
     set textY [Scale $w [expr [lindex $ptz 1] + $looks($n,$type,yoffset)*$fatness/100]]
     set ankh $looks($n,$type,textanchor)
-# rotate clockwise for horizontal flow
-    if {![string equal $type $ptype] && ![string equal c $ankh]} {
+# rotate clockwise for horizontal flow/squirt
+    if {![string equal $type $ptype] && ![string equal center $ankh]} {
 	set compass {e ne n nw w sw s se e ne}
 	set ankh [lindex $compass [expr {[lsearch $compass $ankh]+2}]]
     }
@@ -2174,7 +2173,7 @@ proc LoadLooks {t n object} {
 	$g.objectsize.scale set $looks($n,$object,objectsize)
 	$g.lines.scale set $looks($n,$object,lines)
 	foreach {workName saveName} {newXOff xoffset newYOff yoffset \
-		     captAnchor captanchor} {
+		     captAnchor captanchor textAnchor textanchor} {
 	    set looks($workName) $looks($n,$object,$saveName)
 	}
 	DoGraphics $t $object $looks($n,$object,objectsize) $looks(captAnchor)
@@ -2284,7 +2283,7 @@ proc DoGraphics {box type size captAnchor} {
             set r [expr $middlex + $size/8]
             set t [expr $middley - $size/4]
             set b [expr $middley + $size/4]
-            PutBowTie $box.canvas $l $t $r $b 100 {} $status $boxTags
+            PutBowTie $box.canvas $l $t $r $b 100 {} $status "$boxTags size_on_this"
 #            PutFatArrow $box.canvas "30 [expr $middley-30] $middlex \
 #                    [expr $middley - 30] $middlex [expr $middley + 30] \
 #                    [expr 2*$middlex - 30] [expr $middley + 30]" \
@@ -2295,7 +2294,7 @@ proc DoGraphics {box type size captAnchor} {
 	    PutFatArrow $box.canvas "$l $middley $r $middley" \
 		1 100 $status $lineTags
 	    set rr [expr $r+$size/2]	    
-	    PutCloud $box.canvas $r $t $rr $b 1 100 {} $status $boxTags
+	    PutCloud $box.canvas $r $t $rr $b 1 100 {} $status $lineTags
         } variable|event {
             set l [expr $middlex - 3*$size/20]
             set r [expr $middlex + 3*$size/20]
@@ -2424,10 +2423,15 @@ proc SampleMark { x y w } {
     
     
     set textItem [GetCaptionItem $w current]
-    $w itemconfigure $textItem \
-	-anchor [FindClosestCompassPoint $w $textItem $x $y]
-    $w coords $textItem $x $y
-    FixBackBox $w $textItem
+    if {$textItem eq ""} return
+    set newCP [FindClosestCompassPoint $w $textItem $x $y]
+    foreach item [$w find withtag movable] {
+	if {[$w type $item] eq "text"} {
+	    $w itemconfigure $item -anchor $newCP
+	    FixBackBox $w $item
+	}
+    }
+    SampleMove $x $y $w
 }
 
 proc SampleMove {x y w} {
@@ -2440,9 +2444,13 @@ proc SampleDrop {x y w} {
 # tweak component size
     global looks
 
-    set looks(captAnchor) [FindClosestCompassPoint $w targetable $x $y]
+    set datumTxt [GetCaptionItem $w eg_normal]
+    foreach {x y} [$w coords $datumTxt] {}
+    set looks(textAnchor) [$w itemcget $datumTxt -anchor]
+    set datumTags targetable&&eg_normal&&size_on_this
+    set looks(captAnchor) [FindClosestCompassPoint $w $datumTags $x $y]
 # now we just have to find out where that is...again I already do it somewhere
-    set tgtBox [$w bbox targetable]
+    set tgtBox [$w bbox $datumTags]
     set baseAnchor [eval FindAnchor $tgtBox $looks(captAnchor)]
 
     set looks(newXOff) [expr {$x-[lindex $baseAnchor 0]}]
@@ -2554,13 +2562,9 @@ proc UpdateOffsets {t n type nta} {
 	set looks($n,$type,yoffset) $looks(newYOff)
 #    }
     if {!$nta} {
-	set looks($n,$type,textanchor) [GetTextAnchor $t]
+	set looks($n,$type,textanchor) $looks(textAnchor)
 	set looks($n,$type,captanchor) $looks(captAnchor)
     }
-}
-
-proc GetTextAnchor {t} {
-    $t.canvas itemcget [GetCaptionItem $t.canvas sample] -anchor
 }
 
 proc ResetLooks {c type} {
@@ -2601,7 +2605,7 @@ proc ResetLooks {c type} {
 	    set looks($c,submodel,textanchor) sw
 	    set looks($c,submodel,captanchor) nw
 	} text {
-	    set looks($c,text,textanchor) c
+	    set looks($c,text,textanchor) center
 	    set looks($c,image,outline) {}
 	    set looks($c,image,text) {}
 	} generic {
