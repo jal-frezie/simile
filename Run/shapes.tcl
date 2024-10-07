@@ -2319,12 +2319,9 @@ proc DoGraphics {box type size captAnchor} {
         } relation {
 	    set l [expr $middlex-60]
 	    set r [expr $middlex+60]
-	    PutRelation $box.canvas "$l $middley $middlex \
-                    [expr $middley-30] $r $middley" 100 $status $lineTags
-	    set l [set r $middlex]
+	    PutRelation $box.canvas "$l $middley $middlex [expr $middley-30] \
+                    $r $middley" 100 $status "$boxTags size_on_this"
 	    set t [set b [expr $middley-15]]
-	    $box.canvas create rectangle $l $t $r $b -outline {} \
-		-tags "targetable" ;# dummy for caption anchor
         }
     }
 
