@@ -2420,7 +2420,7 @@ proc SampleMark { x y w } {
     
     
     set textItem [GetCaptionItem $w current]
-    if {$textItem eq ""} return
+    if {$textItem eq ""} return ;# workaround Tk bug, all movables have captions
     set newCP [FindClosestCompassPoint $w $textItem $x $y]
     foreach item [$w find withtag movable] {
 	if {[$w type $item] eq "text"} {
@@ -2433,6 +2433,7 @@ proc SampleMark { x y w } {
 
 proc SampleMove {x y w} {
     set oldPosn [$w coords [GetCaptionItem $w current]]
+    if {$oldPosn eq ""} return ;# see above
     $w move movable [expr $x-[lindex $oldPosn 0]] [expr $y-[lindex $oldPosn 1]]
 }
 
