@@ -281,7 +281,7 @@ proc ResponseTo {paramList} {
 		c_setstepmodel $iH $dt [incr i]
 	    }
 	    set ::instance_id $iH
-	    ResetModel $params(current) 1 0.0 $params(depth)
+	    ResetModel DUMMY 1 $params(current) $params(depth)
 	    set reqs [::json::json2dict $params(note)]
 	    set result [JsonifyArray [ValuesOfInterest $iH $reqs]]
 	} Query {
