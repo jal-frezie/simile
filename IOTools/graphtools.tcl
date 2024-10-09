@@ -784,6 +784,9 @@ proc ::graphtools::AddUnitIfInMath {node capt} {
     if {[string is double $unit]} {
 	append unit s
     }
+    if {[string match a(*) $unit]} {
+	set unit "in [string range $unit 2 end-1]"
+    }
     return "$capt ($unit)"
 }
 
