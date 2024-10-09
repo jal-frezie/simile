@@ -7,7 +7,7 @@ namespace eval ::graphtools {
             Xslide Yslide CanvasMark CanvasDrag Ylabel_move settings_axis \
             do_axis_settings horizlines vertlines boxed \
             delist decimalPlaces myAssembleFont get_x get_y get_Yvalues \
-            resetGraph AxisRound dodgyValue
+            resetGraph AxisRound dodgyValue AddUnitIfInMath
     
     # protected       gridOnOff myAssembleFont
     
@@ -771,5 +771,19 @@ proc ::graphtools::dodgyValue {val} {
     return [expr ![string is double -strict $val] || \
 		[lsearch {inf nan +inf +nan -inf -nan} \
 		     [string tolower $val]]>-1]
+}
+
+proc ::graphtools::AddUnitIfInMath {node capt} {
+    set unit [GetFromProlog tk_get_info($node,units)]
+    if {[lindex $unit end-1] eq "of"} { ;# component has dimensions, ignore
+	set unit [lindex $unit end]
+    }
+    if {[lsearch {int real} $unit]>=0} {
+	return $capt
+    }
+    if {[string is double $unit]} {
+	append unit s
+    }
+    return "$capt ($unit)"
 }
 

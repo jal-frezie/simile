@@ -204,7 +204,7 @@ namespace eval ::$keyValue {
 		    set node [lindex $sortedPath 1]
 		}
 	    }
-            set plot(caption,$node) [file tail $path]
+            set plot(caption,$node) [AddUnitIfInMath $node [file tail $path]]
             lappend ynodes($winId) $node
 	    lappend newYvars $path
         }
@@ -232,7 +232,7 @@ namespace eval ::$keyValue {
         #ShowMess debug info "testResult $testResult" ok
         if {[string compare $testResult novalue]} {
             if {[lsearch -exact $plot($w,Yvars) $path]==-1} {
-                set plot(caption,$node) $caption
+                set plot(caption,$node) [AddUnitIfInMath $node $caption]
                 lappend plot($w,Yvars) $path
 		UpdateYLabel $w
                 lappend ynodes($w) $node
@@ -567,8 +567,11 @@ namespace eval ::$keyValue {
     }
 
     proc UpdateYLabel {w} {
-	foreach var $::graphtools::plot($w,Yvars) {
-	    lappend tails [string map {\n { }} [file tail $var]]
+	variable ynodes
+#	foreach var $::graphtools::plot($w,Yvars) {...}
+	foreach node $ynodes($w) {
+	    set var $::graphtools::plot(caption,$node)
+	    lappend tails [string map {\n { }} $var]
 	}
 	if {![info exists tails]} {
 	    set tails Values
