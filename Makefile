@@ -502,6 +502,7 @@ install:
 		Images/Toolbar/Large/squirt.gif \
 		Images/Toolbar/Large/state.gif \
 		Images/Toolbar/Large/submodel.gif \
+		Images/Toolbar/Large/table.gif \
 		Images/Toolbar/Large/text.gif \
 		Images/Toolbar/Large/tog_grid.gif \
 		Images/Toolbar/Large/undo.gif \
