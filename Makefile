@@ -466,7 +466,6 @@ install:
 		Images/Eqnbar/function.gif \
 		Images/Eqnbar/inputs.gif \
 		Images/Eqnbar/tick.gif \
-		Images/Toolbar/Large/Initial.gif \
 		Images/Toolbar/Large/alarm.gif \
 		Images/Toolbar/Large/compartment.gif \
 		Images/Toolbar/Large/condition.gif \
