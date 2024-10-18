@@ -74,7 +74,8 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 	      asserta(table_data_is(TableSpec))), % needed in parser
 	  (Result_list = [EqnSt, _,_,_,_,_,_] ->
 	       sicstus_atom_chars(UncheckedEqn, EqnSt),
-	       add_parameter(Part, 0, spec, UncheckedEqn);
+	       add_parameter(Part, 0, spec, UncheckedEqn),
+	       add_parameter(Part, 0, value, '');
 	   true),
 	  catch(update_equation(Part, Input_list, Result_list, Effect),
 		UpThrow, Effect = user_advice_generated(bad_syntax('Equation', UpThrow))),
