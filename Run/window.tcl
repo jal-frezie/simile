@@ -55,7 +55,8 @@ proc FindObj { winId x y } {
     set canx [Scale $winId $x]
     set cany [Scale $winId $y]
     
-    return [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 5]]
+    return [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 15]]
+    # error allowance of 15 should be 1 default grid cell
 }
 
 # New to 4.8: get nodular component overlaps from GUI, in a list

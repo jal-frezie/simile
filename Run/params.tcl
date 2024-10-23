@@ -662,7 +662,8 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	set preload [GetCompProperty $topNode Spec $node]
 	if {$newData eq "" && \
 		[GetCompProperty $topNode Class $node] ne "EVENT"} {
-	    if {$caseId eq "" && $preload ne ""} {
+	    if {$caseId eq "" && $preload ne "" && \
+		    ![string match #* $preload]} {
 		$chking insert 0 $preload
 		set msgs(param_source_$compName) $msgs(fce)
 		ColourCaptions $box blue

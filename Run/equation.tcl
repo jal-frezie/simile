@@ -525,10 +525,14 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
 	}
 	set datePart [clock format [clock seconds] \
 			  -format [PrefValue custom(clockFmt) clockFmt]]
-	if {[string length $comment] && ![string match *\n $comment]} {
-	    append comment \n
+	set tag [format $::msgs($action) $::tcl_platform(user) $datePart]
+	if {![string match *$tag $comment]} {
+	    # do not repeat same tag
+	    if {[string length $comment] && ![string match *\n $comment]} {
+		append comment \n
+	    }
+	    append comment $tag
 	}
-	append comment [format $::msgs($action) $::tcl_platform(user) $datePart]
     }
 
     set equationbar(units) $units
