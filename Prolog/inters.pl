@@ -1200,7 +1200,10 @@ Now one that uses a special conditional level */
 			Step, Used, DefUnit, MidInters,
 			part_result(XIContext, SubSetups, _,_)),
 	    get_model_and_loops(XIContext, DestPath, XILoops,_),
-	    suffix(XILoops, LoopSlot),
+	    (suffix(XILoops, LoopSlot), !;
+	     get_dims_from_loops(XILoops, XIDims, _),
+	     get_dims_from_loops(LoopSlot, SlotDims, _),
+	     throw(wrong_param_dims(Ref, XIDims, SlotDims))),
 	    /* If we know what the parameter units are by now, use them */
 	    (nonvar(UseUnit), !;
 		promote_unit(DefUnit, UseUnit),

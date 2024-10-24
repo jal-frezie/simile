@@ -865,9 +865,12 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	      member(Attr=Term, ExtCode), \+ Term = none;
 	 member(Field-Attr, [spec-spec, spec-value, units-units]),
 	  Node has_class_refinement Attr of Repn,
-	  (Attr = spec, catch((tcltk><all_utf8_to_ttfn(Repn, TtfnRepn),
+	  (Attr = spec, (\+ Node has_class_refinement value of _,
+			   % non-buildable equation -- mark as comment
+			   append_atoms('#', Repn, Term);
+			 catch((tcltk><all_utf8_to_ttfn(Repn, TtfnRepn),
 			       sicstus_atom_chars(Term, TtfnRepn)),
-			      _Er, fail); % old style spec
+			      _Er, fail)); % old style spec
 	   Term = Repn)), !,
              sicstus_format_to_chars("~w", [Term], FullStrStr),
              sicstus_atom_chars(FullStr, FullStrStr)),
