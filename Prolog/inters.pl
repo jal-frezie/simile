@@ -1203,7 +1203,7 @@ Now one that uses a special conditional level */
 	    (suffix(XILoops, LoopSlot), !;
 	     get_dims_from_loops(XILoops, XIDims, _),
 	     get_dims_from_loops(LoopSlot, SlotDims, _),
-	     throw(wrong_param_dims(Ref, XIDims, SlotDims))),
+	     throw(wrong_param_type(Ref, XIDims, SlotDims, dimensions))),
 	    /* If we know what the parameter units are by now, use them */
 	    (nonvar(UseUnit), !;
 		promote_unit(DefUnit, UseUnit),
@@ -1217,7 +1217,7 @@ Now one that uses a special conditional level */
 				% in case they use param
 	    (promote_arg(DefUnit, UseUnit,_FType,_Conv);
 		% not sure how to make this happen
-		throw(wrong_param_units(Param, UseUnit, DefUnit))),!,
+		throw(wrong_param_type(Param, DefUnit, UseUnit, units))),!,
 	    append(SubSetups, ExSetups, Setups);	  
 
 	Source = flatten(SubExp),
@@ -1719,7 +1719,7 @@ physical_if_defined(Result, In, Out) :-
 	Out = Result). 
 
 promote_arg(Lo, Hi, Phys, Conv) :-
-	var(Lo), !, Phys = Lo, Conv = 1;
+	var(Lo), !, Hi = Lo, Phys = Lo, Conv = 1;
 	promote_unit(Lo, Tpt),
 	(Lo = any; % match to any physical unit
 	    %Tpt = real, Med = 1; forces result dimensionless --

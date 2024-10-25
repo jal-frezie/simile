@@ -717,7 +717,7 @@ process. */
 test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 ParamList, ParseError) :-
 	reverse(IndxCount, IndxSzs),
-	append(InterInputs, [input_link(_, DimL, '/dest/', _-DLoops,_)],
+	append(InterInputs, [input_link(_, DimL, '/dest/', DUnits-DLoops,_)],
 	       AllInputs),
 
 	on_exception(ParseException,
@@ -753,7 +753,14 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 					[], dummy, _, Type, _I,
 					part_result(Context, _,_,_)),
 		     inters><get_model_and_loops(Context, DummyDest,
-						   Loops, _)),
+						   Loops, _),
+	    (promote_unit(Type, DUnits);
+		% not sure how to make this happen
+		throw(wrong_param_type('prev(n)', Type, DUnits, units))),
+	    (suffix(Loops, DLoops), !;
+	     get_dims_from_loops(Loops, XIDims, _),
+	     get_dims_from_loops(DLoops, SlotDims, _),
+	     throw(wrong_param_type('prev(n)', XIDims, SlotDims, dimensions)))),
 	(replace_subexps(ParseExcp, dialogue, collapse_params,
 			 _, top_down, _, ParseError);
 			     ParseError = ParseExcp))),
