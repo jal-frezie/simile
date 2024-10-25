@@ -188,13 +188,13 @@ public:
 }; // end of enum data type decl
 */
 // above to be phased out -- we now have...
-typedef struct enum_type_data_t {
+typedef const struct enum_type_data_t {
   int count;
   const char* name;
   char** members;
 } enum_type_data; // end of enum type data type decl
 
-typedef struct ghost_ref_data_t {
+typedef const struct ghost_ref_data_t {
   char ghost[16];
   char base[16];
 } ghost_ref_data;
@@ -204,20 +204,20 @@ about model components. It is repeated in the stub ame_cmx.cpp to access fields
 outside the dll. */
 
 typedef struct node_data_line_t {
-  char name[16];
-  int datatype;
-  int enum_type_count;
+  const char name[16];
+  const int datatype;
+  const int enum_type_count;
   enum_type_data* enum_type_ptrs;
-  int ghost_count;
+  const int ghost_count;
   ghost_ref_data* ghost_ref_ptrs;
-  int eval;
-  int dims[32];
-  int path[32];
-  int graph;
-  double min;
-  double max;
-  int compclass;
-  char *strings[4];
+  const int eval;
+  const int dims[32];
+  const int path[32];
+  const int graph;
+  const double min;
+  const double max;
+  const int compclass;
+  const char *strings[4];
 } node_data_line; /* end(class,node_data_line) */
 /*
 typedef struct connectRecord_t {
@@ -340,7 +340,7 @@ EXTDEC int setstep(void*, double, int);
 EXTDEC char* myexit(void*, void*);
 
 EXTDEC void* get_ptr(void*, void*, int**, int**);
-EXTDEC char* getNodeId(void*, char*); // Just for 5-D, not used in Simile
+EXTDEC const char* getNodeId(void*, char*); // Just for 5-D, not used in Simile
 EXTDEC int retrieve_context(int**);
 
 EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, interact_gui_type*,
@@ -385,14 +385,14 @@ EXTDEC void* rdLocateElement(long int old, int* indices);
 
 // Extra shank definitions for clients that cannot look inside c structures
 // (the 4-D interface)
-EXTDEC char* name_from_nodlin(node_data_line*);
-EXTDEC char* eqn_from_nodlin(node_data_line*);
-EXTDEC double min_from_nodlin(node_data_line*);
-EXTDEC double max_from_nodlin(node_data_line*);
-EXTDEC int class_from_nodlin(node_data_line*);
-EXTDEC int type_from_nodlin(node_data_line*);
-EXTDEC int eval_from_nodlin(node_data_line*);
-EXTDEC char* units_from_nodlin(node_data_line*);
+EXTDEC const char* name_from_nodlin(node_data_line*);
+EXTDEC const char* eqn_from_nodlin(node_data_line*);
+EXTDEC const double min_from_nodlin(node_data_line*);
+EXTDEC const double max_from_nodlin(node_data_line*);
+EXTDEC const int class_from_nodlin(node_data_line*);
+EXTDEC const int type_from_nodlin(node_data_line*);
+EXTDEC const int eval_from_nodlin(node_data_line*);
+EXTDEC const char* units_from_nodlin(node_data_line*);
 EXTDEC int* ds_from_nodvals(nodeValues*);
 EXTDEC void* ct_from_nodvals(nodeValues*);
 EXTDEC int size_from_sznptr(sizeAndPtr*);

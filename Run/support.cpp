@@ -474,7 +474,8 @@ int get_client_indices(TSPOUT where, int sm_graph_id, int destIdcs[]) {
 }
 
 int parent_line (int line) {
-  int count, level, test, *path;
+  const int *path;
+  int count, level, test;
   path = nodedata[line].path;
   for (count=0;nodecount>count;count++) {
     level = 0;

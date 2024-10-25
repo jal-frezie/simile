@@ -313,7 +313,7 @@ class ModelServer
 
  protected: // protected methods
   int parent_line (int);
-  int member_param_item(FileParamData**, int*);
+  int member_param_item(FileParamData**, const int*);
   
  public:// public methods
   //! Constructor takes shared lib filename and pointer to string for error mess
@@ -335,13 +335,13 @@ class ModelServer
   make_full_caption_type* make_full_caption;
 
   //! Gets node serial number from old id (last arg set to submodel if ghost)
-  int getinfo(char*, int*);
+  int getinfo(const char*, int*);
 
   //! Gets an integer property (arg2 = GETCLASS, GETTYPE, GETEVAL) for node
   int GetProperty(HCOMP, int);
 
   //! Gets a node string property (arg2 = 0:name, 1:spec, 2:desc, 3:comment)
-  char* GetMetadataText(int, int);
+  const char* GetMetadataText(int, int);
 
   //! Gets node serial number from its full caption
   HCOMP CompFromCapt(char*);

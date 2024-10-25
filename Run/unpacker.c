@@ -295,11 +295,12 @@ Tcl_Obj* extend_string(Tcl_Obj *localObj, Tcl_Obj *index, Tcl_Obj *localSubObj, 
 }
 
 /* next two call convert_to_tcl, which calls them, so declare in advance */
-Tcl_Obj* convert_to_tcl(int*, int*, char*, BOOLEAN, enum_type_data**, BOOLEAN, int*, int*, BOOLEAN);
+Tcl_Obj* convert_to_tcl(int*, int*, char*, BOOLEAN, const enum_type_data**, BOOLEAN, int*, int*, BOOLEAN);
 
 Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
 			     int* subBlocks, int *members, char** block,
-			     BOOLEAN loseZeros, enum_type_data** enums, BOOLEAN translateEnums, int* toGet, BOOLEAN jsonic) {
+			     BOOLEAN loseZeros, const enum_type_data** enums,
+			     BOOLEAN translateEnums, int* toGet, BOOLEAN jsonic) {
   Tcl_Obj *localObj, *localSubObj, *IndObj;
   int count, dir, noinds = -1;
 
@@ -352,9 +353,10 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
   return(localObj);
 }
 
-Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks, 
-			      char* block, BOOLEAN loseZeros, enum_type_data** enums, BOOLEAN translateEnums,
-			      int* count, BOOLEAN jsonic) {
+Tcl_Obj*
+append_array_members(int membership, int* dims, int* subBlocks, char* block,
+		     BOOLEAN loseZeros, const enum_type_data** enums,
+		     BOOLEAN translateEnums, int* count, BOOLEAN jsonic) {
   Tcl_Obj *localObj, *localSubObj, *IndObj;
   int offset, start, end, dir, noinds = -1;
 
@@ -388,7 +390,8 @@ Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks,
 }
   
 Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
-			BOOLEAN loseZeros, enum_type_data** enums, BOOLEAN translateEnums, int* indxs, int* count,
+			BOOLEAN loseZeros, const enum_type_data** enums,
+			BOOLEAN translateEnums, int* indxs, int* count,
 			BOOLEAN jsonic) {
   Tcl_Obj *localObj;
   int membership, *indices;

@@ -376,7 +376,7 @@ int retrieve_context(int** ctxPtr) {
   return contextDepth;
 }
 
-void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
+void append_ints_to_null(int* dest, const int* src, int sep, int sep2) {
   while (*dest) { dest++; }
   if (sep) { *(dest++)=sep; }
   if (sep2) { *(dest++)=sep2; }
@@ -2269,7 +2269,7 @@ int ModelServer::make_full_caption(int line, char *result, int* dims,
   }
   */
 
-int ModelServer::getinfo(char* node_id, int* gLine) {
+int ModelServer::getinfo(const char* node_id, int* gLine) {
     int count, gcount;
     char* ghosts;
     ghost_ref_data* gpair;
@@ -2306,7 +2306,7 @@ int ModelServer::GetProperty(HCOMP line, int propertyId) {
     }
 }
 
-char* ModelServer::GetMetadataText(int line, int propertyId) {
+const char* ModelServer::GetMetadataText(int line, int propertyId) {
   switch (propertyId) {
     case GETINTERNALID:
       return nodedata[line].name;
@@ -2351,7 +2351,7 @@ HCOMP ModelServer::CompFromCapt(char* seeknode) {
   return 0;
 }
 
-int ModelServer::member_param_item(FileParamData** start, int* parentPath) {
+int ModelServer::member_param_item(FileParamData** start, const int* parentPath) {
   node_data_line* nLine;
 
   if (!*start)
@@ -2997,35 +2997,35 @@ void add_wave_command(void* instanceId, char* nodeId) {
 // dumb it down even further for emscripten clients that do not know how to get
 // fields from structures -- the 4-D interface?
 
-char* name_from_nodlin(node_data_line* line) {
+const char* name_from_nodlin(node_data_line* line) {
   return line->name;
 }
 
-char* eqn_from_nodlin(node_data_line* line) {
+const char* eqn_from_nodlin(node_data_line* line) {
   return line->strings[1];
 }
 
-double min_from_nodlin(node_data_line* line) {
+const double min_from_nodlin(node_data_line* line) {
   return line->min;
 }
 
-double max_from_nodlin(node_data_line* line) {
+const double max_from_nodlin(node_data_line* line) {
   return line->max;
 }
 
-int class_from_nodlin(node_data_line* line) {
+const int class_from_nodlin(node_data_line* line) {
   return line->compclass;
 }
 
-int type_from_nodlin(node_data_line* line) {
+const int type_from_nodlin(node_data_line* line) {
   return line->datatype;
 }
 
-int eval_from_nodlin(node_data_line* line) {
+const int eval_from_nodlin(node_data_line* line) {
   return line->eval;
 }
 
-char* units_from_nodlin(node_data_line* line) {
+const char* units_from_nodlin(node_data_line* line) {
   return line->strings[2];
 }
 
@@ -3141,7 +3141,7 @@ char* myexit(void* modelType, void* modelHandle) {
   // to have params or retval
 }
 
-char* getNodeId(void* modelType, char* capt) {
+const char* getNodeId(void* modelType, char* capt) {
   int tgtIndex;
 
   tgtIndex = ((ModelServer*)modelType)->CompFromCapt(capt);
