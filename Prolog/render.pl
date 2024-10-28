@@ -811,10 +811,10 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 
 	    /* do something similar for any strings that need including */
 	    all(render, make_runtime_string,
-		[unify([L, Name, Used]),
+		[unify(L),
 		 build([VisName, BaseName, BaseName, VisName]),
 		 build([name, spec, units, comment]),
-		 build(StringPtrs), unify(Stream)]),
+		 build(StringPtrs)]),
 	    % if tcl, put in name itself to find when debugging
 	    (L = tcl -> append(StringPtrs, [Name], AllStrPtrs);
 			       AllStrPtrs = StringPtrs),
@@ -847,7 +847,7 @@ make_runtime_enum_data(L, Name, Type-Mems, Used, [ETCount, TypePtr, ETPtr],
 	    [unify(L), unify(variable_declaration), build(Templates),
 	     unify(0), unify(Stream)]).
 
-make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
+make_runtime_string(L, Node, Field, Ptr) :-
 	(Field = name, !,
 	    caption_for(Node, LocalStr),
 	    (Node is_of_sort value_outside, !,
@@ -875,12 +875,13 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	   Term = Repn)), !,
              sicstus_format_to_chars("~w", [Term], FullStrStr),
              sicstus_atom_chars(FullStr, FullStrStr)),
-	templatify(L, FullStr, Ptr, Decl),
-	    append_atoms([Name, '_', Field], PtrTag),
-	    generate_name(L, PtrTag, Ptr, Used),
-	    excrete(L, variable_declaration, Decl, 0, Stream);
+	templatify(L, FullStr, dummy, [_,_,_, Ptr]);
+%	    append_atoms([Name, '_', Field], PtrTag),
+%	    generate_name(L, PtrTag, Ptr, Used),
+%	    excrete(L, variable_declaration, Decl, 0, Stream);
 	Ptr = 'NULL'.
 
+% remove this after inlining enum type string consts
 templatify(L, Elt, Ptr, [char, Ptr, void, QElt]) :-
 	name(Elt, TtfnStr),
 	user><all_ttfn_to_utf8(TtfnStr, Utf8Str),

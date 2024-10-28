@@ -1550,7 +1550,7 @@ proc GetTclCompProperty {prop args} {
 	    set which [lsearch {Name Spec Units Comment} $prop]
 	    set targetVar [lindex [getinfo $node 12] $which]
 	    if {[lsearch {"" NULL} $targetVar]==-1} {
-		return [set ::$targetVar]
+		return ::$targetVar
 	    }
 	}
     }
@@ -1597,7 +1597,7 @@ proc GetFullCaption {line} {
 	return {}
     } else {
 	set parentCapt [GetFullCaption [ParentLine $line]]
-	append parentCapt / [set ::[lindex [lindex $line 13] 0]]
+	append parentCapt / [lindex [lindex $line 13] 0]
 	return $parentCapt
     }
 }				      
