@@ -334,7 +334,7 @@ EXPORT int get_count(graph_data_type** graph_ptr,
   //graph_data_pointer = graph_ptr;
 
   /* ...and we are telling stub... */
-  *identStr = simile_identifier;
+  *identStr = (char*)simile_identifier;
   *phases = phasecount;
   *data_ptr = nodedata;
 /*  *arc_count = (sizeof inputArcs)/sizeof(char*)-1; // don't include filler

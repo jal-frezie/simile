@@ -355,7 +355,7 @@ char* member_name(int graph, int what) {
   //  for (curType=0; curType<nTypes; ++curType)
   //    if (strcmp(types[curType]->name, ETid)==0) break;
   curType = ENUM_BASE-nodedata[nodeLine].datatype;
-  return types[curType]->members[what-1];
+  return (char*)(types[curType]->members[what-1]);
 }
 
 int get_BOOLEAN_from_pipe(TSPOUT where, BOOLEAN* what) {
@@ -440,7 +440,7 @@ int put_member_in_pipe(TSPOUT where, int graph, int what) {
   //  for (curType=0; curType<nTypes; ++curType)
   //    if (strcmp(types[curType]->name, ETid)==0) break;
   curType = ENUM_BASE-nodedata[nodeLine].datatype;
-  return put_chars_in_pipe(where, types[curType]->members[what-1]);
+  return put_chars_in_pipe(where, (char*)(types[curType]->members[what-1]));
 }
 
 int get_client_indices(TSPOUT where, int sm_graph_id, int destIdcs[]) {

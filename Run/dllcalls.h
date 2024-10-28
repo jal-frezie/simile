@@ -191,7 +191,7 @@ public:
 typedef const struct enum_type_data_t {
   int count;
   const char* name;
-  char** members;
+  const char** members;
 } enum_type_data; // end of enum type data type decl
 
 typedef const struct ghost_ref_data_t {

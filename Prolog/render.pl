@@ -841,7 +841,8 @@ make_runtime_enum_data(L, Name, Type-Mems, Used, [ETCount, TypePtr, ETPtr],
 	all(render, templatify,
 	    [unify(L), build([Type|Mems]), build(EltPtrs), build(VTemplates)]),
 	length(Mems, ETCount),
-	append(VTemplates, [['char*', ETPtr, [ETCount], MemPtrs]], Templates),
+	append(VTemplates, [['const char*', ETPtr, [ETCount], MemPtrs]],
+	       Templates),
 	all(render, excrete,
 	    [unify(L), unify(variable_declaration), build(Templates),
 	     unify(0), unify(Stream)]).
@@ -1278,6 +1279,7 @@ type_for_unit(Unit, Type) :-
 	    type_for_unit(Case, Low),
 	    sicstus_format_to_chars("~a<~a>", [Class, Low], Result_string),
 	    name(Type, Result_string);
+	Unit = char, Type = 'const char';
 	Type = Unit.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
