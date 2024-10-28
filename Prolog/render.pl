@@ -811,10 +811,10 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 
 	    /* do something similar for any strings that need including */
 	    all(render, make_runtime_string,
-		[unify(L),
+		[unify([L, Name, Used]),
 		 build([VisName, BaseName, BaseName, VisName]),
 		 build([name, spec, units, comment]),
-		 build(StringPtrs)]),
+		 build(StringPtrs), unify(Stream)]),
 	    % if tcl, put in name itself to find when debugging
 	    (L = tcl -> append(StringPtrs, [Name], AllStrPtrs);
 			       AllStrPtrs = StringPtrs),
@@ -841,13 +841,12 @@ make_runtime_enum_data(L, Name, Type-Mems, Used, [ETCount, TypePtr, ETPtr],
 	all(render, templatify,
 	    [unify(L), build([Type|Mems]), build(EltPtrs), build(VTemplates)]),
 	length(Mems, ETCount),
-	append(VTemplates, [['const char*', ETPtr, [ETCount], MemPtrs]],
-	       Templates),
+	append(VTemplates, [['const char*', ETPtr, [ETCount], MemPtrs]], Templates),
 	all(render, excrete,
 	    [unify(L), unify(variable_declaration), build(Templates),
 	     unify(0), unify(Stream)]).
 
-make_runtime_string(L, Node, Field, Ptr) :-
+make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	(Field = name, !,
 	    caption_for(Node, LocalStr),
 	    (Node is_of_sort value_outside, !,
@@ -866,22 +865,18 @@ make_runtime_string(L, Node, Field, Ptr) :-
 	      member(Attr=Term, ExtCode), \+ Term = none;
 	 member(Field-Attr, [spec-spec, spec-value, units-units]),
 	  Node has_class_refinement Attr of Repn,
-	  (Attr = spec, (\+ Node has_class_refinement value of _,
-			   % non-buildable equation -- mark as comment
-			   append_atoms('#', Repn, Term);
-			 catch((tcltk><all_utf8_to_ttfn(Repn, TtfnRepn),
+	  (Attr = spec, catch((tcltk><all_utf8_to_ttfn(Repn, TtfnRepn),
 			       sicstus_atom_chars(Term, TtfnRepn)),
-			      _Er, fail)); % old style spec
+			      _Er, fail); % old style spec
 	   Term = Repn)), !,
              sicstus_format_to_chars("~w", [Term], FullStrStr),
              sicstus_atom_chars(FullStr, FullStrStr)),
-	templatify(L, FullStr, dummy, [_,_,_, Ptr]);
-%	    append_atoms([Name, '_', Field], PtrTag),
-%	    generate_name(L, PtrTag, Ptr, Used),
-%	    excrete(L, variable_declaration, Decl, 0, Stream);
+	templatify(L, FullStr, Ptr, Decl),
+	    append_atoms([Name, '_', Field], PtrTag),
+	    generate_name(L, PtrTag, Ptr, Used),
+	    excrete(L, variable_declaration, Decl, 0, Stream);
 	Ptr = 'NULL'.
 
-% remove this after inlining enum type string consts
 templatify(L, Elt, Ptr, [char, Ptr, void, QElt]) :-
 	name(Elt, TtfnStr),
 	user><all_ttfn_to_utf8(TtfnStr, Utf8Str),
@@ -1280,7 +1275,7 @@ type_for_unit(Unit, Type) :-
 	    type_for_unit(Case, Low),
 	    sicstus_format_to_chars("~a<~a>", [Class, Low], Result_string),
 	    name(Type, Result_string);
-	Unit = char, Type = 'const char';
+ 	Unit = char, Type = 'const char';
 	Type = Unit.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
