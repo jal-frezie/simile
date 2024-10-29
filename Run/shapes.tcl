@@ -27,7 +27,7 @@ if {!$headless} {
 #    set preloadFont [expr {$niceSize/12.0}]
     switch [tk windowingsystem] {
 	x11 {
-	    set hideTinies 4
+	    set hideTinies 10
 	} win32 {
 	    set hideTinies 6
 	} aqua {
@@ -1628,9 +1628,10 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
     }
     foreach object $objList {
 	set objType [$winId type $object]
-	if {$hideTinies==5 && $objType ne "image"} {
-	    $winId itemconfigure $object -stipple {}
-	} ;# stipple breaks Postscript conversion in macos
+	# if {$hideTinies==5 && $objType ne "image"} {
+	#     $winId itemconfigure $object -stipple {}
+	# } ;# stipple breaks Postscript conversion in macos --
+	# probably no problem as all postscript done direct since v7.2
 	switch $objType {
         text {
 	    set fontData [ExtractFontData [$winId itemcget $object -font]]
