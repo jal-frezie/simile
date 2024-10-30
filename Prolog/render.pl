@@ -441,15 +441,15 @@ strings_direct(L, variable_declaration, [Unit, Name, Dims | Init],
 	    (L = c,
 /* if var is a char string, it will not be nested so no curlies will be added,
 and the rules for breaking lines are like tcl's (need a \ at end) so... */
-	        (Unit = char, !,
-		    PrepStyle = tcl;
-		PrepStyle = L),    
+%	        (Unit = char, !,
+%		    PrepStyle = tcl;
+%		PrepStyle = L),    
 		(Dims = void, Counts = [''];
 %		all(render, boost, [build(Dims), build(Counts)]),
                 Counts = Dims),
 		make_indexed_reference(L, Name, Counts, ArrayName),
 		format(Stream, "~*s~a ~a = ", [Indent, " ", Type, ArrayName]),
-		swap_squares_for_curlies(PrepStyle, InitialValues, Stream),
+		swap_squares_for_curlies(L, InitialValues, Stream),
 		format(Stream, ";\n", []);
 	    L = tcl,
 		format(Stream, "~*svariable ~a\n", [Indent, " ", Name]),
@@ -982,7 +982,7 @@ make_tcl_array_elts(Inds, N, [Val | Rest], Done) :-
 
 swap_squares_for_curlies(L, ListList, Stream) :-
 	make_arg_string(L, [ListList], NestStr),
-	split_lines(L, NestStr, Stream).
+	split_lines(L, NestStr, 0, false, false, Stream).
 
 /* split_lines(NestStr, [String | Strings]) :-
 	[Br, C] = "},",
@@ -993,9 +993,33 @@ swap_squares_for_curlies(L, ListList, Stream) :-
 		Strings = [].
 */
 
-split_lines(L, NestStr, Stream) :-
-	(L = c, [Br, C] = "},";
-	    L = tcl, [Br, C] = "} "),
+split_lines(L, NestStr, SoFar, InLit, Escpd, Stream) :-
+    NestStr = [], !;
+	(L = c, \+ InLit -> [Br, C] = "},";
+	 [Br, C] = "} "),
+	(\+ Escpd,
+	 (SoFar > 30, Tail = [Br, C];
+	  SoFar > 300, Tail = [C]),
+	 append(Tail, Rest, NestStr),
+	 (L = c, \+ InLit ->
+	      format(Stream, "~s\n", [Tail]);
+	  format(Stream, "~s\\\n", [Tail])),
+	 [NewSoFar, NewInLit, NewEscpd] = [0, InLit, false];
+	 NestStr = [One | Rest],
+	 ([One] = "\n" -> NewSoFar = 0; NewSoFar is SoFar+1),
+	 ([One] = "\\", \+ Escpd -> NewEscpd = true; NewEscpd = false),
+	 ([One] = "\"", \+ Escpd ->
+	      (InLit -> NewInLit = false; NewInLit = true);
+	  NewInLit = InLit),
+	 format(Stream, "~c", [One])),
+	 split_lines(L, Rest, NewSoFar, NewInLit, NewEscpd, Stream).
+	 
+	 
+
+	 
+old_split_lines(L, NestStr, Stream) :-
+	(L = c -> [Br, C] = "},";
+	 [Br, C] = "} "),
 	append(Start, Rest, NestStr),
 	length(Start, Len),
 	(append(String, "\n", Start);
@@ -1006,7 +1030,7 @@ split_lines(L, NestStr, Stream) :-
 	 (L = c, String = Start;
 	  L = tcl, append(Start, "\\", String))), !,
 		    format(Stream, "~s\n", [String]),
-		    split_lines(L, Rest, Stream);
+		    old_split_lines(L, Rest, Stream);
 	format(Stream, "~s", [NestStr]).
 
 /*
