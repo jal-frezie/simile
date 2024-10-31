@@ -1257,7 +1257,7 @@ Now one that uses a special conditional level */
 	    SourceRef = 1;
 
 	Source =.. [Op | ArgListForm], % was \+ atom(Source)
-	    (individuates_instances(_, Source, _, _), !,
+	    (individuates_instances([], Source, _, _), !,
 		FunctionContext = DestPath;
 	    FunctionContext = []),
 
@@ -1719,7 +1719,9 @@ physical_if_defined(Result, In, Out) :-
 	Out = Result). 
 
 promote_arg(Lo, Hi, Phys, Conv) :-
-	var(Lo), !, Hi = Lo, Phys = Lo, Conv = 1;
+    var(Lo), ((promote_unit(Hi, 1); get_conversion(1, Hi, Hi, 1)) ->
+		  Phys = Lo;
+	      Hi = Lo), !, Conv = 1;
 	promote_unit(Lo, Tpt),
 	(Lo = any; % match to any physical unit
 	    %Tpt = real, Med = 1; forces result dimensionless --
@@ -2342,8 +2344,9 @@ individuates_elements(InterDefs, Subexp, _, 0) :-
 	random(_, Subexp, _,_);
 	nonvar(Subexp),
 	(Subexp = place_in(_);
-	  member(instance(internal, _, Subexp, _, _-[_|_]),
-		 InterDefs)). % refers to inter with multiple vals
+	  member(instance(internal, _, Subexp, _, _-Dims),
+		 InterDefs),
+	  \+ Dims = []). % refers to inter with multiple vals
 
 random(_, Subexp, _, 0) :-
 	nonvar(Subexp),

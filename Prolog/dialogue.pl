@@ -754,7 +754,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 					part_result(Context, _,_,_)),
 		     inters><get_model_and_loops(Context, DummyDest,
 						   Loops, _),
-	    (promote_unit(Type, DUnits);
+	    (inters><promote_arg(Type, DUnits,_FType,_Conv);
 		% not sure how to make this happen
 		throw(wrong_param_type('prev(n)', Type, DUnits, units))),
 	    (suffix(Loops, DLoops), !;
