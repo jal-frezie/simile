@@ -2004,7 +2004,8 @@ indices_for(Sm, Inds, Dims, Origins) :-
       Origins = [Sm];
      length(Dims, Dimty),
       make_ind_exprs(Ptr, Dimty, Inds),
-      append(Bases, FlatBases),
+      (Bases = [] -> FlatBases = []; % avoid uninst error in swi
+       append(Bases, FlatBases)),
       get_origins(FlatBases, RemOrigins),
       length(RemOrigins, Origty),
       LocalDimty is Dimty - Origty,

@@ -882,7 +882,7 @@ make_runtime_string(L, Node, Field, Ptr) :-
 	Ptr = 'NULL'.
 
 % remove this after inlining enum type string consts
-templatify(L, Elt, Ptr, [char, Ptr, void, QElt]) :-
+templatify(L, Elt, Ptr, ['const char', Ptr, void, QElt]) :-
 	name(Elt, TtfnStr),
 	user><all_ttfn_to_utf8(TtfnStr, Utf8Str),
 	sicstus_atom_chars(Utf8Atom, Utf8Str),
@@ -1304,7 +1304,6 @@ type_for_unit(Unit, Type) :-
 	    type_for_unit(Case, Low),
 	    sicstus_format_to_chars("~a<~a>", [Class, Low], Result_string),
 	    name(Type, Result_string);
-	Unit = char, Type = 'const char';
 	Type = Unit.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

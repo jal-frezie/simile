@@ -545,7 +545,7 @@ wot need them
 	     build([[void, this, []] | Constants]),
 	     unify(0), unify(Stream)]), */
 	excrete(Language, variable_declaration,
-	       [char, simile_identifier, void, IdentAtom], 0, Stream),
+	       ['const char', simile_identifier, void, IdentAtom], 0, Stream),
 	excrete(Language, variable_declaration,
 	       [int, phasecount, [], Phases], 0, Stream),
         BoostPhases is Phases+1,

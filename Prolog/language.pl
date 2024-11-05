@@ -1062,7 +1062,7 @@ field_specifier_and_arg_for(L, Ptr, CmdParam, Unit-_, GraphId, Arg, Spec) :-
 	 make_procedure_call_chars(L, [member_name, GraphId, NumArg], ArgStr),
 	 name(Arg, ArgStr);
      Arg = NumArg,
-         member(Unit-Spec, ['BOOLEAN'-' %hhd', int-' %d', 1-' %lf'])).
+         member(Unit-Spec, [boolean-' %hhd', int-' %d', 1-' %lf'])).
 
 product(_L, [], 1).
 product(L, [H | T], N) :-
