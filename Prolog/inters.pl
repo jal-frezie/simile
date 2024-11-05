@@ -240,7 +240,8 @@ wrap_fp(Arg, TB, Wrapped) :-
 
 expand_library(Var, Expanded) :-
 	shed_dummy_args(Var, Fn),
-	Fn =.. [Op | Args],
+	Fn =.. [MxOp | Args],
+	lower_if_needed(MxOp, Op),
 	length(Args, Arity),
 	member(MacroMatch, [right, bad_format /*, bad_arity */]),
 	% do not fail with wrong arg count, there may be a matching builtin
@@ -1326,10 +1327,7 @@ Now one that uses a special conditional level */
 		SourceList = ArgList,
 		length(Arg_template, Arity),
 		length(ResultList, Arity),
-		name(Op, OpStr),
-		lower(OpStr, LopStr),
-		name(Lop, LopStr),
-		ValRef =.. [Lop | ResultList],
+		ValRef =.. [Op | ResultList],
 		((length(ArgTpts, Arity); WrongArity = 1),
 		    fragment_expansion(Categ, FragFile, Op, FragOut, ArgTpts),
 		    (WrongArity = 0;
@@ -1362,8 +1360,8 @@ Now one that uses a special conditional level */
 					  [count=ExecDims]),
 		append([ExecLoops, OutLoops, SmLoops, ExecBase], SourceContext);
 	      SourceContext = ExecContext,
-	        (ValRef =.. [Lop, _, _],
-		member(Lop, [*, /]),
+	        (ValRef =.. [Op, _, _],
+		member(Op, [*, /]),
 		    \+ (member(MathWouldBeSilly, UnitList),
 			   inherently_bound(MathWouldBeSilly)),
 		    (member(any, UnitList),
@@ -1372,11 +1370,11 @@ Now one that uses a special conditional level */
 		      \+ promote_unit(One, 1),
 		      % succeeds only if unitless, or matches any units
 			(promote_unit(Other, 1),
-			    (UnitList == [Other, One], Lop = (/),
+			    (UnitList == [Other, One], Op = (/),
 				Units = 1/One;
 				Units = One),
 			    SourceRef = ValRef;
-			  TattyUnits =.. [Lop | UnitList],
+			  TattyUnits =.. [Op | UnitList],
 			    sort_units(TattyUnits, Units, ConvFactor),
 			    SourceRef = ConvFactor*ValRef)), !;
 		ValRef = Arg1++Arg2,
@@ -1405,23 +1403,23 @@ Now one that uses a special conditional level */
 		     ValRef = as_it_comes(SourceRef);
 		     ValRef = default(_), SourceRef = 0),
 		    UnitList = [Units];
-		 (var(Lop),
+		 (var(Op),
 		     SourceRef = ValRef,
 		     Units = RUnits;
-		  nonvar(Lop),
-		     fn_or_op(Lop, MxOp, RUnits, Arg_template),
+		  nonvar(Op),
+		     fn_or_op(Op, MxOp, RUnits, Arg_template),
 		    /* first, check my units are right... */
 	            retractall(trying_units(_,_)),
-	            assert(trying_units(Lop, Arg_template)),
+	            assert(trying_units(Op, Arg_template)),
 		    try_units(RUnits, Arg_template, UnitList, Units, Scales),
 		    all(inters, apply_scale_factor,
 			[build(Scales), build(ResultList), build(ScaledRs)]),
 		    SourceRef =.. [MxOp | ScaledRs]);
 		 % complain about last set of units tried, = most general?
-	         retract(trying_units(Lop, Arg_template)),
-		    throw(mismatched_units(Lop, Source,
+	         retract(trying_units(Op, Arg_template)),
+		    throw(mismatched_units(Op, Source,
 					   UnitList, Arg_template));
-		 fn_or_op(Lop, _, RUnits, WrongLen),
+		 fn_or_op(Op, _, RUnits, WrongLen),
 		    length(WrongLen, FnArity),
 		    throw(wrong_no_of_args(Source, built-in, Op, Arity, FnArity));
 		 macro_expansion(Orig, (Tplt --> _Defn)),
@@ -1574,13 +1572,19 @@ members_of_type(Dun, IndxUnits) :-
 	 IndxUnits = int.
 
 fn_or_op(Op, MxOp, RUnits, AUnits) :-
-	var(Op), MxOp = Op, !;
-	name(Op, OpStr),
-	(function(_Cat0, MxOp, RUnits, AUnits);
-	builtin(_Cat1, MxOp, RUnits, AUnits);
-	operator(MxOp, RUnits, AUnits)),
-	name(MxOp, MxOpStr),
-	lower(MxOpStr, OpStr).
+    var(Op), MxOp = Op, !;
+    lower_if_needed(Op, MxOp),
+	% explicitly define search order
+	member(Local, [true, false]),
+	(function(Origin, MxOp, RUnits, AUnits);
+	builtin(Origin, MxOp, RUnits, AUnits);
+	Origin = op, operator(MxOp, RUnits, AUnits)),
+	(Origin = 'Local' -> Local; \+ Local).
+
+lower_if_needed(Op, MxOp) :-
+    MxOp = Op;
+    name(Op, OpStr), lower(OpStr, MxOpStr), \+ MxOpStr = OpStr,
+    name(MxOp, MxOpStr).
 
 units_for_trigger_mag(Fn, MagUnits) :-
     (m_class><Fn has_class_refinement value of V,
