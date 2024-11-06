@@ -338,6 +338,9 @@ set msgs(unused_macro_param_message) [tr. {Failed to parse macro definition:
 %1$s
 The macro function contains the parameter "%2$s", which does not appear in the arguments of the macro template}]
 
+set msgs(defn_clash_title) [tr. {Parsing definitions in %1$s}]
+set msgs(defn_clash_message) [tr. {The file %1$s contained the user-supplied %2$s %3$s/%4$s, which clashes with the %5$s definition of %6$s/%4$s (%7$s)}]
+    
 set msgs(bad_user_fn_format_title) [tr. {Parsing definitions in %1$s}]
 set msgs(bad_user_fn_format_message) [tr. {The file %1$s contained the line %2$s which is in the wrong format for a macro, function or unit definition -- please refer to the documentation.}]
 set msgs(bad_user_fn_format_full) [tr. {It appears that the functor in this line is "%3$s" and the arguments are %4$s.}]

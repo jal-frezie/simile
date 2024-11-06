@@ -358,8 +358,28 @@ load_fragment_macro(AllDirs, Context, Category, [FnEntry]) :-
 	    
 	name(FnEntry, FnChars),
 %	m_update><make_blind_toplevel(AllDirs, TopLevel), 
+	(Category = 'Local' ->
+	     length(Params, Arity),
+	     check_for_clash('model fragment function definition', Functor, Arity, AllDirs);
+	 true),
 	assert(fragment_expansion(Category, AllDirs, Functor, OutNode, Params)),
 	add_comment_for_fn(AllDirs, Functor).
+
+check_for_clash(Type, Name, Arity, Found) :-
+    lower_if_needed(Name, Functor),
+    length(ParamsToCheck, Arity),
+    (builtin(_Field, Functor, _Result, ParamsToCheck),
+     Category = 'built-in',
+     AllDirs = implicit;
+     function(Category, Functor, _, ParamsToCheck),
+     AllDirs = unknown;
+    fragment_expansion(Category, AllDirs, Functor, _OutNode, ParamsToCheck);
+    Function =.. [Functor | ParamsToCheck],
+     macro_expansion(Category, (Function --> _Defn)),
+     AllDirs = unknown), !,
+    query(defn_clash(Found, Type, Name, Arity, Category, Functor, AllDirs),
+	  warning, user_defns, [ok], _);
+    true.
 
 add_comment_for_fn(FilePath, Fn) :-
     open_native(FilePath, read, Stream),
@@ -424,19 +444,27 @@ read_funcs(File, Stream, Text, Category, Done) :-
 	    Done = [];
 	all(user, call, [build(VPrs)]),
 	(Line = (Macro --> Defn),
-	    add_macro(Category, Macro=Defn, Op),
-	    append_atoms(['{', Category, ' {', File, '}} ', macro, ' ', Op],
+	    Type = 'macro definition',
+	    Macro =.. [Functor | ArgTypes], % for message
+	    Action = add_macro(Category, Macro=Defn, _Op),
+	    append_atoms(['{', Category, ' {', File, '}} ', macro, ' ', Functor],
 			 FnEntry);
 	(Line = sample(Functor, ReturnType, ArgTypes),
-	        assert(sample(Functor));
+	    assert(sample(Functor));
 	 Line = function(Functor, ReturnType, ArgTypes)),
-	    assert(function(Category, Functor, ReturnType, ArgTypes)),
+	    Action = assert(function(Category, Functor, ReturnType, ArgTypes)),
+	    Type = 'procedural function definition',
 	    % assert(use_tcl_proc_for(Functor)), !, [can now use in exprs]
 	    dialogue><spell_out([ReturnType | ArgTypes], 1),
 	    dialogue><make_arg_list(ArgTypes, String),
 	    sicstus_format_to_chars("{~a {~a}} procedure ~a (~s) returns ~w",
 		[Category, File, Functor, String, ReturnType], FnChars),
 	    name(FnEntry, FnChars)),
+	    (Category = 'Local' ->
+	     length(ArgTypes, Arity),
+	     check_for_clash(Type, Functor, Arity, File);
+	     true),
+	    call(Action),
 	    read_funcs(File, Stream, Text, Category, More),
 	    (File = 'Hidden', Done = More;
 		\+ File = 'Hidden', Done = [FnEntry | More]);
