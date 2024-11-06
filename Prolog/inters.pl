@@ -1431,10 +1431,10 @@ Now one that uses a special conditional level */
 		     ValRef = as_it_comes(SourceRef);
 		     ValRef = default(_), SourceRef = 0),
 		    UnitList = [Units];
-		 (var(Op),
+		 (nonvar(RUnits),
 		     SourceRef = ValRef,
 		     Units = RUnits;
-		  nonvar(Op),
+		  var(RUnits),
 		     fn_or_op(Op, MxOp, RUnits, Arg_template),
 		    /* first, check my units are right... */
 	            retractall(trying_units(_,_)),
