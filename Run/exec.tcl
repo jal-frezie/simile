@@ -141,6 +141,7 @@ proc ExecuteTo {node current pause unitLength display \
     set evtPause [expr {$evtMsg || $evtDisp}] ;# event sounds selected
     set forward [expr {($pause>$current)*2-1}] ;# 1 for forward, -1 for back
     set scaled_current [expr {$current*$unitLength}]
+    set timedDisp 0
     if {$display} {
 	set lastDisp [expr int($current/$display)]
 	set timedDisp 1

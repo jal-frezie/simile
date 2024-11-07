@@ -23,7 +23,8 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 					      Formula))), Prob,
 		     report(Sm, Prob)),
 
-	get_model_and_loops(SourceContext, DestPath, SourceLoops, _),
+	get_model_and_loops(SourceContext, DestPath, SourceLLoops, _),
+	remove_outside_refs(SourceLLoops, SourceLoops),
 	append(SourceLoops, DestPath, BaseContext),
 	(swap_back(BaseContext, BackSwap, FContext, no_dim), !;
 	throw(cannot_make_context(Target, BaseContext, BackSwap))),
@@ -697,7 +698,8 @@ make_intermediates(
 				   Step, Used, [TXUnits, ArgUnits], OldInters,
 				   _, [], SubContext, OldSetups, OldArgs,
 				   [IncrementRef, PayloadRef])),
-	get_model_and_loops(SubContext, TotalPath, SubLoops, _),
+	get_model_and_loops(SubContext, TotalPath, SubLLoops, _),
+	remove_outside_refs(SubLLoops, SubLoops),
 
 	/* choose a location for Total where it will be visible in the
 	destination path .... need to make sure it does not contain any
@@ -1286,7 +1288,7 @@ Now one that uses a special conditional level */
 	    SourceRef = 1;
 
 	Source =.. [Op | ArgListForm], % was \+ atom(Source)
-	    (individuates_instances([], Source, _, _), !,
+	    (individuates_instances(PrevInters, Source, _, _), !,
 		FunctionContext = DestPath;
 	    FunctionContext = []),
 
@@ -2452,10 +2454,13 @@ loops(cond_section(_)).
 loops([sm(_,_,_,_)|_]). % a flattened list
 
 get_model_and_loops(Context, Dest, Loops, Base) :-
-	append(LLoops, Base, Context),
-	get_model(Dest, Base),
-	(append(A, [sm(OM, B, C, D) | E], LLoops), outside(OM, M) ->
-	    append(A, [sm(M, B, C, D) | E], Loops); Loops = LLoops), !.
+	append(Loops, Base, Context),
+	get_model(Dest, Base).
+%	(append(A, [sm(OM, B, C, D) | E], LLoops), outside(OM, M) ->
+%	    append(A, [sm(M, B, C, D) | E], Loops); Loops = LLoops), !.
+
+remove_outside_refs(LLoops, Loops) :-
+    substitute(sm(outside(A), B,C,D), LLoops, sm(A,B,C,D), Loops).
 
 outside(O, I) :-
     nonvar(O), O = outside(I).
