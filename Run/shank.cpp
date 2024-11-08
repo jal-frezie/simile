@@ -342,7 +342,9 @@ void play_at_vol(const char* file, double level) {
 
 int latestContext[32];
 EvtCmdData* EvtCmdList = NULL;
-struct wavListen_t {int id; PaStream* mic;} wavListen = {.id=0, .mic=NULL};
+typedef struct wavListen_t {int id; PaStream* mic; struct wavListen_t* next;}
+  wavListen;
+wavListen* audioChs = NULL;
 int contextDepth = 0;
 
 void report_events(int dimty, const int inds[], int evts,
@@ -1622,12 +1624,13 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     } // made progress
     // printf("Moved forward %f units\n", freq);
 
-    if (wavListen.id) {
+    wavListen* soundCh = audioChs;
+    while (soundCh) {
       // moved a whole time step, do sound 
       nodeValues* ldata;
       float buffer[2];
       
-      ldata = GetRawValues(wavListen.id);
+      ldata = GetRawValues(soundCh->id);
       // send it
       int *typeLocn = ldata->dimSpecs;
       if (*typeLocn>0) //array, treat 1st two vals as L and R
@@ -1644,13 +1647,14 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       delete ldata;
       // write(wavListen.mic, buffer, 4);
       // printf("Sounding %f\n", buffer[0]);
-      PaError err = Pa_WriteStream(wavListen.mic, buffer, 1);
+      PaError err = Pa_WriteStream(soundCh->mic, buffer, 1);
       if (err != paNoError && err != -9980) { // ignore underrun if poss
           fprintf( stderr, "An error occurred while using the portaudio stream\n" );
 	  fprintf( stderr, "Error number: %d\n", err );
 	  fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( err ) );
 	  userDefStop->excpNo = -89;
       }
+      soundCh = soundCh->next;
     }
 
     if (userDefStop->excpNo) break; // from outer loop
@@ -1959,31 +1963,50 @@ void ExecutingModel::old_set_wav_cmd(char* nodeId) {
   wavListen.id = modelSpec->getinfo(nodeId, &spare);
 }
 */
-void ExecutingModel::set_wav_cmd(char* nodeId) {
+void ExecutingModel::set_wav_cmd(char* nodeId, int go) {
   PaStreamParameters outputParameters;
   PaError err;
-  int spare;
+  int refId, spare;
+  wavListen **audioPtr = &audioChs, *audioCh = NULL;
+
+  refId = modelSpec->getinfo(nodeId, &spare);
+  while (*audioPtr) {
+    if ((*audioPtr)->id == refId) {
+      audioCh = *audioPtr;
+      *audioPtr = audioCh->next; // snip it out
+      break;
+    }
+    audioPtr = &((*audioPtr)->next);
+  }
   
-  if (!strlen(nodeId)) {
-    wavListen.id = 0;
-    Pa_StopStream(wavListen.mic);
-    Pa_CloseStream(wavListen.mic);
-    Pa_Terminate();
+  if (!go) {
+    if (audioCh) { // wave exists, close it
+      Pa_StopStream(audioCh->mic);
+      Pa_CloseStream(audioCh->mic);
+      delete audioCh;
+    }
+    if (!audioChs) { // all waves closed, release player
+      Pa_Terminate();
+    }
     return;
   }
-
-  err = Pa_Initialize();
-  if( err != paNoError ) goto error;
+  
+  if (!audioCh && !audioChs) { // No waves playing, kick off server
+    err = Pa_Initialize();
+    if( err != paNoError ) goto error;
+  }
 
   outputParameters.device = Pa_GetDefaultOutputDevice(); // default output device
-
   outputParameters.channelCount = 2;       // stereo output
   outputParameters.sampleFormat = paFloat32; // 32 bit floating point output
   outputParameters.suggestedLatency = 0.050; // Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
   outputParameters.hostApiSpecificStreamInfo = NULL;
 
+  if (!audioCh) {
+    audioCh = new wavListen;
+    audioCh->id = modelSpec->getinfo(nodeId, &spare);
     
-  err = Pa_OpenStream(&(wavListen.mic),
+    err = Pa_OpenStream(&(audioCh->mic),
               NULL, // no input
               &outputParameters,
               44100,
@@ -1991,12 +2014,13 @@ void ExecutingModel::set_wav_cmd(char* nodeId) {
 	      0,
               NULL, // no callback, use blocking API
               NULL ); // no callback, so no callback userData
-  if( err != paNoError ) goto error;
+    if( err != paNoError ) goto error;
 
-  err = Pa_StartStream(wavListen.mic);
-  if( err != paNoError ) goto error;
-
-  wavListen.id = modelSpec->getinfo(nodeId, &spare);
+    err = Pa_StartStream(audioCh->mic);
+    if( err != paNoError ) goto error;
+  }
+  audioCh->next = audioChs;
+  audioChs = audioCh;
   return;
 
 error:
@@ -2990,8 +3014,8 @@ void add_event_command(void* instanceId, char* nodeId, char* cmd) {
   ((ExecutingModel*)instanceId)->set_evt_cmd(nodeId, cmd);
 }
 
-void add_wave_command(void* instanceId, char* nodeId) {
-  ((ExecutingModel*)instanceId)->set_wav_cmd(nodeId);
+void add_wave_command(void* instanceId, char* nodeId, int go) {
+  ((ExecutingModel*)instanceId)->set_wav_cmd(nodeId, go);
 }
 
 // dumb it down even further for emscripten clients that do not know how to get

@@ -1667,13 +1667,19 @@ FINDABLE int addEventCommandCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int addWaveCommandCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   void* modelInst;
+  int go, error;
 
-  if (argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "instance_id node_id");
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "instance_id node_id start/stop");
     return TCL_ERROR;
   }
+  error = Tcl_GetIntFromObj(interp, argv[3], &go);
+  if (error != TCL_OK) {
+    return error;
+  }
   memcpy(&modelInst, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  add_wave_command(modelInst, Tcl_GetStringFromObj(argv[2], NULL));
+  add_wave_command(modelInst, Tcl_GetStringFromObj(argv[2], NULL), go);
+	
   return TCL_OK;
 }
 

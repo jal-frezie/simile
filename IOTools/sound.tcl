@@ -4,7 +4,6 @@
 set newHelperClass Sound20220921
 itcl::class similescript::$newHelperClass {
     inherit Helper
-
     proc Identify {} {
 	return "Sound wave output"
     }
@@ -17,8 +16,8 @@ itcl::class similescript::$newHelperClass {
 	    set State $state ;# keep it local
 	    pack [message $winId.message \
 		      -text "Generating sound wave for [lindex $State 0]"]
-	    AddWaveCommand [$modelInst cget -modelNode] \
-			        [GetIdFromCaptionPath [lindex $State 0]]
+	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
+	    AddWaveCommand [$modelInst cget -modelNode] $useNode 1
 	    Display 0 0 0
 	} else {
 	    # new instance so request data from model
@@ -30,7 +29,8 @@ itcl::class similescript::$newHelperClass {
 
     destructor {
 	if {[info exists State]} {
-	    AddWaveCommand [$modelInst cget -modelNode] ""
+	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
+	    AddWaveCommand [$modelInst cget -modelNode] $useNode 0
 	}
     }
 
@@ -39,17 +39,17 @@ itcl::class similescript::$newHelperClass {
 		       [$modelInst GetMaxValue $path]]
 	SetState $winId $State
 	$winId.message configure -text "Generating sound wave for $path"
-	AddWaveCommand [$modelInst cget -modelNode] [GetIdFromCaptionPath $path]
+	AddWaveCommand [$modelInst cget -modelNode] [GetIdFromCaptionPath $path] 1
 	$modelInst ReleaseClicks
 	Display 0 0 0
     }
 
     public method Reset {} {
-	# node id may be out of date due to rebuild
+	# node id may be out of date or lost due to rebuild
 	if {[info exists State]} {
-	    set topNode [$modelInst cget -modelNode]			
-	    AddWaveCommand $topNode ""
-	    AddWaveCommand $topNode [GetIdFromCaptionPath [lindex $State 0]]
+	    set topNode [$modelInst cget -modelNode]
+	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
+	    AddWaveCommand $topNode $useNode 1
 	}
     }
 

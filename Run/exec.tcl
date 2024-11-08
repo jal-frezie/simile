@@ -1267,8 +1267,8 @@ proc MarkEvtParamActive {caseId node inC wait} {
     }
 }
 
-proc AddWaveCommand {topNode node} {
-    add_wave_command $::instance_id $node
+proc AddWaveCommand {topNode node go} {
+    add_wave_command $::instance_id $node $go
 }
 
 proc AddEventCommand {topNode node cmd} {
