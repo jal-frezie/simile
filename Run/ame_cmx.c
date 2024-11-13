@@ -1650,33 +1650,17 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
-FINDABLE int addEventCommandCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
-  void* modelInst;
-
-  if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "instance_id node_id command_string");
-    return TCL_ERROR;
-  }
-  memcpy(&modelInst, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  add_event_command(modelInst, Tcl_GetStringFromObj(argv[2], NULL),
-		    Tcl_GetStringFromObj(argv[3], NULL));
-  return TCL_OK;
-}
-
 FINDABLE int addWaveCommandCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   void* modelInst;
-  int go, error;
+  char* go;
+  int error;
 
   if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "instance_id node_id start/stop");
+    Tcl_WrongNumArgs(interp, 1, argv, "instance_id node_id sound_source");
     return TCL_ERROR;
   }
-  error = Tcl_GetIntFromObj(interp, argv[3], &go);
-  if (error != TCL_OK) {
-    return error;
-  }
+  go = Tcl_GetStringFromObj(argv[3], NULL);
   memcpy(&modelInst, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   add_wave_command(modelInst, Tcl_GetStringFromObj(argv[2], NULL), go);
 	
@@ -1806,7 +1790,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
      "newc_gettimepointall", "c_resetmodel", "c_repeatreset", "c_executemodel",
      "c_checkmodel", "c_setstepmodel", "c_exitmodel", "getvalue", "graph_table",
      "handle_data", "free_data_handle", "listobjects", "randseed", "random01",
-     "add_event_command", "add_wave_command"};
+     "add_wave_command"};
   Tcl_ObjCmdProc* allProcs[] =
     {loadmodelCmd, createmodelCmd, addtogroupCmd, deletemodelCmd,
      setparamarrayCmd, clearparamarrayCmd, settimepointarrayCmd,
@@ -1816,7 +1800,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
      getparamallCmd, settimepointallCmd, gettimepointallCmd, resetmodelCmd,
      repeatresetCmd, executemodelCmd, checkmodelCmd, setstepCmd, exitmodelCmd,
      interfaceCmd, graphCmd, handleDataCmd, freeDataHandleCmd, listobjCmd,
-     randseedCmd, random01Cmd, addEventCommandCmd, addWaveCommandCmd};
+     randseedCmd, random01Cmd, addWaveCommandCmd};
   int cmdNo;
   // char pkgName[16];
 

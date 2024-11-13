@@ -47,7 +47,8 @@ itcl::class similescript::$newHelperClass {
     destructor {
 	set topNode [$modelInst cget -modelNode]
 	foreach {path act} $useNodes(sounds) {
-	    catch {AddSoundFor $topNode $path {}}
+	    catch {AddWaveCommand $topNode [GetIdFromCaptionPath $path] \
+		       "/none/"}
 	}
     }
 
@@ -63,7 +64,7 @@ itcl::class similescript::$newHelperClass {
 	set topNode [$modelInst cget -modelNode]
 	set sound [ChooseFile sound.wav "New sound file for $path" 0 $topNode]
 	lset useNodes(sounds) [incr resonorize] $sound
-	AddEventCommand $topNode [GetIdFromCaptionPath $path] \
+	AddWaveCommand $topNode [GetIdFromCaptionPath $path] \
 	    [file nativename $sound]
 	$winId.traces itemconfig $path&&capt -text "$path ([file tail $sound])"
     }
@@ -73,7 +74,7 @@ itcl::class similescript::$newHelperClass {
 	set path [lindex $useNodes(sounds) $oblit]
 	$winId.traces delete $path
 	set topNode [$modelInst cget -modelNode]
-	AddEventCommand $topNode [GetIdFromCaptionPath $path] {}
+	AddWaveCommand $topNode [GetIdFromCaptionPath $path] "/none/"
 	set useNodes(sounds) [lreplace $useNodes(sounds) $oblit $oblit+1]
 	while {$oblit<[llength $useNodes(sounds)]} {
 	    $winId.traces move [lindex $useNodes(sounds) $oblit] 0 -50
@@ -138,13 +139,13 @@ method Stuff {contents} {
 	}
     }
 
-    public method AddSoundFor {topNode path sound} {
+public method AddSoundFor {topNode path sound} {
 	set ytext [expr {[llength $useNodes(sounds)]*25+25}]
 	$winId.traces create text 25 $ytext -text "$path ([file tail $sound])" \
 	    -fill gray -anchor w -tag [list $path capt]
 	lappend useNodes(sounds) $path $sound
 	set node [GetIdFromCaptionPath $path]
-	AddEventCommand $topNode $node [file nativename $sound]
+	AddWaveCommand $topNode $node [file nativename $sound]
 	GetModelValue $node ;# to add it to foci
     }
 

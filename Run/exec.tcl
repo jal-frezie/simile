@@ -1271,16 +1271,6 @@ proc AddWaveCommand {topNode node go} {
     add_wave_command $::instance_id $node $go
 }
 
-proc AddEventCommand {topNode node cmd} {
-    add_event_command $::instance_id $node $cmd
-#    global eventSounds
-#    if {$cmd eq ""} {
-#	unset eventSounds($node)
-#    } else {
-#	set eventSounds($node) cmd	
-#    }
-}
-
 proc SetWrapTime {caseId inC where args} {
     global paramData
     if {$inC} {

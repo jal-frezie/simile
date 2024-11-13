@@ -88,6 +88,7 @@ void* safe_open(char* fileName) {
 #endif
 
 #include <portaudio.h>
+#include <sndfile.h>
 /*
  * Unix or Win64 (or Win32!) version: does not have min & max defined
  */
@@ -97,6 +98,12 @@ int s_min(int a, int b) {
 }
 int s_max(int a, int b) {
   return a>b?a:b;
+}
+
+int nice_time() {
+  timespec tim;
+  clock_gettime(CLOCK_MONOTONIC, &tim);
+  return 1000000*tim.tv_sec + tim.tv_nsec/1000;
 }
 
 char globMess[256];
@@ -277,21 +284,6 @@ double brand48_by_val(void* seed) {
   return erand48((unsigned short int*)seed);
 }
 
-class EvtCmdData {
-public:
-  int gphId;
-  double min, max;
-  char* cmd;
-  EvtCmdData* next;
-
-  EvtCmdData() {
-  }
-  
-  ~EvtCmdData() {
-    free(cmd);
-  }
-};
-
 void playsound(const char* file) {
   char cmd[256];
 #ifdef _WIN32
@@ -341,10 +333,91 @@ void play_at_vol(const char* file, double level) {
 }
 
 int latestContext[32];
-EvtCmdData* EvtCmdList = NULL;
-typedef struct wavListen_t {int id; PaStream* mic; struct wavListen_t* next;}
-  wavListen;
+
+typedef struct sound_t {
+  SNDFILE *file;
+  int evtTime;
+  float volume;
+  struct sound_t* next;
+} sound;
+
+typedef struct wavListen_t {
+  int id;
+  PaStream* mic;
+  char* file;
+  SF_INFO sfinfo;
+  sound *playlist;
+  struct wavListen_t* next;
+} wavListen;
 wavListen* audioChs = NULL;
+
+static int pasimCallback(const void *inputBuffer, void *outputBuffer,
+                          unsigned long framesPerBuffer,
+                          const PaStreamCallbackTimeInfo* timeInfo,
+                          PaStreamCallbackFlags statusFlags,
+                          void *userData)
+{
+    wavListen *data = (wavListen*)userData;
+    float *out = (float*)outputBuffer;
+    sf_count_t num_read;
+    int result = paContinue, bufSize;
+
+    (void) inputBuffer;
+
+    // if (!(data->playlist)) printf("Trying to play empty list!\n");
+    // initialize buffer to zero
+    bufSize = framesPerBuffer * data->sfinfo.channels;
+    float* in = new float[bufSize];
+    //    printf("responding");
+    memset(out, 0, bufSize * sizeof(float));
+
+    sound** playlist = &(data->playlist); 
+    while (*playlist) {
+      int age = nice_time()-(*playlist)->evtTime;
+      int samples = data->sfinfo.samplerate*(long)age*data->sfinfo.channels/1000000;
+      if (samples>bufSize) samples=bufSize;
+      //      printf(" (age %d)", samples);
+      
+      num_read = sf_read_float((*playlist)->file, in, samples);
+
+      // Apply volume scaling and mixing
+      for (sf_count_t i = bufSize-samples; i < num_read+bufSize-samples; i++) {
+        out[i] += (*playlist)->volume*in[i];
+      }
+
+      if (num_read < samples) {
+	sf_close((*playlist)->file);
+	delete *playlist;
+	*playlist = (*playlist)->next; // hope it still there
+	continue;
+      } else {
+	result = paContinue;
+      }
+      playlist = &((*playlist)->next);
+    }
+    //    printf("\n");
+    delete in;
+    return result;
+}
+
+int play_sound_for(int graphId, double vol) {
+    wavListen* soundCh = audioChs;
+    while (soundCh) {
+      if (soundCh->id == graphId) {
+	sound* spin = new sound;
+	spin->file = sf_open(soundCh->file, SFM_READ, &(soundCh->sfinfo));
+	if (!spin->file) return 1;
+	spin->volume = vol;
+	spin->next = soundCh->playlist;
+	spin->evtTime = nice_time();
+	soundCh->playlist = spin;
+	// ...and stay in loop as one evt may have many sounds
+      }
+      soundCh = soundCh->next;
+    }
+    return 0;
+}
+
 int contextDepth = 0;
 
 void report_events(int dimty, const int inds[], int evts,
@@ -357,19 +430,8 @@ void report_events(int dimty, const int inds[], int evts,
   contextDepth = dimty;
 
   // now do commands associated with events
-  EvtCmdData* EvtCmd;
-  // ref_pointers[0] is -ve to avoid confusion with dummy value
-  // passed here in earlier executables
   for (count=0;count<evts;++count) {
-    EvtCmd = EvtCmdList;
-    // printf("Cmding %d\n", ref_pointers[count]);
-    while (EvtCmd) {
-      if (EvtCmd->gphId == ids[count]) {
-	play_at_vol(EvtCmd->cmd,
-		    (sums[count]-EvtCmd->min)/(EvtCmd->max-EvtCmd->min));
-      }
-      EvtCmd = EvtCmd->next;
-    }
+    play_sound_for(ids[count], sums[count]);
   }
 }
 
@@ -911,16 +973,8 @@ double VarParamData::update_from_points(double nowInDays, double next,
     myModelExec->seriesEvtSign = ndRef->graph;
     // Now play sound for event if there is one
     double volume;
-    EvtCmdData* CheckEvtCmd;
-
-    CheckEvtCmd = EvtCmdList;
-    // printf("Cmding %d\n", ref_pointers[count]);
-    while (CheckEvtCmd) {
-      if (CheckEvtCmd->gphId == ndRef->graph)
-	play_at_vol(CheckEvtCmd->cmd,
-		    sum_bloc_data(destPtr->contents, destPtr->dimSpecs));
-      CheckEvtCmd = CheckEvtCmd->next;
-    }
+    play_sound_for(ndRef->graph,
+		   sum_bloc_data(destPtr->contents, destPtr->dimSpecs));
   }
 
   return next;
@@ -1629,8 +1683,11 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       // moved a whole time step, do sound 
       nodeValues* ldata;
       float buffer[2];
-      
-      ldata = GetRawValues(soundCh->id);
+
+      if (!soundCh->file) { // wav file played by events, ignore
+      int nodNo = modelSpec->md_nodlin_from_id(soundCh->id) -
+	modelSpec->nodedata;
+      ldata = GetRawValues(nodNo);
       // send it
       int *typeLocn = ldata->dimSpecs;
       if (*typeLocn>0) //array, treat 1st two vals as L and R
@@ -1653,6 +1710,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	  fprintf( stderr, "Error number: %d\n", err );
 	  fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( err ) );
 	  userDefStop->excpNo = -89;
+      }
       }
       soundCh = soundCh->next;
     }
@@ -1884,7 +1942,7 @@ double ExecutingModel::UpdateTimeSeries(double series_pt, double nextSeriesEvt)
   }
   return nextSeriesEvt;
 }
-
+/*
 void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
   int spare;
   EvtCmdData *going, **insert;
@@ -1920,56 +1978,18 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
     *insert = going;
   }
 }
-/*
-void ExecutingModel::old_set_wav_cmd(char* nodeId) {
-  int spare, pipefd[2];
-  pid_t pid;
-  const char* argv[] = {"play", "--buffer", "2048", "-t", "raw", "-r", "44100",
-			 "-b", "16", "-e", "signed-integer", "-c", "2",
-			 "-", NULL}; 
 
-  if (!strlen(nodeId)) {
-    wavListen.id = 0;
-    close(wavListen.mic);
-    return;
-  }
-  // Create a pipe. 
-  pipe(pipefd); 
- 
-  // Create our second process. 
-  pid = fork(); 
-  if (pid == 0) { 
-    // Hook stdin up to the read end of the pipe and close the write end of 
-    // the pipe which is no longer needed by this process. 
-    dup2(pipefd[0], STDIN_FILENO); 
-    close(pipefd[1]);
-    freopen("/dev/null", "w", stderr);
-    
-    // run the command
-    execvp(argv[0], (char**)argv); 
-    perror("exec"); 
-    return; 
-  } 
-  
-  // Close read end of the pipe.  The respective read/write ends of the pipe 
-  // persists in the process created above (and happen to be tying stdin 
-  // of the process to the write end here). 
-  close(pipefd[0]);
-  wavListen.mic = pipefd[1];
-#ifndef __MACH__
-  // option does not exist in Darwin
-  fcntl(wavListen.mic, F_SETPIPE_SZ, 2048);
-#endif
-  wavListen.id = modelSpec->getinfo(nodeId, &spare);
-}
 */
-void ExecutingModel::set_wav_cmd(char* nodeId, int go) {
+#define FRAMES_PER_BUFFER 1024
+
+void ExecutingModel::set_wav_cmd(const char* nodeId, const char* toPlay) {
   PaStreamParameters outputParameters;
   PaError err;
   int refId, spare;
   wavListen **audioPtr = &audioChs, *audioCh = NULL;
 
-  refId = modelSpec->getinfo(nodeId, &spare);
+  //  refId = modelSpec->getinfo(nodeId, &spare);
+  refId = modelSpec->nodedata[modelSpec->getinfo(nodeId, &spare)].graph;
   while (*audioPtr) {
     if ((*audioPtr)->id == refId) {
       audioCh = *audioPtr;
@@ -1979,8 +1999,9 @@ void ExecutingModel::set_wav_cmd(char* nodeId, int go) {
     audioPtr = &((*audioPtr)->next);
   }
   
-  if (!go) {
+  if (!strcmp("/none/", toPlay)) { // stop playing this component
     if (audioCh) { // wave exists, close it
+      printf("Removing sound %s for event %d\n", audioCh->file, audioCh->id);
       Pa_StopStream(audioCh->mic);
       Pa_CloseStream(audioCh->mic);
       delete audioCh;
@@ -1996,34 +2017,56 @@ void ExecutingModel::set_wav_cmd(char* nodeId, int go) {
     if( err != paNoError ) goto error;
   }
 
-  outputParameters.device = Pa_GetDefaultOutputDevice(); // default output device
-  outputParameters.channelCount = 2;       // stereo output
-  outputParameters.sampleFormat = paFloat32; // 32 bit floating point output
-  outputParameters.suggestedLatency = 0.050; // Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
-  outputParameters.hostApiSpecificStreamInfo = NULL;
-
   if (!audioCh) {
     audioCh = new wavListen;
-    audioCh->id = modelSpec->getinfo(nodeId, &spare);
+    audioCh->id = refId;
+    audioCh->next = audioChs;
+    audioChs = audioCh;
     
-    err = Pa_OpenStream(&(audioCh->mic),
-              NULL, // no input
-              &outputParameters,
-              44100,
-              1,
-	      0,
-              NULL, // no callback, use blocking API
-              NULL ); // no callback, so no callback userData
-    if( err != paNoError ) goto error;
+    if (!strcmp("/model/", toPlay)) {
+      audioCh->file = NULL;
+      outputParameters.device = Pa_GetDefaultOutputDevice(); // default output device
+      outputParameters.channelCount = 2;       // stereo output
+      outputParameters.sampleFormat = paFloat32; // 32 bit floating point output
+      outputParameters.suggestedLatency = 0.050; // Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
+      outputParameters.hostApiSpecificStreamInfo = NULL;
 
-    err = Pa_StartStream(audioCh->mic);
-    if( err != paNoError ) goto error;
+	err = Pa_OpenStream(&(audioCh->mic),
+			    NULL, // no input
+			    &outputParameters,
+			    44100,
+			    1,
+			    0,
+			    NULL, // no callback, use blocking API
+			    NULL ); // no callback, so no callback userData
+	if( err != paNoError ) goto error;
+	
+	err = Pa_StartStream(audioCh->mic);
+	if( err != paNoError ) goto error;
+    } else {
+      printf("Adding sound %s for event %d\n", toPlay, audioCh->id);
+      // set up a wav file playback -- no sound yet...
+      audioCh->file = strdup(toPlay);
+      if (play_sound_for(audioCh->id, 0.1)) goto error;
+	    
+      err = Pa_OpenDefaultStream(&audioCh->mic,
+                               0,          /* no input channels */
+                               audioCh->sfinfo.channels,
+                               paFloat32,  /* 32 bit floating point output */
+                               audioCh->sfinfo.samplerate,
+                               FRAMES_PER_BUFFER,
+                               pasimCallback,
+                               audioCh);
+      if( err != paNoError ) goto error;
+	
+      err = Pa_StartStream(audioCh->mic);
+      if( err != paNoError ) goto error;
+    }
   }
-  audioCh->next = audioChs;
-  audioChs = audioCh;
   return;
 
 error:
+  audioChs = audioChs->next; // remove failed channel
     fprintf( stderr, "An error occurred while using the portaudio stream\n" );
     fprintf( stderr, "Error number: %d\n", err );
     fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( err ) );
@@ -3010,12 +3053,8 @@ node_data_line* nodlin_from_id(void* modelId, int paramId) {
   return ((ModelFor5D*)modelId)->md_nodlin_from_id(paramId);
 }
 
-void add_event_command(void* instanceId, char* nodeId, char* cmd) {
-  ((ExecutingModel*)instanceId)->set_evt_cmd(nodeId, cmd);
-}
-
-void add_wave_command(void* instanceId, char* nodeId, int go) {
-  ((ExecutingModel*)instanceId)->set_wav_cmd(nodeId, go);
+void add_wave_command(void* instanceId, char* nodeId, char* toPlay) {
+  ((ExecutingModel*)instanceId)->set_wav_cmd(nodeId, toPlay);
 }
 
 // dumb it down even further for emscripten clients that do not know how to get
