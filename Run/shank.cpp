@@ -396,7 +396,8 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
     sound** playlist = &(data->playlist); 
     while (*playlist) {
       int age = nice_time()-(*playlist)->evtTime;
-      int samples = data->format.sample_rate*(long)age*data->format.num_channels/1000000;
+      int samples = data->format.sample_rate*(long)age/1000000;
+      samples *= data->format.num_channels; // ensure channels time synced
       if (samples>bufSize) samples=bufSize;
       //      printf(" (age %d)", samples);
       
