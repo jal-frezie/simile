@@ -88,7 +88,7 @@ void* safe_open(char* fileName) {
 #endif
 
 #include <portaudio.h>
-#include <sndfile.h>
+// #include <sndfile.h> doing this stuff with our own code now
 /*
  * Unix or Win64 (or Win32!) version: does not have min & max defined
  */
@@ -335,21 +335,41 @@ void play_at_vol(const char* file, double level) {
 int latestContext[32];
 
 typedef struct sound_t {
-  SNDFILE *file;
+  FILE *file;
   int evtTime;
   float volume;
   struct sound_t* next;
 } sound;
 
+typedef struct {
+    uint16_t audio_format;
+    uint16_t num_channels;
+    uint32_t sample_rate;
+    uint32_t byte_rate;
+    uint16_t block_align;
+    uint16_t bits_per_sample;
+} WAV_FORMAT;
+
 typedef struct wavListen_t {
   int id;
   PaStream* mic;
   char* file;
-  SF_INFO sfinfo;
+  WAV_FORMAT format;
+  uint32_t data_size;
   sound *playlist;
   struct wavListen_t* next;
 } wavListen;
 wavListen* audioChs = NULL;
+
+// functions for reading and writing explicitly little-endian quantities
+int16_t read_le16(uint8_t* buffer) {
+    return (uint16_t)buffer[0] | ((uint16_t)buffer[1] << 8);
+}
+
+int32_t read_le32(uint8_t* buffer) {
+    return (uint32_t)buffer[0] | ((uint32_t)buffer[1] << 8) | 
+           ((uint32_t)buffer[2] << 16) | ((uint32_t)buffer[3] << 24);
+}
 
 static int pasimCallback(const void *inputBuffer, void *outputBuffer,
                           unsigned long framesPerBuffer,
@@ -359,34 +379,48 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
 {
     wavListen *data = (wavListen*)userData;
     float *out = (float*)outputBuffer;
-    sf_count_t num_read;
-    int result = paContinue, bufSize;
+    int what_to_read = data->format.bits_per_sample/8;
+    int bufSize = framesPerBuffer * data->format.num_channels;
+    int num_read;
+    int result = paContinue;
 
     (void) inputBuffer;
 
     // if (!(data->playlist)) printf("Trying to play empty list!\n");
     // initialize buffer to zero
-    bufSize = framesPerBuffer * data->sfinfo.channels;
-    float* in = new float[bufSize];
+
+    uint8_t* in = new uint8_t[bufSize * what_to_read];
     //    printf("responding");
     memset(out, 0, bufSize * sizeof(float));
 
     sound** playlist = &(data->playlist); 
     while (*playlist) {
       int age = nice_time()-(*playlist)->evtTime;
-      int samples = data->sfinfo.samplerate*(long)age*data->sfinfo.channels/1000000;
+      int samples = data->format.sample_rate*(long)age*data->format.num_channels/1000000;
       if (samples>bufSize) samples=bufSize;
       //      printf(" (age %d)", samples);
       
-      num_read = sf_read_float((*playlist)->file, in, samples);
+      num_read = fread(in, what_to_read, samples, (*playlist)->file);
 
       // Apply volume scaling and mixing
-      for (sf_count_t i = bufSize-samples; i < num_read+bufSize-samples; i++) {
-        out[i] += (*playlist)->volume*in[i];
+      for (int i = bufSize-samples; i < num_read+bufSize-samples; i++) {
+	if (data->format.audio_format == 3) {	
+	  out[i] += (*playlist)->volume* *(float*)(in + what_to_read*i);
+	} else {
+	  switch (what_to_read) {
+	  case 2: {
+	    out[i] += (*playlist)->volume*(float)read_le16(in + what_to_read*i)/32768;
+	    break;
+	  } case 3:
+	  case 4:
+	    out[i] += (*playlist)->volume*(float)read_le32(in + what_to_read*i)/2000000000;
+	    break;
+            // Add cases for other bit depths as needed
+	  }
+	}
       }
-
       if (num_read < samples) {
-	sf_close((*playlist)->file);
+        fclose((*playlist)->file);
 	delete *playlist;
 	*playlist = (*playlist)->next; // hope it still there
 	continue;
@@ -400,13 +434,58 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
     return result;
 }
 
+FILE* read_wav_header(wavListen* wav) {
+    FILE* file = fopen(wav->file, "rb");
+    if (!file) {
+        printf("Error opening file\n");
+        return 0;
+    }
+
+    char chunk_id[4];
+    uint32_t chunk_size;
+    char format[4];
+
+    fread(chunk_id, sizeof(char), 4, file);
+    fread(&chunk_size, sizeof(uint32_t), 1, file);
+    fread(format, sizeof(char), 4, file);
+
+    if (strncmp(chunk_id, "RIFF", 4) != 0 || strncmp(format, "WAVE", 4) != 0) {
+        printf("Not a valid WAV file\n");
+        fclose(file);
+        return NULL;
+    }
+
+    while (1) {
+        fread(chunk_id, sizeof(char), 4, file);
+        fread(&chunk_size, sizeof(uint32_t), 1, file);
+
+        if (strncmp(chunk_id, "fmt ", 4) == 0) {
+            fread(&wav->format, sizeof(WAV_FORMAT), 1, file);
+            fseek(file, chunk_size - sizeof(WAV_FORMAT), SEEK_CUR);
+        } else if (strncmp(chunk_id, "data", 4) == 0) {
+            wav->data_size = chunk_size;
+	    // wav->data_start = ftell(file);
+            break;
+        } else {
+            fseek(file, chunk_size, SEEK_CUR);
+        }
+    }
+
+    return file;
+}
+
 int play_sound_for(int graphId, double vol) {
     wavListen* soundCh = audioChs;
     while (soundCh) {
       if (soundCh->id == graphId) {
 	sound* spin = new sound;
-	spin->file = sf_open(soundCh->file, SFM_READ, &(soundCh->sfinfo));
-	if (!spin->file) return 1;
+    /* Open the WAV file */
+	spin->file = read_wav_header(soundCh);
+	if (!spin->file) {
+	  printf("Failed to read WAV file\n");
+	  delete spin;
+	  return 1;
+	}
 	spin->volume = vol;
 	spin->next = soundCh->playlist;
 	spin->evtTime = nice_time();
@@ -2051,9 +2130,9 @@ void ExecutingModel::set_wav_cmd(const char* nodeId, const char* toPlay) {
 	    
       err = Pa_OpenDefaultStream(&audioCh->mic,
                                0,          /* no input channels */
-                               audioCh->sfinfo.channels,
+                               audioCh->format.num_channels,
                                paFloat32,  /* 32 bit floating point output */
-                               audioCh->sfinfo.samplerate,
+                               audioCh->format.sample_rate,
                                FRAMES_PER_BUFFER,
                                pasimCallback,
                                audioCh);

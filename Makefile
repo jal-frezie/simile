@@ -329,8 +329,7 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h $(SLDIR)/$(INSTLIB)
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -std=c++11 -DSHARELIB $(CFLAGS) $(CPPFLAGS) \
 		$(MAKEPIC) $(MAKESL) -I. -Wl,--out-implib,lib5d$(ARCHEXTN).a \
-		-o $(SHANK) shank.cpp -lpthread -L../$(RESDIR) \
-		-lportaudio -lsndfile; \
+		-o $(SHANK) shank.cpp -lpthread -L../$(RESDIR) -lportaudio; \
 	mv $(SHANK) ../$(SLDIR); \
 	mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
 
@@ -353,8 +352,7 @@ $(EXECDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 # Unix: not needed for Linux as it can build at run time
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(CFLAGS) $(CPPFLAGS) -std=c++11 -I. $(MAKEPIC) \
-		$(MAKESL) -o ../$(SLDIR)/$(SHANK) shank.cpp \
-		-lportaudio -lsndfile; cd ..
+		$(MAKESL) -o ../$(SLDIR)/$(SHANK) shank.cpp -lportaudio; cd ..
 	$(call ADJUST_LOCAL_LIBS,/usr/local/lib/libportaudio.2.dylib,libportaudio.2.dylib) $(SLDIR)/$(SHANK)
 
 $(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
