@@ -687,7 +687,6 @@ namespace eval RunEnv {
         variable currentNode
 	
 	array unset helperTable $currentNode,stateName
-	file delete -force [file join $::simtmpdir model.shf]
     }
 
     proc WindUp {{times 0}} {
