@@ -403,8 +403,10 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
       
       num_read = fread(in + what_to_read*(bufSize-samples), what_to_read,
 		       samples, (*playlist)->file);
-      printf("nr %d wtr %d s %d bs %d t %d\n", num_read, what_to_read, samples,
-	     bufSize, age);
+      //FILE* debug = fopen("/home/jaspert/simile.log", "a");
+      //fprintf(debug, "nr %d wtr %d s %d bs %d t %d\n", num_read, what_to_read, samples,
+//	     bufSize, age);
+      //fclose(debug);
       // Apply volume scaling and mixing
       for (int i = bufSize-samples; i < num_read+bufSize-samples; i++) {
 	if (data->format.audio_format == 3) {	
