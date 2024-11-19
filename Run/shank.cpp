@@ -396,12 +396,13 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
     sound** playlist = &(data->playlist); 
     while (*playlist) {
       int age = nice_time()-(*playlist)->evtTime;
-      int samples = data->format.sample_rate*(long)age/1000000;
+      int samples = data->format.sample_rate*(long)age/1000000; // frames
       samples *= data->format.num_channels; // ensure channels time synced
       if (samples>bufSize) samples=bufSize;
       //      printf(" (age %d)", samples);
       
-      num_read = fread(in, what_to_read, samples, (*playlist)->file);
+      num_read = fread(in + what_to_read*(bufSize-samples), what_to_read,
+		       samples, (*playlist)->file);
 
       // Apply volume scaling and mixing
       for (int i = bufSize-samples; i < num_read+bufSize-samples; i++) {
