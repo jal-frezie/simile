@@ -403,7 +403,8 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
       
       num_read = fread(in + what_to_read*(bufSize-samples), what_to_read,
 		       samples, (*playlist)->file);
-
+      printf("nr %d wtr %d s %d bs %d t %d\n", num_read, what_to_read, samples,
+	     bufSize, age);
       // Apply volume scaling and mixing
       for (int i = bufSize-samples; i < num_read+bufSize-samples; i++) {
 	if (data->format.audio_format == 3) {	
@@ -439,7 +440,7 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
 FILE* read_wav_header(wavListen* wav) {
     FILE* file = fopen(wav->file, "rb");
     if (!file) {
-        printf("Error opening file\n");
+      printf("Error opening file %s\n", wav->file);
         return 0;
     }
 

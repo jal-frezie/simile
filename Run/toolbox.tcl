@@ -1578,8 +1578,10 @@ proc LoadFile {topNode tree tgt} {
                         }
 			SaveMimeBit $boddledy $tree$oldPath $Date
 		    } "Simile helper configuration file" {
+			RecordPathChoice .shf $tgt $topNode
 			SaveMimeBit $boddledy $tree$oldPath $Date
 		    } "Simile parameter file" {
+			RecordPathChoice .spf $tgt $topNode
 			SaveMimeBit $boddledy $tree$oldPath $Date
                     } default {
 			# If no auth code, do not keep executable, but
@@ -2048,10 +2050,11 @@ proc SaveProjectFile {topNode path tgt} {
     if {[HaveValues $topNode]} {
         set SimileProject(modelRunning) [expr {1+$runState($topNode,updated)}]
 	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
-    }
+#    \}
     # stateName referred to separate .shf -- bundle it instead
-    if {[ViewUnsaved $topNode]} {
+#    if {[ViewUnsaved $topNode]} \{
 	set ::helperTable($topNode,stateName) [file join $path model.shf]
+	RecordPathChoice .shf $tgt $topNode
 	::RunEnv::SaveView 0
 	set SimileProject(nameOfHelperStateFile) model.shf
 	# this should make v6x find it OK
@@ -2096,9 +2099,11 @@ proc SaveProjectFile {topNode path tgt} {
 # start by always writing it, later add check if version in tmp has been updated
     if {[HaveValues $topNode]>1 && [[winfo parent $RunEnv::paramFrame($topNode)] tab $RunEnv::paramFrame($topNode) -state] eq "normal"} { ;# will be hidden if no params
 	set ::preSelect [file join $path model.spf]
+	RecordPathChoice .spf $tgt $topNode
 	fileparams::Save $topNode $topNode
 
 	set ::preSelect [file join $path model.sxf]
+	RecordPathChoice .sxf $tgt $topNode
 	similescript::$::helperTable(ParamEditor)::Save \
 	    $runState($topNode,parmsId) ${topNode}_expt
     }
