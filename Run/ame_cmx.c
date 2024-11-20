@@ -23,7 +23,11 @@ char simileVersion[] = SIMILE_VERSION;
 void showMess (const char* mess) {
   // Tcl_VarEval(globInterp, "tk_messageBox -title {c++ debug} -icon info -message {", mess, "} -type ok",
   // NULL);
-  printf("exec: %s\n", mess);
+  // printf("exec: %s\n", mess);
+      FILE* debug = fopen("/c/Users/jaspe/simile.log", "a");
+      fprintf(debug, "About to write an error message\n");
+      fprintf(debug, mess);
+      fclose(debug);
 }
 
 /* this simply makes up a tcl list of all the objects that

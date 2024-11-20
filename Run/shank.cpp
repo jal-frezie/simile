@@ -283,7 +283,7 @@ double ame_rand(double lo, double hi) {
 double brand48_by_val(void* seed) {
   return erand48((unsigned short int*)seed);
 }
-
+/*
 void playsound(const char* file) {
   char cmd[256];
 #ifdef _WIN32
@@ -331,7 +331,7 @@ void play_at_vol(const char* file, double level) {
   system(cmd);
 #endif
 }
-
+*/
 int latestContext[32];
 
 typedef struct sound_t {
@@ -396,17 +396,11 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
     sound** playlist = &(data->playlist); 
     while (*playlist) {
       int age = nice_time()-(*playlist)->evtTime;
-      int samples = data->format.sample_rate*(long)age/1000000; // frames
+      int samples = (uint64_t)data->format.sample_rate*age/1000000; // frames
       samples *= data->format.num_channels; // ensure channels time synced
       if (samples>bufSize) samples=bufSize;
-      //      printf(" (age %d)", samples);
-      
       num_read = fread(in + what_to_read*(bufSize-samples), what_to_read,
 		       samples, (*playlist)->file);
-      //FILE* debug = fopen("/home/jaspert/simile.log", "a");
-      //fprintf(debug, "nr %d wtr %d s %d bs %d t %d\n", num_read, what_to_read, samples,
-//	     bufSize, age);
-      //fclose(debug);
       // Apply volume scaling and mixing
       for (int i = bufSize-samples; i < num_read+bufSize-samples; i++) {
 	if (data->format.audio_format == 3) {	
@@ -434,7 +428,6 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
       }
       playlist = &((*playlist)->next);
     }
-    //    printf("\n");
     delete in;
     return result;
 }
@@ -2131,6 +2124,7 @@ void ExecutingModel::set_wav_cmd(const char* nodeId, const char* toPlay) {
       printf("Adding sound %s for event %d\n", toPlay, audioCh->id);
       // set up a wav file playback -- no sound yet...
       audioCh->file = strdup(toPlay);
+      audioCh->playlist = NULL;
       if (play_sound_for(audioCh->id, 0.1)) goto error;
 	    
       err = Pa_OpenDefaultStream(&audioCh->mic,
