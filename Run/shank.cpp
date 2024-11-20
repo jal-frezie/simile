@@ -356,6 +356,7 @@ typedef struct wavListen_t {
   char* file;
   WAV_FORMAT format;
   uint32_t data_size;
+  uint32_t data_start;
   sound *playlist;
   struct wavListen_t* next;
 } wavListen;
@@ -382,6 +383,7 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
     int what_to_read = data->format.bits_per_sample/8;
     int bufSize = framesPerBuffer * data->format.num_channels;
     int num_read;
+    int remaining;
     int result = paContinue;
 
     (void) inputBuffer;
@@ -399,6 +401,8 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
       int samples = (uint64_t)data->format.sample_rate*age/1000000; // frames
       samples *= data->format.num_channels; // ensure channels time synced
       if (samples>bufSize) samples=bufSize;
+      remaining = (data->data_size-ftell((*playlist)->file))/what_to_read;
+      if (remaining>samples) remaining=samples;
       num_read = fread(in + what_to_read*(bufSize-samples), what_to_read,
 		       samples, (*playlist)->file);
       // Apply volume scaling and mixing
@@ -462,7 +466,7 @@ FILE* read_wav_header(wavListen* wav) {
             fseek(file, chunk_size - sizeof(WAV_FORMAT), SEEK_CUR);
         } else if (strncmp(chunk_id, "data", 4) == 0) {
             wav->data_size = chunk_size;
-	    // wav->data_start = ftell(file);
+	    wav->data_start = ftell(file);
             break;
         } else {
             fseek(file, chunk_size, SEEK_CUR);
