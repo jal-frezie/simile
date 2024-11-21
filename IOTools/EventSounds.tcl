@@ -181,6 +181,13 @@ public method AddSoundFor {topNode path sound} {
 
     public method Reset {} {
 	set useNodes(lastDisp) [GetModelTime]
+	# Sounds will have been cleared if model rebuilt, due to possible node
+	# id changes, so reinstate them
+	set topNode [$modelInst cget -modelNode]
+	foreach {path file} $useNodes(sounds) {	    
+	    set node [GetIdFromCaptionPath $path]
+	    AddWaveCommand $topNode $node [file nativename $file]
+	}
     }
     
     public method Display {time dispInt step} {

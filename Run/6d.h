@@ -281,7 +281,6 @@ class ExecutingModel
 
   // allow model to update client during execution; client should not call
   BOOLEAN do_gui_check(double, int);
-  void set_wav_cmd(const char*, const char*);
   graph_data_type* GetSketchGraphs();
 }; // End of class ExecutingModel
 

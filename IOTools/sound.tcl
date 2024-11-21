@@ -44,15 +44,14 @@ itcl::class similescript::$newHelperClass {
 	Display 0 0 0
     }
 
-#    public method Reset {} {
-    #	# node id may be out of date or lost due to rebuild --
-    # in which case it will fail to remove the old one
-#	if {[info exists State]} {
-#	    set topNode [$modelInst cget -modelNode]
-#	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
-#	    AddWaveCommand $topNode $useNode "/model/"
-#	}
-#    }
+    public method Reset {} {
+	# node id may be out of date or lost due to rebuild --
+	if {[info exists State]} {
+	    set topNode [$modelInst cget -modelNode]
+	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
+	    AddWaveCommand $topNode $useNode "/model/"
+	}
+    }
 
     public method Display {time dispInt step} {
 # time is current model time

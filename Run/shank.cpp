@@ -2064,47 +2064,49 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
 */
 #define FRAMES_PER_BUFFER 1024
 
-void ExecutingModel::set_wav_cmd(const char* nodeId, const char* toPlay) {
+void set_wav_cmd(ModelServer* mSpec, const char* nodeId, const char* toPlay) {
   PaStreamParameters outputParameters;
   PaError err;
   int refId, spare;
   wavListen **audioPtr = &audioChs, *audioCh = NULL;
 
   //  refId = modelSpec->getinfo(nodeId, &spare);
-  refId = modelSpec->nodedata[modelSpec->getinfo(nodeId, &spare)].graph;
+  refId = mSpec->nodedata[mSpec->getinfo(nodeId, &spare)].graph;
   while (*audioPtr) {
     if ((*audioPtr)->id == refId) {
       audioCh = *audioPtr;
-      *audioPtr = audioCh->next; // snip it out
-      break;
+      if (!strcmp("/none/", toPlay)) { 
+	Pa_StopStream(audioCh->mic);
+	Pa_CloseStream(audioCh->mic);
+	*audioPtr = audioCh->next; // snip it out
+	delete audioCh;
+	continue; // avoid advancing pointer again
+      }
+      if (audioCh->file && !strcmp(audioCh->file, toPlay) ||
+	  !audioCh->file && !strcmp("/model/", toPlay)) {
+	return; // already doing this, no action
+      }
     }
     audioPtr = &((*audioPtr)->next);
   }
   
-  if (!strcmp("/none/", toPlay)) { // stop playing this component
-    if (audioCh) { // wave exists, close it
-      printf("Removing sound %s for event %d\n", audioCh->file, audioCh->id);
-      Pa_StopStream(audioCh->mic);
-      Pa_CloseStream(audioCh->mic);
-      delete audioCh;
-    }
+  if (!strcmp("/none/", toPlay)) {
     if (!audioChs) { // all waves closed, release player
       Pa_Terminate();
     }
     return;
   }
   
-  if (!audioCh && !audioChs) { // No waves playing, kick off server
+  if (!audioChs) { // No waves playing, kick off server
     err = Pa_Initialize();
     if( err != paNoError ) goto error;
   }
 
-  if (!audioCh) {
-    audioCh = new wavListen;
-    audioCh->id = refId;
-    audioCh->next = audioChs;
-    audioChs = audioCh;
-    
+  audioCh = new wavListen;
+  audioCh->id = refId;
+  audioCh->next = audioChs;
+  audioChs = audioCh;
+
     if (!strcmp("/model/", toPlay)) {
       audioCh->file = NULL;
       outputParameters.device = Pa_GetDefaultOutputDevice(); // default output device
@@ -2126,7 +2128,6 @@ void ExecutingModel::set_wav_cmd(const char* nodeId, const char* toPlay) {
 	err = Pa_StartStream(audioCh->mic);
 	if( err != paNoError ) goto error;
     } else {
-      printf("Adding sound %s for event %d\n", toPlay, audioCh->id);
       // set up a wav file playback -- no sound yet...
       audioCh->file = strdup(toPlay);
       audioCh->playlist = NULL;
@@ -2145,10 +2146,10 @@ void ExecutingModel::set_wav_cmd(const char* nodeId, const char* toPlay) {
       err = Pa_StartStream(audioCh->mic);
       if( err != paNoError ) goto error;
     }
-  }
-  return;
+    return;
 
 error:
+  delete audioCh;
   audioChs = audioChs->next; // remove failed channel
     fprintf( stderr, "An error occurred while using the portaudio stream\n" );
     fprintf( stderr, "Error number: %d\n", err );
@@ -3042,6 +3043,13 @@ public:
   {
   }
 
+  ~ModelFor5D() {
+  // now clear all sounds
+    for (int i=0; i<nodecount; ++i) {
+      set_wav_cmd(this, nodedata[i].name, "/none/");
+    }
+  }
+  
   int get_value_pointer(void* ref, void* slot, double time,
 				int paramId, int ic, int* indxs) {
     return fivedee_get_value_pointer(ref, slot, time, paramId, ic, indxs);
@@ -3137,7 +3145,7 @@ node_data_line* nodlin_from_id(void* modelId, int paramId) {
 }
 
 void add_wave_command(void* instanceId, char* nodeId, char* toPlay) {
-  ((ExecutingModel*)instanceId)->set_wav_cmd(nodeId, toPlay);
+  set_wav_cmd(((ExecutingModel*)instanceId)->modelSpec, nodeId, toPlay);
 }
 
 // dumb it down even further for emscripten clients that do not know how to get

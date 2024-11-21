@@ -623,7 +623,7 @@ proc ShiftDisplays {node payload current display doAll} {
 			Display $current $display 1]
 	
 	if {$runState($node,splimit)} {
-	    set minStep [expr {1000/$runState($node,speedLimit)}]
+	    set minStep [expr {round(1000/$runState($node,speedLimit))}]
 	} else {
 	    set minStep -1
 	}
