@@ -401,10 +401,11 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
       int samples = (uint64_t)data->format.sample_rate*age/1000000; // frames
       samples *= data->format.num_channels; // ensure channels time synced
       if (samples>bufSize) samples=bufSize;
-      remaining = (data->data_size-ftell((*playlist)->file))/what_to_read;
+      remaining = (data->data_start+data->data_size - ftell((*playlist)->file))
+	/what_to_read;
       if (remaining>samples) remaining=samples;
       num_read = fread(in + what_to_read*(bufSize-samples), what_to_read,
-		       samples, (*playlist)->file);
+		       remaining, (*playlist)->file);
       // Apply volume scaling and mixing
       for (int i = bufSize-samples; i < num_read+bufSize-samples; i++) {
 	if (data->format.audio_format == 3) {	
