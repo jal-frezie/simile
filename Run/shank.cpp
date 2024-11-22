@@ -433,7 +433,7 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
       }
       playlist = &((*playlist)->next);
     }
-    delete in;
+    delete [] in;
     return result;
 }
 
@@ -634,7 +634,7 @@ int free_bloc_level(char* ptData, int* ptDims, int offset) {
       free_bloc_level(convenience->ptr, ptDims+1, count);
     }
     if (convenience->size) 
-      delete convenience->ptr;
+      delete [] convenience->ptr;
     return 1;
   case SPARSEARRAY:
     for (count=0; count<convenience->size; ++count) {
@@ -643,7 +643,7 @@ int free_bloc_level(char* ptData, int* ptDims, int offset) {
 		      ptDims+2, count);
     }
     if (convenience->size) 
-      delete convenience->ptr;
+      delete [] convenience->ptr;
     return 1;
   default:
     int reps, *subDims;
@@ -664,7 +664,7 @@ int free_bloc_level(char* ptData, int* ptDims, int offset) {
 // free_bloc_data frees all memory used in a structure
 void free_bloc_data(char* ptData, int* ptDims) {
   if (free_bloc_level(ptData, ptDims, 0))
-    delete ptData;
+    delete [] ptData;
 }
 
 // copy_bloc_data duplicates a structure, allocating the required memory
@@ -2750,7 +2750,7 @@ int set_bloc_record_count(char* ptData, int* ptDims, int* indxs, int length) {
   if (*subDims != OWNSIZED) return 1; // we are not
   
   if (newRecord->size) {
-    delete newRecord->ptr;
+    delete [] newRecord->ptr;
   }
   //substitute OWNSIZED to create right size block then put back
   *subDims = newRecord->size = length;
