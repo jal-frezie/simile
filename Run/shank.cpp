@@ -3044,10 +3044,6 @@ public:
   }
 
   ~ModelFor5D() {
-  // now clear all sounds
-    for (int i=0; i<nodecount; ++i) {
-      set_wav_cmd(this, nodedata[i].name, "/none/");
-    }
   }
   
   int get_value_pointer(void* ref, void* slot, double time,
@@ -3146,6 +3142,13 @@ node_data_line* nodlin_from_id(void* modelId, int paramId) {
 
 void add_wave_command(void* instanceId, char* nodeId, char* toPlay) {
   set_wav_cmd(((ExecutingModel*)instanceId)->modelSpec, nodeId, toPlay);
+}
+
+void clear_wav_commands(ModelFor5D* modelId) {
+  // now clear all sounds
+  for (int i=0; i<modelId->nodecount; ++i) {
+    set_wav_cmd(modelId, modelId->nodedata[i].name, "/none/");
+  }
 }
 
 // dumb it down even further for emscripten clients that do not know how to get
@@ -3288,7 +3291,8 @@ char* myexit(void* modelType, void* modelHandle) {
     // swap below cmd for above at next minor version increment
     delete (ExecutingModel*)modelHandle;
   }
-  if (modelType) { 
+  if (modelType) {
+    clear_wav_commands((ModelFor5D*)modelType);
     delete (ModelFor5D*)modelType;
   }
   return NULL; // message displayed in destructor cos it is not allowed
