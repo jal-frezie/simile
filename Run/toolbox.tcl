@@ -1945,6 +1945,7 @@ proc OpenAll {win} {
 	    return
 	}
 	RunIfPackage
+	return ;# update status set correctly
     }
     set ::runState($window_info($win,top_node),updated) 0
 }
@@ -1964,7 +1965,6 @@ proc OpenProjectFile {path} {
     #gets $projectF SimileProjectData
     set SimileProjectData [read $projectF] ;# may be line breaks in sm names
     close $projectF
-    file delete $pFile
     array set SimileProject $SimileProjectData
     
     # if params it should load the spfs

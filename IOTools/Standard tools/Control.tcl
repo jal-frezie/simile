@@ -329,7 +329,7 @@ namespace eval runcontrol33857 {
 		    UpdateExecution $node $action
 		    return
 		} no {
-		    if {$runState($node,modelRunning)==3} {
+		    if {$runState($node,modelRunning)>1} {
 			set runState($node,modelRunning) 4
 		    }
 		} cancel {
