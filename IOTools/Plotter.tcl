@@ -101,13 +101,14 @@ namespace eval ::$keyValue {
         set plot($w,KeyArrays) 0
         set plot($w,KeyRuns) 1
         set plot($w,FewXAxisTicks) false
-        set plot($w,AutoAxisScaling) 1; #use ints "true" doesn't  to work with check button
+	set plot($w,TimeBase) 0
+	set plot($w,Persistence) 0
+#        set plot($w,AutoAxisScaling) 1; #use ints "true" doesn't  to work with check button
         set plot($w,DrawLegend) 1
 	set plot($w,timeFmt) General
-        set plot($w,KeyArrays) 0
-        set plot($w,KeyRuns) 1
         set plot($w,highlittrace) {}
 	set plot($w,usedLegend) 0
+	set plot($w,ordinal) 0
     }
     
     proc InitPlatformDependentPlotVars {w} {
@@ -158,6 +159,24 @@ namespace eval ::$keyValue {
 # so may as well keep plots too
 #        drawGraphpad $w
     }
+
+    proc SetTimeAxes {w Tnew} {
+        global ::graphtools::plot
+        if { ( $Tnew>$plot($w,Xmax_axis) || ($Tnew<$plot($w,Xmin_axis)) )} {
+            if {$Tnew>$plot($w,Xmax_axis)} {
+                set plot($w,Xmax_data) [GetModelEndTime]
+		if {$plot($w,TimeBase)} {
+		    set  plot($w,Xmax_data) $plot($w,TimeBase)
+		}
+		if {$plot($w,timeFmt) ne "General"} {
+		    set plot($w,Xmax_data) [expr {$plot($w,Xmax_data)*[InDays $::runState([GetTopNode $w],timeUnit)]}]
+		}
+            }
+            if {$Tnew<$plot($w,Xmin_axis)} {
+                set plot($w,Xmin_data) $Tnew
+            }
+	}
+    }
     
     proc Restore {winId} {
         #    ShowMess debug info "plotter.tcl Restore $winId" ok
@@ -179,8 +198,7 @@ namespace eval ::$keyValue {
         
         regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set plot $restoreString
-        set plot($winId,Xmin_data) [GetModelTime]
-        set plot($winId,Xmax_data) [GetModelEndTime]
+	SetTimeAxes $winId [GetModelTime]
 	set topNode [GetTopNode $winId]
 	if {$plot($winId,timeFmt) ne "General"} {
 	    set unitInDays [InDays $::runState($topNode,timeUnit)]
@@ -275,7 +293,10 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         global ::graphtools::Told
         global ::graphtools::Tnew
+        global ::graphtools::YYnew
         global runState
+
+	variable times
         
         get_Yvalues $w
 
@@ -283,8 +304,19 @@ namespace eval ::$keyValue {
 	    set time [expr {$time*[InDays $::runState([GetTopNode $w],timeUnit)]}]
 	}
         set Told($w) $Tnew($w)
-        set Tnew($w) $time
-        
+	set Tnew($w) $time
+	set seq [incr plot($w,ordinal)]
+	set times($w,$seq) $time
+        if {$plot($w,Persistence)} {
+	    set lead [string length $w,]
+	    foreach {oldLog oldTime} [array get times $w,*] {
+		if {abs($time-$oldTime)>$plot($w,Persistence)} {
+		    set expired [string range $oldLog $lead end]
+		    $w.canvas delete trace$expired
+		    array unset times $oldLog
+		}
+	    }
+        }
         #redraw axis and graph if necessary; otherwise just extend plots
         if {$plot($w,redraw)} {
             #drawGraphpad $w
@@ -342,19 +374,21 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         # copy the values of the variables to be edited to temp, but namespace accessible, variables
         variable FewXAxisTicks
-	variable KeyArrays $::graphtools::plot($w,KeyArrays)
-	variable KeyRuns $::graphtools::plot($w,KeyRuns)
-        variable AutoAxisScaling
+#        variable AutoAxisScaling
         variable DrawLegend
 	variable timeFmt
 	variable KeyArrays
 	variable KeyRuns
+	variable TimeBase
+	variable Persistence
         set FewXAxisTicks $::graphtools::plot($w,FewXAxisTicks)
-        set AutoAxisScaling $::graphtools::plot($w,AutoAxisScaling)
+#        set AutoAxisScaling $::graphtools::plot($w,AutoAxisScaling)
         set DrawLegend $::graphtools::plot($w,DrawLegend)
         set timeFmt $::graphtools::plot($w,timeFmt)
         set KeyArrays $::graphtools::plot($w,KeyArrays)
         set KeyRuns $::graphtools::plot($w,KeyRuns)
+        set TimeBase $::graphtools::plot($w,TimeBase)
+        set Persistence $::graphtools::plot($w,Persistence)
         
         set dlg [PutItThere .plotxyprop $w]
         wm title $dlg [tr. "Plotter properties"]
@@ -394,6 +428,9 @@ namespace eval ::$keyValue {
 		      -variable [namespace current]::timeFmt \
 		      -value $effect] -side left
 	}
+	pack [set tbfr [ttk::frame $xaxix.tbframe]] -fill x -expand 1
+	grid [ttk::label $tbfr.tblabel -text [tr. {Timebase (0 for open):}]] [ttk::entry $tbfr.tbentry -textvariable [namespace current]::TimeBase]
+	grid [ttk::label $tbfr.plabel -text [tr. {Persistence (0 for indefinite):}]] [ttk::entry $tbfr.pentry -textvariable [namespace current]::Persistence]
         pack [ttk::labelframe $chkF.legendF -text "Draw legend"] -fill x
         pack [ttk::checkbutton $chkF.legendF.cbutton -variable [namespace current]::DrawLegend] -side right
         pack [ttk::labelframe $chkF.colsF -text "Use different colours for:"] -fill x
@@ -419,6 +456,8 @@ namespace eval ::$keyValue {
             #set ::graphtools::plot($w,AutoAxisScaling) $AutoAxisScaling
 	    set ::graphtools::plot($w,KeyArrays) $KeyArrays
 	    set ::graphtools::plot($w,KeyRuns) $KeyRuns
+	    set ::graphtools::plot($w,TimeBase) $TimeBase
+	    set ::graphtools::plot($w,Persistence) $Persistence
 
             if {$KeyArrays || $KeyRuns} {
                 set $plot($w,Ylabels) {}
@@ -426,8 +465,6 @@ namespace eval ::$keyValue {
             
             set ::graphtools::plot($w,DrawLegend) $DrawLegend
             set ::graphtools::plot($w,timeFmt) $timeFmt
-            set ::graphtools::plot($w,KeyArrays) $KeyArrays
-            set ::graphtools::plot($w,KeyRuns) $KeyRuns
 ################################################################################
 #             set OldXRange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
 #             set OldXmin_axis $plot($w,Xmin_axis)
@@ -852,6 +889,16 @@ namespace eval ::$keyValue {
         global ::graphtools::Tnew
         
 	array set Yold_array $YYold($w)
+	if {$plot($w,TimeBase)} {
+	    set RTold [expr {fmod($Told($w),$plot($w,TimeBase))}]
+	    set RTnew [expr {fmod($Tnew($w),$plot($w,TimeBase))}]
+	    if {($RTnew>$RTold) != ($Tnew($w)>$Told($w))} { # flyback
+		return
+	    }
+	} else {
+	    set RTold $Told($w)
+	    set RTnew $Tnew($w)
+	}
         foreach {node Ynew} $YYnew($w) {
             #puts "plot_YY Ynew $Ynew"
 #            foreach Yold $YYold($w) {
@@ -859,8 +906,8 @@ namespace eval ::$keyValue {
 	    if {![info exists Yold_array($node)]} {
 		set Yold_array($node) {}
 	    }
-	    plot_Y $w $Told($w) $Yold_array($node) \
-		$Tnew($w) $Ynew $node {}
+	    plot_Y $w $RTold $Yold_array($node) \
+		$RTnew $Ynew $node {}
 #                }
 #            }
         }
@@ -912,9 +959,9 @@ namespace eval ::$keyValue {
 		$w.canvas create text $xm $ym -tags prompt -width 100 \
 		    -justify center -text [tr. "Some values resulting from maths errors have not been plotted"]
 	    } else {
-		if $plot($w,AutoAxisScaling) {
+#		if $plot($w,AutoAxisScaling) {
 		    adjustLimits $w $Tnew $Ynew
-		}
+#		}
 		if {![dodgyValue $Yold]} {
 		    set colId [CaptionNo $w $node $ident]
 		    set colour [lindex $plot($w,YColours) [expr {$colId%$NColours}]]
@@ -972,10 +1019,11 @@ namespace eval ::$keyValue {
         } else  {
             set width 1p
         }
+	set cTag trace$plot($w,ordinal)
 	set plot($w,usedLegend) 1
         $w.canvas create line $x0 $y0 $x1 $y1 \
                 -fill $Colour -width $width\
-                -tags "graph scalable xaxis_item yaxis_item $node.$id"
+                -tags "graph scalable xaxis_item yaxis_item $node.$id $cTag"
     }
     
     
@@ -986,7 +1034,7 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         variable runCount
         
-        if $plot($w,AutoAxisScaling) {
+#        if $plot($w,AutoAxisScaling) {
             set plot($w,Xmax_axis) -1e100
             set plot($w,Xmin_axis) 1e100
             set plot($w,Xmajorstep) 1
@@ -1002,7 +1050,7 @@ namespace eval ::$keyValue {
             set plot($w,Xprecision) 0
             set plot($w,Yprecision) 0
             set plot($w,usedLegend) 0
-        }
+ #       }
         set YYold($w) {}
         set YYnew($w) {}
         
@@ -1016,17 +1064,8 @@ namespace eval ::$keyValue {
     
     proc adjustLimits {w Tnew Ynew} {
         global ::graphtools::plot
-        
-        if { ( $Tnew>$plot($w,Xmax_axis) || ($Tnew<$plot($w,Xmin_axis)) )} {
-            if {$Tnew>$plot($w,Xmax_axis)} {
-                set plot($w,Xmax_data) [GetModelEndTime]
-		if {$plot($w,timeFmt) ne "General"} {
-		    set plot($w,Xmax_data) [expr {$plot($w,Xmax_data)*[InDays $::runState([GetTopNode $w],timeUnit)]}]
-		}
-            }
-            if {$Tnew<$plot($w,Xmin_axis)} {
-                set plot($w,Xmin_data) $Tnew
-            }
+
+	SetTimeAxes $w $Tnew
             set OldRange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
             set OldXmin_axis $plot($w,Xmin_axis)
             
@@ -1039,7 +1078,7 @@ namespace eval ::$keyValue {
                     plot($w,Xmin_axis) plot($w,Xmax_axis) \
                     plot($w,Xmajorstep) numInt plot($w,Xminorstep) numMinorInt plot($w,Xprecision)
             RescaleGraphX $w $OldRange $OldXmin_axis
-        }
+        
         if { ( ($Ynew>$plot($w,Ymax_axis)) || ($Ynew<$plot($w,Ymin_axis)) )} {
             #       ShowMess debug info "$Ynew $plot($w,Ymin_data) $plot($w,Ymax_data)\
             #                $plot($w,Ymin_axis) $plot($w,Ymax_axis)" ok
