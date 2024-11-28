@@ -757,7 +757,8 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	    (inters><promote_arg(Type, DUnits,_FType,_Conv);
 		% not sure how to make this happen
 		throw(wrong_param_type('prev(n)', Type, DUnits, units))),
-	    (suffix(Loops, DLoops), !;
+	    (Loops = [sm(_,_,_, vm_retrieve(_,_,_)) | _]; % bad inter error
+	     suffix(Loops, DLoops), !;
 	     get_dims_from_loops(Loops, XIDims, _),
 	     get_dims_from_loops(DLoops, SlotDims, _),
 	     throw(wrong_param_type('prev(n)', XIDims, SlotDims, dimensions)))),
