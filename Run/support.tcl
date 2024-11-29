@@ -239,7 +239,7 @@ proc NewCaptionIfAvail {topNode dest inds in_code} {
 	    set allETs [GetTclCompProperty Trans \
 		      [lindex $nodedata($record) 0]]
 	    set useETs [lrange $allETs end-[expr {[llength $inds]-1}] end]
-	    return [concat [list [set ::[lindex $texts 0]]] \
+	    return [concat [list [lindex $texts 0]] \
 			[TransEnums $useETs $inds]]
 	}
     }
