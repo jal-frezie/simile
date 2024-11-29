@@ -713,7 +713,6 @@ parser here.
 We just have to make the eqn look like we are in the middle of the 
 generation
 process. */
-
 test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 ParamList, ParseError) :-
 	reverse(IndxCount, IndxSzs),
@@ -747,38 +746,41 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 superfast_delete(Frag),
 	 oblitterfry(Frag), fail;
 	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, IndxSzs, _,_))]),
-	on_exception(ParseExcp,
-		     (make_intermediates(FullExpr, Fn, ['/dest/'],
+	catch(make_intermediates(FullExpr, Fn, ['/dest/'],
 		                        DummyDest, _, [],
 					[], dummy, _, Type, _I,
 					part_result(Context, _,_,_)),
-		     inters><get_model_and_loops(Context, DummyDest,
-						   Loops, _),
-	    (inters><promote_arg(Type, DUnits,_FType,_Conv);
+	      ParseExcp,
+	      replace_subexps(ParseExcp, dialogue, collapse_params,
+			      _, top_down, _, ParseError))),
+	(nonvar(ParseError);
+	 inters><get_model_and_loops(Context, DummyDest, Loops, _),
+	 get_dims_from_loops(Loops, Dims, _),
+	 % hack to make sure all dims grounded -- need sublist/3, include/3?
+	 suffix(FreeDims, Dims),
+	 list_of(n, _, FreeDims),
+	 ground(Dims),
+	  (member(var, Dims), !,
+	    ParseError = expr_denotes_list;
+	   member(records, Dims), !,
+	    ParseError = expr_denotes_per_record_array;
+	   inters><promote_arg(Type, DUnits,_FType,_Conv),
+	  (suffix(Loops, DLoops), !;
+	   get_dims_from_loops(DLoops, SlotDims, _),
+	   ParseError = wrong_param_type('prev(n)', Dims, SlotDims, dimensions));
+
 		% not sure how to make this happen
-		throw(wrong_param_type('prev(n)', Type, DUnits, units))),
-	    (Loops = [sm(_,_,_, vm_retrieve(_,_,_)) | _]; % bad inter error
-	     suffix(Loops, DLoops), !;
-	     get_dims_from_loops(Loops, XIDims, _),
-	     get_dims_from_loops(DLoops, SlotDims, _),
-	     throw(wrong_param_type('prev(n)', XIDims, SlotDims, dimensions)))),
-	(replace_subexps(ParseExcp, dialogue, collapse_params,
-			 _, top_down, _, ParseError);
-			     ParseError = ParseExcp))),
+	  ParseError = wrong_param_type('prev(n)', Type, DUnits, units))),
 	(nonvar(ParseError), !;
 	(member(input_link(_,_, Param, _-PLoops, _), ExpInters),
 	    nth(N, PLoops, set(_, loop(Bound,_))),
 	    var(Bound),
 	    ParseError = cannot_set_dims(N, Param);
-	    Type == cond_spec,
+	  Type == cond_spec,
 	    \+ instance><is_lookup_cond(Equation, _),
 	    ParseError = bad_cond_spec_form;
+	  true)).
 	    %sicstus_format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
-	  get_dims_from_loops(Loops, Dims, _),
-		 (member(var, Dims), !,
-		    ParseError = expr_denotes_list;
-		 \+ member(records, Dims), !;
-		    ParseError = expr_denotes_per_record_array))).
 	/* real_dims_only(XDims, Dims).
 	Hack alert. The term representing the dest context has indices
 	(   so index(n) will work) but no loops, so we don't need to add it
@@ -817,8 +819,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	            Units = param_history(_Defn, 1)),
 	        /* pass dims up the recursion loop */
 	        length(Dims, L),
-	        list_of(x, L, DimB),
-	        append(DimB, _, DimL),
+%	        list_of(x, L, DimB),
+	        append(Dims, _, DimL),
 		source_compat(Link, Compat),
 	        DoneExpr = param(arr(_, Param, Inds), Type, PLoops, Compat, []);
 	    raise_exception(undefined_parameter(Param)));
@@ -865,11 +867,11 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DsDone),
 	    DoneExpr =.. [Cumulative | DsDone],
-	    SubL = [x | DimL];
+	    SubL = [_IntOrVar | DimL];
 	(is_list(Param),
-	    length(Param, N), 
+	    length(Param, Count), 
 	    DParam =.. [do | Param], % conversion to fn avoids recursion
-	    length(DoneExpr, N),
+	    length(DoneExpr, Count),
 	    DDone =.. [do | DoneExpr];
 	 Param = makearray(Elt, Count),
 	    DParam = do(Elt, Count),
@@ -878,16 +880,19 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    replace_subexps(DParam, dialogue, expand_params,
 			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DDone),
-	    DimL = [x | SubL];
+	    DimL = [Count | SubL];
 	Param = element(List, Index),
 % work out dimty as if:
 % element([[a,b,c],[d,e,f]],[x,y,z]) is [element([a,d],x)...element([c,f],z)].
 	    replace_subexps(List, dialogue, expand_params,
-			    dim_data([x | DimL], PsUsed, AllInputs, ExpInters),
+			    dim_data([Pk | Elts], PsUsed, AllInputs, ExpInters),
 			    top_down, _, ListExpr),
 	    replace_subexps(Index, dialogue, expand_params,
-			    dim_data(DimL, PsUsed, AllInputs, ExpInters),
+			    dim_data(Elts, PsUsed, AllInputs, ExpInters),
 			    top_down, _, IndXpr),
+	    (\+ Pk = var ->
+		 DimL = Elts;
+	     DimL = [Pk | Elts]),
 	    DoneExpr = element(ListExpr, IndXpr)),
 	    Recurse = 0;
 	Param = prev(N),
