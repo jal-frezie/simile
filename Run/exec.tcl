@@ -1268,7 +1268,9 @@ proc MarkEvtParamActive {caseId node inC wait} {
 }
 
 proc AddWaveCommand {topNode node go} {
-    add_wave_command $::instance_id $node $go
+    if {$::instance_id ne {}} { # unlikely to work in debug mode
+	add_wave_command $::instance_id $node $go
+    }
 }
 
 proc SetWrapTime {caseId inC where args} {
