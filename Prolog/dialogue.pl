@@ -890,9 +890,9 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    replace_subexps(Index, dialogue, expand_params,
 			    dim_data(Elts, PsUsed, AllInputs, ExpInters),
 			    top_down, _, IndXpr),
-	    (\+ Pk = var ->
-		 DimL = Elts;
-	     DimL = [Pk | Elts]),
+	    (Pk == var ->
+		 DimL = [Pk | Elts];
+	     DimL = Elts),
 	    DoneExpr = element(ListExpr, IndXpr)),
 	    Recurse = 0;
 	Param = prev(N),
