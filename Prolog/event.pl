@@ -1089,6 +1089,8 @@ spread_dims(Node) :-
 	    dialogue><check_param_usage(IList, [], Xs, IList, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (Err = [],
+	     default_units(Node, DefBase, _DefDims),
+	     inters><promote_unit(DefBase, Type),
 		(get_actual_sizes(Node, FoundArray, bare, _, Array, _),
 		    get_actual_sizes(Node, GivenArray, bare, _, Array, _), !,
 		    UseArray = GivenArray;
