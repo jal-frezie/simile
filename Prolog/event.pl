@@ -1090,7 +1090,7 @@ spread_dims(Node) :-
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (Err = [],
 	     (default_units(Node, DefBase, _DefDims) ->
-		  inters><promote_unit(DefBase, Type); true),
+		  check_unit(Type, DefBase, 1, []); true),
 		(get_actual_sizes(Node, FoundArray, bare, _, Array, _),
 		    get_actual_sizes(Node, GivenArray, bare, _, Array, _), !,
 		    UseArray = GivenArray;
