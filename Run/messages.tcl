@@ -461,7 +461,7 @@ set msgs(null_exponentiation_message) [tr. {This equation contains the subexpres
 set msgs(null_exponentiation_detail) [tr. {The usual cause of this problem is an attempt to get the nth root of a subexpression by writing x^1/n. Exponentiation binds more strongly than division, so for this to work correctly, the exponent should be parenthesized, e.g., x^(1/n).}]
 
 set msgs(missing_graph_or_table_data_title) [tr. {Built-in data missing}]
-set msgs(missing_graph_or_table_data_message) [tr. {Subexpression "%1$s" is a reference to a data table or sketch graph, but no data has been entered for it.}]
+set msgs(missing_graph_or_table_data_message) [tr. {Subexpression "%1$s" is a reference to a %2$s, but no data has been entered for it.}]
 set msgs(missing_graph_or_table_data_detail) [tr. {Use the Graph and Table buttons in the equation dialogue to add these functions and define data for them.}]
 
 set msgs(cannot_combine_argument_dimensions_title) [tr. {Argument dimensions incompatible}]

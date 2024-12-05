@@ -366,9 +366,9 @@ proc EditAsTable {t canvas} {
 
 proc SetDefaultGraph {xlow xhigh xspan ylow yhigh yspan range size points} {
     global equation
-    set equation(table_data) [list /graph/ $ylow $yhigh $yspan $size \
+    set equation(graph_data) [list $ylow $yhigh $yspan $size \
             $xlow $xhigh $xspan $range]
-    set equation(table_values) $points
+    set equation(graph_values) $points
 }
 
 proc CheckFloaty {args} {

@@ -49,7 +49,8 @@ make_arg_list([Arg | Args], Str) :-
 	make_arg_list(Args, Str2),
 	append(Str1, [44, 32 | Str2], Str).
 
-:- dynamic([table_data_is/1, def_unit_and_index_type_list_are/2]).
+:- dynamic([graph_data_is/1, table_data_is/1,
+	    def_unit_and_index_type_list_are/2]).
 
 interactively_parse(Part) :-
 	get_input_info(Part, Input_list),
@@ -59,17 +60,21 @@ interactively_parse(Part) :-
 	list_index_meanings(Part, ISpecs),
 	all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
 	asserta(def_unit_and_index_type_list_are(TypeBase-TypeDims, IndxCount)),
+	(get_av_pair(Part, 0, graph_data, GraphSpec), !;
+	    GraphSpec = ''),
 	(get_av_pair(Part, 0, table_data, TableSpec), !;
 	    TableSpec = ''),
 	(find_type(ClickedObj, state), !,
 	    extract_rule_forms(Part, Input_list, Rules);
 	  Rules = []),
-	handle_eqn_interaction(Part, Input_list, TableSpec, Rules),
+	handle_eqn_interaction(Part, Input_list, GraphSpec, TableSpec, Rules),
 	    retractall(def_unit_and_index_type_list_are(_,_)).
 
-handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
+handle_eqn_interaction(Part, Input_list, GraphSpec, TableSpec, Rules) :-
 	interact_equation(Result_list),
 	(Result_list = [], !; % dialogue cancelled
+	  (GraphSpec = '', !;
+	      asserta(graph_data_is(GraphSpec))), % needed in parser
 	  (TableSpec = '', !;
 	      asserta(table_data_is(TableSpec))), % needed in parser
 	  (Result_list = [EqnSt, _,_,_,_,_,_] ->
@@ -79,6 +84,7 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 	   true),
 	  catch(update_equation(Part, Input_list, Result_list, Effect),
 		UpThrow, Effect = user_advice_generated(bad_syntax('Equation', UpThrow))),
+	    retractall(graph_data_is(_GraphSpec)),  
 	    retractall(table_data_is(_TableSpec)),  
 		((Effect = new_effect_accepted(Cause, NewSpec, NewVal, ArrSpec),
 		    ArrSpec = Units-Dims,
@@ -92,6 +98,9 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 	      (Effect = input_list_changed_to(NewInputList), !,
 		  fill_inputs(NewInputList);
 		  NewInputList = Input_list),
+		(Effect = graph_spec_changed_to(NewGraphSpec), !;
+		    % Tcl data already updated, no need to change it
+		    NewGraphSpec = GraphSpec),
 		(Effect = table_spec_changed_to(NewTableSpec), !;
 		    % Tcl data already updated, no need to change it
 		    NewTableSpec = TableSpec),
@@ -102,13 +111,16 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 		    query(Mess, warning, HelpTopic, [ok], _);
 		    true),
 	    ((Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn,
-				    NewArrSpec, TabDat, MinVal, MaxVal,
+				    NewArrSpec, GphDat, TabDat, MinVal, MaxVal,
 				    Desc, Comment, NewInputs),
 		update_parameterhood(Part, Is_P, AffectedNode),
 		add_parameter(AffectedNode, 0, value, Result),
 		add_parameter(AffectedNode, 0, spec, OldEqn),
+		(\+ GphDat = 0, GraphAttr = GraphSpec, !;
+		    GraphAttr = ''), /* no graphs found */
 		(\+ TabDat = 0, TableAttr = TableSpec, !;
-		    TableAttr = ''), /* no tables/graphs found */
+		    TableAttr = ''), /* no tables found */
+		add_parameter(AffectedNode, 0, graph_data, GraphAttr),
 		add_parameter(AffectedNode, 0, table_data, TableAttr),
 		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList);
 	      Effect = rule_list_accepted(_,_,_,_, Is_P, MinVal, MaxVal,
@@ -125,8 +137,8 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 		add_parameter(Visible, CAttrType, description, Desc),
 		add_parameter(Visible, CAttrType, comment, Comment),
 		update_links_and_vars(NewInputs); % and finish
-		handle_eqn_interaction(Part, NewInputList, NewTableSpec,
-				       NewRules))).
+	     handle_eqn_interaction(Part, NewInputList,
+				    NewGraphSpec, NewTableSpec, NewRules))).
 
 index_types(ind_spec(_Name, _Posn, Ind, _Link), Type) :-
 	inters><type_ind(Ind, Type).
@@ -204,16 +216,18 @@ update_equation(Function,_, [Table_st, Data_st], Effect) :-
 	    all(user, sicstus_atom_chars, [build(DataTable), build(DataStrs)]),
 	    Units = 1,
 	    Bounds = 1,
-	    ComplaintStr = [];
-	DataSpec = [DataField | Indices],
-	    get_table_data(Function, Data_st, DataTable,
-			   Units, Bounds, Dims, ComplaintStr)),
-	(ComplaintStr = [], !,
-	    Effect = table_spec_changed_to([file = FileName, data = DataField,
+	    Effect = graph_spec_changed_to([data = DataField,
 				indices = Indices, current = DataTable,
 				units=Units, bounds=Bounds, dims=Dims]);
-	  name(Complaint, ComplaintStr),
-		Effect = user_advice_generated(bad_table_data(Complaint))).
+	DataSpec = [DataField | Indices],
+	    get_table_data(Function, Data_st, DataTable,
+			   Units, Bounds, Dims, ComplaintStr),
+	    (ComplaintStr = [], !,
+	     Effect = table_spec_changed_to([file = FileName, data = DataField,
+				indices = Indices, current = DataTable,
+				units=Units, bounds=Bounds, dims=Dims]);
+	     name(Complaint, ComplaintStr),
+		Effect = user_advice_generated(bad_table_data(Complaint)))).
 
 % name or units for an input parameter edited -- 3 elts
 update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
@@ -422,8 +436,8 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_pb, Is_P_st, Desc_st,
 	/* Now, is there a reference to a table or graph? If so, load the data 
 	for it. Otherwise ignore any data. This also lists user-defined
 	functions (macros and procedures) */
-	replace_subexps(Result, dialogue, table_ref, got(UserFnOpen, TabDat),
-			top_down, _,_),
+	 replace_subexps(Result, dialogue, graph_or_table_ref,
+			 got(UserFnOpen, GphDat, TabDat), top_down, _,_),
 	(var(UserFnOpen), !,
 	    UserFnList = '';
 	get_ground_part(UserFnOpen, UserFnList)),
@@ -443,7 +457,7 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_pb, Is_P_st, Desc_st,
 	(FinalComplaint = [], !,
 	    warn_dimless_scaler(NewUnits),
 	    Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
-				  TabDat, MinVal, MaxVal,
+				  GphDat, TabDat, MinVal, MaxVal,
 				  Desc, Comment, New_inputs);
 %	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	 FinalComplaint = continue, !,
@@ -568,10 +582,10 @@ explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
 	    Many = no, append([PL1, TypeStr, SubType], Str), name(Desc, Str)).
 	    
 	
-table_ref(got(Datta, Tabs), Ref, DumFn, Recurse) :-
+graph_or_table_ref(got(Datta, Gphs, Tabs), Ref, DumFn, Recurse) :-
 	Ref =.. [Functor | Args],
-	(member(Functor, [table, graph]),
-	    Tabs = 1,
+	(member(Functor-1, [(table)-Tabs, graph-Gphs]),
+	 % ('table' is keyword in swi)
 	    Recurse = 0;	 
 	length(Args, Arity),
 	    (function(Cat, Functor, _R, TptArgs);

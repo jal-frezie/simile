@@ -3119,8 +3119,8 @@ name_components(Language, [instance(_Type, Node, _, elt(_, Var, _), _)
 	    append_atoms(CompName, made, Var); % use name reserved by submodel
 	  generate_name( Language, Name, Var, Used)),
 %	make_code_atom(Name, Var, Used),
-	(Node has_class_refinement table_data of
-	[file='/graph/', data=[YLow, YHigh, YSpan],
+	(Node has_class_refinement graph_data of
+	[data=[YLow, YHigh, YSpan],
 	 indices=[XLow, XHigh, XSpan, Range], current=PointList,
 	 units=_, _, dims=NumPts | _], !,
 	    nth(GraphNo, Used, Var),

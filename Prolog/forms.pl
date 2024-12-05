@@ -59,20 +59,24 @@ do_equation_dialog(Win, Part) :-
 	    (single_enquote_et_if_dubious(RawBase, Base), !; Base = RawBase);
 	Base = '',
 	    Dims = []),
+	(get_av_pair(Part, 0, graph_data, GraphSpec),
+	    permutation(GraphSpec, [data=GDataField,
+				    indices=GIndices, current=GValues,
+				    units=_GUnits, bounds=GBounds | _GR]), !,
+	    append(GDataField, [GBounds | GIndices], GraphList),
+		GraphVals = br(GValues);
+	GraphList = '', GraphVals = '{}'),
 	(get_av_pair(Part, 0, table_data, TableSpec),
 	    permutation(TableSpec, [file=FilePath, data=DataField,
 				    indices=Indices, current=Values,
 				    units=TUnits, bounds=Bounds | _R]), !,
-	    (FilePath = '/graph/', !,
-		append([FilePath | DataField], [Bounds | Indices], TableList),
-		TableVals = br(Values);
 	     (FilePath = '' -> % only numerical values entered
 		  TableList = '';
 	      TableList = [FilePath, DataField | Indices]),
 		append(Bounds, [TUnits], TableTypes), 
 		all(event, insert_mem_list,
 		    [build(TableTypes), unify(ClickedObj), build(TableTrans)]),
-		dialogue><reverse_engineer(Values, TableTrans, 1, TableVals));
+		dialogue><reverse_engineer(Values, TableTrans, 1, TableVals);
 	TableList = '', TableVals = '{}'),
 
 	(ClickedObj is_of_sort line -> AttType = 2; AttType = 0),
@@ -100,7 +104,8 @@ do_equation_dialog(Win, Part) :-
 %	 UseBase = Base),
 % OK so we do not care about actual time unit but show unit not dimension
 	fill_equation(ToPass, Base, Dims, Is_P, Desc, Comment, Min, Max),
-	fill_table(Part, TableList, TableVals), % calls interaction from tcl
+	fill_graph_and_table(Part, GraphList, GraphVals, TableList, TableVals),
+	% calls interaction from tcl
 	destroy_equation.
 
 single_enquote_et_if_dubious(a(Atom), a(RuggedAtom)) :-

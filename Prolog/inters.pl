@@ -914,7 +914,7 @@ make_intermediates(
            GetSpec = (m_class><SubId has_class_refinement table_data 
                                   of TableData)),
             (GetSpec, !;
-		throw(missing_graph_or_table_data(Source))),
+		throw(missing_graph_or_table_data(Source, 'data table'))),
 	     member(dims=Sizes, TableData),
 	     member(bounds=Bounds, TableData),
 	     all(inters, derive_dim, [build(Sizes), build(Bounds), unify(Step),
@@ -1322,8 +1322,8 @@ Now one that uses a special conditional level */
 		ValRef = (RTest?RTrue><RFalse); */
 	    Source = graph(Param), \+ Param = '',
 		(\+ Step = dummy;
-		dialogue><table_data_is(_);
-		    throw(missing_graph_or_table_data(Source))),
+		dialogue><graph_data_is(_);
+		    throw(missing_graph_or_table_data(Source, 'sketch graph'))),
 		SourceList = [Param],
 		RUnits = 1,
 		Arg_template = [1],

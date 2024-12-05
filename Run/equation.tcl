@@ -667,6 +667,9 @@ proc interact_equation {} {
                     $equation(entry$equation(ckLine)) \
                     [UnityForReal $equation(unit$equation(ckLine))]]
         } 3 {
+            return [list \['/graph/','[join $equation(graph_data) ',']'\] \
+                    $equation(graph_values)]
+        } 13 {
             return [list \['[join $equation(table_data) ',']'\] \
                     $equation(table_values)]
         } 4 {
@@ -769,7 +772,7 @@ proc GetTable {parent topNode comp box enum_types} {
         if {![string match *table(*)* [$box get 1.0 end]]} {
 	    InsertFunction $box table
         }
-        set equation(done) 3
+        set equation(done) 13
     }
 }
 
@@ -874,9 +877,9 @@ proc fill_inputs { triples } {
     set equation(ckWidg) {} ;# no need for widget to keep focus if updated
 }
 
-proc fill_table {node table_data table_values} {
+proc fill_graph_and_table {node gph_data gph_values table_data table_values} {
     global equation
-    set equation(table_data) [lrange $table_data 0 end]
+    set equation(graph_data) [lrange $gph_data 0 end]
     # you would think that the above line would not change the list, as it
     # takes the range from start to finish. But it does -- Prolog has wrapped
     # each element in curly brackets whether or not it needs it, and the effect
@@ -884,7 +887,8 @@ proc fill_table {node table_data table_values} {
     # we check if the elements have changed from the original list it does not
     # matter if some other function has quietly got rid of their surplus curly
     # brackets. Trust me, it works.
-
+    set equation(graph_values) $gph_values
+    set equation(table_data) [lrange $table_data 0 end]
     # Translation should be done in Prolog by reverse_engineer
     set equation(table_values) $table_values
 
@@ -1047,14 +1051,12 @@ proc equationGraph {parent name} {
     # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
     # set default values for new graph
     set graphArgs {0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200}
-    if {[info exists equation(table_data)]} {
-	if {[string equal /graph/ [lindex $equation(table_data) 0]]} {
-	    set graphArgs [concat [lrange $equation(table_data) 5 7] \
-			       [lrange $equation(table_data) 1 3] \
-			       [lindex $equation(table_data) 8] \
-			       [lindex $equation(table_data) 4] \
-			       [join $equation(table_values) ,]]
-	}
+    if {$equation(graph_data) ne ""} {
+	set graphArgs [concat [lrange $equation(graph_data) 4 6] \
+			   [lrange $equation(graph_data) 0 2] \
+			   [lindex $equation(graph_data) 7] \
+			   [lindex $equation(graph_data) 3] \
+			   [join $equation(graph_values) ,]]
     }
     set done [eval [list GraphEntry .graph 1 $name] $graphArgs]
 

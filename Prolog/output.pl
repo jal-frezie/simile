@@ -29,7 +29,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3, clear_display/1,
 	prepare_equation/1, create_equation/5,
-	fill_equation/8, fill_inputs/1, fill_table/3,
+	fill_equation/8, fill_inputs/1, fill_graph_and_table/5,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/1, tk_update_infobox/2, 
 	tk_finish_progress_dialogue/0, tk_alter_model/1,
@@ -459,9 +459,11 @@ fill_inputs(List) :-
 	get_from_list(List, Table),
 	safe_tcl_eval(['fill_inputs', br(Table)], _).
 
-fill_table(Part, TableData, TableVals) :-
+fill_graph_and_table(Part, GraphData, GraphVals, TableData, TableVals) :-
+	bracketize(GraphData, Tk_graphData),
 	bracketize(TableData, Tk_tableData),
-	safe_tcl_eval(['fill_table', Part, Tk_tableData, TableVals], _).
+	safe_tcl_eval(['fill_graph_and_table', Part, Tk_graphData, GraphVals,
+		       Tk_tableData, TableVals], _).
 
 /* Do a bit of processing to the parameter name column so the square/curly
 brackets appear as text. */

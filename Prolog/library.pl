@@ -333,7 +333,8 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    adjust_to_10(Parent)),
 	(SimileV >= 6.1, !;
 	  reassure_user(updating_v, ['5.x']),
-	    adjust_to_10_1(Parent)),
+	  adjust_to_10_1(Parent)),
+	adjust_to_future(Parent),
 	state><numeric_version_is(MyV),
 	(MyV > SimileV+0.001, % throw away code so no need to test load
 	    (\+ backup><is_toplevel(Parent);
@@ -640,7 +641,15 @@ adjust_to_10_1(Parent) :-
 	    ImpFn has_changed_class_refinement units from 1 to 1/day,
 	    fail;
 	true.
-	
+
+adjust_to_future(Parent) :-
+    contains(Parent, Fn),
+    Fn has_class_refinement table_data of TDList,
+    select(file='/graph/', TDList, Others),
+    Fn no_longer_has_class_refinement table_data of TDList,
+    Fn has_new_class_refinement graph_data of Others;
+    true.
+
 dequote_ET(Qat, UQat) :-
 	atom(Qat),
 	name(Qat, Qstr),
