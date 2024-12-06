@@ -123,6 +123,12 @@ check_ref_entry(Node, Ref, SelOnly, Count, SaveRef) :-
 incr(Count, NewCount) :-
 	NewCount is Count+1.
 
+revert_to_present(Future, Now) :-
+    select(graph_data=GD, Future, Other),
+    \+ member(table_data=_TD, Other) ->
+	Now = [table_data=[file='/graph/' | GD] | Other];
+    Now = Future.
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_node - write out a data structure representing a node to a stream
 % 1998: does not write model refinements
@@ -137,7 +143,8 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 		       \+ (SelOnly = yes,
 		       CRAttr=complete)),
 		   /* if only saving seln it may be incomplete */
-		   ClassRefinements ),
+		   FutureClassRefinements ),
+	revert_to_present(FutureClassRefinements, ClassRefinements),
 /*	any_setof( MRAttr=MRValue,
                    ( Node has_model_refinement MRAttr of MRValue,
 		     \+ MRAttr = link_equivalences ),
