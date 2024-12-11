@@ -1200,7 +1200,7 @@ proc StartLogging {w topNode node filename} {
     set runState(sep$node) [PrefValue custom(columnSeparator) columnSeparator]
     for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
 	set line $lh
-	set lh {}
+	set lh {{}}
 	PutIndNo line -$idx $runState(val$w)
 	puts $out [::csv::join $line $runState(sep$node)]
     }
