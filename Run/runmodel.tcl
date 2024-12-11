@@ -1197,7 +1197,7 @@ proc StartLogging {w topNode node filename} {
     $w.bbframe.reel configure -image $iconImages(noreel)
     set out [NetOpen $filename w]
     set lh time
-    set runState(sep$node) [PrefValue custom(columnSeparator) columnSeparator)]
+    set runState(sep$node) [PrefValue custom(columnSeparator) columnSeparator]
     for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
 	set line $lh
 	set lh {}
