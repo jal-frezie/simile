@@ -13,8 +13,8 @@ models saved by Simile.
 \tabular{ll}{
 Package: \tab Simile\cr
 Type: \tab Package\cr
-Version: \tab 1.3.1\cr
-Date: \tab 2013-06-01\cr
+Version: \tab 1.3.4\cr
+Date: \tab 2024-12-10\cr
 License: \tab Unrestricted\cr
 LazyLoad: \tab yes\cr
 }
@@ -34,7 +34,7 @@ execution. get.model.time() returns the time at which execution
 finished. Use get.value.array() to get the values from any model
 component as an R array, or get.value.list() to get them as an R list.
 
-This version works with Simile versions 5.97 on.
+This version works with Simile versions 6.0 on.
 }
 \author{
   Simulistics Ltd
@@ -89,16 +89,8 @@ print("View default pattern -- now try to plot dancer")
 plot(xs, ys, type="l")
 
 # now we are going to parameterize it using a state file for the slider helper
-# -- the file from the distribution has no value for "Wheel outside?"
-# so we set this boolean directly
-pHandle <- create.param.array(iHandle, "/start/Wheel outside?")
-set.model.parameter(pHandle, FALSE)
-
-# reset before loading new slider posns as it will return them to defaults
-reset.model(iHandle, 0)
-
-# also to make this work we load the mime library, which is needed only because
-# the dancer.spf in Simile v5.97 is an older v4.x format file. No need to load 
+# -- to make this work we load the mime library, which is needed only because
+# the dancer.spf in Simile v6 is an older v4.x format file. No need to load 
 # if testing, and will always be available if live because required for Simile.
 
 if (!is.dummy(iHandle)) {
@@ -107,8 +99,13 @@ if (!is.dummy(iHandle)) {
 pFile  <- tcl("file", "join", path.to.installation, "Examples", "dancer.spf")
 consult.parameter.metafile(iHandle, pFile)
 
-# propagate new slider values to rest of model
-reset.model(iHandle, 1)
+# also the file from the v6 distribution has no value for "Wheel outside?"
+# so we set this boolean directly
+pHandle <- create.param.array(iHandle, "/start/Wheel outside?")
+set.model.parameter(pHandle, FALSE)
+
+# apply reset at level 0 to propagate input values
+reset.model(iHandle, 0)
 
 xs <- list(get.value.list(iHandle, "/runs/x"))
 ys <- list(get.value.list(iHandle, "/runs/y"))
