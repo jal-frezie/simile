@@ -22,7 +22,7 @@ itcl::class similescript::$newHelperClass {
 #	        check if relocating param or measurement data
 		set typesToShow {INPUT TABLE BLOCK POPULATION GRID HONEYCOMB}
 	    } submodel {
-		set typesToShow {BLOCK GRID HONEYCOMB}
+		set typesToShow {BLOCK GRID HONEYCOMB TABLE}
 		set showTopLevel 1
 #		$tableframe.table insert {} end -id $::myNode -open 1 \
 #		    -text "TOP LEVEL" -image $iconImages(new)
@@ -73,6 +73,7 @@ itcl::class similescript::$newHelperClass {
 	}
 	set sorted [lsort -dictionary -index 1 $universe]
 	foreach makeTree {1 0} {
+	    if {!$makeTree && $winTitle eq "submodel"} break
 	    foreach pair $sorted {
 		set component [lindex $pair 0]
 		set type [GetModelClass $component]; # Simile 2.7+

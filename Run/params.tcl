@@ -759,6 +759,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		set recordId [TrimDTFromPath $globalRecordId]
 		if {[string first $recordId $compLocal]==0 && \
 			![string equal $recordId $compLocal]} {
+		    set compLocal $recordId
 		    set recordNode [IdFromTail $topNode $recordId -1]
 		    if {$useCppArray} {
 #puts "c_setparamarray a $recordNode"
