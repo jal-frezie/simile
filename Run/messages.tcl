@@ -79,7 +79,7 @@ set msgs(add_reproduction) [tr. {Add reproduction processes to population submod
 set msgs(add_loss) [tr. {Add destruction processes to population submodels}]
 set msgs(move) [tr. {Move diagram}]
 set msgs(cut) [tr. {Cut selected components to clipboard}]
-set msgs(copy) [tr. {Copy selected components to clipboar}]
+set msgs(copy) [tr. {Copy selected components to clipboard}]
 set msgs(paste) [tr. {Paste clipboard contents to desktop}]
 set msgs(ghost) [tr. {Create 'ghosts' of components}]
 set msgs(select) [tr. {Select components}]
