@@ -654,7 +654,8 @@ adjust_to_future(Parent) :-
     Fn has_class_refinement table_data of TDList,
     select(file='/graph/', TDList, Others),
     Fn no_longer_has_class_refinement table_data of TDList,
-    Fn has_new_class_refinement graph_data of Others;
+    Fn has_new_class_refinement graph_data of Others,
+    fail;
     true.
 
 dequote_ET(Qat, UQat) :-
