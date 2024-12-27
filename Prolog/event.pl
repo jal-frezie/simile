@@ -2452,8 +2452,11 @@ set_selection_abilities(Comp) :-
 	AllLit = [Comp], % do submodel clicked in if nothing selected
 	    Cuttable = 0,
 	    Dellable = 0),
-	(AllLit = [Choice],
-	    \+ Choice is_of_sort cloud, !,
+	((AllLit = [Choice],
+	    \+ Choice is_of_sort cloud;
+	  Cuttable = 0,
+	    member(Choice, AllLit),
+	    Choice is_of_sort transfer), !,
 	    Peekable = 1;
 	Peekable = 0),
 	update_ability(Comp, file, ['{Save selection as...}'], [Cuttable]),
