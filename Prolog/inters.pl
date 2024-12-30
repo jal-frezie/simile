@@ -1622,9 +1622,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 			regular(_)-(int-[]), regular2(_,_)-(real-[])]), !;
       (setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
 	    caption_for(Fn, Capt),
-	    (find_type(Fn, function) ->
-		 throw(no_antecedents_for_derived(Capt));
-	     throw(no_triggering_events(Capt)))),
+	    throw(trigger_units_undefined(Capt))),
 	% check dimensions the same
 	all(m_update, analyze_array,
 	    [build(EvtUnits), build(EvtBases), build(EvtDimses)]),

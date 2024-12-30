@@ -118,7 +118,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    % only add alarm loop if assigning condition in this pass
 	    make_struct_reference(L, Pointer, DoneCond, AlarmVar, AlarmRef),
 	    excrete(L, assignment, AlarmVar=1, Indent, Stream),
-	    make_evaluation_routine(L, TryCond, Used, TryRef),
+	    (TryCond = 0 -> TryRef = 1;
+	     make_evaluation_routine(L, TryCond, Used, TryRef)),
 	    excrete(L, while_start, TryRef, Indent, Stream),
 	    deepen_indent(Indent, Indent1),
 	    % excrete(L, procedure_call, abort_check, Indent1, Stream),

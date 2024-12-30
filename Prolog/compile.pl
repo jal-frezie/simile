@@ -1880,6 +1880,8 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Made = preload(Dest);
 	member(Type, [compartment, immigration, reproduction, state]),
 	  \+ Source = none,
+	  (Type = state, \+ Source = in_update(choose(_,_,_)) ->
+	   query(no_triggering_events(Dest), info, top, [ok], _); true),
 	    UseList = [time | RefList], 
 	    Made = update(Dest),
 	    UseStep = SmStep,
@@ -1901,6 +1903,9 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    AllActs = [Expr]; */
 	  Type = magnitude, !, % no derived events yet but same
 	    SourceEqn = event(ActEqn, EnableEqn, MagEqn),
+	    (EnableEqn = '"false"' ->
+	      query(no_antecedents_for_derived(Dest), info, top, [ok], _);
+	     true),
 	    replace_subexps(ActEqn, compile, find_fn, trigger_magnitude,
 			    top_down, TMHits, _),
 	    (TMHits = [] ->
