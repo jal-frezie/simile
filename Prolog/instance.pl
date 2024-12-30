@@ -316,7 +316,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	     [build(_Type), build(EvtNodes), build(_Load),
 	      build(EvtNames), build(_Dims), build(EvtRefs)]),
 	 (build_sum(EvtArgs, EvtTrigger, EvtMag), !;
-	   EvtTrigger = '"true"'),
+	   EvtTrigger = '"false"'),
 	(RType = state -> append(InputPairs, EvtPairs, AllowedInExp);
 	    AllowedInExp = InputPairs),
 	list_fragments_for_use(Node, FragSMs),
@@ -388,7 +388,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	      CondExpr = SubbedExpr,
 	        Void = '"false"',
 	        FType = function),
-	    (EvtTrigger = '"true"' ->
+	    (EvtTrigger = '"false"' ->
 	        FinalExpr = CondExpr;
 	      EndRefs = EvtRefs, 
 	        FinalExpr = (trigger_magnitude('')=EvtMag,
@@ -399,7 +399,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Name, Later), _)) | _],
 	    EndRefs = EvtRefs;
 	   member(RType, [immigration, reproduction, loss]),
-	    \+ EvtTrigger = '"true"', !,
+	    \+ EvtTrigger = '"false"', !,
 	    FType = function,
 	    FinalExpr = (trigger_magnitude('')=EvtMag,
 			     choose(EvtTrigger, SubbedExpr, 0)),
