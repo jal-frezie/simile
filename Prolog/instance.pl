@@ -315,14 +315,16 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	 all(instance, is_instance, 
 	     [build(_Type), build(EvtNodes), build(_Load),
 	      build(EvtNames), build(_Dims), build(EvtRefs)]),
-	 (build_sum(EvtArgs, EvtTrigger, EvtMag), !;
-	   EvtTrigger = '"false"'),
 	(RType = state -> append(InputPairs, EvtPairs, AllowedInExp);
 	    AllowedInExp = InputPairs),
 	list_fragments_for_use(Node, FragSMs),
 	replace_subexps(GroundExpr, instance, process_expr,
 			sub(AllowedInExp, FragSMs, Refs), top_down,
 			Switched, SubbedExpr),
+	all(user, arg, [unify(2), build(FragSMs),
+			append(EvtSrcs, EvtArgs)]),
+	 (build_sum(EvtSrcs, EvtTrigger, EvtMag), !;
+	   EvtTrigger = '"false"'),
 
 	(member(RType, [creation, compartment]), !,
 	  FType = init_function,
@@ -755,11 +757,16 @@ process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
 	    (ArgsOrDummy = [''] -> Args = []; Args = ArgsOrDummy),
 	    % return a reference to the output in the submodel
 	    fragment_expansion(_,_, Fnct, RetCapt, ArgData),
-	    member(frags(FragSm, UsedYet), FragSMs), var(UsedYet), !,
-	    UsedYet = yes,
+	    member(frags(FragSm, Trigs), FragSMs), var(Trigs), !,
+
 	    with_capt(OutNode, _, FragSm, RetCapt),
 	    OutNode has_class_refinement units of Multis,
 	    is_instance(_, OutNode, _, ToMatch, _, Ref),
+	    (get_host(OutNode, OutVis),
+	     OutVis is_of_sort discrete ->
+		 Trigs = [input(in_hierarchy, ToMatch, none,
+				     Multis)];
+	     Trigs = []),
 	    member(Ref, Refs), !,
 
 	    % now recurse to make references for the arguments
