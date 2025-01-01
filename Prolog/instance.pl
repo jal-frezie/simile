@@ -337,11 +337,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	  % connected to the trigger events	  
 	    DefExpr = elt(Path, Name, MagBase-Units), 
 	    compile><choosify(SubbedExpr, DefExpr, UpdateExpr, InitExpr),
-	    replace_subexps(UpdateExpr, compile, find_fn, trigger_magnitude,
-			    top_down, TMHits, _),
-	    (TMHits = [] ->
-		 DoUpdate = UpdateExpr;
-	     DoUpdate = (trigger_magnitude('')=EvtMag, UpdateExpr)),
+	    define_tm_if_needed(UpdateExpr, EvtMag, DoUpdate),
 	    FinalExpr = in_update(DoUpdate),
 	    is_instance(init_function, Result, InitExpr,
 			DefExpr, MagBase-Units, Init),
@@ -392,9 +388,9 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	        FType = function),
 	    (EvtTrigger = '"false"' ->
 	        FinalExpr = CondExpr;
-	      EndRefs = EvtRefs, 
-	        FinalExpr = (trigger_magnitude('')=EvtMag,
-			     choose(EvtTrigger, CondExpr, Void)));
+	      EndRefs = EvtRefs,
+	      define_tm_if_needed(choose(EvtTrigger, CondExpr,
+					 Void), EvtMag, FinalExpr));
 	  (RType = alarm, !,
 	    FType = al_function,
 	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, Later),
@@ -403,8 +399,9 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	   member(RType, [immigration, reproduction, loss]),
 	    \+ EvtTrigger = '"false"', !,
 	    FType = function,
-	    FinalExpr = (trigger_magnitude('')=EvtMag,
-			     choose(EvtTrigger, SubbedExpr, 0)),
+	    (Base = boolean -> Void = '"false"'; Void = 0),
+	    define_tm_if_needed(choose(EvtTrigger, SubbedExpr,
+				       Void), EvtMag, FinalExpr),
 	    EndRefs = EvtRefs;
 	  FType = function,
 	    FinalExpr = SubbedExpr)),
@@ -484,6 +481,13 @@ instance_of(Type, Node, _, Inst, Ref) :-
 	    oblitterfry(Node),
 	    caption_for(Parent, PCapt),
 	    query(remove_orphan(Capt, PCapt), info, top, [ok], _)).
+
+define_tm_if_needed(UpdateExpr, EvtMag, DoUpdate) :-
+    replace_subexps(UpdateExpr, compile, find_fn,
+		    trigger_magnitude, top_down, TMHits, _),
+    (TMHits = [] ->
+	 DoUpdate = UpdateExpr;
+     DoUpdate = (trigger_magnitude('')=EvtMag, UpdateExpr)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* If a loss channel is being used as an event antecedent, we need to use the

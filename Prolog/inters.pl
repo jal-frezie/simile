@@ -1617,10 +1617,7 @@ lower_if_needed(Op, MxOp) :-
     name(MxOp, MxOpStr).
 
 units_for_trigger_mag(Fn, MagUnits) :-
-    (m_class><Fn has_class_refinement value of V,
-     member(V-MagUnits, [sporadic(_) -(int-[]), sporadic2(_,_) -(real-[]),
-			regular(_)-(int-[]), regular2(_,_)-(real-[])]), !;
-      (setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
+    (setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
 	    caption_for(Fn, Capt),
 	    throw(trigger_units_undefined(Capt))),
 	% check dimensions the same
@@ -1645,7 +1642,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	    caption_for(Fn, Capt),
 	    throw(mixed_trigger_units(Capt, EvtUnits))),
 	% (MagBase = boolean -> ReferMagBase = int; ReferMagBase = MagBase),
-	MagUnits = MagBase-TDims). % triggers now summed or howmanytrued
+	MagUnits = MagBase-TDims. % triggers now summed or howmanytrued
 
 use_int_for_boolean(B, I) :-
     member((B,I), [(boolean, int), (U,U)]), !.
