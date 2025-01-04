@@ -104,7 +104,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	name(Checked, SafeCheckedStr),
 	(member(Checked, [no, yes]), !, 
 	    append_atoms(TargetDir, '/model.pl', PrologData),
-	    ame_merge(Parent, PrologData, FileV, Checked, Translated),
+	    ame_merge(Name, Parent, PrologData, FileV, Checked, Translated),
 	    /* date not needed */
 	    output><my_delete_file(PrologData),
 
@@ -159,7 +159,8 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	      setof(Comp-Comp, contains(Parent, Comp), TransList)),
 	    backup><assert(running_session(Parent, Stm, TransList)),
 	    redo_edit(Win, [Win]); % go to first pause so something shows
-	  on_exception(ProLoss, ame_merge(Parent, Name, _FileV, no, Translated),
+	 on_exception(ProLoss,
+		      ame_merge(Name, Parent, Name, _FileV, no, Translated),
 		     (make_nice_error_message(ProLoss, ProLite),
 		     query(open_model_failed(Checked, ProLite), error, top,
 			   [ok], _)))),
@@ -521,13 +522,13 @@ menu_handle(Win, file, ExportType) :-
 	    get_default_export_name(Model, ".pl", DefName),
 	    get_program_file(DefName, TopModel, FileName),
 	    start_progress_dialogue(Win),
-	    save_isolated(FileName, Model, Date, no, yes),
+	    save_isolated(FileName, Model, FileName, Date, no, yes),
 	    finish_progress_dialogue;
 	  ExportType = export_xml,
 	    use_pref_dir(Dir),
 	    append_atoms(Dir, '/temp_out.pl', TempFile),
 	    start_progress_dialogue(Win),
-	    save_isolated(TempFile, Model, Date, export, yes),
+	    save_isolated(TempFile, Model, FileName, Date, export, yes),
 	    finish_progress_dialogue,
 	    get_default_export_name(Model, ".xml", DefName),
 	    get_program_file(DefName, TopModel, FileName),
@@ -570,7 +571,7 @@ menu_handle(Win, file, import_xml) :-
 	(nonvar(Loss), !,
 	 query(xml_conversion_fail(Loss), warning, top, [ok], _);
 	 % stick_model_in(Win, Model, TempFile, open_toplevel)),
-	 ame_merge(Model, TempFile, _F, _C, _T),
+	 ame_merge(XmlSrc, Model, TempFile, _F, _C, _T),
 	 redraw_window(Win)),
 	finish_progress_dialogue,
 	output><my_delete_file(TempFile).
@@ -683,7 +684,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	output><date_is(Date),
 	retractall(lost_ghost_in_seln(_,_)),
 	record_lost_ghosts(Model),
-	save_isolated(CopyFile, Model, Date, yes, no),
+	save_isolated(CopyFile, Model, CopyFile, Date, yes, no),
 	/* restart_move will put the rest of the model back but it will
 	not be selected, so list the nodes and select them after the rest is
 	added so any external links and ghosts come out right
@@ -1454,13 +1455,6 @@ do_save(Win, Model, New_name) :-
 	/* Remove any old executables (and make sure dirs exist) */
 	output><shift_dll(Point, Dir, Model, 1),
 	% save executable whether up-to-date or not
-
-	/* save prolog data */
-	append_atoms(SaveDir, '/model.pl', TempFile),
-	output><date_is(Date),
-	(New_name = seln_only, Select = yes, CanvasModel = none;
-	    \+ New_name = seln_only, Select = no, CanvasModel = Model),
-	save_isolated(TempFile, Model, Date, Select, yes),
 	
 	/* Save image backgrounds */
 	transfer_images(Model, SaveDir, out),
@@ -1484,6 +1478,13 @@ do_save(Win, Model, New_name) :-
 	retrying dialogue */
 	(start_progress_dialogue(Win);
         finish_progress_dialogue, fail),
+
+	/* save prolog data */
+	append_atoms(SaveDir, '/model.pl', TempFile),
+	output><date_is(Date),
+	(New_name = seln_only, Select = yes, CanvasModel = none;
+	    \+ New_name = seln_only, Select = no, CanvasModel = Model),
+	save_isolated(TempFile, Model, Name, Date, Select, yes),
 
 	/* Now build the multi-part MIME format save file */
         reassure_user(pl_mimeout, []),
@@ -1552,7 +1553,7 @@ try_save_files(Model, Name, First) :-
 	(Name = TestName;
 	try_save_files(Model, Name, 0)).
 
-save_isolated(Name, Part, Date, SelnOnly, MakeCompat) :-
+save_isolated(Dest, Part, Name, Date, SelnOnly, MakeCompat) :-
 /*	(SelnOnly = yes, !,
 	    setof(Seln, (contains(Model, Seln),
 			    \+ Seln = Model,
@@ -1564,7 +1565,7 @@ save_isolated(Name, Part, Date, SelnOnly, MakeCompat) :-
 	(cutout(Part, SelnOnly);
 	    % comment out above to save with border links
 	    % if these must be same in reusable modules
-	ame_save(Name, Part, Date, SelnOnly, MakeCompat),
+	ame_save(Dest, Part, Name, Date, SelnOnly, MakeCompat),
 	    Done = 1;
 	finish_progress_dialogue),
 %	all(event, do_colours, [build(TempSels), unify(off)]),

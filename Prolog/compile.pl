@@ -1157,7 +1157,7 @@ make_exit_proc(Language, Instance, Dest) :-
 	% Get rid of any filesystem entries for, well, anything
 	(_ has_class_refinement external_code of ExtCode,
 	 member(include=Inc, ExtCode),
-	 \+ inc=none,
+	 \+ Inc=none,
 	 member(unit=U, ExtCode),
 	 \+ U = none, % is a hierarchical pipe interface
 	 append_atoms(['"', Inc, '"'], IncQtd),

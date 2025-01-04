@@ -773,13 +773,14 @@ proc ShowDisagSetup {} {
 
 proc ChangeIncFile {incFileTxt isPipe mdl modelLocn} {
     set current [string trimright [$incFileTxt get 1.0 end]]
-    if {[file pathtype $current] ne "absolute" && $modelLocn ne "unsaved"} {
-	set current [file join [file dirname $modelLocn] $current]
-    }
-    if {[file pathtype $current] eq "absolute"} {
+#    if {[file pathtype $current] ne "absolute" && $modelLocn ne "unsaved"} {
+#	set current [file join [file dirname $modelLocn] $current]
+#    }
+# will always be absolute thanks to internalization on model loading
+#    if {[file pathtype $current] eq "absolute"} {
 	RecordPathChoice [file extension $current] $current $mdl
 	set current [file tail $current]
-    }
+#    }
     if {$isPipe} {
 	set newFile [ChooseFile $current [tr. "Pipe/socket location:"] \
 			 1 $mdl]
@@ -791,13 +792,13 @@ proc ChangeIncFile {incFileTxt isPipe mdl modelLocn} {
     if {[string length $newFile]} {
 	$incFileTxt configure -state normal
 	$incFileTxt delete 1.0 end
-	# save relative to model save name
-	if {$modelLocn ne "unsaved"} {
-	    set relFile [Relativize $modelLocn $newFile]
-	    if {[string first $newFile $relFile]==-1} { # actually shortened it
-		set newFile $relFile
-	    }
-	}
+	# no relativize to model save name, as cannot update when resaving
+#	if {$modelLocn ne "unsaved"} {
+#	    set relFile [Relativize $modelLocn $newFile]
+#	    if {[string first $newFile $relFile]==-1} { # actually shortened it
+#		set newFile $relFile
+#	    }
+#	}
 	$incFileTxt insert 1.0 $newFile
 	$incFileTxt configure -state disabled
     }

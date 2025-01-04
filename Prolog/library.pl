@@ -4,7 +4,7 @@
 **** is defined in terms of the model class ADT 			    ****
 *******************************************************************************/
 
-sicstus_module( library, [ame_save/5, ame_merge/5, count_functions/2] ).
+sicstus_module( library, [ame_save/6, ame_merge/6, count_functions/2] ).
 
 sicstus_use_module( [library(lists),
 	sp_only, ame_gen, m_class, utility, text, forms, build] ).
@@ -15,13 +15,13 @@ sicstus_use_module( [library(lists),
 % models are saved in terms of calls to predicates defined in construction:, 
 % thus keeping the abstract syntax away from the user.
 
-ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
+ame_save( File, Model, Name, Date, SelOnly, _MakeCompat) :-
 	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
 	       Models = []),
 	(SelOnly = yes,
 	    Models = [UseAsParent],
 	    \+ draw><get_highlit_obj(0, UseAsParent), !,
-	    ame_save(File, UseAsParent, Date, SelOnly, _);
+	    ame_save(File, UseAsParent, Name, Date, SelOnly, _);
 	(backup><is_toplevel(Model),
 	    \+ SelOnly = yes,
 	    setof(A-V, Model has_class_refinement A of V, Props);
@@ -54,7 +54,7 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 	% was to allow the save process to try and fail each node to
 	% save memory, but just doing it this way had desired
         % result (it was building list of arcs that used the resources).
-        chars_from_stream(ArcData, library><save_nodes( Models, Stream, 
+        chars_from_stream(ArcData, library><save_nodes(Name, Models, Stream, 
 							  SelOnly, ArcData ),
 			  ArcChars),
 	nl(Stream),
@@ -67,10 +67,10 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 % save_stream - does the work of ame_save/[12]. Arg [34] are "done" lists for
 % Nodes and Arcs respectively - don't do the same node twice.
 
-save_nodes( [], _,_,_ ).
+save_nodes(_, [], _,_,_ ).
 
-save_nodes( [Node|Nodes], Stream, SelOnly, ArcData ) :-
-    save_node( Node, Stream, SelOnly, NewArcsUsed ),
+save_nodes(File, [Node|Nodes], Stream, SelOnly, ArcData ) :-
+    save_node(File, Node, Stream, SelOnly, NewArcsUsed ),
     save_arcs(NewArcsUsed, ArcData),
 	save_links( Node, Stream, SelOnly ),
 	save_refs( Node, Stream, SelOnly ),
@@ -80,9 +80,9 @@ save_nodes( [Node|Nodes], Stream, SelOnly, ArcData ) :-
 		   (Node has_part Child, go_with(Child, SelOnly)),
 		   Children ),
 	append( Children, Nodes, NewNodes )),
-	save_nodes( NewNodes, Stream, SelOnly, ArcData),
+	save_nodes(File, NewNodes, Stream, SelOnly, ArcData),
 	any_setof(ArcMem, arcmem(NewArcsUsed, ArcMem), ArcMems),
-	save_nodes( ArcMems, Stream, SelOnly, ArcData ).
+	save_nodes(File, ArcMems, Stream, SelOnly, ArcData ).
 
 arcmem(ArcSets, Node) :-
 	member(Arc-_-_, ArcSets),
@@ -123,6 +123,17 @@ check_ref_entry(Node, Ref, SelOnly, Count, SaveRef) :-
 incr(Count, NewCount) :-
 	NewCount is Count+1.
 
+externalize(SavedModel, SmClassRefs, Savable) :-
+    (select(external_code=XC, SmClassRefs, MoreClass),
+     select(include=AbsPath, XC, MoreXCSpecs), \+ AbsPath = none ->
+	 output><safe_tcl_eval(['Relativize', br(SavedModel), br(AbsPath)],
+				RelPathStr),
+	 name(RelPath, RelPathStr),
+	 ExtClassRefs = [external_code=[include=RelPath | MoreXCSpecs]
+			 | MoreClass];
+     ExtClassRefs = SmClassRefs),
+    revert_to_present(ExtClassRefs, Savable).
+
 revert_to_present(Future, Now) :-
     select(graph_data=GD, Future, Other),
     \+ member(table_data=_TD, Other) ->
@@ -133,7 +144,7 @@ revert_to_present(Future, Now) :-
 % save_node - write out a data structure representing a node to a stream
 % 1998: does not write model refinements
 
-save_node( Node, Stream, SelOnly, ArcsUsed ) :-
+save_node(SavedModel, Node, Stream, SelOnly, ArcsUsed ) :-
 	Node has_class Class,
 	any_setof( Child,
 		   (Node has_part Child, go_with(Child, SelOnly)),
@@ -144,7 +155,7 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 		       CRAttr=complete)),
 		   /* if only saving seln it may be incomplete */
 		   FutureClassRefinements ),
-	revert_to_present(FutureClassRefinements, ClassRefinements),
+	externalize(SavedModel, FutureClassRefinements, ClassRefinements),
 /*	any_setof( MRAttr=MRValue,
                    ( Node has_model_refinement MRAttr of MRValue,
 		     \+ MRAttr = link_equivalences ),
@@ -270,7 +281,7 @@ choose_breakpoint(Break) :-
 % structure in it, and adds it into Parent. All structures are renamed
 % if not toplevel, to avoid clashes. Date from file is returned.
 
-ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
+ame_merge(Origin, Parent, File, SimileV, HasCode, Translated ) :-
 	open_native( File, read, Stream),
 	reassure_user(reading_file, []),
 	read( Stream, Header ),
@@ -341,7 +352,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 6.1, !;
 	  reassure_user(updating_v, ['5.x']),
 	  adjust_to_10_1(Parent)),
-	adjust_to_future(Parent),
+	internalize(Origin, Parent),
 	state><numeric_version_is(MyV),
 	(MyV > SimileV+0.001, % throw away code so no need to test load
 	    (\+ backup><is_toplevel(Parent);
@@ -648,6 +659,19 @@ adjust_to_10_1(Parent) :-
 	    ImpFn has_changed_class_refinement units from 1 to 1/day,
 	    fail;
 	true.
+
+internalize(LoadPath, Model) :-
+    contains(Model, Sub),
+      Sub has_class_refinement external_code of XC,
+      select(include=RelPath, XC, MoreXCSpecs),
+      output><safe_tcl_eval(['Relate', br(LoadPath), br(RelPath)],
+			    AbsPathStr),
+      name(AbsPath, AbsPathStr),
+      Sub no_longer_has_class_refinement external_code of XC,
+      Sub has_new_class_refinement external_code of
+      [include=AbsPath | MoreXCSpecs],
+      fail;
+    adjust_to_future(Model).
 
 adjust_to_future(Parent) :-
     contains(Parent, Fn),

@@ -1959,7 +1959,7 @@ make_blind_level(Root, Step, File, Parent) :-
 	    AllowBig = Checked;
 	  PrologData = File,
 	    AllowBig = yes), % prolog decls only saved by enterprise edn
-	library><ame_merge(Parent, PrologData, _FileV, AllowBig, _Tr),
+	library><ame_merge(File, Parent, PrologData, _FileV, AllowBig, _Tr),
 	(Step = dummy -> forms><finish_progress_dialogue ; true).
 /* Procedure to draw first model window */
 
