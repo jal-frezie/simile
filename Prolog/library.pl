@@ -663,7 +663,7 @@ adjust_to_10_1(Parent) :-
 internalize(LoadPath, Model) :-
     contains(Model, Sub),
       Sub has_class_refinement external_code of XC,
-      select(include=RelPath, XC, MoreXCSpecs),
+      select(include=RelPath, XC, MoreXCSpecs), \+ RelPath = none,
       output><safe_tcl_eval(['Relate', br(LoadPath), br(RelPath)],
 			    AbsPathStr),
       name(AbsPath, AbsPathStr),

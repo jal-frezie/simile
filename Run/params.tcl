@@ -1708,8 +1708,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
                 set suppliedData($restoredComp) [TrimFields \
                         [lindex $IdAndValue 1]]
                 set VFile [lindex $suppliedData($restoredComp) 0]
-                set reference [file exists [file join [file dirname $oldPath] \
-                        $VFile]]
+                set reference [file exists [Relate $oldPath $VFile]]
             }
             #ShowMess debug info "Param data is $paramData($restoredComp)" ok
             
@@ -1720,8 +1719,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 		    set locn $VFile
 		} else {
 		    # Now use the saved relative path to move to the .csv file's directory
-		    set seekDir [file join [file dirname $oldPath] \
-				     [file dirname $VFile]]
+		    set seekDir [Relate $oldPath [file dirname $VFile]]
 		    if {[catch {cd $seekDir}]} {
 			set act [list failed_dir_reference [file tail $VFile] \
 				     $relativeComp [file dirname $VFile] \
