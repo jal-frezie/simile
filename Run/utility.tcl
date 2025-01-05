@@ -157,7 +157,11 @@ proc ChooseText {choice ifTrue ifFalse} {
 
 # using fileutil instead for now
 proc Relativize  {current remote} {
-    return [::fileutil::relative [file dirname $current] $remote]
+    set alt [::fileutil::relative [file dirname $current] $remote]
+    if {[string length $remote]<[string length $alt]} { # keep abs if shorter!
+	set alt $remote
+    }
+    return $alt
 }
 
 #proc Relativize {current remote} {
@@ -180,7 +184,10 @@ proc Relativize  {current remote} {
 
 # reverses the above
 proc Relate {startPt offset} {
-    return [file join [file dirname $startPt] $offset]
+    if {[file pathtype $offset] eq "relative"} {
+	return [file normalize [file join [file dirname $startPt] $offset]]
+    }
+    return $offset
 }
 
 # This deals with the quirk of Netware file systems that if the user has

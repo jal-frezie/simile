@@ -531,6 +531,18 @@ proc AbleSetup {mathf} {
     $mathf.extcode.where configure -state \
 	[ChooseText [expr {$disaggregate(useOwnCode) eq "pipe"}] normal disabled]
 }
+
+proc AddIncBrowse {incFileTxt prev isPipe mdl modelLocn} {
+    if {$modelLocn ne "unsaved"} {
+	set prev [Relativize $modelLocn $prev]
+    }
+    $incFileTxt insert 1.0 $prev
+    $incFileTxt configure -state disabled
+    pack [button [winfo parent $incFileTxt].btn -text [tr. Browse] \
+	-command [list ChangeIncFile $incFileTxt $isPipe $mdl $modelLocn]] \
+	-anchor e -side right
+}
+
 proc PipeSetup {mdl modelLocn} {
     global disaggregate
 
@@ -543,13 +555,10 @@ proc PipeSetup {mdl modelLocn} {
     set incFileTxt [GetFrame $t.incfilefr].txt
     pack [text $incFileTxt -width 32 -height 1] \
 	-side left -fill x
-    $incFileTxt insert 1.0 $prev
     if {$::tcl_platform(platform) eq "Windows"} { # pipe name can be anything
+	$incFileTxt insert 1.0 $prev
     } else { # must be in file system
-	$incFileTxt configure -state disabled
-	pack [button [GetFrame $t.incfilefr].btn -text [tr. Browse] \
-		  -command [list ChangeIncFile $incFileTxt 1 $mdl $modelLocn]] \
-	    -anchor e -side right
+	AddIncBrowse $incFileTxt $prev 1 $mdl $modelLocn
     }
     pack [TitleFrame $t.remmodfr -text [tr. "Remote model:"]] \
 	-padx 4 -pady 4 -fill x
@@ -573,6 +582,10 @@ proc PipeSetup {mdl modelLocn} {
     if {$disaggregate(xdone)} {
 # transfer data back to variables
 	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
+	if {$modelLocn ne "unsaved" && \
+		[file pathtype $disaggregate(xinc)] eq "relative"} {
+	    set disaggregate(xinc) [Relate $modelLocn $disaggregate(xinc)]
+	}
     }
     PackItUp $t
 }
@@ -592,11 +605,7 @@ proc ExtCodeSetup {mdl modelLocn} {
     set incFileTxt [GetFrame $t.incfilefr].txt
     pack [text $incFileTxt -width 32 -height 1] \
 	-side left -fill x
-    $incFileTxt insert 1.0 $disaggregate(xinc)
-    $incFileTxt configure -state disabled
-    pack [ttk::button [GetFrame $t.incfilefr].btn -text [tr. Browse] \
-	      -command [list ChangeIncFile $incFileTxt 0 $mdl $modelLocn]] \
-	-anchor e -side right
+    AddIncBrowse $incFileTxt $disaggregate(xinc) 0 $mdl $modelLocn
 
     pack [TitleFrame $t.liblistfr -text [tr. "Library files:"]] \
 	-padx 4 -pady 4 -fill x
@@ -620,6 +629,10 @@ proc ExtCodeSetup {mdl modelLocn} {
 # transfer data back to variables
 	set disaggregate(xproc) [[GetFrame $t.procnamfr].ent get]
 	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
+	if {$modelLocn ne "unsaved" && \
+		[file pathtype $disaggregate(xinc)] eq "relative"} {
+	    set disaggregate(xinc) [Relate $modelLocn $disaggregate(xinc)]
+	}
 	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
     }
     PackItUp $t
@@ -773,14 +786,13 @@ proc ShowDisagSetup {} {
 
 proc ChangeIncFile {incFileTxt isPipe mdl modelLocn} {
     set current [string trimright [$incFileTxt get 1.0 end]]
-#    if {[file pathtype $current] ne "absolute" && $modelLocn ne "unsaved"} {
-#	set current [file join [file dirname $modelLocn] $current]
-#    }
-# will always be absolute thanks to internalization on model loading
-#    if {[file pathtype $current] eq "absolute"} {
+    if {[file pathtype $current] ne "absolute" && $modelLocn ne "unsaved"} {
+	set current [file join [file dirname $modelLocn] $current]
+    }
+    if {[file pathtype $current] eq "absolute"} {
 	RecordPathChoice [file extension $current] $current $mdl
 	set current [file tail $current]
-#    }
+    }
     if {$isPipe} {
 	set newFile [ChooseFile $current [tr. "Pipe/socket location:"] \
 			 1 $mdl]
@@ -792,13 +804,10 @@ proc ChangeIncFile {incFileTxt isPipe mdl modelLocn} {
     if {[string length $newFile]} {
 	$incFileTxt configure -state normal
 	$incFileTxt delete 1.0 end
-	# no relativize to model save name, as cannot update when resaving
-#	if {$modelLocn ne "unsaved"} {
-#	    set relFile [Relativize $modelLocn $newFile]
-#	    if {[string first $newFile $relFile]==-1} { # actually shortened it
-#		set newFile $relFile
-#	    }
-#	}
+	# display relative to model save name
+	if {$modelLocn ne "unsaved"} {
+	    set newFile [Relativize $modelLocn $newFile]
+	}
 	$incFileTxt insert 1.0 $newFile
 	$incFileTxt configure -state disabled
     }
