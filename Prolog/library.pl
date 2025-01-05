@@ -54,12 +54,10 @@ ame_save( File, Model, Name, Date, SelOnly, _MakeCompat) :-
 	% was to allow the save process to try and fail each node to
 	% save memory, but just doing it this way had desired
         % result (it was building list of arcs that used the resources).
-        chars_from_stream(ArcData, library><save_nodes(Name, Models, Stream, 
-							  SelOnly, ArcData ),
-			  ArcChars),
+        save_nodes(Name, Models, Stream, SelOnly, ArcData ),
 	nl(Stream),
 	reassure_user(writing_arc, []),
-	sicstus_write_chars(Stream, ArcChars),
+	save_arcs(ArcData, Stream),
 	close( Stream ), !;
 	fail)).
 
@@ -69,20 +67,20 @@ ame_save( File, Model, Name, Date, SelOnly, _MakeCompat) :-
 
 save_nodes(_, [], _,_,_ ).
 
-save_nodes(File, [Node|Nodes], Stream, SelOnly, ArcData ) :-
-    save_node(File, Node, Stream, SelOnly, NewArcsUsed ),
-    save_arcs(NewArcsUsed, ArcData),
+save_nodes(File, [Node|Nodes], Stream, SelOnly, ArcsUsed ) :-
+        save_node(File, Node, Stream, SelOnly, LocalArcsUsed ),
 	save_links( Node, Stream, SelOnly ),
 	save_refs( Node, Stream, SelOnly ),
 	(Node has_class function, SelOnly = export ->
 	    NewNodes = Nodes;
-	any_setof( Child,
+	 any_setof( Child,
 		   (Node has_part Child, go_with(Child, SelOnly)),
 		   Children ),
-	append( Children, Nodes, NewNodes )),
-	save_nodes(File, NewNodes, Stream, SelOnly, ArcData),
-	any_setof(ArcMem, arcmem(NewArcsUsed, ArcMem), ArcMems),
-	save_nodes(File, ArcMems, Stream, SelOnly, ArcData ).
+	 append( Children, Nodes, NewNodes )),
+	save_nodes(File, NewNodes, Stream, SelOnly, DeepArcsUsed),
+	any_setof(ArcMem, arcmem(LocalArcsUsed, ArcMem), ArcMems),
+	save_nodes(File, ArcMems, Stream, SelOnly, FurtherArcsUsed ),
+	append([LocalArcsUsed, DeepArcsUsed, FurtherArcsUsed], ArcsUsed).
 
 arcmem(ArcSets, Node) :-
 	member(Arc-_-_, ArcSets),

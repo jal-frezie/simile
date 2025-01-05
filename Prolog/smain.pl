@@ -75,9 +75,6 @@ reopen_stream_internally_formatted(Utf8Stm, IntStm, EuContents) :-
 close_internally_formatted_stream(Stm) :-
 	close(Stm).
 
-chars_from_stream(Stream, Pred, Chars) :-
-        with_output_to_chars((current_output(Stream), Pred), Chars).
-
 % 'make' should not recursively display all conds during debug
 efx_of([],[]).
 efx_of([make(E, _,_,_,_)  | Insts], [make(E, '...') | Efx]) :-
