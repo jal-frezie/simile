@@ -65,7 +65,7 @@ ame_save( File, Model, Name, Date, SelOnly, _MakeCompat) :-
 % save_stream - does the work of ame_save/[12]. Arg [34] are "done" lists for
 % Nodes and Arcs respectively - don't do the same node twice.
 
-save_nodes(_, [], _,_,_ ).
+save_nodes(_, [], _,_, []).
 
 save_nodes(File, [Node|Nodes], Stream, SelOnly, ArcsUsed ) :-
         save_node(File, Node, Stream, SelOnly, LocalArcsUsed ),
@@ -78,9 +78,10 @@ save_nodes(File, [Node|Nodes], Stream, SelOnly, ArcsUsed ) :-
 		   Children ),
 	 append( Children, Nodes, NewNodes )),
 	save_nodes(File, NewNodes, Stream, SelOnly, DeepArcsUsed),
+        save_arcs(DeepArcsUsed, Stream),
 	any_setof(ArcMem, arcmem(LocalArcsUsed, ArcMem), ArcMems),
 	save_nodes(File, ArcMems, Stream, SelOnly, FurtherArcsUsed ),
-	append([LocalArcsUsed, DeepArcsUsed, FurtherArcsUsed], ArcsUsed).
+	append(LocalArcsUsed, FurtherArcsUsed, ArcsUsed).
 
 arcmem(ArcSets, Node) :-
 	member(Arc-_-_, ArcSets),
