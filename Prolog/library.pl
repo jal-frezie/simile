@@ -49,14 +49,13 @@ ame_save( File, Model, Name, Date, SelOnly, _MakeCompat) :-
 	nl(Stream),
 	export_with_breaks( Stream, properties(Props)),
 	nl(Stream),
-	reassure_user(writing_node, []),
+	reassure_user(writing_decls, []),
 	% Arc data is saved to a separate stream -- original intention
 	% was to allow the save process to try and fail each node to
 	% save memory, but just doing it this way had desired
         % result (it was building list of arcs that used the resources).
         save_nodes(Name, Models, Stream, SelOnly, ArcData ),
 	nl(Stream),
-	reassure_user(writing_arc, []),
 	save_arcs(ArcData, Stream),
 	close( Stream ), !;
 	fail)).
@@ -71,17 +70,16 @@ save_nodes(File, [Node|Nodes], Stream, SelOnly, ArcsUsed ) :-
         save_node(File, Node, Stream, SelOnly, LocalArcsUsed ),
 	save_links( Node, Stream, SelOnly ),
 	save_refs( Node, Stream, SelOnly ),
-	(Node has_class function, SelOnly = export ->
-	    NewNodes = Nodes;
-	 any_setof( Child,
-		   (Node has_part Child, go_with(Child, SelOnly)),
-		   Children ),
-	 append( Children, Nodes, NewNodes )),
-	save_nodes(File, NewNodes, Stream, SelOnly, DeepArcsUsed),
-        save_arcs(DeepArcsUsed, Stream),
 	any_setof(ArcMem, arcmem(LocalArcsUsed, ArcMem), ArcMems),
-	save_nodes(File, ArcMems, Stream, SelOnly, FurtherArcsUsed ),
-	append(LocalArcsUsed, FurtherArcsUsed, ArcsUsed).
+	save_nodes(File, ArcMems, Stream, SelOnly, IndirArcsUsed ),
+	save_nodes(File, Nodes, Stream, SelOnly, MoreArcsUsed ),
+	append([LocalArcsUsed , IndirArcsUsed, MoreArcsUsed], ArcsUsed ),
+	(\+ (Node has_class function, SelOnly = export),
+	 setof( Child, (Node has_part Child, go_with(Child, SelOnly)),
+		Children ) ->
+	     save_nodes(File, Children, Stream, SelOnly, DeepArcsUsed),
+             save_arcs(DeepArcsUsed, Stream);
+	 true).
 
 arcmem(ArcSets, Node) :-
 	member(Arc-_-_, ArcSets),
