@@ -55,8 +55,9 @@ ame_save( File, Model, Name, Date, SelOnly, _MakeCompat) :-
 	% save memory, but just doing it this way had desired
         % result (it was building list of arcs that used the resources).
         save_nodes(Name, Models, Stream, SelOnly, ArcData ),
-	nl(Stream),
-	save_arcs(ArcData, Stream),
+	save_arcs(ArcData, Stream, ArcMems),
+	save_nodes(File, ArcMems, Stream, SelOnly, IndirArcsUsed ),
+	save_arcs(IndirArcsUsed, Stream, _), % arcs to/from arcs have no nodes
 	close( Stream ), !;
 	fail)).
 
@@ -70,20 +71,16 @@ save_nodes(File, [Node|Nodes], Stream, SelOnly, ArcsUsed ) :-
         save_node(File, Node, Stream, SelOnly, LocalArcsUsed ),
 	save_links( Node, Stream, SelOnly ),
 	save_refs( Node, Stream, SelOnly ),
-	any_setof(ArcMem, arcmem(LocalArcsUsed, ArcMem), ArcMems),
-	save_nodes(File, ArcMems, Stream, SelOnly, IndirArcsUsed ),
 	save_nodes(File, Nodes, Stream, SelOnly, MoreArcsUsed ),
-	append([LocalArcsUsed , IndirArcsUsed, MoreArcsUsed], ArcsUsed ),
+	append(LocalArcsUsed, MoreArcsUsed, ArcsUsed),
 	(\+ (Node has_class function, SelOnly = export),
 	 setof( Child, (Node has_part Child, go_with(Child, SelOnly)),
 		Children ) ->
 	     save_nodes(File, Children, Stream, SelOnly, DeepArcsUsed),
-             save_arcs(DeepArcsUsed, Stream);
+             save_arcs(DeepArcsUsed, Stream, ArcMems),
+	     save_nodes(File, ArcMems, Stream, SelOnly, IndirArcsUsed ),
+	     save_arcs(IndirArcsUsed, Stream, _);
 	 true).
-
-arcmem(ArcSets, Node) :-
-	member(Arc-_-_, ArcSets),
-	Arc has_part Node.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_links - write out a data structure representing links in a module
@@ -206,8 +203,8 @@ connects_leaver(Arc) :-
 % save_arcs - write out data structures representing arcs; don't do the same
 % one twice because the input list is a set.
 
-save_arcs( [], _ ).
-save_arcs( [Arc-Start-End|Arcs], Stream ) :-
+save_arcs( [], _, []).
+save_arcs( [Arc-Start-End|Arcs], Stream, AllChildren) :-
 	Arc has_type Type,
 	!, % green cut
 	any_setof( Child,
@@ -225,7 +222,8 @@ save_arcs( [Arc-Start-End|Arcs], Stream ) :-
 			       GraphicalAttributeValuePairs)),
 	% children should be separate arg but need to get through load
 	% in earlier versions
-	save_arcs( Arcs, Stream ).
+	save_arcs( Arcs, Stream, MoreChildren),
+        append(Children, MoreChildren, AllChildren).
 
 /* Line is written character by character in the hope that this will prevent
 DOS-type CRLFs being used for the line breaks, which will then bugger up
