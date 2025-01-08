@@ -167,7 +167,7 @@ namespace eval $keyValue {
 	    -yscrollcommand [list AdjustCanvas $winId t y] \
 	    -xscrollcommand [list AdjustCanvas $winId f x] \
 	    -validatecommand [namespace code [list EditCellIs %W %r %c %S]] \
-	    -validate 1 -selecttitle true
+	    -validate 1 -selecttitle true -autoclear 1
 	
         pack $winId.t -fill both -expand true
         $winId.t tag configure red -fg red
