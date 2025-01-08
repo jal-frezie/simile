@@ -674,15 +674,12 @@ reverse_engineer(Table, [Trans | MoreTrans], Here, TclRep) :-
 	    (Here = 1, !,
 		TclRep = br([HereTxt, TclHead | TclTail]);
 	    TclRep = [HereTxt, TclHead | TclTail]);
-	member(Table, [0, []]), !,
-	    TclRep = Table;
 	make_e_t(Table, Trans, TclRep).
 
 make_e_t(Table, Trans, TclRep) :-
-	Trans = [],
-	    TclRep = Table;
-	nth0(Table, Trans, Enum),
-	    append_atoms(['{"', Enum, '"}'], TclRep).
+	nth0(Table, Trans, Enum) ->
+	    append_atoms(['{"', Enum, '"}'], TclRep);
+	TclRep = Table.
 
 check_bound(Eqn_st, FieldName, Function, Needed,
             Alternatives, Eqn, Value, Base, Error) :-
