@@ -1584,12 +1584,8 @@ proc StripNewCrs {txt} {
 }
 
 proc InModelDir {node} {
-    global chosenPaths
     set tail [GetExecTitle $node].sml
-    if {[info exists chosenPaths(.sml,$node)]} {
-	return [file join $chosenPaths(.sml,$node) $tail]
-    }
-    return [file join $chosenPaths(.sml,) $tail]
+    return [file join [GetPathChoice .sml $node] $tail]
 }
 
 proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {

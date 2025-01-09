@@ -618,6 +618,11 @@ proc AbleArrows {db t} {
 #####################################################################
 # TABLE LOADING
 #####################################################################
+
+proc RelToModel {mdl path} {
+    return [Relativize [InModelDir $mdl] $path]
+}
+
 set commonTimes [list second minute hour day week month year]
 proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     global table_entry iconImages tcl_platform
@@ -639,7 +644,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack $fc.instructions -side top -padx 2 -pady 2
     TitleFrame $fc.fdata -text [tr. "Data file "]
     set fdata [GetFrame $fc.fdata]
-    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(fileName)]
+    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(visFileName)]
 # xview end not working (8.5.11) so xview moveto 1 instead
     $dfile xview moveto 1
     bind $dfile <Return> "LoadDataFile columns 0 $mdl"
@@ -729,7 +734,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack $fg.instructions -side top -padx 2 -pady 2
     TitleFrame $fg.fdata -text [tr. "Data file "]
     set fdata [GetFrame $fg.fdata]
-    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(fileName)]
+    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(visFileName)]
     $dfile xview moveto 1
     bind $dfile <Return> "LoadDataFile grid 0 $mdl"
     KoreanClick $dfile 1 {}
@@ -791,7 +796,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack $fi.instructions -side top -padx 2 -pady 2
     TitleFrame $fi.fdata -text [tr. "Image file "]
     set fdata [GetFrame $fi.fdata]
-    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(fileName)]
+    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(visFileName)]
     $dfile xview moveto 1
     bind $dfile <Return> "LoadDataFile image 0 $mdl"
     KoreanClick $dfile 1 {}
@@ -862,7 +867,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack $ft.instructions -side top -padx 2 -pady 2
     TitleFrame $ft.fdata -text [tr. "Data file "]
     set fdata [GetFrame $ft.fdata]
-    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(fileName)]
+    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(visFileName)]
     $dfile xview moveto 1
     bind $dfile <Return> "LoadDataFile gdal 0 $mdl"
     KoreanClick $dfile 1 {}
@@ -1029,6 +1034,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     }
     if {[llength $table_entry(data)]} {
         set table_entry(fileName) [lindex $table_entry(data) 0]
+	set table_entry(visFileName) [RelToModel $mdl $table_entry(fileName)]
         switch [lindex $table_entry(data) 1] {
             ,grid {
                 $t select $t.grid
@@ -1622,6 +1628,7 @@ proc LoadDataFile {mode query mdl} {
             return 0
         }
     }
+    set table_entry(visFileName) [RelToModel $mdl $table_entry(fileName)]
     [GetFrame $tn.$mode.fdata].dfile xview moveto 1
     
     if {[string equal gdal $mode]} {
