@@ -429,7 +429,7 @@ proc GetCompExecData {topNode prop args} {
        
     if {[RunningInC $topNode]} {
 	if {$runState($topNode,modelRunning)<=1} {
-	    WarnNoData $topNode
+	    Query [list no_model_data $topNode] warning helpers {} abort
 	    return nodata
 	}
 	if {[catch {GetHandle $topNode [lindex $args 0]} hdl]} {
@@ -473,11 +473,3 @@ proc AbortCheck {node} {
     return [$helperTable(RunControl)::RCAbortCheck $node]
 }
 
-proc WarnNoProgram {node} {
-    global errorInfo
-    error "This operation cannot be done as there is no model program loaded for node $node."
-}
-
-proc WarnNoData {node} {
-    error "This operation cannot be done as there is no model program running for node $node."
-}

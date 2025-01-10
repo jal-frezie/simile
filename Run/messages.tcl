@@ -975,6 +975,8 @@ set msgs(missing_iotool_type_message) [tr. {No I/O tool with keyword "%1$s" is i
 set msgs(missing_var_requested_title) [tr. {Missing values for helper}]
 set msgs(missing_var_requested_message) [tr. {An instance of the I/O tool "%1$s" has requested information about the %2$s %3$s, but there is no %2$s of this name in the current model.}]
 set msgs(missing_var_requested_detail) [tr. {If the model has changed since the I/O tools were set up, you should adjust the settings of the I/O tools to reflect these changes, otherwise more warnings may appear and the model may stop running.}]
+set msgs(no_model_data_title) [tr. {No model running}]
+set msgs(no_model_data_message) [tr. {This operation cannot be completed as there is no model program running for desktop %1$s}]
 set msgs(no_spf_for_project_title) [tr. {Problem loading project}]
 set msgs(no_spf_for_project_message) [tr. {Parameter metafile %1$s could not be found.}]
 set msgs(no_shf_for_project_title) [tr. {Problem loading project}]
