@@ -73,7 +73,7 @@ cd -
 
 
 %changelog
-* Wed Jan 15 2025 Simulistics Ltd <info@simulistics.com> - 7.2-5
+* Fri Jan 10 2025 Simulistics Ltd <info@simulistics.com> - 7.2-5
 - Patch release
 
 * Sat Nov 30 2024 Simulistics Ltd <info@simulistics.com> - 7.2-4
