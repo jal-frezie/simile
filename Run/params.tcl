@@ -1231,11 +1231,11 @@ namespace eval fileparams {
 		puts $pStr $indent</$eltType>
 
 		set msgs(param_source_$compName) \
-		    [format $msgs(metafile_ref) $relName $metaFile]
+		    [format $msgs(metafile_ref) $relName \"$metaFile\"]
 	    } elseif {fmod([llength $outData($compName)],2)==1} {
 		puts $pStr "$indent<single_value $genericAVs val=[Entitize $outData($compName)]/>"
 		set msgs(param_source_$compName) \
-		    [format $msgs(metafile_lit) $metaFile]
+		    [format $msgs(metafile_lit) \"$metaFile\"]
 	    } elseif {[llength $outData($compName)]} {
 # do not write if no data, can only cause trouble
 		puts $pStr "$indent<multi_value $genericAVs>"
@@ -1244,7 +1244,7 @@ namespace eval fileparams {
 		    #				    spec=\"$outData($compName)\"/>"
 		puts $pStr "$indent</multi_value>"
 		set msgs(param_source_$compName) \
-		    [format $msgs(metafile_lit) $metaFile]
+		    [format $msgs(metafile_lit) \"$metaFile\"]
 	    }
 	}
 	puts $pStr $indent</variables>
@@ -1642,6 +1642,9 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
     # if loaded from temp dir, references relative to saved model
     if {[string first $simtmpdir $oldPath]==0} {
 	set oldPath [InModelDir $topNode]
+	set spfRef [tr. "model file"]
+    } else {
+	set spfRef \"$oldPath\"
     }
     set pStr [NetOpen $metaFile r]
     if {$paramState(origVersion)>=5.0} { ;# converted from xml so will be...
@@ -1755,7 +1758,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 		    [LoadTableData paramState($restoredComp) $startLine 1]
                 set whichParamsAffected($restoredComp) 1
                 set msgs(param_source_$restoredComp) \
-		    [format $msgs(metafile_ref) $VFile $oldPath]
+		    [format $msgs(metafile_ref) $VFile $spfRef]
 		set paramMetadata($restoredComp,saveBinary) 0
 		set paramMetadata($restoredComp,saveReference) 1
             } else {
@@ -1769,7 +1772,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 		if {[lindex $litPosn 0]>0} {
                     set whichParamsAffected($restoredComp) 1
                     set msgs(param_source_$restoredComp) \
-			[format $msgs(metafile_lit) $oldPath]
+			[format $msgs(metafile_lit) $spfRef]
 		    set paramMetadata($restoredComp,saveBinary) 0
 		    set paramMetadata($restoredComp,saveReference) 0
                 } else {
