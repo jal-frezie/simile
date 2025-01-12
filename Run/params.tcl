@@ -675,7 +675,8 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		set dataChanged 1 ;# still need to clear old param
 	    }
 	    set suppliedData($compName) $preload
-	} elseif {![string equal $newData [UglifyValList $suppliedData($compName) $readMany($compName)]]} {
+	} elseif {$complain > 0 && \
+	    ![string equal $newData [UglifyValList $suppliedData($compName) $readMany($compName)]]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
 	    #                set suppliedData($compName) $newData
@@ -1092,7 +1093,7 @@ namespace eval fileparams {
 	if {$metaFile eq [InModelDir $topNode]} {
 	    set spfRef [tr. "model file"]
 	} else {
-	    set spfRef \"$metaFile\"
+	    set spfRef "file \"$metaFile\""
 	}
 	foreach compName [array names outData $smPath/*] {
 	    if {[IsRecordCount $compName] || \
@@ -1357,7 +1358,7 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     if {[string first $::simtmpdir $oldPath]==0} {
 	set spfRef [tr. "model file"]
     } else {
-	set spfRef \"$oldPath\"
+	set spfRef "file \"$oldPath\""
     }
     array set parseStatus [list spfRef $spfRef topNode $topNode \
 			       smPath $smPath submodel {} valNesting 0]
@@ -1568,6 +1569,7 @@ proc LoadBase64CharData {encoded} {
 # will now load when loading other data, or not if Tcl
     set msgs(param_source_$compName) [format $msgs(metafile_bin) \
 					  $parseStatus(spfRef)]
+    puts "set msgs(param_source_$compName) $msgs(param_source_$compName)"
     set paramMetadata($compName,saveBinary) 1
     if {[info exists widgetNames($compName)]} { ;# should imply widget exists
 	FillIfSmall $widgetNames($compName).e [concat $paramData($compName)] \
@@ -1654,7 +1656,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 	set oldPath [InModelDir $topNode]
 	set spfRef [tr. "model file"]
     } else {
-	set spfRef \"$oldPath\"
+	set spfRef "file \"$oldPath\""
     }
     set pStr [NetOpen $metaFile r]
     if {$paramState(origVersion)>=5.0} { ;# converted from xml so will be...
