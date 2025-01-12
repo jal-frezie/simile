@@ -273,7 +273,7 @@ set msgs(with_role) [tr. {Include source value(s) corresponding with role "%1$s"
 # parameter sources, metafile quotes added in call if necessary
 set msgs(metafile_ref) [tr. {Loaded from file "%1$s" according to reference in file %2$s}]
 set msgs(metafile_lit) [tr. {Literal data in %1$s}]
-set msgs(metafile_bin) [tr. {Binary data in "%1$s"}]
+set msgs(metafile_bin) [tr. {Binary data in %1$s}]
 set msgs(direct_ref) [tr. {Loaded from file "%1$s"}]
 
 # file read/write operations

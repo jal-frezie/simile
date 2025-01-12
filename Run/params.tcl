@@ -1089,6 +1089,11 @@ namespace eval fileparams {
 	upvar 1 $outerData outData
 	upvar 1 $outerWidgets outWidgets
 	set inC [RunningInC $topNode]
+	if {$metaFile eq [InModelDir $topNode]} {
+	    set spfRef [tr. "model file"]
+	} else {
+	    set spfRef \"$metaFile\"
+	}
 	foreach compName [array names outData $smPath/*] {
 	    if {[IsRecordCount $compName] || \
 		$msgs(param_source_$compName) eq $msgs(fce)} continue
@@ -1157,7 +1162,7 @@ namespace eval fileparams {
 		puts $pStr "  $indent\]\]>"
 		puts $pStr "$indent</byte_array>"
 		set msgs(param_source_$compName) \
-		    [format $msgs(metafile_bin) $metaFile]
+		    [format $msgs(metafile_bin) $spfRef]
 	    } elseif {[ReferenceWorks $compName]} {
 		set typePairs [list csv_columns ,image image ,gdal geotiff \
 				   ,grid csv_grid]
@@ -1231,11 +1236,11 @@ namespace eval fileparams {
 		puts $pStr $indent</$eltType>
 
 		set msgs(param_source_$compName) \
-		    [format $msgs(metafile_ref) $relName \"$metaFile\"]
+		    [format $msgs(metafile_ref) $relName $spfRef]
 	    } elseif {fmod([llength $outData($compName)],2)==1} {
 		puts $pStr "$indent<single_value $genericAVs val=[Entitize $outData($compName)]/>"
 		set msgs(param_source_$compName) \
-		    [format $msgs(metafile_lit) \"$metaFile\"]
+		    [format $msgs(metafile_lit) $spfRef]
 	    } elseif {[llength $outData($compName)]} {
 # do not write if no data, can only cause trouble
 		puts $pStr "$indent<multi_value $genericAVs>"
@@ -1244,7 +1249,7 @@ namespace eval fileparams {
 		    #				    spec=\"$outData($compName)\"/>"
 		puts $pStr "$indent</multi_value>"
 		set msgs(param_source_$compName) \
-		    [format $msgs(metafile_lit) \"$metaFile\"]
+		    [format $msgs(metafile_lit) $spfRef]
 	    }
 	}
 	puts $pStr $indent</variables>
@@ -1349,7 +1354,12 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     global parseStatus errorInfo
 
     array unset parseStatus simV
-    array set parseStatus [list oldPath $oldPath topNode $topNode \
+    if {[string first $::simtmpdir $oldPath]==0} {
+	set spfRef [tr. "model file"]
+    } else {
+	set spfRef \"$oldPath\"
+    }
+    array set parseStatus [list spfRef $spfRef topNode $topNode \
 			       smPath $smPath submodel {} valNesting 0]
     $parseStatus(spfParser) reset
 #    set logFile [tk_getSaveFile]
@@ -1557,7 +1567,7 @@ proc LoadBase64CharData {encoded} {
 	      $parseStatus(fillMtd) $decoded]]
 # will now load when loading other data, or not if Tcl
     set msgs(param_source_$compName) [format $msgs(metafile_bin) \
-					  $parseStatus(oldPath)]
+					  $parseStatus(spfRef)]
     set paramMetadata($compName,saveBinary) 1
     if {[info exists widgetNames($compName)]} { ;# should imply widget exists
 	FillIfSmall $widgetNames($compName).e [concat $paramData($compName)] \
