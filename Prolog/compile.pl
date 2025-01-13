@@ -1880,7 +1880,9 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Made = preload(Dest);
 	member(Type, [compartment, immigration, reproduction, state]),
 	  \+ Source = none,
-	  (Type = state, \+ Source = in_update(choose(_,_,_)) ->
+	  (Type = state,
+	   \+ member(Source, [in_update(choose(_,_,_)),
+			      in_update((_TM=_Expr, choose(_,_,_)))]) ->
 	   query(no_triggering_events(Dest), info, top, [ok], _); true),
 	    UseList = [time | RefList], 
 	    Made = update(Dest),
