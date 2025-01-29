@@ -584,6 +584,8 @@ if {[info exists SimileAutoObjLoaded]} {
 #after 1000
 wm withdraw . ;# already withdrawn if not Linux
 # after 5000 ;# pause to admire
+} else {
+    set preloadFont 1.0
 } ;# matches if {!$headless}
 
 # This is the folder that AME should start looking for model

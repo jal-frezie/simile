@@ -1076,9 +1076,19 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     }
     set tWid 0
     set tHgt 0
+    if {$::headless} {
+	set lHgt [expr {1.6*$realFont}]
+    } else {
+	set lHgt [font metrics $useFont -linespace]
+    }
     foreach subCapt [split $capt \n] {
-	set tWid [expr {max($tWid, [font measure $useFont $subCapt])}]
-	set tHgt [expr {$tHgt+[font metrics $useFont -linespace]}]
+	if {$::headless} {
+	    set lWid [expr {$realFont*[string length $subCapt]}]
+	} else {
+	    set lWid [font measure $useFont $subCapt]
+	}
+	set tWid [expr {max($tWid, $lWid)}]
+	set tHgt [expr {$tHgt+$lHgt}]
     }
 # ankh seems always to be n at the moment...
     if {[string match s* $ankh]} {
