@@ -18,7 +18,7 @@ sicstus_module(input, [tk_make_desktop_node/1, tk_undo/2, tk_redo/2,
 		       tk_certain_death_node/1, tk_kill_everything/1,
 		       tk_set_new_size/4, tk_change_size/4, tk_do_colours/2,
 		       tcl_export_graphics/2, tk_append_to_log/2,
-		       tk_in_days/1, tk_locate/2]).
+		       tk_copy_display_depths/2, tk_in_days/1, tk_locate/2]).
 
 sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
@@ -172,6 +172,11 @@ bound_all_boxes([[L1, T1, R1, B1] | More], [L, T, R, B]) :-
     T is min(T1-10, T2),
     R is max(R1+10, R2),
     B is max(B1+10, B2).
+
+tk_copy_display_depths(From, To) :-
+    state:display_depth(From, Param, Depth),
+    state:set_display_depth(To, Param, Depth),
+    fail; true.
 
 tcl_export_graphics(Tgt, Node) :-
         draw><display(Tgt, Node, -1, _, 1),

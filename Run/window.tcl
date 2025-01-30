@@ -1549,6 +1549,7 @@ proc MenuSelect { window button item } {
 		    global simtmpdir
 		    # preload location for .svg
 		    set ::preSelect [file join $simtmpdir for_web.svg]
+		    prolog tk_copy_display_depths('$window','ToSVG')
 		    ExportSVGDirect $node
 		    # ...and saved IO tool setup
 		    if {[info exists helperTable($node,whichRunEnv)]} {
