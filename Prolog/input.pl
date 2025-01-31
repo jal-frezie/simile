@@ -174,8 +174,8 @@ bound_all_boxes([[L1, T1, R1, B1] | More], [L, T, R, B]) :-
     B is max(B1+10, B2).
 
 tk_copy_display_depths(From, To) :-
-    state:display_depth(From, Param, Depth),
-    state:set_display_depth(To, Param, Depth),
+    state><display_depth(From, Param, Depth),
+    state><set_display_depth(To, Param, Depth),
     fail; true.
 
 tcl_export_graphics(Tgt, Node) :-

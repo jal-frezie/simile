@@ -746,10 +746,9 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
 	    } [tr. Microsoft] {
-	    set TOOLS32 [file dirname $env(MSVCDIR)/bin]
-	    exec $TOOLS32/bin/cl.exe -GX -Ox -c -W1 -nologo \
+		exec [file join $env(MSVCDIR) cl.exe] -GX -Ox -c -W1 -nologo \
 		-DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
-		-I. -I$TOOLS32/include -I$TOOLDIR \
+		-I. -I$TOOLDIR \
 		-Foobjtmp.o model.cpp
 	    
 	    exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
@@ -1376,7 +1375,7 @@ proc CheckCompilerLocation {} {
     if {[info exists compiler]} {
         if {[llength [set execLoc [auto_execok $compiler]]]} {
             # compiler tools are in path, hope libs and includes are nearby
-            set env(MSVCDIR) [file dirname [file dirname [lindex $execLoc 0]]]
+            set env(MSVCDIR) [file dirname [lindex $execLoc 0]]
         } else {
             foreach possDir $possDirs {
                 if {[llength [auto_execok $possDir/bin/$compiler]]} {

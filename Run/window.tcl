@@ -1507,7 +1507,8 @@ proc MenuSelect { window button item } {
 	    DoLocalCmd $window $item
 	} code {
 	    set node $::window_info($window,top_node)
-	    if {[info exists helperTable($node,whichRunEnv)]} {
+	    if {[info exists helperTable($node,whichRunEnv)] && \
+		    [lsearch {build_c compile_c} $item]==-1} {
 		set helperTable($node,whereRunEnv) \
 		    [wm geometry $helperTable($node,whichRunEnv)]
 		wm withdraw $helperTable($node,whichRunEnv)
