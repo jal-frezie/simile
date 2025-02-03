@@ -814,7 +814,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 proc Undisturb {rightPlace} {
     set hideyhole [file join [file dirname $rightPlace] outoftheway]
     if {[file exists $hideyhole]} {
-	file rename $hideyhole $rightPlace
+	file rename -force $hideyhole $rightPlace
     }
 }
 
