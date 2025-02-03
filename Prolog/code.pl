@@ -27,12 +27,11 @@ tk_code(Model, CompOrBuild, _Tgt) :-
 	    CompDir = Temp;
 	abs_path_name(Base, root, Path),
 	    append_atoms([Temp, '/', Path], CompDir)),
+	caption_for(Model, Capt),	  
+	utility><append_atoms([CompDir, '/', Capt, '/model', 1, Ident], Top),
 	(\+ rebuild_code(c, Model, CompDir, Action), !;
-	  caption_for(Model, Capt),
-	  
-	  utility><append_atoms([CompDir, '/', Capt, '/model', 1, Ident],
-				  Top),
-	  output><safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
+	    output><safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)),
+	output><safe_tcl_eval(['Undisturb', Top], _).
 
 tk_code(Node, RunCmd, _Dummy) :-
 	member([RunCmd, Lang], [[run_c, c], [run_in_browser, c], [run_tcl, tcl]]),

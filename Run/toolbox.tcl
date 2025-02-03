@@ -706,6 +706,10 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 # Do not supply a path, modeller should add it to their environment
 		# puts $spout "set PATH=c:\\mingw\\bin;%PATH%"
 	    }
+	    if {[catch {file delete -force $TARGET}]} {
+		set hideyhole [file join [file dirname $TARGET] outoftheway]
+		file rename $TARGET $hideyhole
+	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
 		puts $spout "g++ $gppFlags -c -o objtmp.o \
                         -I\"[file nativename $TOOLDIR]\" \
@@ -805,6 +809,13 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
     # do not allow an old dcf to be saved with a new model
     cd $oldDir
     return $serial
+}
+
+proc Undisturb {rightPlace} {
+    set hideyhole [file join [file dirname $rightPlace] outoftheway]
+    if {[file exists $hideyhole]} {
+	file rename $hideyhole $rightPlace
+    }
 }
 
 proc LoadProgram {node lang} {

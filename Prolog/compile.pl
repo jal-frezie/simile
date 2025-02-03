@@ -207,13 +207,11 @@ build_instances(Language, DestDir, Parent, TopNode,
 		Includes = [LostFn, WhereSought],
 	        raise_exception(missing_function(LostFn, WhereSought))),
 
-	 ((OldTgt = 1; % no change to model; reuse executable?
-	   safe_tcl_eval(['HaveValues', TopNode],
-			  "4")), % Modeller opted to keep old exec
+	 (OldTgt = 1, % no change to model; reuse executable?
 		Stat = 0,
 		% \+ Action = export_sharelib, always build new if exporting?
 		safe_tcl_eval(['ReuseShareLib', br(WCheckDir), Language, 
-			       1], "1"), % succeeds if old sharelib found
+			       OldTgt], "1"), % succeeds if old sharelib found
 		Tgt = OldTgt;
 	     (safe_tcl_eval(['CheckCompilerPresent'], "1") -> true;
 	      throw(aborted)),
