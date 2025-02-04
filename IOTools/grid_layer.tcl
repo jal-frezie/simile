@@ -334,7 +334,16 @@ set repts [expr {$hex*$bpp/8}]
 		lappend result [expr {$useNodes($winId,min) + $level*($useNodes($winId,max)-$useNodes($winId,min))/255}]
 	    }
 	} else {
-	    set result [lreverse $rgb] ;# now convert rgb back to value!!
+	    for {set chkSw 0} {$chkSw < $useNodes($winId,nswatches)} {incr chkSw} {
+		scan $useNodes($winId,c$chkSw) "#%2x%2x%2x%2x%2x%2x" r z g z b z
+		if {$rgb eq "$r $g $b"} {
+		    # breaks if same colour reappears later in legend
+		    set wayThrough [expr {1.0*$chkSw/$useNodes($winId,nswatches)}]
+		    set result [expr {$useNodes($winId,max)*$wayThrough + \
+					  $useNodes($winId,min)*(1-$wayThrough)}]
+		    break
+		}
+	    }
 	}
 	return $result
 # old version needed value array
