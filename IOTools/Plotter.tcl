@@ -359,7 +359,7 @@ namespace eval ::$keyValue {
 	$w.canvas bind graph <Button-1> \
 	    [namespace code [list TraceHighlight $w]]
 	$w.canvas bind graph <Enter> \
-	    [concat QueuePopup [namespace code [list TracePopup $w %X %Y]]]
+	    [concat QueuePopup [namespace code [list TracePopup $w %X %Y %x]]]
 	$w.canvas bind graph <Leave> RemovePopup
         pack $w.canvas -fill both -expand true -side bottom
     }
@@ -641,7 +641,7 @@ namespace eval ::$keyValue {
         }
     }
     
-    proc TracePopup {winId X Y} {
+    proc TracePopup {winId X Y x} {
         global ::graphtools::plot
         
         #::graphtools::get_datax {w Xc Xscale}
@@ -651,9 +651,15 @@ namespace eval ::$keyValue {
 	set canvas [GetCanvas $winId]
 	set segment [$canvas find withtag current]
 	set origin [$canvas coords $segment]
-        set nearestval [::graphtools::get_datay $winId [lindex $origin 1] \
+	set LoX [lindex $origin 0]
+	set HiX [lindex $origin end-1]
+	set hoveredCoord [expr {min(1-1e-6,max(0,($x-$LoX)/($HiX-$LoX))) \
+				    * ([llength $origin]/2 - 1)}]
+	set localSect [lrange $origin [expr {2*int($hoveredCoord)}] end]
+
+        set nearestval [::graphtools::get_datay $winId [lindex $localSect 1] \
 			    $plot($winId,Yscale)]
-        set nearesttime [::graphtools::get_datax $winId [lindex $origin 0] \
+        set nearesttime [::graphtools::get_datax $winId [lindex $localSect 0] \
 			     $plot($winId,Tscale)]
 
 	set ident [lsearch -inline [$canvas itemcget $segment -tags] *.*]
@@ -1021,9 +1027,21 @@ namespace eval ::$keyValue {
         }
 	set cTag trace$plot($w,ordinal)
 	set plot($w,usedLegend) 1
-        $w.canvas create line $x0 $y0 $x1 $y1 \
+	set old [$w.canvas find withtag $node.$id]
+	foreach subline $old {
+	    set coords [$w.canvas coords $subline]
+	    if {[lindex $coords end-1]==$x0} {
+		set grow $subline
+		break
+	    }
+	}
+	if {[info exists grow]} {
+	    $w.canvas coords $grow [concat $coords $x1 $y1]
+	} else {
+	    $w.canvas create line $x0 $y0 $x1 $y1 \
                 -fill $Colour -width $width\
                 -tags "graph scalable xaxis_item yaxis_item $node.$id $cTag"
+	}
     }
     
     
