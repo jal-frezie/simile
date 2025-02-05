@@ -175,7 +175,9 @@ namespace eval ::$keyValue {
             if {$Tnew<$plot($w,Xmin_axis)} {
                 set plot($w,Xmin_data) $Tnew
             }
+	    return 1
 	}
+	return 0
     }
     
     proc Restore {winId} {
@@ -651,15 +653,15 @@ namespace eval ::$keyValue {
 	set canvas [GetCanvas $winId]
 	set segment [$canvas find withtag current]
 	set origin [$canvas coords $segment]
-	set LoX [lindex $origin 0]
-	set HiX [lindex $origin end-1]
-	set hoveredCoord [expr {min(1-1e-6,max(0,($x-$LoX)/($HiX-$LoX))) \
-				    * ([llength $origin]/2 - 1)}]
-	set localSect [lrange $origin [expr {2*int($hoveredCoord)}] end]
-
-        set nearestval [::graphtools::get_datay $winId [lindex $localSect 1] \
+#	set LoX [lindex $origin 0]
+#	set HiX [lindex $origin end-1]
+#	set hoveredCoord [expr {min(1-1e-6,max(0,($x-$LoX)/($HiX-$LoX))) \
+#				    * ([llength $origin]/2 - 1)}]
+#	set origin [lrange $origin [expr {2*int($hoveredCoord)}] end]
+#
+        set nearestval [::graphtools::get_datay $winId [lindex $origin 1] \
 			    $plot($winId,Yscale)]
-        set nearesttime [::graphtools::get_datax $winId [lindex $localSect 0] \
+        set nearesttime [::graphtools::get_datax $winId [lindex $origin 0] \
 			     $plot($winId,Tscale)]
 
 	set ident [lsearch -inline [$canvas itemcget $segment -tags] *.*]
@@ -1027,21 +1029,23 @@ namespace eval ::$keyValue {
         }
 	set cTag trace$plot($w,ordinal)
 	set plot($w,usedLegend) 1
-	set old [$w.canvas find withtag $node.$id]
-	foreach subline $old {
-	    set coords [$w.canvas coords $subline]
-	    if {[lindex $coords end-1]==$x0} {
-		set grow $subline
-		break
-	    }
-	}
-	if {[info exists grow]} {
-	    $w.canvas coords $grow [concat $coords $x1 $y1]
-	} else {
+# Extending lines rather than adding new ones fails to improve performance
+# due to overhead of finding existing part, uncomment next line to see
+#	set old [$w.canvas find withtag $node.$id]
+#	foreach subline $old {
+#	    set coords [$w.canvas coords $subline]
+#	    if {[lindex $coords end-1]==$x0} {
+#		set grow $subline
+#		break
+#	    }
+#	}
+#	if {[info exists grow]} {
+#	    $w.canvas coords $grow [concat $coords $x1 $y1]
+#	} else {
 	    $w.canvas create line $x0 $y0 $x1 $y1 \
                 -fill $Colour -width $width\
                 -tags "graph scalable xaxis_item yaxis_item $node.$id $cTag"
-	}
+#	}
     }
     
     
@@ -1083,7 +1087,7 @@ namespace eval ::$keyValue {
     proc adjustLimits {w Tnew Ynew} {
         global ::graphtools::plot
 
-	SetTimeAxes $w $Tnew
+	if {[SetTimeAxes $w $Tnew]} {
             set OldRange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
             set OldXmin_axis $plot($w,Xmin_axis)
             
@@ -1096,7 +1100,7 @@ namespace eval ::$keyValue {
                     plot($w,Xmin_axis) plot($w,Xmax_axis) \
                     plot($w,Xmajorstep) numInt plot($w,Xminorstep) numMinorInt plot($w,Xprecision)
             RescaleGraphX $w $OldRange $OldXmin_axis
-        
+        }
         if { ( ($Ynew>$plot($w,Ymax_axis)) || ($Ynew<$plot($w,Ymin_axis)) )} {
             #       ShowMess debug info "$Ynew $plot($w,Ymin_data) $plot($w,Ymax_data)\
             #                $plot($w,Ymin_axis) $plot($w,Ymax_axis)" ok
