@@ -142,7 +142,7 @@ itcl::class similescript::$newHelperClass {
 	    set curHelpers($node) $hlpr
 	} else {
 	    $tbl cellconfigure $node,1 -image {}
-	    unset curHelpers($node)
+	    array unset curHelpers $node
 	}
     }
     

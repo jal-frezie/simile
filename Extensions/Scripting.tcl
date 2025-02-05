@@ -325,8 +325,7 @@ itcl::class similescript::Helper {
 	if {[string match *_3dinst $this]} return
 	unset helperTable($winId,whichInstance)
 	foreach node $helperTable($this,foci) {
-	    catch {$::runState($modelNode,inspId) HelperLeaf $node $this 0}
-	    # will raise error if executable already removed
+	    $::runState($modelNode,inspId) HelperLeaf $node $this 0
 	}
 	unset helperTable($this,foci)
     }
