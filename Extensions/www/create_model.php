@@ -4,7 +4,7 @@
 <title>Simile model execution</title>
 <link rel="stylesheet" href="dist/themes/default/style.css" />
 <!-- link href=" jquery-ui.min.css" rel="stylesheet" /-->
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/mint-choc/jquery-ui.css" />
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/humanity/jquery-ui.css" />
 <!-- link href="css/xcharts.min.css" rel="stylesheet" /-->
 <!-- link href="css/jquery.jui_dropdown.css" rel="stylesheet" /-->
 <link href="css/jquery.dataTables.css" rel="stylesheet" />
@@ -225,8 +225,8 @@ if (isset($crmPath)) {
    gethostbyaddr($_SERVER['REMOTE_ADDR'])."', '".
    htmlspecialchars(stripslashes($_POST['model_link']))."')";
 
-   $result = mysql_query($query) or die("Query failed : " . mysql_error());
-   mysql_close($link);
+   $result = mysqli_query($link, $query) or die("Query failed : " . mysql_error());
+   mysqli_close($link);
 }
 
 // CreateModelExec($base);
