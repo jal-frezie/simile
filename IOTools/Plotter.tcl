@@ -1013,6 +1013,7 @@ namespace eval ::$keyValue {
     # Connect two points on the graph
     proc drawPoint { w X0 Y0 X1 Y1 Colour node id} {
         global ::graphtools::plot
+#	variable currentLines
         #ShowMess debug info "draw $node.$id" ok
 #puts "Drawing from $X0 $Y0 to $X1 $Y1"
         set x0 [get_x $w $X0 $plot($w,Tscale)]
@@ -1030,22 +1031,25 @@ namespace eval ::$keyValue {
 	set cTag trace$plot($w,ordinal)
 	set plot($w,usedLegend) 1
 # Extending lines rather than adding new ones fails to improve performance
-# due to overhead of finding existing part, uncomment next line to see
-#	set old [$w.canvas find withtag $node.$id]
-#	foreach subline $old {
-#	    set coords [$w.canvas coords $subline]
+# due to overhead of finding and/or redrawing existing part, or something
+#	if {[info exists currentLines($id)]} {
+#	    set grow $currentLines($id)
+#	    set coords [$w.canvas coords $grow]
 #	    if {[lindex $coords end-1]==$x0} {
-#		set grow $subline
-#		break
+# multi-point lines are inefficient, but if we can just extend the
+# segment? Get rid of last point if the line from the previous one to
+# the current passes within 0.1 vertical pixel of it. Rejected due to
+# difficulty of implementing persistence.
+#		if {abs($y1 + ([lindex $coords end-2]-$y1)*($x1-$x0)/($x1-[lindex $coords end-3])-$y0)<0.001} {
+#		    $w.canvas coords $grow [lreplace $coords end-1 end $x1 $y1]
+#		    return
+#		}
 #	    }
 #	}
-#	if {[info exists grow]} {
-#	    $w.canvas coords $grow [concat $coords $x1 $y1]
-#	} else {
-	    $w.canvas create line $x0 $y0 $x1 $y1 \
-                -fill $Colour -width $width\
-                -tags "graph scalable xaxis_item yaxis_item $node.$id $cTag"
-#	}
+#	set currentLines($id)
+	$w.canvas create line $x0 $y0 $x1 $y1 \
+	    -fill $Colour -width $width \
+	    -tags "$node.$id graph scalable xaxis_item yaxis_item $cTag"
     }
     
     
