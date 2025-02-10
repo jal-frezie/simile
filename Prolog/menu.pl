@@ -1459,12 +1459,6 @@ do_save(Win, Model, New_name) :-
 	/* Save image backgrounds */
 	transfer_images(Model, SaveDir, out),
 
-	/* Save canvas file -- remove selection cos graphics but not state
-	are saved */
-	select_all_in(Model, base),
-	check_save_canvas(SaveDir, CanvasModel, Date),
-
-
 	/* here is where we get the user to enter the name to save it
 	as.  This may be tried multiple times, which is why it is done after
 	writing all the saved components to temp file. */
@@ -1485,6 +1479,12 @@ do_save(Win, Model, New_name) :-
 	(New_name = seln_only, Select = yes, CanvasModel = none;
 	    \+ New_name = seln_only, Select = no, CanvasModel = Model),
 	save_isolated(TempFile, Model, Name, Date, Select, yes),
+
+	/* Save canvas file -- remove selection cos graphics but not state
+	are saved */
+	select_all_in(Model, base),
+	check_save_canvas(SaveDir, CanvasModel, Date),
+
 
 	/* Now build the multi-part MIME format save file */
         reassure_user(pl_mimeout, []),
