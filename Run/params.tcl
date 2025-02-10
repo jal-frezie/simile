@@ -1285,7 +1285,7 @@ namespace eval fileparams {
 	set title [format [tr. {Load %1$s for "%2$s" from:}] $whatToLoad $defBase]
 	set metaFile [ChooseFile $defBase$extn $title 0 $topNode]
         if {[llength $metaFile]} {
-            MergeParams $topNode $smPath $metaFile $notInput 1
+            MergeParams $topNode /$smPath $metaFile $notInput 1
             
         }
     }

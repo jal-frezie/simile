@@ -1995,7 +1995,7 @@ proc OpenProjectFile {path} {
 		set ::projectParams($smPath) [file join $baseDir $spfRelPath]
 	    }
 	} elseif {[file exists $defaultSPF]} {
-	    set ::projectParams({}) $defaultSPF
+	    set ::projectParams() $defaultSPF
 	}
 	set tw [FindNodeTopWin $topNode]
 	# if undo enabled, a log has been applied, so do not rerun!
