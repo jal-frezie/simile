@@ -80,6 +80,8 @@ proc PrettifyValList {ugly txtVals} {
     } elseif {[llength $ugly]==1 || [lsearch $txtVals $ugly]>-1} {
 	# do mind even length ET mem mangling
 	set result [EnquoteIfNonNumeric $ugly]
+    } elseif {[llength $ugly]==0} { # ensure generated JSON at least parses
+	set result <empty>
     } else {
 	set result {}
 	foreach {indx val} $ugly {

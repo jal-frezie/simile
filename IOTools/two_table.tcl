@@ -1001,7 +1001,9 @@ namespace eval $keyValue {
         return [ArrayToList newValues]
     }
 
-    proc ReComp {l1 l2} {
+    proc NewReComp {l1 l2} {
+	# not finished, headers can be lists of indices!
+	puts [info level 0]
 	if {[catch {set way [expr {($l2<$l1)-($l2>$l1)}]} boglar]} {
 	    puts "Unexpected text comparison: $boglar"
 	    return [string compare $l1 $l2]
@@ -1009,7 +1011,7 @@ namespace eval $keyValue {
 	return $way
     }
     
-    proc OldReComp {l1 l2} {
+    proc ReComp {l1 l2} {
         if {[string match $l1 $l2]} {
             return 0
         }

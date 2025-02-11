@@ -2034,10 +2034,11 @@ proc OpenProjectFile {path} {
 		[file normalize [file join $baseDir \
 				     $SimileProject(nameOfHelperStateFile)]]
 	    RecordPathChoice .shf $helperTable($topNode,stateName) $topNode
-            ::RunEnv::LoadSHF $topNode $helperTable($topNode,stateName)
-        } else {
-	    ::RunEnv::InitializeDisplays
+            if {[::RunEnv::LoadSHF $topNode $helperTable($topNode,stateName)]} {
+		return
+	    }
 	}
+	::RunEnv::InitializeDisplays
     }
 }
 
