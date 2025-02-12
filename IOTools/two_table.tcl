@@ -1032,7 +1032,7 @@ namespace eval $keyValue {
         if {[catch {expr ($l2<$l1)-($l2>$l1)} math]} {
             return [string compare $l1 $l2]
         }
-	puts "[info level 0] gives $math"
+#	puts "[info level 0] gives $math"
         return $math
     }
     
