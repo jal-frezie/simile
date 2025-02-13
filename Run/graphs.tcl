@@ -1548,6 +1548,7 @@ proc EditListAsTable {parent caption startLine dims valueArray} {
     ${viewerId}::initialize $t
     
     upvar 1 $valueArray values
+    puts $values
     set ${viewerId}::displayList($t) eqn_table
     set ${viewerId}::displayList($t,paths) [list $caption]
     set ${viewerId}::displayList($t,ids) [list dummyId]

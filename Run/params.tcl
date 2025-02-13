@@ -2069,7 +2069,12 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
     }
     set node [IdFromTail $topNode $compName $notInput]
     if {$msgs(param_source_$compName) eq $msgs(fce)} {
-	set table_entry(values) [lindex [GetModelValue $node] 0]
+	if {$::runState($topNode,modelRunning)>1} {
+	    set table_entry(values) [TransEnums $trans \
+					 [lindex [GetModelValue $node] 0]]
+	} else {
+	    set table_entry(values) {}
+	}
     } elseif {[string match normal [$outNames($compName).e cget -state]]} {
         set table_entry(values) [UglifyValList [$outNames($compName).e get] \
 				    $::readMany($compName)]
