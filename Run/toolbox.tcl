@@ -2066,7 +2066,10 @@ proc SaveProjectFile {topNode path tgt} {
 #    if {[ViewUnsaved $topNode]} \{
 	set ::helperTable($topNode,stateName) [file join $path model.shf]
 	RecordPathChoice .shf $tgt $topNode
+	set oldFocus [focus]
+	event generate $::helperTable($topNode,whichRunEnv) <FocusIn>
 	::RunEnv::SaveView 0
+	event generate $oldFocus <FocusIn>
 	set SimileProject(nameOfHelperStateFile) model.shf
 	# this should make v6x find it OK
 
