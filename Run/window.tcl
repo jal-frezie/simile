@@ -544,6 +544,8 @@ proc DragObj {winId xco yco} {
     }
 
     set dragtime [clock clicks -milliseconds]
+    set minWait 100
+    if {$dragtime-$debounce(clicktime)<$minWait} return
 #    if {$dragtime>$debounce(clicktime) && $dragtime-$debounce(clicktime)<100}
     if {[string equal busy $debounce(down)]} {
         return
@@ -566,28 +568,34 @@ proc DragObj {winId xco yco} {
 #   }
 #    }
 
-    set sloth 5
+    set sloth $::looks(scrollIncr)
 
-    if {[tk windowingsystem] ne "aqua"} {
-	# MacOS has spurious drags after dismissing menus
-	RollBack $winId 1 $xco $yco $xco $yco
-    }
-    
+    set xjump 0
+    set yjump 0
     if {$xco < 0} {
-        $winId xview scroll [expr $xco/$sloth] units
+	set xjump [expr $xco/$sloth]
     }
     if {$yco < 0} {
-        $winId yview scroll [expr $yco/$sloth] units
+        set yjump [expr $yco/$sloth]
     }
     if {$xco > $window_info($winId,width)} {
-        $winId xview scroll \
-                [expr int($xco-$window_info($winId,width))/$sloth] units
+        set xjump [expr int($xco-$window_info($winId,width))/$sloth]
     }
     if {$yco > $window_info($winId,height)} {
-        $winId yview scroll \
-                [expr int($yco-$window_info($winId,height))/$sloth] units
+        set yjump [expr int($yco-$window_info($winId,height))/$sloth]
     }
 
+    if {$xjump || $yjump} {
+	set debounce(clicktime) $dragtime ;# limit scroll/barge speed
+	if {[tk windowingsystem] ne "aqua"} {
+	    # MacOS has spurious drags after dismissing menus
+	    set extra 15
+	    RollBack $winId 1 [expr $xco-$extra] [expr $yco-$extra] \
+		[expr $xco+$extra] [expr $yco+$extra]
+	}
+	$winId xview scroll $xjump units
+	$winId yview scroll $yjump units
+    }
 #    set draggedObj [GetClickedObj $winId $canx $cany 5]
 #    if {[lsearch [$winId gettags $draggedObj] /handle/] == -1} {
 	prolog [list tk_drag( $virtx , $virty )] ;# no cursor change
@@ -768,7 +776,7 @@ proc ModelWindow {winName} {
 
 proc AdjustScroll {canvas dir args} {
     if {[string compare [lindex $args 2] units] == 0} {
-        set jump [expr 10*[lindex $args 1]]
+        set jump [expr 10*[lindex $args 1]/$::looks(scrollIncr)]
         $canvas $dir [lindex $args 0] $jump units
     } else {
         eval {$canvas $dir} $args
@@ -877,7 +885,7 @@ proc ChangeParentTitle {wc title bg} {
     ResizeBackgnd $wc $bl $bt $br $bb
 }
 
-set looks(scrollIncr) 10
+set looks(scrollIncr) 5
 
 proc AddGrid {c onCol wl wt wr wb} {
     global window_info custom
