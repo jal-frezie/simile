@@ -696,12 +696,12 @@ get_link_route(Link, Route) :-
 
 	(Link is_of_sort curved, !,
 	    get_shape(Link, curve, [CX, CY]),
-	    MX is CX + (SX+FX)/2,
-	    MY is CY + (SY+FY)/2,
+	    MX is CX+0.25*WarpFactor*(SY-FY) + (SX+FX)/2,
+	    MY is CY+0.25*WarpFactor*(FX-SX) + (SY+FY)/2,
 	    crossing_point(Parent, [SX, SY], [MX, MY], SType, SBox,
-			   WarpFactor/4, P0),
+			   0, P0),
 	    crossing_point(Parent, [FX, FY], [MX, MY], FType, FBox,
-			   -WarpFactor/4, Pn),
+			   0, Pn),
 	    Route = [Pn, [MX, MY], P0];
 	SBox = [SL, ST, SR, SB],
 	    FBox = [FL, FT, FR, FB],
@@ -1106,7 +1106,7 @@ route_parent_child_link(Type, Direction, Parent, Child, Route) :-
         Route = [Finish, Midpoint, Start]).
 
 /* Easy one for straight whole routes; this and its partial equivalent might need 
-to take some note of the centres...OK then */
+to take some note of the centres...OK then
 
 route_link(Parent, Type, Start, Finish, [End, Beginning]) :-
     Type is_class_of_sort has_bowtie,
@@ -1131,7 +1131,7 @@ route_link(Parent, Type, Start, Finish, [End, Beginning]) :-
         crossing_point(Parent, [X2, Y], Beginning, 0, NodeType2, 
                 [L2, T2, R2, B2], End)), !.
 
-/* Slight mod to the one below to start flows in the centre of the appropriate
+Slight mod to the one below to start flows in the centre of the appropriate
 side of the compartment etc and thus differentiate routes in opposite
 directions */
 

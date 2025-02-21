@@ -21,7 +21,7 @@ longhand(radian, rad).
 unit_definition(deg,rad*180/3.1415927).
 longhand(degree, deg).
 
-unit_definition(l, m*m*m/1000).
+unit_definition(l, dm^3).
 longhand(litre, l).
 longhand(liter, l).
 
@@ -46,11 +46,14 @@ unit_definition(inch,	m*254/10000).
 unit_definition(ft,	inch*12).
 longhand(foot, ft).
 unit_definition(yard,	ft*3).
-unit_definition(mile,   yard*1760).
+unit_definition(chain,  yard*22).
+unit_definition(furlong, chain*10).
+unit_definition(mile,   furlong*8).
 
-unit_definition(a, 100*m*m).
+unit_definition(a, 100*m^2).
 longhand(are, a).
 longhand(hectare, ha).
+unit_definition(acre, furlong*chain).
 
 unit_definition(lb, kg*45359237/100000000). % avoirdupois
 longhand(pound, lb).
@@ -73,10 +76,10 @@ longhand(joule, 'J').
 unit_definition(cal,	'J'*41868/10000).
 longhand(calorie, cal).
 longhand(kilocalorie, kcal).
+unit_definition('BTU',  'J'*1055.05585262).
 
 unit_definition('W', 'J'/s).
 unit_definition('Wh', 'W'*h). % energy to power and back again, wtfn?
-
 longhand(watt, 'W').
 longhand(kilowatt, kW).
 

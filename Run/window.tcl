@@ -2285,15 +2285,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	}
 	set component [lindex $funk 2]
 	set wParen $component\(\)
-#	if {[catch {$box index $wParen}]} {
+#	if {[catch {$box index $wParen}]}
+	if {![info exists posted($box,$component)]} {
 	    $box add command -label $wParen \
 		-command [list InsertFunction $eb.equation $component]
 	    lappend fnList $component
+	    set posted($box,$component) 1 ;# to weed out duplicates
 	    if {[info exists msgs($component)]} {
 		set component $msgs($component) ;# may not exist
 	    }
+
 	    lappend popLists($box) $component
-#	}
+	}
     }
     set lname [menu $m.enumtypes -tearoff 0]
     $m add cascade -menu $lname -label [tr. "Enum. type constants"]

@@ -2068,7 +2068,9 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
         set table_entry(data) {}
     }
     set node [IdFromTail $topNode $compName $notInput]
+    set table_entry(source) -1
     if {$msgs(param_source_$compName) eq $msgs(fce)} {
+	set table_entry(source) -2
 	if {$::runState($topNode,modelRunning)>1} {
 	    set table_entry(values) [TransEnums $trans \
 					 [lindex [GetModelValue $node] 0]]

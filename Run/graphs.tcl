@@ -1127,7 +1127,6 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     #        return 0
     #    }
 
-    set table_entry(source) -1
     LetItShow .table table_entry(done)
     PackItUp .table
     CombineTimeExtras
@@ -1356,7 +1355,7 @@ proc EditTableData {startLine capt dims trans} {
 
     if {$table_entry(fileName) ne {}} {
 	AcquireTableData 0 $startLine
-    } elseif {$values eq {}} {
+    } elseif {$values eq {} || $table_entry(source)==-2} {
 	# No file data selected, fill table with empties unless values there
 	if {$dims eq [lrepeat 7 0] || [lsearch $dims RECORDS]>-1} {
 	    set dims \
