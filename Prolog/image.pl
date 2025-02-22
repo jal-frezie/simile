@@ -682,10 +682,14 @@ get_end_pt(Link, End, Type, Pt, Box) :-
 	    middle(Box, Pt)).
 
 warp_factor_for(Link, WarpFactor) :-
+    find_type(Link, Type),
+    (Type = influence -> WarpFactor = 0;
 	Link is_connector from A to B,
-	setof(GenLink, GenLink is_connector from A to B, Links),
+	setof(GenLink,
+	      (GenLink is_connector from A to B, find_type(GenLink, Type)),
+	      Links),
 	nth(Seq, Links, Link),
-	WarpFactor is 1-2*float_fractional_part(Seq/2.6).
+	WarpFactor is 1-2*float_fractional_part(Seq/2.6)).
 
 get_link_route(Link, Route) :-
 	get_end_pt(Link, start, SType, [SX, SY], SBox),
