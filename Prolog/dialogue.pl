@@ -727,18 +727,24 @@ process. */
 test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 ParamList, ParseError) :-
 	reverse(IndxCount, IndxSzs),
-	append(InterInputs, [input_link(_, DimL, '/dest/', DUnits-DLoops,_)],
+	append(InterInputs,
+	       [input_link(_, DimL, '/dest/', DUnits-DLoops,_),
+		input_link(_, TrigL, '/tm/', _,_)],
 	       AllInputs),
 
 	on_exception(ParseException,
 		     replace_subexps(Equation, dialogue, expand_params,
-			dim_data(DimL, ParamList, AllInputs, ExpInters),
+			dim_data(DimL, UsedList, AllInputs, ExpInters),
 				     top_down, _ParamSubs, FullExpr),
 		     ParseError = ParseException),
 	
 	(nonvar(ParseError), !;
 	
-	length(ParamList, _LenP),
+	 length(UsedList, _LenP),
+	 (select('/tm/', UsedList, ParamList) ->
+	      inters><units_for_trigger_mag(Fn, _-TrigDG),
+	      append(TrigDG, _, TrigL);
+	  ParamList = UsedList),
 	    get_ground_part(DimL, DimDG),
 	    length(DimDG, LenD),
 	    length(DimDV, LenD),
@@ -911,6 +917,12 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 		throw(bad_index_number(N, prev, 32));
 	    DoneExpr = '/dest/'),
 	    Recurse = 1;
+	Param = trigger_magnitude(''),
+	    member(input_link(_, LRefs, '/tm/', _,_), AllInputs),
+	    DoneExpr = Param,
+	    member('/tm/', PsUsed),
+	    DimL = LRefs,
+	    Recurse = 0;
 	instance><build_table_ref(table_const(1), Param, DoneExpr);
 	expand_library(Param, DoneExpr),
 	    Recurse = 1.
