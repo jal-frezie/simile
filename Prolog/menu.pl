@@ -252,7 +252,7 @@ resize_canvas_for(Parent) :-
 	CBox = [Ln, Tn, Rn, Bn],
 	(is_toplevel(Parent), !,
 	    % make extent cover existing canvas area
-	    get_shape(Parent, bounding_box, [LO, TO, RO, BO]),
+	    get_shape(Parent, internal_extent, [LO, TO, RO, BO]),
 	    IR is Ln + max(Rn-Ln, RO-LO),
 	    IB is Tn + max(Bn-Tn, BO-TO),
 	    IBox = [Ln, Tn, IR, IB];
