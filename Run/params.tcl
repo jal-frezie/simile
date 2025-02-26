@@ -628,14 +628,15 @@ proc AcceptAll {topNode compNames notInput complain} {
 
 proc AcceptData {topNode compName notInput complain {caseId {}}} {
     global runState msgs whichParamsAffected readMany paramMetadata
-    set namencase [SeparateCase $topNode $compName]
-    set compLocal [TrimDTFromPath [lindex $namencase 0]]
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
+	set compLocal $compName
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
+	set namencase [SeparateCase $topNode $compName]
+	set compLocal [TrimDTFromPath [lindex $namencase 0]]
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
