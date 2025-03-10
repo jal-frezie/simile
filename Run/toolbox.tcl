@@ -2021,7 +2021,7 @@ proc OpenProjectFile {path} {
 	}
 	
 	UpdateByOS
-        if {$runState($topNode,modelRunning)<3} return
+#        if {$runState($topNode,modelRunning)<3} return ; load setup anyway
 	set defaultSHF [file join $path model.shf]
 	if {[file exists $defaultSHF]} {
 	    ::RunEnv::LoadSHF $topNode $defaultSHF

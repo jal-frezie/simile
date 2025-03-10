@@ -1357,6 +1357,8 @@ combine( L, Op, VArgs, Atom) :-
 	Op = as_type, VArgs = [_, Atom];
 	Op = nonnull, (L = c, VArgs = [Atom];
 		       L = tcl, VArgs = [Test], Atom = (Test ne '"NULL"'));
+	Op = print, VArgs = [Ind, Val], !,
+	    Atom = printf('"Id %d, val %lg\\n"', Ind, '(double)'(Val));
 	(member(Op, [and, ',', '&&']), !,
 		((L = c; L = tcl),
 			TargetOp = (&&);

@@ -1902,6 +1902,8 @@ builtin('Model properties', dies_of, boolean, [real]).
 builtin('Model properties', latency, real, [real]).
 builtin('Model properties', after, Any, [real, Any]) :- Any = any; value(Any).
 
+builtin('Model properties', print, int, [int, real]).
+
 /* These are recognized by the parser but is not part of the equation
 language -- they and the operators are hidden */
 

@@ -15,6 +15,7 @@ itcl::class similescript::$newHelperClass {
 	Helper::constructor $modelInst $winTitle
     } {
 	global iconImages
+	variable curHelpers
 
 	package require tablelist 5-
 	switch -glob $winTitle {
@@ -72,6 +73,7 @@ itcl::class similescript::$newHelperClass {
 	    }
 	}
 	set sorted [lsort -dictionary -index 1 $universe]
+	array unset curHelpers ;# this is constructor but vars are set, why?
 	foreach makeTree {1 0} {
 	    if {!$makeTree && $winTitle eq "submodel"} break
 	    foreach pair $sorted {
@@ -106,6 +108,7 @@ itcl::class similescript::$newHelperClass {
 		set new [$tbl insertchild $parent end [list $capt]]
 		$tbl rowconfig $new -name $component -bg $fColour
 		$tbl cellconfig $new,0 -image $image
+		set curHelpers($component) {}
 	    }
 	}
 	bind [$tbl bodytag] <Button-1> [::itcl::code ProdIfComp %W %x %y]
@@ -121,7 +124,8 @@ itcl::class similescript::$newHelperClass {
 
     public method HelperLeaf {node hlpr add} {
 	variable curHelpers
-    
+
+	if {![info exists curHelpers($node)]} return
 	set id [[$hlpr info class]::Identify]
 	array set hlprIcons {Plotter graph \
 				 "XY Plotter" plotxy \
@@ -142,7 +146,7 @@ itcl::class similescript::$newHelperClass {
 	    set curHelpers($node) $hlpr
 	} else {
 	    $tbl cellconfigure $node,1 -image {}
-	    array unset curHelpers $node
+	    set curHelpers($node) {}
 	}
     }
     
@@ -198,7 +202,7 @@ itcl::class similescript::$newHelperClass {
 	}
 
 	set plName [$tbl rowcget $row -name]
-	if {$col==1 && [info exists curHelpers($plName)]} {
+	if {$col==1 && [llength $curHelpers($plName)]} {
 	    set toShow [[$curHelpers($plName) info class]::Identify]
 	    RemovePopup
 	    eval QueuePopup AddWidgetPopup $tbl $X $Y [list $toShow]
