@@ -122,7 +122,9 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	     make_evaluation_routine(L, TryCond, Used, TryRef)),
 	    excrete(L, while_start, TryRef, Indent, Stream),
 	    deepen_indent(Indent, Indent1),
-	    % excrete(L, procedure_call, abort_check, Indent1, Stream),
+	    (L = c ->
+		 excrete(L, procedure_call, pthread_testcancel, Indent1, Stream);
+	     true),
 	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	    excrete(L, if_start, AlarmRef, Indent1, Stream),
 	    deepen_indent(Indent1, Indent2),

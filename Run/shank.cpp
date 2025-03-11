@@ -1457,7 +1457,7 @@ void ExecutingModel::LaunchThreads(void* thread_action(void*)) {
 pthread_t supervisorId;
 void ExecutingModel::WrapUpThreads(excpData* userDefStop) {
   void *clientResult = NULL;
-  struct timespec ts;
+  // struct timespec ts;
 
   xmList* aChild = children;
   while (aChild) {
