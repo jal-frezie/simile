@@ -112,14 +112,15 @@ handle_eqn_interaction(Part, Input_list, GraphSpec, TableSpec, Rules) :-
 		    true),
 	    ((Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn,
 				    NewArrSpec, GphDat, TabDat, MinVal, MaxVal,
-				    Desc, Comment, NewInputs),
+				    UserUnits, Desc, Comment, NewInputs),
 		update_parameterhood(Part, Is_P, AffectedNode),
 		add_parameter(AffectedNode, 0, value, Result),
 		add_parameter(AffectedNode, 0, spec, OldEqn),
 		(\+ GphDat = 0, GraphAttr = GraphSpec, !;
 		    GraphAttr = ''), /* no graphs found */
 		(\+ TabDat = 0, TableAttr = TableSpec, !;
-		    TableAttr = ''), /* no tables found */
+		 TableAttr = ''), /* no tables found */
+		add_parameter(AffectedNode, 0, user_units, UserUnits),
 		add_parameter(AffectedNode, 0, graph_data, GraphAttr),
 		add_parameter(AffectedNode, 0, table_data, TableAttr),
 		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList);
@@ -371,7 +372,7 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_pb, Is_P_st, Desc_st,
 		(member('', [Min, Max]) -> CompBase=boolean; CompBase=int);
 		CompBase = RawBase),		
 	    appropriate_units(Units, TypeBase, CompBase, CheckLevel,
-			      NewUnits, TypeError))),
+			      DefUnits, NewUnits, TypeError))),
 
 	    build_array(NewUnits, EqnDims, NewArrSpec),
 	    (\+ var(TypeDims),
@@ -456,8 +457,10 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_pb, Is_P_st, Desc_st,
 
 	(FinalComplaint = [], !,
 	    warn_dimless_scaler(NewUnits),
+	    (NewUnits = DefUnits -> UserUnits = '';
+	     UserUnits = yes),
 	    Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
-				  GphDat, TabDat, MinVal, MaxVal,
+				  GphDat, TabDat, MinVal, MaxVal, UserUnits,
 				  Desc, Comment, New_inputs);
 %	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	 FinalComplaint = continue, !,
@@ -483,7 +486,7 @@ update_equation(Function, InterInputs, [Eqn_st, Evt_st, Unit_st,
 	    get_term(Unit_st, GivenUnits, UnitParseError),
 	    (UnitParseError = [], !,
 		appropriate_units(GivenUnits, any, EqnBase, 2,
-				  NewUnits, FinalError);
+				  _, NewUnits, FinalError);
 	      FinalError = UnitParseError);
 	  FinalError = ParseError),
 
@@ -521,26 +524,26 @@ warn_dimless_scaler(NewUnits) :-
 	    warning, top, [ok], ok)), !; true.
 
 appropriate_units(Units, TypeBase, RawBase, CheckLevel,
-                  NewUnits, TypeError) :-
+                  DefUnits, NewUnits, TypeError) :-
 	promote_unit(RawBase, ComboBase),
 	\+ member(ComboBase, [const_int, const_ratio]),
 		% variables cannot have constant units even if constant
+	(nonvar(TypeBase), \+ TypeBase = any,
+	    (\+ TypeBase = 1; ComboBase = int), !,
+	    DefUnits = TypeBase; % interesting default units, use them
+	  DefUnits = ComboBase),
 	(\+ member(Units, ['', any]),
-	    (Units = int, ComboBase = 1,
-	        NewUnits = 1;
-		% num constant changed from int to float -- allow
-	     member(Units, [1, int]),
+	    (member(Units, [1, int]),
 	        units><get_conversion(_, ComboBase, ComboBase, _),
 	        NewUnits = ComboBase;
+		% num constant changed from int to float, or
 	        % physical units supplied for numerical -- allow
 	      NewUnits = Units); % otherwise if units were given, use them
-	    nonvar(TypeBase), \+ TypeBase = any,
-		(\+ TypeBase = 1; ComboBase = int), !,
-	      NewUnits = TypeBase; % interesting default units, use them
-	    NewUnits = ComboBase), % last resort, use units from eqn
+	    NewUnits = DefUnits), % last resort, use units from eqn
 	check_unit(ComboBase, NewUnits, CheckLevel, EqnToUnitError),
 	
 	\+ (EqnToUnitError = bad_type_conversion(_,_),
+	    % this never happens because we allow quiet upgrade of int units
 	    \+ NewUnits == TypeBase,
 	    query(replace_units(ComboBase, NewUnits), question, fill_equation,
 		 [ok, cancel], ok)), % user chooses to override old unit field

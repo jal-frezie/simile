@@ -1088,26 +1088,30 @@ spread_dims(Node) :-
 	        dialogue><retract(table_data_is(TD)); true),
 	    dialogue><check_param_usage(IList, [], Xs, IList, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
+	     applies_in(Obj, eqn_units, DoingUnits),
 	    (Err = [],
 	     (default_units(Node, DefBase, _DefDims) ->
-		  check_unit(Type, DefBase, 1, []); true),
+		  (DoingUnits = 'No' ->
+		    DefCheckLevel = 1;
+		  DefCheckLevel = 2),
+		check_unit(Type, DefBase, DefCheckLevel, []); true),
 		(get_actual_sizes(Node, FoundArray, bare, _, Array, _),
-		    get_actual_sizes(Node, GivenArray, bare, _, Array, _), !,
+		    get_actual_sizes(Node, GivenArray, bare, _, Array, _) ->
 		    UseArray = GivenArray;
 		  UseArray = FoundArray,
 		    SpecChanged = dims),
-		(Type = real, !, Base = 1; Base = Type),
-		((applies_in(Obj, eqn_units, 'No');
+		(Type = real -> Base = 1; Base = Type),
+		((DoingUnits = 'No';
 		  IList = [], inters><promote_unit(Base,1)),
 		    CheckLevel = 1;
 		  CheckLevel = 2),
-		(check_unit(Base, GivenBase, CheckLevel, []), !,
+		(check_unit(Base, GivenBase, CheckLevel, []) ->
 		    UseBase = GivenBase;
-		  UseBase = Base,
+		  \+ get_av_pair(Obj, 0, user_units, yes), UseBase = Base,
 		    SpecChanged = units),
 		update_links_and_vars(IList);
 	      \+ GivenBase = any,
-	        applies_in(Node, eqn_units, 'Yes'),
+	        DoingUnits = 'Yes',
 	        value_propagates(out, Node, Next, _Link),
 		multi_prop(out, Next, Node, 5),		
 % if eqn does not parse following unit change, see if it is in a loop
