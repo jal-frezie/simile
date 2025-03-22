@@ -2001,7 +2001,6 @@ proc OpenProjectFile {path} {
 	# if undo enabled, a log has been applied, so do not rerun!
 	if {[$tw.toolSlot.navbar.undo cget -state] eq "normal"} return
 
-	set runState($topNode,updated) [expr {1-$SimileProject(modelRunning)}]
 	set runState($topNode,modelRunning) 0
 #	if {$SimileProject(running_c)} {
 #            MenuSelect $tw.canvas code run_c
@@ -2019,7 +2018,8 @@ proc OpenProjectFile {path} {
 	if {$builtOK} {
 	    LoadProgram $topNode $lang
 	}
-	
+	set runState($topNode,updated) [expr {1-$SimileProject(modelRunning)}]
+	# after running so out-of-date warning not produced on load
 	UpdateByOS
 #        if {$runState($topNode,modelRunning)<3} return ; load setup anyway
 	set defaultSHF [file join $path model.shf]
