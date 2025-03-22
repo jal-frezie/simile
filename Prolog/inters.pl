@@ -941,7 +941,7 @@ make_intermediates(
 
 	((Source = channel_is(ChannelName), !,
 	    (ChannelName = param(arr(_, ChannelVar,_),_, ChanPath, Compat, _),
-	        (Step = dummy -> Compat = generator; true);
+	        (Step = dummy -> Compat == generator; true);
 	    throw(needs_channel_parameter(ChannelName))),
 	    nth(ChannelNum, Used, ChannelVar), !,
 	    suffix(ChanPath, DestPath),
@@ -958,8 +958,9 @@ make_intermediates(
 	    Units = boolean,
 	    Args = [on_step];
 	Source = dies_of(ChannelName), !, % parsing if we see that here
-	(ChannelName = param(_,_,_, destroyer, _) -> Args = [], Units = boolean;
-	 throw(needs_loss_parameter(ChannelName)));
+	  ChannelName = param(_,_,_, Compat, _),
+	  (Compat == destroyer -> Args = [], Units = boolean;
+	   throw(needs_loss_parameter(ChannelName)));
 	Source =.. [Op, N],
 	    name(Op, OpStr),
 	    lower(OpStr, LopStr),

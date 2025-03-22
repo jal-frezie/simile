@@ -716,7 +716,7 @@ source_compat(Id, Compat) :-
     m_class><initiates(Arc, Src),
     member(Compat, [generator, destroyer]),
     Src is_of_sort Compat, !;
-    Compat = none.
+    true.
 
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
 now
