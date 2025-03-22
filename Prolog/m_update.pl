@@ -1620,7 +1620,8 @@ sever_links(Kill_obj, End) :-
 	    continues_from(Kill_obj, End), NewEnd = finish),
 	((Kill_obj = LastSect; sequence(Kill_obj, LastSect)),
 	    LastSect has_attribute role of DestData,
-	    member(use(_R, _S, VisCapt, _U), DestData),
+	    member(use(_R, _S, HidCapt, _U), DestData),
+	    (HidCapt = usr(VisCapt); VisCapt = HidCapt),
 	    add_brackets(NewCapt, _, VisCapt) -> true;
 	 caption_for(Start, NewCapt)),
 	% min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
