@@ -2058,7 +2058,7 @@ proc SaveProjectFile {topNode path tgt} {
 #    set topCapt [GetExecTitle $topNode]
     
     # is it builtC|builtTcl|notbuilt
-    if {[HaveValues $topNode]} {
+    if {[HaveValues $topNode]>1} {
         set SimileProject(modelRunning) [expr {1+$runState($topNode,updated)}]
 	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
 #    \}
