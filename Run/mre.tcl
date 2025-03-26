@@ -693,9 +693,9 @@ namespace eval RunEnv {
 	global helperTable
         variable currentNode
 
-	if {[ExDestroyHelpers $currentNode]} {
-	    ScrubRun $currentNode $times
-	}
+	set ::runState($currentNode,currentMode) stop
+	$helperTable(RunControl)::AbortFromMenu $currentNode \
+	    [list ExDestroyHelpers $currentNode]
     }
 
     proc Destroy {node} {

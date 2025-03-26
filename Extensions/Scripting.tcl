@@ -318,15 +318,15 @@ itcl::class similescript::Helper {
 	    if {[string equal $winId $runState($modelNode,helperId)]} {
 		unset runState($modelNode,cnvs)
 		unset runState($modelNode,helperId)
+		foreach node $helperTable($this,foci) {
+		    $::runState($modelNode,inspId) HelperLeaf $node $this 0
+		}
 	    }
 	}
 	bind $winId <Destroy> {} ;# prevent destructor calling itself when...
 	# (done by base destructor)	    destroy $winId
 	if {[string match *_3dinst $this]} return
 	unset helperTable($winId,whichInstance)
-	foreach node $helperTable($this,foci) {
-	    $::runState($modelNode,inspId) HelperLeaf $node $this 0
-	}
 	unset helperTable($this,foci)
     }
 
