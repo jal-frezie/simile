@@ -778,8 +778,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 #		    if {[string match $outerDims \
 #			     [lrange $recordDims 0 $recordDepth]]} {
 # note afterTime will always be 0 here as RECORDS levels removed otherwise NOT
-		    set recordDims [lset recordDims $recordDepth \
-					    [list RECORDS $recordNode]]
+		    lset recordDims $recordDepth [list RECORDS $recordNode]
 		    break
 #		    }
 		}
@@ -1570,7 +1569,7 @@ proc LoadBase64CharData {encoded} {
 # will now load when loading other data, or not if Tcl
     set msgs(param_source_$compName) [format $msgs(metafile_bin) \
 					  $parseStatus(spfRef)]
-    puts "set msgs(param_source_$compName) $msgs(param_source_$compName)"
+    #puts "set msgs(param_source_$compName) $msgs(param_source_$compName)"
     set paramMetadata($compName,saveBinary) 1
     if {[info exists widgetNames($compName)]} { ;# should imply widget exists
 	FillIfSmall $widgetNames($compName).e [concat $paramData($compName)] \
