@@ -762,13 +762,13 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		set recordId [TrimDTFromPath $globalRecordId]
 		if {[string first $recordId $compLocal]==0 && \
 			![string equal $recordId $compLocal]} {
-		    set compLocal $recordId
 		    set recordNode [IdFromTail $topNode $recordId -1]
 		    if {$useCppArray} {
 #puts "c_setparamarray a $recordNode"
 #                            c_setparamarray $recordNode
 # not needed with universal structure, but might help -- later
 		    } else {
+			set compLocal $recordId
 			tcl_setparamarray $topNode $recordNode 1
 		    }
 # Not sure how this condition would ever fail...does if TIME added above
