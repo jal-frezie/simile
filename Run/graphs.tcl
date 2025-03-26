@@ -1605,13 +1605,20 @@ proc LoadDataFile {mode query mdl} {
     # set driver {Microsoft dBase Driver *.dbf)}
     # xls
     
-    if {$query} {
+    if {$query || ![info exists table_entry(visFileName)]} {
         set info [format [tr. {Select new %1$s file}] $mode]
         if {![llength [set table_entry(fileName) \
                     [ChooseFile data$type $info 0 $mdl]]]} {
             return 0
         }
+    } elseif {[file pathtype $table_entry(visFileName)] eq "absolute"} {
+	set table_entry(fileName) $table_entry(visFileName)
+    } else {
+	set table_entry(fileName) \
+	    [file normalize [file join [file dirname [InModelDir $mdl]] \
+				 $table_entry(visFileName)]]
     }
+
     
     # mode columns read non-csv files using ODBC
     set ext [file extension $table_entry(fileName)]
