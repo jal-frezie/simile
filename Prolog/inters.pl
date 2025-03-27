@@ -168,7 +168,7 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		    pointer_from(Top, Ptr),
 		    pointer_to(Assoc, Ptr),
 		    append([Deeper, Assoc, Top], Path),
-		    BackSwap = values_from_base(Top); % was Path for 11 years
+		    BackSwap = values_from_base(Path); % was Top till 2014
 		Location = in_assoc,
 		    append(Assoc, Top, AssocPath),
 		    append(Deeper, AssocPath, RealPath),
