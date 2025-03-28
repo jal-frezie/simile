@@ -577,7 +577,9 @@ make_intermediates(
 	    parameter info (in case it is a ref to final result) but not
 	    indices (because they may differ between references) or var names
 	    (so they get instantiated and declared in each procedure) */
-	    (TermSwap = BackSwap, !,
+	((TermSwap = BackSwap;
+	  TermSwap = values_from_base(Tx), BackSwap = values_from_base(Bx),
+	  longest_path([Tx, Bx], _One)), !,
 		SourceRef = UseRef,
 	    Source = param(_, SrcUnits, OrigLoops, _,_),
 	    remove_physical_units_if_disabled(SubId, SrcUnits, Units),
