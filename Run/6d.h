@@ -142,7 +142,7 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! Borrow series data from another param spec
   BOOLEAN CopySeries(VarParamData*);
   
-  double update_from_points(double, double, nodeValues*, BOOLEAN);
+  BOOLEAN update_from_points(double, double*, nodeValues*, BOOLEAN);
 };
 
 // Structue for making a linked list of model instances representing group

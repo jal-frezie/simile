@@ -961,7 +961,7 @@ BOOLEAN VarParamData::CopySeries(VarParamData* source) {
   return timePoints!=NULL;
 }
 
-double VarParamData::update_from_points(double nowInDays, double next,
+BOOLEAN VarParamData::update_from_points(double nowInDays, double *next,
 					nodeValues* destPtr, BOOLEAN fallback) {
   listTimePoint *loBound, *hiBound;
   int hiWraps = 0, newWraps = wraps;
@@ -1008,7 +1008,7 @@ double VarParamData::update_from_points(double nowInDays, double next,
 					       hiBound->dataPtr, 
 					       destPtr->dimSpecs, 
 					       interFract);
-      return next; // nothing has changed it yet
+      return true; // nothing has changed it yet
     }
     if (interFract>0.5) { // fillMethod is USE_CLOSEST
       loBound = hiBound;
@@ -1023,8 +1023,8 @@ double VarParamData::update_from_points(double nowInDays, double next,
     }
     if (hiBound) { // return time at which event will next happen
       later = (hiBound->when+hiWraps*wrapAroundPoint)*seriesIdxUnits;
-      if (later<next)
-	next = later;
+      if (later<*next)
+	*next = later;
     }
   }
   if (loBound && (fallback || loBound!=curTimePoint || newWraps!=wraps)) {
@@ -1049,6 +1049,7 @@ double VarParamData::update_from_points(double nowInDays, double next,
     // series data is active
     //free_bloc_data(destPtr->contents, destPtr->dimSpecs);
     //destPtr->contents = NULL;
+    return false;
   }
 
   if (amEvent && active==3) {
@@ -1059,7 +1060,7 @@ double VarParamData::update_from_points(double nowInDays, double next,
 		   sum_bloc_data(destPtr->contents, destPtr->dimSpecs));
   }
 
-  return next;
+  return true;
 }
 
 listTimePoint* VarParamData::create_time_point(double time) {
@@ -1159,21 +1160,22 @@ void VarParamData::InitTimeSeries(BOOLEAN cancelSliders) {
   curTimePoint = NULL;
   wraps = 0;
   active = 2; // this will cause any current event data to be zeroed
-  if (amEvent) {
+
     ExecutingModel* host = myModelExec->parent;
-    while (host && !timePoints) {
+    while (host && !inheritSeries) {
       VarParamData* srcWotsit = host->varParamArrayBase;
       while (srcWotsit) {
 	if (srcWotsit->nodeId == nodeId) {
-	  CopySeries(srcWotsit);
-	  if (timePoints) inheritSeries = TRUE;
+	  if (amEvent)
+	    CopySeries(srcWotsit);
+	  if (srcWotsit->timePoints) inheritSeries = TRUE;
 	  break;
 	}
 	srcWotsit = srcWotsit->nextVP;
       }
       host = host->parent;
     }
-  } else if (dataPtr.contents && (timePoints || cancelSliders)) {
+    if (dataPtr.contents && (timePoints || inheritSeries || cancelSliders)) {
     free_bloc_data(dataPtr.contents,dataPtr.dimSpecs);
     dataPtr.contents = NULL;
   }
@@ -2000,14 +2002,15 @@ void ExecutingModel::advance_time (int phase, double fraction) {
 double ExecutingModel::UpdateTimeSeries(double series_pt, double nextSeriesEvt)
 {
   VarParamData *paramCursor, *srcCursor;
+  BOOLEAN inRange;
   
   paramCursor = varParamArrayBase;
   while (paramCursor) {
     nodeValues* destPtr = &(paramCursor->dataPtr);
     ExecutingModel* defaultHolder = parent;
-    nextSeriesEvt = paramCursor->update_from_points(series_pt, nextSeriesEvt,
+    inRange = paramCursor->update_from_points(series_pt, &nextSeriesEvt,
 						    destPtr, false);
-    while (defaultHolder && !destPtr->contents) {
+    while (defaultHolder && !inRange) {
       srcCursor = defaultHolder->varParamArrayBase;
       while (srcCursor && srcCursor->nodeId != paramCursor->nodeId)
 	srcCursor = srcCursor->nextVP;
@@ -2016,10 +2019,10 @@ double ExecutingModel::UpdateTimeSeries(double series_pt, double nextSeriesEvt)
 	       paramCursor->nodeId);
 	return 0;
       }
-      nextSeriesEvt = srcCursor->update_from_points(series_pt, nextSeriesEvt,
+      inRange = srcCursor->update_from_points(series_pt, &nextSeriesEvt,
 						    destPtr, true);
       defaultHolder = defaultHolder->parent;
-    }
+      }
     paramCursor = paramCursor->nextVP;
   }
   return nextSeriesEvt;
