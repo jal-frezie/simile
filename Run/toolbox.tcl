@@ -60,8 +60,6 @@ if {![info exists simplify]} {
 # support drag'n'drop text exchange with other apps
     if {[catch {package require tkdnd 2.8} whyNot]} {
 	puts $whyNot
-	package require BWidget
-	namespace import BWidget::*
     }
 
 if {[info tclversion]>=8.5} {
