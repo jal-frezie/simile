@@ -171,7 +171,6 @@ itcl::class similescript::$newHelperClass {
     }
 
     proc ProdIfComp {widg winId component capEnd isDbl} {
-	puts [info level 0]
 	if {[winfo name $widg] ne "vis"} { ;# dropdown arrow
 	    if {$isDbl} {
 		foreach {elt val} [array get ::window_info *,top_node] {
