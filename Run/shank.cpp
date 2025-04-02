@@ -1175,7 +1175,8 @@ void VarParamData::InitTimeSeries(BOOLEAN cancelSliders) {
       }
       host = host->parent;
     }
-    if (dataPtr.contents && (timePoints || inheritSeries || cancelSliders)) {
+    if (!amEvent && dataPtr.contents && \
+	(timePoints || inheritSeries || cancelSliders)) {
     free_bloc_data(dataPtr.contents,dataPtr.dimSpecs);
     dataPtr.contents = NULL;
   }
