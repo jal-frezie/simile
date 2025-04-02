@@ -111,7 +111,8 @@ itcl::class similescript::$newHelperClass {
 		set curHelpers($component) {}
 	    }
 	}
-	bind [$tbl bodytag] <Button-1> [::itcl::code ProdIfComp %W %x %y]
+	bind [$tbl bodytag] <Button-1> [::itcl::code ProdIfComp %W %x %y 0]
+	bind [$tbl bodytag] <Double-1> [::itcl::code ProdIfComp %W %x %y 1]
 	bind [$tbl bodytag] <Motion> [::itcl::code MoveInInsp %W %X %Y %x %y]
 	bind [$tbl bodytag] <Leave> RemovePopup
     }
@@ -150,7 +151,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     
-    proc ProdIfComp {w x y} {
+    proc ProdIfComp {w x y isDbl} {
 	variable curHelpers
     
 	foreach {tbl x y} [tablelist::convEventFields $w $x $y] {}
@@ -160,6 +161,15 @@ itcl::class similescript::$newHelperClass {
 	set node [$tbl rowcget $row -name]
 	if {$col==1 && [info exists curHelpers($node)]} {
 	    ::RunEnv::FocusTool $curHelpers($node)
+	} elseif {$isDbl} {
+	    set sought [$tbl rowcget $row -name]
+	    foreach {elt val} [array get ::window_info *,top_node] {
+		if {$val eq $::myNode} {
+		    set modelCanvas [string range $elt 0 end-9]
+		    set ::find(List,$modelCanvas) [list $sought]
+		    NextCaption $modelCanvas
+		}
+	    }
 	} else {
 	    ProdFromHelper [winfo parent [winfo parent $tbl]] \
 		[$tbl rowcget $row -name] [GetCaptionPathFromId $node]
