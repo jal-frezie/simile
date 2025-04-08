@@ -1021,7 +1021,7 @@ FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
   } else
     loseZeros = 0;
 
-  if (loseZeros) {
+  if (loseZeros && accessTool->dimSpecs[0] != UNSTABLE) {
     size = 0;
     while (!unp_base_type(baseType=accessTool->dimSpecs[size])) 
       ++size; //stop at base data type
