@@ -15,6 +15,7 @@
 #endif
 
 #include <pthread.h>
+#include <errno.h>
 
 //! Identifies of a component in either model class or model instance
 typedef unsigned short int HCOMP;

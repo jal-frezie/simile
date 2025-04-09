@@ -1882,10 +1882,10 @@ void ExecutingModel::start_in_thread(void *action(void *)) {
 }
 
 void ExecutingModel::signal_complete(xmList* args) {
-    pthread_mutex_lock(&args->mtx);
     set_completion(TRUE);
-    pthread_mutex_unlock(&args->mtx);
+    pthread_mutex_lock(&args->mtx);
     pthread_cond_signal(&args->cond);
+    pthread_mutex_unlock(&args->mtx);
 }
 
 excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
@@ -1896,18 +1896,16 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
 
   paused = (cancel>1);
   if (pthread_kill(topList->thredd, 0)) { // health check failed
-    clientResult->completed = TRUE;
-    pthread_join(topList->thredd, (void**)&clientResult->excpNo);
-  }
-  if (!clientResult->completed) { // cannot be as lock is on?
+    ping = 0;
+    // pthread_join(topList->thredd, (void**)&clientResult->excpNo);
+  } else {
     clock_gettime(CLOCK_REALTIME, &ts);
     if (max_wait>=0)
       incr_time(&ts, max_wait);
     ping = pthread_cond_timedwait(&topList->cond, &topList->mtx, &ts);
     clientResult->timeOfCrime = lts[modelSpec->phases];
-  } else
-    printf("Thread was set complete despite lock\n");
-  if (!clientResult->completed) { // still
+  }
+  if (ping == ETIMEDOUT) { // still running
     if (cancel>2) { // user has lost patience
       //ping = pthread_cancel(topList->thredd); does not work on Mac
       // kill(getpid(), SIGINFO);
