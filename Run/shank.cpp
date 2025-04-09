@@ -1897,7 +1897,6 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
   paused = (cancel>1);
   if (pthread_kill(topList->thredd, 0)) { // health check failed
     ping = 0;
-    // pthread_join(topList->thredd, (void**)&clientResult->excpNo);
   } else {
     clock_gettime(CLOCK_REALTIME, &ts);
     if (max_wait>=0)
@@ -1920,6 +1919,7 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
       clientResult->completed = TRUE;
       clientResult->excpNo = -101; // terminated
     } else {
+      // model still running, so no result but we still need to return time
       return clientResult;
     }
   } else

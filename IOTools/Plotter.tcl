@@ -932,6 +932,7 @@ namespace eval ::$keyValue {
 	    set trTab [GetTransTable $node]
 	    foreach num [lrange $identList 1 end] key $trTab {
 		lappend trVals [TransValue $key $num]
+		break ;# single level colouring
 	    }
 	    append capt \[[join $trVals ,]\]
 	}
@@ -987,7 +988,11 @@ namespace eval ::$keyValue {
             #array set Ynew_array $Ynew
             array set Yold_array $Yold
             foreach {element newVal} $Ynew {
-		set identList [concat $id [list $element]]
+		if {[llength $id]} {
+		    set identList $id ;# single level colouring
+		} else {
+		    set identList [concat $id [list $element]]
+		}
                 if {![info exists Yold_array($element)]} {
 		    set Yold_array($element) {}
 		}
