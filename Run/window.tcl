@@ -639,6 +639,12 @@ proc EmbraceObj {winId} {
 # This allows prolog to save the values of editing when the window is exited.
 # Comment it out to debug edit procedure from separate window.
 proc AbandonObj {c} {
+    set flashed ::looks($::window_info($c,top_node),over)
+    if {[info exists $flashed]} {
+	UnFlash $c [set $flashed]
+	RemovePopup
+	unset $flashed
+    }
     prolog tk_abandon
 }
 
