@@ -1180,7 +1180,7 @@ FINDABLE int checkmodelCmd(ClientData clientData, Tcl_Interp *interp,
     } else if (errorBlk->completed < 2) { // model was still running
       // printf("still running, compl %d\n", errorBlk->completed);
       error = 2;
-    } else {
+    } else if (errorBlk->excpNo) {
       Tcl_SetObjResult(interp, make_exec_error(interp, errorBlk->excpNo,
 					     "evalmodel", 
 					     name_in_line(modelType, 
