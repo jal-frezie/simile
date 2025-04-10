@@ -69,7 +69,7 @@ EXPORT InstanceOfModel* do_createmodel(ExecutingModel* outerRef) {
   // sprintf(mess, "Model .dll setting partner to %lx", (long)outerRef);
   // suppShowMess(mess);
   memset(newInst->loopIndexPtrs, 0, 32*sizeof(void*));
-  newInst->userStop.completed = FALSE; // until it has been initialized
+  newInst->userStop.completed = 0; // until it has been initialized
   return newInst;
 }
 

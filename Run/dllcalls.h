@@ -241,7 +241,7 @@ typedef struct excpData_t {
   int targetId;
   void* excpSource;
   double timeOfCrime;
-  BOOLEAN completed;  // for use outside model only
+  int completed;  // 0 still running, 1 awaiting GUI check, 2 checked
 } excpData;
 
 /* this is defined in the stub, which is loaded as a library...well it

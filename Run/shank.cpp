@@ -856,7 +856,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, HCOMP newNodeId,
   myModelExec = instToUse;
   nodeId = newNodeId;
   translate_dims(fullDims, sparePath, dataPtr.dimSpecs, 
-		 myModelExec->modelSpec->nodedata[nodeId].datatype, 2);
+		 myModelExec->modelSpec->nodedata[nodeId].datatype, -1);
   dataPtr.contents = init_space(dataPtr.dimSpecs);
   active = 1; // will never change except if event
   //    dataPtr.contents = new char[sparePath[0]];
@@ -1405,7 +1405,7 @@ void* reset_grp_instance(void* clientData) {
   ExecutingModel *parmSrc = payload->parent;
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
   if (parmSrc)
-    payload->set_completion(FALSE); // get no data from vms
+    payload->set_completion(0); // get no data from vms
   else 
     parmSrc = payload; // doing top level instance, parms from self
   memcpy(rand_states, args->randKeeper, 3*sizeof(unsigned short));
@@ -1416,7 +1416,7 @@ void* reset_grp_instance(void* clientData) {
   // If this is the top level we will be doing a timed wait so we need to send
   // a signal
   if (payload->parent)
-    payload->set_completion(TRUE); // get data from vms
+    payload->set_completion(1); // get data from vms
   else 
     payload->signal_complete(args); // does the following
   return retVal;
@@ -1429,7 +1429,7 @@ void* execute_grp_instance(void* clientData) {
   ExecutingModel *parmSrc = payload->parent;
   pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
   if (parmSrc)
-    payload->set_completion(FALSE); // get no data from vms
+    payload->set_completion(0); // get no data from vms
   else 
     parmSrc = payload; // doing top level instance, parms from self
   memcpy(rand_states, args->randKeeper, 3*sizeof(unsigned short));
@@ -1443,7 +1443,7 @@ void* execute_grp_instance(void* clientData) {
   // If this is the top level we will be doing a timed wait so we need to send
   // a signal
   if (payload->parent)
-    payload->set_completion(TRUE); // get no data from vms
+    payload->set_completion(1); // get data from vms
   else 
     payload->signal_complete(args); // does the following
   return retVal;
@@ -1497,7 +1497,7 @@ void ExecutingModel::WrapUpThreads(excpData* userDefStop) {
     pthread_join(aChild->thredd, &clientResult);
     if (clientResult) {
       *userDefStop = *(excpData*)clientResult; // copy it up?
-      userDefStop->completed = false; // parent will not be
+      userDefStop->completed = 0; // parent will not be
     }
     aChild = aChild->next;
   }
@@ -1864,7 +1864,7 @@ void incr_time(timespec *ts, int by_ms) {
   }
 }
 
-void ExecutingModel::set_completion(BOOLEAN status) {
+void ExecutingModel::set_completion(int status) {
   loadedInst->userStop.completed = status;
 }
 
@@ -1874,7 +1874,7 @@ void ExecutingModel::start_in_thread(void *action(void *)) {
   topList->now = this;
   topList->next = NULL;
 
-  set_completion(FALSE);
+  set_completion(0);
   pthread_mutex_init(&topList->mtx, 0);
   pthread_cond_init(&topList->cond, 0);
   pthread_mutex_lock(&topList->mtx);
@@ -1882,8 +1882,9 @@ void ExecutingModel::start_in_thread(void *action(void *)) {
 }
 
 void ExecutingModel::signal_complete(xmList* args) {
-    set_completion(TRUE);
+    set_completion(1);
     pthread_mutex_lock(&args->mtx);
+    set_completion(2);
     pthread_cond_signal(&args->cond);
     pthread_mutex_unlock(&args->mtx);
 }
@@ -1916,7 +1917,7 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
       pthread_cancel(topList->thredd); // does not work on Mac
 #endif
       pthread_join(topList->thredd, NULL);
-      clientResult->completed = TRUE;
+      clientResult->completed = 2;
       clientResult->excpNo = -101; // terminated
     } else {
       // model still running, so no result but we still need to return time
@@ -2186,7 +2187,7 @@ nodeValues* ExecutingModel::GetRawValues(HCOMP nodeId) {
   // find first dimension not a positive integer
   translate_dims(fullDims, indices, newBlk->dimSpecs, 
 		 modelSpec->nodedata[nodeId].datatype, 
-		 loadedInst->userStop.completed?1:0);
+		 loadedInst->userStop.completed);
 
   if (indices[0]) {
     insertionPt = newBlk->contents = new char[indices[0]];
@@ -2984,7 +2985,7 @@ void translate_dims(int fromModel[], int blockSizes[], int structDims[],
       structDims[0] = UNSTABLE;
       blockSizes[0] = 0;
       return;
-    case 2: // making dims for parameter value: leave out level
+    case -1: // making dims for parameter value: leave out level
       translate_dims(fromModel+1, blockSizes, structDims, dataType, vm_action);
       return;
     default: // insert level

@@ -1177,7 +1177,7 @@ FINDABLE int checkmodelCmd(ClientData clientData, Tcl_Interp *interp,
   if (errorBlk) {
     if (errorBlk->excpNo == -100) { // model paused by GUI
       error = 0;
-    } else if (!errorBlk->excpNo) { // model still running
+    } else if (errorBlk->completed < 2) { // model was still running
       // printf("still running, compl %d\n", errorBlk->completed);
       error = 2;
     } else {
