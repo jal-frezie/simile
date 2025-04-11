@@ -314,13 +314,14 @@ itcl::class similescript::Helper {
 	    $modelInst ReleaseClicks
 	}
 	set modelNode [GetNode]
-	catch { ;# 'info exists' buggy in itcl4 here so do anyway
+	if {[llength [array names runState $modelNode,helperId]]} {
+	    # 'info exists' buggy in itcl4
 	    if {[string equal $winId $runState($modelNode,helperId)]} {
 		unset runState($modelNode,cnvs)
 		unset runState($modelNode,helperId)
-		foreach node $helperTable($this,foci) {
-		    $::runState($modelNode,inspId) HelperLeaf $node $this 0
-		}
+	    }
+	    foreach node $helperTable($this,foci) {
+		$runState($modelNode,inspId) HelperLeaf $node $this 0
 	    }
 	}
 	bind $winId <Destroy> {} ;# prevent destructor calling itself when...
