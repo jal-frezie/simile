@@ -305,9 +305,10 @@ proc BringParameter {tgt array node inds up} {
     }
 }
 
-proc insert_to_pipe {ns_extras when what} {
+proc insert_to_pipe {what ns_extras when} {
     global event
     upvar \#0 $ns_extras extras
+    if {![info exists extras]} {set extras {}}
 
     set phase [expr {int([glob_element ts 0])}]
     if {[RealPhase $phase] && $what} {

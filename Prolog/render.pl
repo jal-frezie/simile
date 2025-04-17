@@ -33,7 +33,8 @@ make_assignment(L, Dest, Source, AssignStr) :-
 make_pointer(c, Var, Ptr) :-
 	sicstus_format_to_chars("&(~w)", [Var], PtrStr),
 	name(Ptr, PtrStr).
-make_pointer(tcl, Var, Var).
+make_pointer(tcl, Var, Ptr) :-
+        append_atoms(['"', Var, '"'], Ptr).
 
 make_indexed_namespace(L, Base, Indices, Result) :-
 	L = c,
@@ -370,7 +371,7 @@ strings_direct(L, assignment, Dest=Source, Indent, Stream) :-
 	list_of(32, Indent, Leader),
 	(L = c, Fmt = "~s~a = ~w;\n";
 	    L = tcl,
-	    ((atomic(Source); Source = retract_from_pipe(_P, _G)) ->
+	    (atomic(Source) ->
 		 Fmt = "~sset ~a ~w\n";
 	        Fmt = "~sset ~a [expr {~w}]\n")),
 	format(Stream, Fmt, [Leader, Dest, Source]).
