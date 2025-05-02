@@ -74,7 +74,7 @@ proc ChooseIntegerRatio {fraction accu} {
 #    }
 #}
 #	
-set headless [catch {set defScaling [tk scaling]}]
+set headless [catch {package require Tk}]
 # set env(prologId) gnu ;# goodbye forever Sicstus
 if {[info exists prolog_in_console]} {
     set SIMILE_PATH [file dirname [pwd]] ;# otherwise it is relative
@@ -327,8 +327,8 @@ switch $tcl_platform(platform) {
     }
 }
 
-set env(SIMILE_VERSION) 7.2
-set sendvars(simP) {.9}
+set env(SIMILE_VERSION) 7.3
+set sendvars(simP) {b5}
 
 if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols
@@ -459,6 +459,7 @@ if {!$headless} {
 #    if {$niceSize<=0} {
 #	set niceSize 12 ;# otherwise is -12 on Buckaroo
 #    }
+     set defScaling [tk scaling]
      if {[tk windowingsystem] ne "aqua"} {
 	 source $SIMILE_PATH/Run/darkonic.tcl
      }
