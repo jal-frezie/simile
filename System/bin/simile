@@ -9,11 +9,24 @@ if {[string first / $invoc]==-1} { ;# it's a command
 }
 if {![catch {file link $invoc} tgt]} { ;# it's a link
     if {[file pathtype $tgt] eq "relative"} {
-        set invoc [file join [file dirname $invoc] $tgt]
+        set invoc [file normalize [file join [file dirname $invoc] $tgt]]
     } else {
       	set invoc $tgt
     }
 }
-package require Tk
-source [file join [file dirname [file dirname [file dirname $invoc]]] \
-           Run simile.tcl]
+
+set goScript [file join [file dirname [file dirname [file dirname $invoc]]] \
+		  Run simile.tcl]
+if {[catch {source $goScript} gotErr]} {
+    lappend allFails {} $errorInfo
+foreach versSuffix {} {
+    if {[catch {exec tclsh$versSuffix $goScript {*}$argv} gotErr]} {
+	lappend allFails $versSuffix $errorInfo
+    } else {
+	exit
+    }
+}
+foreach {versSuffix failMode} $allFails {
+    puts "Could not execute simile with tclsh$versSuffix because: $failMode"
+}
+}
