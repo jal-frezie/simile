@@ -1555,7 +1555,10 @@ match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, I0, Array) :-
 		% special case -- count or name of ET can refer to last elt
 	      Int = n(AnET), NeedType = a(AnET)),
 		TryIndxRef = IndxRef;
-	     promote_unit(Int, 1), % succeeds only if unitless
+	     promote_unit(Int, int),
+		promote_unit(NeedType, int),
+		TryIndxRef = IndxRef;
+	     fail, promote_unit(Int, 1), % succeeds only if unitless
 		promote_unit(NeedType, 1),
 		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
 	(((NeedType = boolean; \+ NeedType = a(_), I0 = 'Yes'),
