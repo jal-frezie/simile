@@ -468,8 +468,9 @@ use_destination(Link, RemoteUnit,
 	analyze_array(GivenUnit, LBaseUnit, _),
 	analyze_array(RemoteUnit, RBaseUnit, Subs),
 	/* Refer to value by same units as before, provided conversion
-	from actual units is possible */
-	(check_unit(RBaseUnit, LBaseUnit, 2, []), !,
+	from or to actual units is possible */
+	(check_unit(RBaseUnit, LBaseUnit, 2, []),
+	 check_unit(LBaseUnit, RBaseUnit, 2, []), !,
 	    build_array(LBaseUnit, Subs, LocalUnit);
 	LocalUnit = RemoteUnit) /* next line would allow role not foreseen
 				   when entering eqn, disabled for 6.1 ;

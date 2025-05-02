@@ -1105,7 +1105,8 @@ spread_dims(Node) :-
 		  IList = [], inters><promote_unit(Base,1)),
 		    CheckLevel = 1;
 		  CheckLevel = 2),
-		(check_unit(Base, GivenBase, CheckLevel, []) ->
+		(check_unit(Base, GivenBase, CheckLevel, []),
+		 check_unit(GivenBase, Base, CheckLevel, []) ->
 		    UseBase = GivenBase;
 		  \+ get_av_pair(Obj, 0, user_units, yes), UseBase = Base,
 		    SpecChanged = units),
