@@ -23,6 +23,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 					      Formula))), Prob,
 		     report(Sm, Prob)),
 
+	ensure_loops_happen(SourceContext),
 	get_model_and_loops(SourceContext, DestPath, SourceLLoops, _),
 	remove_outside_refs(SourceLLoops, SourceLoops),
 	append(SourceLoops, DestPath, BaseContext),
@@ -80,6 +81,14 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 	         AllArgs = [backgnd(Target) | Args]),
 	add_extra_dependencies(Context, DestPath, AllArgs, Prereqs)).
 
+ensure_loops_happen(Context) :-
+    member(sm(_,_,_, fm_loop(Inds, _,_,_)), Context),
+    member(Ind, Inds),
+    var(Ind),
+    Ind = glob(_,_), wake,
+    ensure_loops_happen(Context);
+    true.
+	 
 set_free_step(make(_,_,_, OrigStep, _), Step) :-
     var(OrigStep) -> OrigStep = Step; true.
 
@@ -800,7 +809,8 @@ make_intermediates(
 	    Setups = OldSetups, /* So, we are just using a number, but we might
 	have made inters that we will use elsewhere */
 	    Args = [],
-	    NewInters = OldInters;
+	    NewInters = OldInters,
+	    SourceContext = [];
 	((Functor = at_phase; Functor = make_inter), !,
 	    Clearing = [];
 	member(Functor-ClearTime,
