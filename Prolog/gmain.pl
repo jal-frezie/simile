@@ -78,6 +78,9 @@ sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
 sicstus_format_to_chars(Template, V1, Result) :-
         format_to_codes(Result, Template, [V1]).
 
+sicstus_tab(Stm, Pos) :-
+    format(Stm, "~*s", [Pos, " "]).
+
 open_chars_stream(String, Stream) :-
 	open_input_codes_stream(String, Stream).
 

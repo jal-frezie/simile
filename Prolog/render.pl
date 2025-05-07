@@ -330,7 +330,7 @@ end_comment(c, Stream) :- write(Stream, ' */'), nl(Stream).
 end_comment(tcl, Stream) :- nl(Stream).
 
 strings_direct(L, comment, Comment, Indent, Stream) :-
-	format(Stream, "~*s", [Indent, " "]),
+	sicstus_tab(Stream, Indent),
 	start_comment(L, Stream),
 	write(Stream, Comment),
 	end_comment(L, Stream).
@@ -358,13 +358,15 @@ strings_direct(tcl, clear_memory, instance(submodel,_,_, Name, _-Dims), Indent,
 	    make_struct_reference(tcl, Name, VWithDollar, SpaceName);
 	NewIndent = Indent,
 	    SpaceName = Name),
-	format(Stream, "~*snamespace delete ~w\n", [NewIndent," ", SpaceName]),
+	sicstus_tab(Stream, NewIndent),
+	format(Stream, "namespace delete ~w\n", [SpaceName]),
 	(\+ number(Dims), !;
 	excrete(tcl, end(for), makenames, Indent, Stream)).
 
 strings_direct(c, clear_memory, instance(submodel,_,_,_,_), Indent, 
 	       Stream) :-
-	format(Stream, "~*sdelete this;\n", [Indent," "]).
+	sicstus_tab(Stream, Indent),
+	format(Stream, "delete this;\n", []).
 
 /* assignment */
 strings_direct(L, assignment, Dest=Source, Indent, Stream) :-
@@ -431,13 +433,14 @@ strings_direct(L, variable_declaration, [Unit, Name, Dims | Init],
 	type_for_unit(Unit, Type),
 	(member(-1, Dims), !; /* no null arrays please */
 	Init = [], !,
+	    sicstus_tab(Stream, Indent), % will hurt to backtrack through?
 	    (L = c,
 		(Dims = void, Counts = [''];
                 Counts = Dims),
 		make_indexed_reference(L, Name, Counts, ArrayName),
-		format(Stream, "~*s~a ~a;\n", [Indent, " ", Type, ArrayName]);
+		format(Stream, "~a ~a;\n", [Type, ArrayName]);
 	    L = tcl,
-		format(Stream, "~*svariable ~a\n", [Indent, " ", Name]));
+		format(Stream, "variable ~a\n", [Name]));
 	Init = [InitialValues],
 	    (L = c,
 /* if var is a char string, it will not be nested so no curlies will be added,
@@ -449,11 +452,11 @@ and the rules for breaking lines are like tcl's (need a \ at end) so... */
 %		all(render, boost, [build(Dims), build(Counts)]),
                 Counts = Dims),
 		make_indexed_reference(L, Name, Counts, ArrayName),
-		format(Stream, "~*s~a ~a = ", [Indent, " ", Type, ArrayName]),
+		format(Stream, "~a ~a = ", [Type, ArrayName]),
 		swap_squares_for_curlies(L, InitialValues, Stream),
 		format(Stream, ";\n", []);
 	    L = tcl,
-		format(Stream, "~*svariable ~a\n", [Indent, " ", Name]),
+		format(Stream, "variable ~a\n", [Name]),
 		assign_initial_values(Name, InitialValues, Indent, Stream))).
 
 strings_direct(L, procedure_declaration, declare(Name, Ins, Outs, _Inc),
@@ -462,7 +465,8 @@ strings_direct(L, procedure_declaration, declare(Name, Ins, Outs, _Inc),
     all(render, type_from_arg, [build(Outs), build(OutDecls), unify(true)]),
     append(InDecls, OutDecls, ArgDecls),
     make_procedure_call(L, [Name | ArgDecls], CallAlike),
-    format(Stream, "~*svoid ~s;\n", [Indent, " ", CallAlike]).
+	sicstus_tab(Stream, Indent),
+    format(Stream, "void ~s;\n", [CallAlike]).
     
 strings_direct(L, data_declaration,
 		instance(NodeType, SymbolicName, _, NameIn, Type-Dims),
@@ -509,34 +513,40 @@ strings_direct( L, for_start, [Name,Start,End,Step], Indent, Stream) :-
 
    start of a while loop */
 strings_direct( L, while_start, Expr, Indent, Stream) :-
-	(L = c, Fmt = "~*swhile ( ~w ) {\n";
-	    L = tcl, Fmt =  "~*swhile {~w} {\n"),
-	format(Stream, Fmt, [Indent," ", Expr]).
+	(L = c, Fmt = "while ( ~w ) {\n";
+	    L = tcl, Fmt =  "while {~w} {\n"),
+	sicstus_tab(Stream, Indent),
+	format(Stream, Fmt, [Expr]).
 
 strings_direct(L, switch_start, Condition, Indent, Stream) :-
 	make_expr(L, Condition, ConditionExpr),
-	(L = c, Template = "~*sswitch (~w) {\n";
-	L = tcl, Template = "~*sswitch ~w {\n"),
-	format(Stream, Template, [Indent, " ", ConditionExpr]).
+	(L = c, Template = "switch (~w) {\n";
+	L = tcl, Template = "switch ~w {\n"),
+	sicstus_tab(Stream, Indent),
+	format(Stream, Template, [ConditionExpr]).
 
 strings_direct(L, case_start, Match, Indent, Stream) :-
-	(L = c, Template = "~*scase ~w:\n";
-	L = tcl, Template = "~*s~w {\n"),
-	format(Stream, Template, [Indent, " ", Match]).
+	(L = c, Template = "case ~w:\n";
+	L = tcl, Template = "~w {\n"),
+	sicstus_tab(Stream, Indent),
+	format(Stream, Template, [Match]).
 
 strings_direct(L, case_end, Match, Indent, Stream) :-
-	(L = c, Template = "~*sbreak; // end(case,~w)\n";
-	L = tcl, Template = "~*s} ;# end(case,~w)\n"),
-	format(Stream, Template, [Indent, " ", Match]).
+	(L = c, Template = "break; // end(case,~w)\n";
+	L = tcl, Template = "} ;# end(case,~w)\n"),
+	sicstus_tab(Stream, Indent),
+	format(Stream, Template, [Match]).
 
 strings_direct(L, if_start, ConditionExpr, Indent, Stream) :-
+	sicstus_tab(Stream, Indent),
 	L = c, !,
-	    format(Stream, "~*sif (~w) {\n", [Indent, " ", ConditionExpr]);
+	    format(Stream, "if (~w) {\n", [ConditionExpr]);
 	L = tcl, !,
-	    format(Stream, "~*sif {~w} {\n", [Indent, " ", ConditionExpr]).
+	    format(Stream, "if {~w} {\n", [ConditionExpr]).
 
 strings_direct(L, else_clause, Cond, Indent, Stream) :-
-	format(Stream, "~*s} else { ", [Indent, " "]),
+	sicstus_tab(Stream, Indent),
+	format(Stream, "} else { ", []),
 	excrete(L, comment, Cond, 0, Stream).
 
 strings_direct(L, function, Act, Indent, Stream) :-
@@ -551,7 +561,8 @@ strings_direct(L, procedure_call, DataFunc, Indent, Stream) :-
 	strings_direct(L, function, CallString, Indent, Stream).
 
 strings_direct(c, procedure_defn, [ReturnType, Fn], Indent, Stream) :-
-	format(Stream, "~*s~a ~w;\n", [Indent, " ", ReturnType, Fn]).
+	sicstus_tab(Stream, Indent),
+	format(Stream, "~a ~w;\n", [ReturnType, Fn]).
 
 strings_direct(tcl, release_space, [Dest, Used], Indent, Stream) :-
 	language><declare(tcl, XIndex, loop, int, Used, Indent, Stream),
@@ -564,7 +575,8 @@ strings_direct(tcl, release_space, [Dest, Used], Indent, Stream) :-
 	name(ExtTest, ExtTestStr),
 	excrete(tcl, while_start, ExtTest, Indent, Stream),
 	resolve_pointer(tcl, NewDest, Zap),
-	format(Stream, "~*snamespace delete ~a\n", [DeepIndent, " ", Zap]),
+	sicstus_tab(Stream, DeepIndent),
+	format(Stream, "namespace delete ~a\n", [Zap]),
 	excrete(tcl, procedure_call, incr(XIndex), DeepIndent, Stream),
 %	excrete(tcl, end(for), XIndex, Indent, Stream).
 	excrete(tcl, end(while), XIndex, Indent, Stream).
@@ -577,11 +589,13 @@ strings_direct(L, cond_events, [Cond, Procs, Args], Indent, Stream) :-
 	excrete(L, end(if), Cond, Indent, Stream).
 
 strings_direct(L, struct_defn, [Name | Members], Indent, Stream) :-
-    format(Stream, "~*sstruct ~a {\n", [Indent, " ", Name]),
+	sicstus_tab(Stream, Indent),
+    format(Stream, "struct ~a {\n", [Name]),
     I1 is Indent+4,
     all(render, excrete, [unify(L), unify(variable_declaration),
 			  build(Members), unify(I1), unify(Stream)]),
-    format(Stream, "~*s};\n", [Indent, " "]).
+	sicstus_tab(Stream, Indent),
+    format(Stream, "};\n", []).
 	
 excrete(L, Stat, Args, Indent, Stream) :-
 	strings_direct(L, Stat, Args, Indent, Stream), !;

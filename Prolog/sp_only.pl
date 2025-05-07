@@ -1,12 +1,14 @@
 % actually, anything other than gnu-prolog
 
-:- module(sp_only, ['><'/2, sicstus_read_from_chars/2, sicstus_write_to_chars/2,
+:- module(sp_only, ['><'/2, sicstus_read_from_chars/2,
+			    sicstus_write_to_chars/2,
 		    sicstus_writeq_to_chars/2, sicstus_format_to_chars/3, 
-		    sicstus_write_chars/1, sicstus_write_chars/2,
+		    sicstus_tab/2, sicstus_write_chars/1, sicstus_write_chars/2,
 		    sicstus_atom_chars/2, wind_up/0,
 		    read_term_from_codes/3, print_to_codes/2, number_atom/2,
 		    gnu_round/2, wrap_fixes/1]).
 :- use_module([library(lists)]).
+:- set_prolog_flag(double_quotes, codes).
 
 /* ...and here is the first component of this port! GNU has no modules, so use
 term_expansion to make something which it can treat as a predicate and ignore,
@@ -34,8 +36,15 @@ sicstus_writeq_to_chars(Term, Result) :-
 	with_output_to_chars(write_term(Term, [quoted(true), numbervars(false),
 					       portrayed(true)]), Result).
 	
-sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
-	format_to_chars(Template, [V1 | Vars], Result).
+sicstus_format_to_chars(Template, Vars, Result) :-
+    append("~*s", Tail, Template), % detect baked-in GNU format
+    append([Indent, " "], RealVars, Vars) ->
+	append("~t~*|", Tail, NewTemplate),
+	format_to_chars(NewTemplate, [Indent | RealVars], Result);
+	format_to_chars(Template, Vars, Result).
+
+sicstus_tab(Stm, Pos) :-
+    format(Stm, '~t~*|', [Pos]).
 
 sicstus_write_chars([]).
 sicstus_write_chars([Char | Rest]) :-
