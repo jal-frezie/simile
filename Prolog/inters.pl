@@ -2067,7 +2067,7 @@ make_ind_exprs(Ptr, N, Inds) :-
 
 get_origins(Bases, Origins) :-
     suffix([sm(A1, A2, A3, Spec) | MoreSMs], Bases),
-    Spec =.. [LoopType, _, [_OD1 | ODims], _,_], !,
+    Spec =.. [LoopType, _, [_OD1 | ODims], _,_], !, % fm_loop/vm_loop(...)
         Origin = sm(A1, A2, A3, _),
 	(ODims = [], !,
 	    RemBases = MoreSMs;
