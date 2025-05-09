@@ -5,6 +5,7 @@
 set newHelperClass TablelistInspector20240911
 itcl::class similescript::$newHelperClass {
     inherit Helper
+    variable curHelpers
 
     proc Identify {} {
 	return "Explorer (Tablelist version)"
@@ -15,7 +16,6 @@ itcl::class similescript::$newHelperClass {
 	Helper::constructor $modelInst $winTitle
     } {
 	global iconImages
-	variable curHelpers
 
 	package require tablelist 5-
 	switch -glob $winTitle {
@@ -111,9 +111,9 @@ itcl::class similescript::$newHelperClass {
 		set curHelpers($component) {}
 	    }
 	}
-	bind [$tbl bodytag] <Button-1> [::itcl::code ProdIfComp %W %x %y 0]
-	bind [$tbl bodytag] <Double-1> [::itcl::code ProdIfComp %W %x %y 1]
-	bind [$tbl bodytag] <Motion> [::itcl::code MoveInInsp %W %X %Y %x %y]
+	bind [$tbl bodytag] <Button-1> [::itcl::code $this ProdIfComp %W %x %y 0]
+	bind [$tbl bodytag] <Double-1> [::itcl::code $this ProdIfComp %W %x %y 1]
+	bind [$tbl bodytag] <Motion> [::itcl::code $this MoveInInsp %W %X %Y %x %y]
 	bind [$tbl bodytag] <Leave> RemovePopup
     }
 
@@ -124,8 +124,6 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method HelperLeaf {node hlpr add} {
-	variable curHelpers
-
 	if {![info exists curHelpers($node)]} return
 	set id [[$hlpr info class]::Identify]
 	array set hlprIcons {Plotter graph \
@@ -152,8 +150,6 @@ itcl::class similescript::$newHelperClass {
     }
     
     proc ProdIfComp {w x y isDbl} {
-	variable curHelpers
-    
 	foreach {tbl x y} [tablelist::convEventFields $w $x $y] {}
 	set pair [$tbl containingcell $x $y]
 	foreach {row col} [split $pair ,] {}
@@ -201,7 +197,6 @@ itcl::class similescript::$newHelperClass {
     
     proc MoveInInsp {w X Y x y} {
 	global helperTable
-	variable curHelpers
 	
 	foreach {tbl x y} [tablelist::convEventFields $w $x $y] {}
 	set pair [$tbl containingcell $x $y]
