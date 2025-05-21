@@ -74,7 +74,6 @@ proc IsPretty {bride} {
 }
 
 proc PrettifyValList {ugly txtVals} {
-    #puts [info level 0]
     if {$ugly eq "sm"} {
 	set result $ugly
     } elseif {[llength $ugly]==1 || [lsearch $txtVals $ugly]>-1} {

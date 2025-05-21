@@ -206,12 +206,13 @@ itcl::class similescript::$newHelperClass {
 	set result {}
 	set bases [Combinations [lrange $sets 1 end]]
 	set additions [lindex $sets 0]
-	foreach part $bases {
-	    foreach extn $additions {
+	foreach extn $additions {
+	    lappend result [list $extn]
+	    foreach part $bases {
 		lappend result [concat $part [list $extn]]
 	    }
 	}
-	return [concat $result $bases $additions]
+	return [concat $result $bases]
     }
 
     public method ExtendPerms {src case levels} {
@@ -450,7 +451,10 @@ itcl::class similescript::$newHelperClass {
 	    return
 	}
 	if {$type eq "plist"} {
-	    $filling.e delete 0 1 ;# trim initial space
+	    set remade [$filling.e get] ;# trim initial space
+	    $filling.e delete 0 end
+	    $filling.e insert 0 \
+		[PrettifyValList [string range $remade 1 end] {}]
 	    $filling.tick invoke
 	    unset filling
 	}
