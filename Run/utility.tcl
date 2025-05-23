@@ -649,7 +649,7 @@ proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
 }
 
 proc ShrinkValueList {outerList limit} {
-    set manage [expr $limit/4]
+    set manage [expr $limit/2] ;# increased to come with efficient json arrays
     set range [expr $manage/2]
     upvar 1 $outerList list
 

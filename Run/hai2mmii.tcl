@@ -73,6 +73,18 @@ proc IsPretty {bride} {
     return $type ;# 1 for object, 2 for array
 }
 
+proc ReconstructJSONArray {tclArray txtVals} {
+    set sortedByIndices [lsort -stride 2 -integer $tclArray]
+    if {1+[lindex $sortedByIndices end-1]-[lindex $sortedByIndices 0] != \
+	    [llength $sortedByIndices]/2} {
+	error "some values missing or duplicated"
+    }
+    foreach {idx val} $sortedByIndices {
+	lappend result [PrettifyValList $val $txtVals]
+    }
+    return \[[join $result ", "]\]
+}
+
 proc PrettifyValList {ugly txtVals} {
     if {$ugly eq "sm"} {
 	set result $ugly
@@ -80,6 +92,9 @@ proc PrettifyValList {ugly txtVals} {
 	# do mind even length ET mem mangling
 	set result [EnquoteIfNonNumeric $ugly]
     } else {
+	if {![catch {set jsonArr [ReconstructJSONArray $ugly $txtVals]}]} {
+	    return $jsonArr
+	}
 	set result {}
 	foreach {indx val} $ugly {
 	    if {[string length $result]} {
