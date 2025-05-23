@@ -74,10 +74,19 @@ proc IsPretty {bride} {
 }
 
 proc ReconstructJSONArray {tclArray txtVals} {
+    set origLen [llength $tclArray]
+    array set mono $tclArray
+    set tclArray [array get mono]
+    if {[llength $tclArray]<$origLen} {
+	error "some values duplicated"
+    }
     set sortedByIndices [lsort -stride 2 -integer $tclArray]
+    if {[lsearch {0 1} [lindex $sortedByIndices 0]]==-1} {
+	error "start index not 0 or 1"
+    }
     if {1+[lindex $sortedByIndices end-1]-[lindex $sortedByIndices 0] != \
 	    [llength $sortedByIndices]/2} {
-	error "some values missing or duplicated"
+	error "some values missing"
     }
     foreach {idx val} $sortedByIndices {
 	lappend result [PrettifyValList $val $txtVals]
