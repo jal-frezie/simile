@@ -29,8 +29,12 @@ proc TransEnums {transList vals} {
 	set argTrans [lrange $transList 1 end]
 	set result {}
 	foreach {index subVals} $vals {
-	    lappend result [TransValue $curLevel $index] \
-		[TransEnums $argTrans $subVals]
+	    if {$index eq "..."} { ;# values have been shrunk, leave alone
+		lappend result $index $subVals
+	    } else {
+		lappend result [TransValue $curLevel $index] \
+		    [TransEnums $argTrans $subVals]
+	    }
 	}
 	return $result
     }
@@ -76,6 +80,11 @@ proc IsPretty {bride} {
 proc ReconstructJSONArray {tclArray txtVals} {
     set origLen [llength $tclArray]
     array set mono $tclArray
+    if {[info exists mono(...)]} {
+	set origMems $mono(...)
+	unset mono(...)
+	incr origLen -2
+    }
     set tclArray [array get mono]
     if {[llength $tclArray]<$origLen} {
 	error "some values duplicated"
@@ -84,9 +93,14 @@ proc ReconstructJSONArray {tclArray txtVals} {
     if {[lsearch {0 1} [lindex $sortedByIndices 0]]==-1} {
 	error "start index not 0 or 1"
     }
-    if {1+[lindex $sortedByIndices end-1]-[lindex $sortedByIndices 0] != \
-	    [llength $sortedByIndices]/2} {
-	error "some values missing"
+    set span [expr {1+[lindex $sortedByIndices end-1]-[lindex $sortedByIndices 0]}]
+    if {[info exists origMems]} {
+	set endLen [expr {$origLen/2 - 1}]
+	set span [expr {$span+[lindex $sortedByIndices $endLen-1] - \
+			    [lindex $sortedByIndices end-$endLen]}]
+    }
+    if {$span > $origLen/2} {
+	error "$tclArray : some values missing"
     }
     foreach {idx val} $sortedByIndices {
 	lappend result [PrettifyValList $val $txtVals]

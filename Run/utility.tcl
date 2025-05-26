@@ -672,7 +672,7 @@ proc ShrinkValueList {outerList limit} {
 	    lset list 2 [expr $bottomRow-$rowEnds]
 	    lset list 3 $bottomRow
 	    set endRange [ReadGdalRefToList $list]
-	    set list [concat [NumberElements $startRange] \
+	    set list [concat [NumberElements $startRange] [list ... $rowCount] \
 			  [NumberElements $endRange [lindex $list 2]]\
 			  [lrange $list 7 end]]
 # transpose not working, or enabled
@@ -721,14 +721,14 @@ proc ShrinkValueList {outerList limit} {
 					 $fatLines*$availAtLevel/$splitBound)]
 	set endRange [DoByteArrayToList $fieldChar $fieldSize $bounds \
 			    [lindex $list end]]
-	set list [concat [NumberElements $startRange] \
+	set list [concat [NumberElements $startRange] [list ... $splitBound] \
 		      [NumberElements $endRange [expr 1+$splitBound-$fatLines]]]
     } else {    
 	set allVals [CountValues $list]
 	if {$allVals>$manage} {
 	    set startRange [GetNVals $list first $range]
 	    set endRange [GetNVals $list last $range]
-	    set list [concat $startRange $endRange]
+	    set list [concat $startRange [list ... [llength $list]] $endRange]
 	}
     }
     return $allVals
