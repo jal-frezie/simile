@@ -682,7 +682,8 @@ itcl::class similescript::$newHelperClass {
 	    set alt [UglifyValList $listExpr 0]
 	    if {[IsPretty $listExpr]==2} { ;# a json array, legibilize indices
 		foreach {ind val} $alt {
-		    lappend compound $name=$val $val
+		    set captVal [PrettifyValList $val {}]
+		    lappend compound $name=$captVal $val
 		}
 	    } else {
 		set compound $alt

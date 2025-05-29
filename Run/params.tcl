@@ -190,6 +190,7 @@ proc InvokeTickOnEntry {e} {
 }
 
 proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
+    puts [info level 0]
     global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -854,7 +855,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 		}
 	    } elseif {$caseId ne {}} {
 		foreach {compoundCase hdl} [ListCases $topNode] {
-		    if {[lsearch [split $compoundCase +] $caseId]>-1 && \
+		    if {[lsearch -exact [split $compoundCase +] $caseId]>-1 && \
 			    $compoundCase ne $caseId} {
 			c_setparamarray $topNode $node $compoundCase 1
 			ListToArray $topNode $compoundCase $node {} {} $trans \
