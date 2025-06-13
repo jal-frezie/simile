@@ -51,7 +51,7 @@ int list(void* listType, Tcl_Interp *interp) {
 }
 
 int do_graph(graph_data_type** graphdata, Tcl_Interp *interp, 
-	     int action, int index, int argc, Tcl_Obj *CONST argv[]) {
+	     int action, int index, int argc, Tcl_Obj *const argv[]) {
   Tcl_Obj* resultPtr;
   graph_data_type* graphptr;
   char current[255];
@@ -162,7 +162,7 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
 }
 
 FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
+		 int argc, Tcl_Obj *const argv[]) {
   int error;
   void* modelType;
 
@@ -420,7 +420,7 @@ also causes an instance of it to be created. */
 //int* connCountPtr;
 
 FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp, 
-			    int argc, Tcl_Obj *CONST argv[]) {
+			    int argc, Tcl_Obj *const argv[]) {
   char* fileName;
   char* edition;
   char* dllProblem;
@@ -452,7 +452,7 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
    instance into another...or at least used to */
 
 FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* modelType;
   void* modelHandle;
@@ -477,7 +477,7 @@ FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int addtogroupCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* topHandle;
   void* modelHandle;
@@ -502,7 +502,7 @@ FINDABLE int addtogroupCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int deletemodelCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* instHandle;
 
@@ -523,7 +523,7 @@ FINDABLE int deletemodelCmd(ClientData clientData, Tcl_Interp *interp,
 First two args are model type and instance, 3rd is node name */
 
 FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* modelInst;
   void* fpHandle;
@@ -550,7 +550,7 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int clearparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* fpHandle;
   if (argc != 2) {
@@ -565,7 +565,7 @@ FINDABLE int clearparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* fpHandle;
   if (argc != 2) {
@@ -580,7 +580,7 @@ FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
 }
 /*
 FINDABLE int savetimepointCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   double time;
 
@@ -602,7 +602,7 @@ FINDABLE int savetimepointCmd(ClientData clientData, Tcl_Interp *interp,
 }
 */
 FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* fpHandle;
   double *time;
@@ -629,7 +629,7 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error, *mtd;
   void* fpHandle;
 
@@ -655,7 +655,7 @@ FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int setintervalCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* fpHandle;
   double *time;
@@ -677,7 +677,7 @@ FINDABLE int setintervalCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* fpHandle;
   double timePt;
@@ -703,7 +703,7 @@ FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 // converts a Tcl list of integers into a 0-teminated c array of them
-int  ints_from_list(Tcl_Interp *interp, Tcl_Obj *CONST obList, int indxs[]) {
+int  ints_from_list(Tcl_Interp *interp, Tcl_Obj *const obList, int indxs[]) {
   int i, count, error;
   Tcl_Obj* elt;
 
@@ -720,7 +720,7 @@ int  ints_from_list(Tcl_Interp *interp, Tcl_Obj *CONST obList, int indxs[]) {
 }
 
 FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int count, error, indxs[32], *dims;
   void* fpHandle;
   char* bloc;
@@ -752,7 +752,7 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
-				    int argc, Tcl_Obj *CONST argv[]) {
+				    int argc, Tcl_Obj *const argv[]) {
   int count, error, indxs[32], *dims;
   void* fpHandle;
   char** bloc;
@@ -791,7 +791,7 @@ FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
-				int argc, Tcl_Obj *CONST argv[]) {
+				int argc, Tcl_Obj *const argv[]) {
   int i, error, indxs[32], *dims;
   void* fpHandle;
   double val;
@@ -826,7 +826,7 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int markevtparamactiveCmd(ClientData clientData, Tcl_Interp *interp,
-				int argc, Tcl_Obj *CONST argv[]) {
+				int argc, Tcl_Obj *const argv[]) {
   int i, error;
   void* fpHandle;
   
@@ -849,7 +849,7 @@ FINDABLE int markevtparamactiveCmd(ClientData clientData, Tcl_Interp *interp,
 /* For this one, we have all the data in a Tcl ByteArray object */
 
 FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   void* fpHandle;
   unsigned char* sourcePtr;
@@ -872,7 +872,7 @@ FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int count, error;
   void* fpHandle;
   char *nodeId;
@@ -892,7 +892,7 @@ FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error, indxs[32], *dims;
   void* fpHandle;
   double time, val;
@@ -932,7 +932,7 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int count, error, squirtPtr = 0, num_bytes, *dims;
   void* fpHandle;
   char **ptBytes;
@@ -983,7 +983,7 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int gettimepointallCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int count, error, squirtPtr = 0, currentSize;
   void* fpHandle;
   unsigned char *holder;
@@ -1036,7 +1036,7 @@ const char* name_in_line(void* modelType, int lineId) {
 }
 
 FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int how_int, phase, error;
   excpData* errorBlk;
   void* modelType;
@@ -1070,7 +1070,7 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int repeatresetCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int how_int, phase, error;
   excpData* errorBlk;
   void* modelType;
@@ -1094,7 +1094,7 @@ FINDABLE int repeatresetCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   void* modelType;
   void* modelHandle;
   double starttime, endtime, errlim;
@@ -1148,7 +1148,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int checkmodelCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   excpData* errorBlk;
   Tcl_Obj* working;
   void* modelType, * modelHandle;
@@ -1200,7 +1200,7 @@ FINDABLE int checkmodelCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   double starttime;
   int phase;
   int error;
@@ -1233,7 +1233,7 @@ FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
 */
 
 FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   char* dllProblem;
   void* modelType;
@@ -1257,7 +1257,7 @@ FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
 }
 /*
 FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
+	int argc, Tcl_Obj *const argv[]) {
   int error;
   char* nodeId;
   void* modelType;
@@ -1282,7 +1282,7 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 }
 */
 FINDABLE int graphCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
+		 int argc, Tcl_Obj *const argv[]) {
   void* modelHandle;
   int action, index, error;
   static graph_data_type* tcl_graphdata = NULL;
@@ -1535,7 +1535,7 @@ Tcl_Obj* fill_value(void* localType, void* smHandle, int tree[],
 }
 */
 FINDABLE int freeDataHandleCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
+		 int argc, Tcl_Obj *const argv[]) {
   int error;
   nodeValues* toFree;
 
@@ -1551,7 +1551,7 @@ FINDABLE int freeDataHandleCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
+		 int argc, Tcl_Obj *const argv[]) {
   Tcl_Obj *resultPtr, *newData;
   int error;
   char spare[256];
@@ -1609,7 +1609,7 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int listobjCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+		int argc, Tcl_Obj *const argv[]) {
    int error;
    void* modelType;
 
@@ -1623,7 +1623,7 @@ FINDABLE int listobjCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int randseedCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+		int argc, Tcl_Obj *const argv[]) {
    int seed, error;
 
    if (argc != 2) {
@@ -1639,7 +1639,7 @@ FINDABLE int randseedCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+		int argc, Tcl_Obj *const argv[]) {
     Tcl_Obj *resultPtr;
 
    if (argc != 1) {
@@ -1652,7 +1652,7 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int addWaveCommandCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+		int argc, Tcl_Obj *const argv[]) {
   void* modelInst;
   char* go;
   int error;
@@ -1701,7 +1701,7 @@ int outeract_gui(void* ref, int stop_chk, double now) {
 }
 /*
 FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+		int argc, Tcl_Obj *const argv[]) {
   int count, count2, spare, error;
   Tcl_Obj** EltPtr;
   Tcl_Obj** PairPtr;

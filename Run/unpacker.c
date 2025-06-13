@@ -27,7 +27,7 @@ int right_license(const char*, const char*);
 char simileVersion[] = SIMILE_VERSION;
 
 FINDABLE int GetVersionCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+		int argc, Tcl_Obj *const argv[]) {
   if (argc != 1) {
     Tcl_WrongNumArgs(interp, 1, argv, "");
     return TCL_ERROR;
@@ -142,7 +142,7 @@ int edn_id = 0;
    of original simile edition and Prolog model specification */
 
 FINDABLE int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
-			      int argc, Tcl_Obj *CONST argv[]) {
+			      int argc, Tcl_Obj *const argv[]) {
    if (argc != 2) {
      Tcl_WrongNumArgs(interp, 1, argv, "source_string");
      return TCL_ERROR;
@@ -170,7 +170,7 @@ thinking of ripping off Simulistics, Inc. A special security code is generated
 from our little secret -- after checking that the edition specified is right */
 
 FINDABLE int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+		int argc, Tcl_Obj *const argv[]) {
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "source_string code");
     return TCL_ERROR;
@@ -241,7 +241,7 @@ char* licenseRight (Tcl_Interp *interp) {
 }
 
 FINDABLE int testlicenseCmd(ClientData clientData, Tcl_Interp *interp, 
-			    int argc, Tcl_Obj *CONST argv[]) {
+			    int argc, Tcl_Obj *const argv[]) {
   char* answer;
   answer = licenseRight(interp);
   if (answer) {
@@ -513,7 +513,7 @@ void make_sub_block_sizes(int *dims, int *sizes) {
 
 // same as version in ame_cmx.c except terminates array with -1 because it is
 // for indices, which may be zero
-int ints_from_list(Tcl_Interp *interp, Tcl_Obj *CONST obList, int indxs[]) {
+int ints_from_list(Tcl_Interp *interp, Tcl_Obj *const obList, int indxs[]) {
   int i, count, error;
   Tcl_Obj* elt;
 
@@ -530,7 +530,7 @@ int ints_from_list(Tcl_Interp *interp, Tcl_Obj *CONST obList, int indxs[]) {
 }
 
 FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
+		 int argc, Tcl_Obj *const argv[]) {
   Tcl_Obj *resultPtr, *newData;
   int iPosn, error, count, indxs[32];
 
@@ -832,7 +832,7 @@ void call_for_each_val(int* ptDims, char* ptData, int offset,
 }
 
 FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
+		 int argc, Tcl_Obj *const argv[]) {
   int rpt_seq, error;
   double valfor0, valfor255, valspan, dval;
   nodeValues* accessTool;
@@ -1002,7 +1002,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
+		 int argc, Tcl_Obj *const argv[]) {
   int size, error, baseType, loseZeros;
   nodeValues* accessTool;
   valCallback* callback_proc;
@@ -1044,7 +1044,7 @@ FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+		int argc, Tcl_Obj *const argv[]) {
   int error, pid;
   Tcl_Obj* resultPtr;
 
@@ -1062,7 +1062,7 @@ FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp,
 }
 
 FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+		int argc, Tcl_Obj *const argv[]) {
   if (argc != 1) {
     Tcl_WrongNumArgs(interp, 1, argv, "");
     return TCL_ERROR;
