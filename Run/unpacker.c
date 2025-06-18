@@ -467,13 +467,14 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
 	localObj = Tcl_NewListObj(0, NULL);
 	break;
       }
-      if (isfinite(*(double *)block) || jsonic!=1) // inf/nan no longer enquoted
-	// in app, allowing inf to be formatted and NaN detected
-	localObj = Tcl_NewDoubleObj(*(double *)block);
-      else {
-	localObj = Tcl_NewStringObj("\"", -1);
+      if (isfinite(*(double *)block) || jsonic!=1) { // inf/nan no longer
+	// enquoted in app, allowing inf to be formatted and NaN detected
+	localObj = Tcl_NewStringObj("", 0); // try to get right precision
 	Tcl_AppendObjToObj(localObj, Tcl_NewDoubleObj(*(double *)block));
-	Tcl_AppendObjToObj(localObj, Tcl_NewStringObj("\"", -1));
+      } else {
+	localObj = Tcl_NewStringObj("\"", 1);
+	Tcl_AppendObjToObj(localObj, Tcl_NewDoubleObj(*(double *)block));
+	Tcl_AppendObjToObj(localObj, Tcl_NewStringObj("\"", 1));
       }
       *count -= *count>0?1:-1;
       break;
