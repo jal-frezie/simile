@@ -799,6 +799,7 @@ proc GetShortVals {topNode plName limit} {
     set dataDimty [llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM]]
     set showMatrix [expr {[PrefValue custom(dispMatrix) dispMatrix] && \
 			      $dataDimty==3}]
+    set precis [PrefValue custom(popupPrecision) popupPrecision]
     if {[RunningInC $topNode]} {
 	if {[catch {GetHandle $topNode $plName} hdl]} {
 	    set text novalue
@@ -812,23 +813,32 @@ proc GetShortVals {topNode plName limit} {
 	    set loseZeros [expr {[lsearch {EVENT SQUIRT} \
 			     [GetCompProperty $topNode Class $plName]]>-1}]
 	    set count [CountCValues $hdl $loseZeros]
-	    if {$count<$limit/3 || $showMatrix || [llength $hdl]>1} {
+	    if {$showMatrix} {
 		set text [ExtractCList $hdl 16777216 $loseZeros]
+		# add option to translate values only?
+		ReleaseHandle $topNode $hdl
 	    } else {
-		set tail [expr {$limit/6}]
-		set text [concat [ExtractCList $hdl $tail $loseZeros] \
-			      {... 0} [ExtractCList $hdl -$tail $loseZeros]]
+		set ::tcl_precision $precis
+		if {$count<$limit/3 || [llength $hdl]>1} {
+		    set text [ExtractJList $hdl 16777216 $loseZeros 1 1]
+		} else {
+		    set tail [expr {$limit/6}]
+		    set text [concat [ExtractJList $hdl $tail $loseZeros 1 1] \
+				  [ExtractJList $hdl -$tail $loseZeros 1 1]]
+		}
+		set ::tcl_precision 0
+		ReleaseHandle $topNode $hdl
+		return [list $count $text]
 	    }
-	    ReleaseHandle $topNode $hdl
 	}
     } else {
 	set text [lindex [GetCompExecData $topNode Value $plName] 0]
+	# no zero removal!
 	set count [ShrinkValueList text $limit]
     }
     if {![string equal novalue $text]} {
 	catch {GetCompProperty $topNode Type $plName} iType
 	if {[string equal REAL $iType]} {
-	    set precis [PrefValue custom(popupPrecision) popupPrecision]
 	    if {$precis} {
 		set text [FormatVals %.${precis}g $text]
 	    }

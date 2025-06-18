@@ -275,41 +275,45 @@ void extend_list(Tcl_Obj *localObj, Tcl_Obj *indObj, Tcl_Obj *localSubObj, int d
 }
 
 Tcl_Obj* extend_string(Tcl_Obj *localObj, Tcl_Obj *index, Tcl_Obj *localSubObj, int dir) {
-  if (!strcmp(Tcl_GetStringFromObj(localSubObj, NULL), "{}"))
+  Tcl_Obj* localNewObj;
+  if (!Tcl_GetCharLength(localSubObj) || // missing single value
+      !strcmp(Tcl_GetStringFromObj(localSubObj, NULL), "{}")) // empty sublist
     return localObj;
-  Tcl_Obj* localNewObj = Tcl_NewStringObj("\"",1);
-  Tcl_AppendObjToObj(localNewObj, index);
-  Tcl_AppendToObj(localNewObj, "\":", 2);
-  Tcl_AppendObjToObj(localNewObj, localSubObj);
+  if (index) {
+    localNewObj = index;
+    Tcl_AppendToObj(localNewObj, ": ", 2);
+    Tcl_AppendObjToObj(localNewObj, localSubObj);
+  } else
+    localNewObj = localSubObj;
   if (!Tcl_GetCharLength(localObj))
     return localNewObj;
   else if (dir>=0) {
-     Tcl_AppendToObj(localObj, ",", 1);
+     Tcl_AppendToObj(localObj, ", ", 2);
      Tcl_AppendObjToObj(localObj, localNewObj);
      return localObj;
   } else {
-     Tcl_AppendToObj(localNewObj, ",", 1);
+     Tcl_AppendToObj(localNewObj, ", ", 2);
      Tcl_AppendObjToObj(localNewObj, localObj);
      return localNewObj;
   }
 }
 
 /* next two call convert_to_tcl, which calls them, so declare in advance */
-Tcl_Obj* convert_to_tcl(int*, int*, char*, BOOLEAN, const enum_type_data**, BOOLEAN, int*, int*, BOOLEAN);
+Tcl_Obj* convert_to_tcl(int*, int*, char*, BOOLEAN, const enum_type_data**, BOOLEAN, int*, int);
 
 Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
 			     int* subBlocks, int *members, char** block,
 			     BOOLEAN loseZeros, const enum_type_data** enums,
-			     BOOLEAN translateEnums, int* toGet, BOOLEAN jsonic) {
+			     BOOLEAN translateEnums, int* toGet, int jsonic) {
   Tcl_Obj *localObj, *localSubObj, *IndObj;
-  int count, dir, noinds = -1;
+  int count, dir;
 
   dir = *toGet>0?1:-1;
   if (depth==dimty) {
     if (*members) {
       *block += dimty*sizeof(int);
       localObj = convert_to_tcl(dims, subBlocks, *block,
-				loseZeros, enums, translateEnums, &noinds, toGet, jsonic);
+				loseZeros, enums, translateEnums, toGet, jsonic);
       if (dir>0) {
 	*block += subBlocks[0];
       } else {
@@ -334,11 +338,16 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
 					subBlocks, members, block, loseZeros,
 					enums+1, translateEnums, toGet, jsonic);
       if (translateEnums && (*enums)->count)
-	IndObj = Tcl_NewStringObj((*enums)->members[indices[depth]-1], -1);
+	if (jsonic==1) {
+	  IndObj = Tcl_NewStringObj("\"", 1);
+	  Tcl_AppendToObj(IndObj, (*enums)->members[indices[depth]-1], -1);
+	  Tcl_AppendToObj(IndObj, "\"", 1);
+	} else
+	  IndObj = Tcl_NewStringObj((*enums)->members[indices[depth]-1], -1);
       else
 	IndObj = Tcl_NewIntObj(indices[depth]);
       if (jsonic)
-	  localObj = extend_string(localObj, IndObj, localSubObj, dir);
+	localObj = extend_string(localObj, IndObj, localSubObj, dir);
       else
 	extend_list(localObj, IndObj, localSubObj, dir);
     }
@@ -356,9 +365,9 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
 Tcl_Obj*
 append_array_members(int membership, int* dims, int* subBlocks, char* block,
 		     BOOLEAN loseZeros, const enum_type_data** enums,
-		     BOOLEAN translateEnums, int* count, BOOLEAN jsonic) {
+		     BOOLEAN translateEnums, int* count, int jsonic) {
   Tcl_Obj *localObj, *localSubObj, *IndObj;
-  int offset, start, end, dir, noinds = -1;
+  int offset, start, end, dir, trans;
 
   localObj = Tcl_NewListObj(0, NULL);
   dir = *count>0?1:-1;
@@ -367,12 +376,20 @@ append_array_members(int membership, int* dims, int* subBlocks, char* block,
   } else {
     start = membership-1; end = -1;
   }
+  trans = translateEnums && (*enums)->count;
   for (offset = start; offset != end; offset += dir) {
     if (!*count) break;
     localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0],
-				 loseZeros, enums+1, translateEnums, &noinds, count, jsonic);
-    if (translateEnums && (*enums)->count)
-      IndObj = Tcl_NewStringObj((*enums)->members[offset], -1);
+				 loseZeros, enums+1, translateEnums, count, jsonic);
+    if (trans)
+      if (jsonic==1) {
+	IndObj = Tcl_NewStringObj("\"", 1);
+	Tcl_AppendToObj(IndObj, (*enums)->members[offset], -1);
+	Tcl_AppendToObj(IndObj, "\"", 1);
+      } else
+	IndObj = Tcl_NewStringObj((*enums)->members[offset], -1);
+    else if (jsonic && !loseZeros)
+      IndObj = NULL;
     else
       IndObj = Tcl_NewIntObj(offset+1);
     if (jsonic)
@@ -381,9 +398,15 @@ append_array_members(int membership, int* dims, int* subBlocks, char* block,
       extend_list(localObj, IndObj, localSubObj, dir);
   }
   if (jsonic) {
-    localSubObj = Tcl_NewStringObj("{", 1);
-    Tcl_AppendObjToObj(localSubObj, localObj);
-    Tcl_AppendToObj(localSubObj, "}", 1);
+    if (trans || loseZeros) {
+      localSubObj = Tcl_NewStringObj("{", 1);
+      Tcl_AppendObjToObj(localSubObj, localObj);
+      Tcl_AppendToObj(localSubObj, "}", 1);
+    } else {
+      localSubObj = Tcl_NewStringObj("[", 1);
+      Tcl_AppendObjToObj(localSubObj, localObj);
+      Tcl_AppendToObj(localSubObj, "]", 1);
+    }
     return localSubObj;
   }
   return localObj;
@@ -391,8 +414,7 @@ append_array_members(int membership, int* dims, int* subBlocks, char* block,
   
 Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
 			BOOLEAN loseZeros, const enum_type_data** enums,
-			BOOLEAN translateEnums, int* indxs, int* count,
-			BOOLEAN jsonic) {
+			BOOLEAN translateEnums, int* count, int jsonic) {
   Tcl_Obj *localObj;
   int membership, *indices;
   char *newBlock;
@@ -427,14 +449,14 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
       free(indices);
       break;
     case VALUELESS:
-      if (jsonic)
+      if (jsonic==1)
 	localObj = Tcl_NewStringObj("\"sm\"", -1);
       else
 	localObj = Tcl_NewStringObj("sm", -1);
       *count -= *count>0?1:-1;
       break;
     case UNSTABLE:
-      if (jsonic)
+      if (jsonic==1)
 	localObj = Tcl_NewStringObj("\"unstable\"", -1);
       else
 	localObj = Tcl_NewStringObj("unstable", -1);
@@ -445,7 +467,7 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
 	localObj = Tcl_NewListObj(0, NULL);
 	break;
       }
-      if (isfinite(*(double *)block) || !jsonic) // inf/nan no longer enquoted
+      if (isfinite(*(double *)block) || jsonic!=1) // inf/nan no longer enquoted
 	// in app, allowing inf to be formatted and NaN detected
 	localObj = Tcl_NewDoubleObj(*(double *)block);
       else {
@@ -540,8 +562,8 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   nodeValues* c_result;
   BOOLEAN loseZeros, translateEnums;
 
-  if (argc < 3 || argc > 6) {
-    Tcl_WrongNumArgs(interp, 1, argv, "data_handle value_count ?lose_zeros? ?translate_enums? ?at_indices?");
+  if (argc < 3 || argc > 5) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle value_count ?lose_zeros? ?translate_enums?");
     return TCL_ERROR;
   }
 
@@ -567,18 +589,12 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
     translateEnums = (BOOLEAN)notBool;
   } else
     translateEnums = 0;
-
-  if (argc == 6) {
-    if ((error = ints_from_list(interp, argv[4], indxs)) != TCL_OK)
-      return error;
-  } else
-    indxs[0] = -1;
   
   int subBlocks[32];
   make_sub_block_sizes(c_result->dimSpecs, subBlocks);
   resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents,
-			     loseZeros, c_result->enumKey, translateEnums, indxs, &count,
-			     clientData != NULL);
+			     loseZeros, c_result->enumKey, translateEnums, &count,
+			     (intptr_t)clientData);
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }
@@ -1091,6 +1107,9 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 		       (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "extract_json", extractListCmd, (ClientData)1,
+		       (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "extract_pretty", extractListCmd, (ClientData)2,
 		       (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "distinct_values", extractBinCmd, 

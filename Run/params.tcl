@@ -190,7 +190,6 @@ proc InvokeTickOnEntry {e} {
 }
 
 proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
-    puts [info level 0]
     global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {
 	set dataLocn targetData

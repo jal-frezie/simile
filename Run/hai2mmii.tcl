@@ -260,16 +260,21 @@ proc ExtractCList {dH count loseZeros} {
     return $runTot
 }
 
-proc ExtractJList {dH count loseZeros} {
+proc ExtractJList {dH count loseZeros doTrans loseQuotes} {
+    if {$loseQuotes} {
+	set style pretty
+    } else {
+	set style json
+    }
     if {[llength $dH]==1} {
-	return [extract_json $dH $count $loseZeros]
+	return [extract_$style $dH $count $loseZeros $doTrans]
     } ;# else
     set runTot {}
     set snip [expr {2*$count/[llength $dH]}]
     foreach {case hdl} $dH {
-	lappend runTot $case [extract_json $hdl $snip $loseZeros]
+	lappend runTot "$case: [extract_$style $hdl $snip $loseZeros $doTrans]"
     }
-    return $runTot
+    return "{[join $runTot ", "]}" ;# note inner dqs nested!
 }
 
 # GetModelValue returns the current value of a node. This is numerical if the
