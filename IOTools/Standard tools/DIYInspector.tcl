@@ -251,7 +251,7 @@ itcl::class similescript::$newHelperClass {
 	    foreach {locn oldCases} [array get permMembers $lvl,*] {
 		if {$locn eq "$lvl,$src"} {
 		    # is addition to list of alternatives
-		    set place [lsearch $oldCases $case]
+		    set place [lsearch -exact $oldCases $case]
 		    set remain [lreplace $oldCases $place $place]
 		    if {$remain eq {}} {
 			unset permMembers($locn)
@@ -321,6 +321,7 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method delete {} {
+	puts [info level 0]
 	# needs to handle case lists
 	global myNode compCases
 	variable clickPath
@@ -337,7 +338,7 @@ itcl::class similescript::$newHelperClass {
 	    } else {
 		set case [string range $leaf $endNodes+2 end]
 		set byLevel [array get compCases $myNode,*]
-		set oldLevel [string range [lindex $byLevel [lsearch $byLevel $case]-1] 10 end]
+		set oldLevel [string range [lindex $byLevel [lsearch -exact $byLevel $case]-1] 10 end]
 		ReducePerms $oldLevel $case $clickPath
 		DeleteCase $myNode $case
 		unset compCases($myNode,$oldLevel)
@@ -378,13 +379,16 @@ itcl::class similescript::$newHelperClass {
 	variable clickPath
 	variable cMenu
 
-	set topF [MakeSubFrames $inst [$inst cget -topFrame] $path {} 0]
+	set topF [MakeSubFrames $inst [$inst cget -topFrame] \
+		      [split $path /] {} 0]
 	set safePath [lindex [CrossPlatformBind $topF] 0 3 1]
+	puts "topF $topF"
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]
 	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} \
 		continue
 	    set clickPath [concat $safePath [list [string range $lvl 5 end]]]
+	    puts "cp $clickPath"
 	    $cMenu invoke Delete ;# does child
 	}
     }
@@ -688,6 +692,18 @@ itcl::class similescript::$newHelperClass {
 	    } else {
 		set compound $alt
 	    }
+	    # check for duplicates
+	    array set arrayVers $compound
+	    if {[llength [array get arrayVers]]<[llength $compound]} {
+		foreach {id val} $compound {
+		    if {[info exists arrayVers($id)]} {
+			unset arrayVers($id)
+		    } else {
+			error "List creates duplicate cases named $id"
+		    }
+		}
+		error "Failed to find duplicate case in $compound"
+	    }
 	}
 	return $compound
     }
@@ -697,18 +713,19 @@ itcl::class similescript::$newHelperClass {
 	variable listStrings
 	variable clickPath
 
-	if {[lsearch [list $box.cross $box.b] [focus]]>-1} {return 0}
+	if {[lsearch -exact [list $box.cross $box.b] [focus]]>-1} {return 0}
 	# tick invoked by clicking on cross or settings, not what user wanted
 	#bind $box.e <FocusOut> {} ;# in case of error message
 	set oldCases $compCases($myNode,$path)
 	set lvl [string range [winfo name $box] 5 end]
 	set listExpr [$box.e get]
 	if {$listExpr eq $listStrings($path)} return
+	set  newCases [InterpList [string range $lvl 0 end-3] $listExpr]
 	
    	set compCases($myNode,$path) {}
 	set fullPath "/[lindex $hitPath end]$path, s"
-        foreach {name val} [InterpList [string range $lvl 0 end-3] $listExpr] {
-	    set found [lsearch $oldCases $name]
+        foreach {name val} $newCases {
+	    set found [lsearch -exact $oldCases $name]
 	    if {$found>=0} {
 		set oldCases [lreplace $oldCases $found $found]
 	    } else {

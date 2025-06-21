@@ -128,13 +128,19 @@ proc InsertExptlCase {node caseId parent} {
     return [set exptl_case($caseId) [c_addmodeltogroup $host]]
 }
 
+proc GlobProof {key} {
+    return [string map \
+		{\* \\\* \? \\\? \[ \\\[ \] \\\] \{ \\\{ \} \\\} \\ \\\\} $key]
+}
+
 proc DeleteExptlCase {node caseId} {
     global exptl_case exptl_params
 
-    array unset exptl_params *,$caseId
+    array unset exptl_params *,[GlobProof $caseId]
     c_deletemodel $exptl_case($caseId)
     unset exptl_case($caseId)
 }
+
 proc ExecuteTo {node current pause unitLength display \
 		    intMethod maxErr lmtPause evtMsg evtDisp} {
     set currentMode start
