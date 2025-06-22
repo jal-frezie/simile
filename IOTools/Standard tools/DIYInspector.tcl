@@ -207,12 +207,12 @@ itcl::class similescript::$newHelperClass {
 	set bases [Combinations [lrange $sets 1 end]]
 	set additions [lindex $sets 0]
 	foreach extn $additions {
-	    lappend result [list $extn]
 	    foreach part $bases {
 		lappend result [concat $part [list $extn]]
 	    }
+	    lappend result [list $extn]
 	}
-	return [concat $result $bases]
+	return [concat $result $bases] ;# Combos of most members first
     }
 
     public method ExtendPerms {src case levels} {
