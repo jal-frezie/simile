@@ -321,7 +321,6 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method delete {} {
-	puts [info level 0]
 	# needs to handle case lists
 	global myNode compCases
 	variable clickPath
@@ -382,13 +381,11 @@ itcl::class similescript::$newHelperClass {
 	set topF [MakeSubFrames $inst [$inst cget -topFrame] \
 		      [split $path /] {} 0]
 	set safePath [lindex [CrossPlatformBind $topF] 0 3 1]
-	puts "topF $topF"
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]
 	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} \
 		continue
 	    set clickPath [concat $safePath [list [string range $lvl 5 end]]]
-	    puts "cp $clickPath"
 	    $cMenu invoke Delete ;# does child
 	}
     }
