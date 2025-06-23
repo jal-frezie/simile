@@ -1086,7 +1086,10 @@ set msgs(save_helper_setup_message) [tr. {The helper setup has been altered sinc
 set msgs(missing_expt_param_title) [tr. {Missing experimental parameter}]
 set msgs(missing_expt_param_message) [tr. {The Experiment setup specifies variations to the parameter "%1$s". However, the current version of the model does not contain a fixed or variable parameter of this name. }]
 set msgs(missing_expt_param_detail) [tr. {The cases in which this parameter is varied will be removed from the experiment setup.}]
-				      
+set msgs(param_list_parse_fail_title) [tr. {Bad list for parameter}]
+set msgs(param_list_parse_fail_message) [tr. {The list of values for parameter "%1$s" could not be parsed.}]
+set msgs(param_list_parse_fail_detail) [tr. {The parser returned this message: "%2$s"}]
+
 # debugging messages: just show the whole string
 set msgs(debug_title) [tr. {Debugging info -- report to Simulistics}]
 set msgs(debug_message) [tr. {The toolchain produced this message:

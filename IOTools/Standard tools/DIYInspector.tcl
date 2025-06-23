@@ -710,14 +710,19 @@ itcl::class similescript::$newHelperClass {
 	variable listStrings
 	variable clickPath
 
-	if {[lsearch -exact [list $box.cross $box.b] [focus]]>-1} {return 0}
-	# tick invoked by clicking on cross or settings, not what user wanted
+	if {[lsearch -exact [list $box.cross $box.b [winfo toplevel $box].shortDlg] [focus]]>-1} {return 0}
+	# tick invoked by clicking on cross or settings, or by error
 	#bind $box.e <FocusOut> {} ;# in case of error message
 	set oldCases $compCases($myNode,$path)
 	set lvl [string range [winfo name $box] 5 end]
 	set listExpr [$box.e get]
 	if {$listExpr eq $listStrings($path)} return
-	set  newCases [InterpList [string range $lvl 0 end-3] $listExpr]
+	set name [string range $lvl 0 end-3]
+	if {[catch {InterpList $name $listExpr} newCases]} {
+	    Query [list param_list_parse_fail $name $newCases] \
+		warning expt_setup {} ok
+	    return
+	}
 	
    	set compCases($myNode,$path) {}
 	set fullPath "/[lindex $hitPath end]$path, s"
@@ -732,9 +737,13 @@ itcl::class similescript::$newHelperClass {
 	    # set the actual parameter in the case!
 	    $box.e delete 0 end
 	    $box.e insert 0 $val
-	    AcceptData $myNode $fullPath 0 1 $name
-	    
-	    lappend compCases($myNode,$path) $name
+	    set result [AcceptData $myNode $fullPath 0 1 $name]
+	    if {$result==1} { ;# data loaded successfully
+		lappend compCases($myNode,$path) $name
+	    } else {
+		lappend oldCases $name ;# no data, schedule case for removal
+		if {!$result} break;
+	    }
 	}
 	$box.e delete 0 end
 	$box.e insert 0 $listExpr

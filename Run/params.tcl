@@ -647,7 +647,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	if {[lsearch [list $box.cross $box.b [winfo toplevel $box].shortDlg] \
 		 [focus]] >-1} {return 0}
 	# tick invoked by clicking on cross or settings, or by error appearing
-	# after hiting return, not what user wanted
+	# after hitting return, not what user wanted
 	set chking $box.e
     }
     set node [IdFromTail $topNode $compLocal -1]
@@ -897,7 +897,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
         }
     }
     #puts "paramData now [array get paramData]"
-    return 1 ;# means no abort
+    return [expr {1+[info exists boredom]}] ;# 2 means error but no abort
 }
 
 # rsearch gives index of last value
