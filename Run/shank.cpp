@@ -395,43 +395,51 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
     //    printf("responding");
     memset(out, 0, bufSize * sizeof(float));
 
-    sound** playlist = &(data->playlist); 
-    while (*playlist) {
-      int age = nice_time()-(*playlist)->evtTime;
+    sound* playlist = data->playlist; 
+    while (playlist) {
+      int age = nice_time()-playlist->evtTime;
       int samples = (uint64_t)data->format.sample_rate*age/1000000; // frames
       samples *= data->format.num_channels; // ensure channels time synced
       if (samples>bufSize) samples=bufSize;
-      remaining = (data->data_start+data->data_size - ftell((*playlist)->file))
+      remaining = (data->data_start+data->data_size - ftell(playlist->file))
 	/what_to_read;
       if (remaining>samples) remaining=samples;
       num_read = fread(in + what_to_read*(bufSize-samples), what_to_read,
-		       remaining, (*playlist)->file);
+		       remaining, playlist->file);
       // Apply volume scaling and mixing
       for (int i = bufSize-samples; i < num_read+bufSize-samples; i++) {
 	if (data->format.audio_format == 3) {	
-	  out[i] += (*playlist)->volume* *(float*)(in + what_to_read*i);
+	  out[i] += playlist->volume* *(float*)(in + what_to_read*i);
 	} else {
 	  switch (what_to_read) {
 	  case 2: {
-	    out[i] += (*playlist)->volume*(float)read_le16(in + what_to_read*i)/32768;
+	    out[i] += playlist->volume*(float)read_le16(in + what_to_read*i)/32768;
 	    break;
 	  } case 3:
 	  case 4:
-	    out[i] += (*playlist)->volume*(float)read_le32(in + what_to_read*i)/2000000000;
+	    out[i] += playlist->volume*(float)read_le32(in + what_to_read*i)/2000000000;
 	    break;
             // Add cases for other bit depths as needed
 	  }
 	}
       }
       if (num_read < samples) {
-        fclose((*playlist)->file);
-	delete *playlist;
-	*playlist = (*playlist)->next; // hope it still there
-	continue;
+        fclose(playlist->file);
+	playlist->file = NULL;
       } else {
 	result = paContinue;
       }
-      playlist = &((*playlist)->next);
+      playlist = playlist->next;
+    }
+    // Now go through again, fast, deleting all that were finished
+    sound** playptr = &(data->playlist); 
+    while (*playptr) {
+      if (!(*playptr)->file) {
+	delete *playptr;
+	*playptr = (*playptr)->next; // hope it still there
+      } else {
+	playptr = &((*playptr)->next);
+      }
     }
     delete [] in;
     return result;
@@ -490,6 +498,7 @@ int play_sound_for(int graphId, double vol) {
 	  return 1;
 	}
 	spin->volume = vol;
+	spin->evtTime = nice_time();
 	spin->next = soundCh->playlist;
 	spin->evtTime = nice_time();
 	soundCh->playlist = spin;
