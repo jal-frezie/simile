@@ -29,8 +29,8 @@ itcl::class similescript::$newHelperClass {
 
     destructor {
 	if {[info exists State]} {
-	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
-	    AddWaveCommand [$modelInst cget -modelNode] $useNode "/none/"
+	    catch {AddWaveCommand [$modelInst cget -modelNode]
+		[GetIdFromCaptionPath [lindex $State 0]] "/none/"}
 	}
     }
 
