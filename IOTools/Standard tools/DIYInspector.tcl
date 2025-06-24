@@ -592,8 +592,14 @@ itcl::class similescript::$newHelperClass {
 	-padx 2 -pady 4 -side left
     
 	focus $ft.e
-	LetItShow .caseentry case(done)
-	set result [$ft.e get]
+	while {![info exists result]} {
+	    LetItShow .caseentry case(done)
+	    set result [$ft.e get]
+	    if {$::case(done)==1 && [CaseExists $::myNode $result]} {
+		$ft.m configure -text "Experiment already includes a case named $result. Please supply a new unique case name for this $path."
+		unset result
+	    }
+	}
 	PackItUp .caseentry
 	if {$::case(done)==1} {
 	    return $result

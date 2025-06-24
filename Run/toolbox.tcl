@@ -844,6 +844,10 @@ proc AddCase {node caseId {parent {}}} {
     set runState($node,reloadParams) -2
 }
 
+proc CaseExists {node caseId} {
+    return [info exists ::runState($node,case$caseId)]
+}
+
 proc DeleteCase {node caseId} {
     global runState
     
