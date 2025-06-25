@@ -15,7 +15,7 @@ in response to successful editing operations.
 
 sicstus_module(image,
       [get_colour/4, get_window_colour/3,
-       get_closest_edge/4, map/6, get_inner_bound/3, get_outer_bound/4,
+       get_closest_edge/4, map/6,
        change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
        targets/5, inside_shape/4, near/2, get_middle/2, middle/2,
        crossing_point/7, make_bounding_box/5,
@@ -92,7 +92,7 @@ set_shape(Component, Shape_field, Data) :-
     WData = Data),
     Component has_new_graphical_attribute Shape_field of WData.
 
-clear_shape(Component, Shape_field) :-
+clear_shape(Component, Shape_field) :- 
     Component has_graphical_attribute Shape_field of _,
     Component no_longer_has_graphical_attribute Shape_field.
 
@@ -173,7 +173,7 @@ get_overlaps(Parent, Targets, Part) :-
     get_drawing_form(Part, _, Box),
     member(Target, Targets),
     interferes(Target, Box).
-
+/*
 get_inner_bound(Parent, Edge, Bound) :-
     get_shape(Parent, internal_extent, [L, T, R, B]),
     get_box_size(Parent, submodel, Standard),
@@ -191,13 +191,13 @@ get_outer_bound(Node, Parent, Edge, Bound) :-
     get_shape(Parent, internal_extent, [PL, PT, PR, PB]),
     member(Edge-ParentBound, [l-PL, t-PT, r-PR, b-PB]),
     exclude_boxes(Boxes, NodeBox, Edge, ParentBound, Bound).
-
+*/
 contains_box(Parent, Box) :-
     find_all_comps(Parent, Comp),
     \+ Comp is_of_sort has_bowtie, % in case doing size headless
     \+ border_node(Comp),
     get_drawing_form(Comp, _, Box).
-
+/*
 unite_boxes([], _, Bound, Bound).
 
 unite_boxes([[L1, T1, R1, B1] | Rest], Edge, PBound, Bound) :-
@@ -205,7 +205,7 @@ unite_boxes([[L1, T1, R1, B1] | Rest], Edge, PBound, Bound) :-
     member(Edge-BB, [l-min(L1, PB), t-min(T1, PB),
              r-max(R1, PB), b-max(B1, PB)]),
     Bound is BB.
-
+*/
 exclude_boxes([], _,_, Bound, Bound).
 
 exclude_boxes([[BL,BT,BR,BB] | Rest], [NL,NT,NR,NB], Edge, PBound, Bound) :-

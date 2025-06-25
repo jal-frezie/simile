@@ -33,7 +33,7 @@ Object has_graphical_attribute Attribute of Value :-
 :- op(500, xfy, [has_new_graphical_attribute]).
 
 Object has_new_graphical_attribute Attribute of Value :-
-	\+ query_model(graphical_info( Object, Attribute, _AnyValue )),
+    \+ query_model(graphical_info( Object, Attribute, _AnyValue )),
 	(round_graphics(Value, IntValue), !,
 	    assert_model( graphical_info( Object, Attribute, IntValue ));
 % some models seem to have nans in course -- refuse to add

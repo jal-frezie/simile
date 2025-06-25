@@ -240,7 +240,18 @@ check_if_already_open(Name) :-
 	output><safe_tcl_eval([wm, deiconify, sqb([winfo, toplevel, Win])], _),
 	output><safe_tcl_eval([raise, sqb([winfo, toplevel, Win])], _).
 
+resize_canvas_for(Parent) :-
+    setof(Box, image><contains_box(Parent, Box), [Starter | Rest]),
+    all(menu, =, [build(Rest), unify_boxes(Result, Starter)]),
+    expand_canvas(Parent, Result).
 
+unify_boxes([L1, T1, R1, B1], [L2, T2, R2, B2], [L, T, R, B]) :-
+    Margin = 30,
+    L is min(L1-Margin, L2),
+    T is min(T1-Margin, T2),
+    R is max(R1+Margin, R2),
+    B is max(B1+Margin, B2).
+/*    
 resize_canvas_for(Parent) :-
 %	(setof(Box, contains_box(Parent, Box), Boxes), !, Boxes = []),
 	all(image, get_inner_bound,
@@ -262,7 +273,7 @@ resize_canvas_for(Parent) :-
 %	change_shape(Parent, internal_extent, [Ln, Tn, Rn, Bn]),
 % above is done in following
 	expand_canvas(Parent, IBox).
-
+*/
 /* menu_handle. First arg is title of menu, second is item selected. */
 
 menu_handle(Win, file, new) :-
