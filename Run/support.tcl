@@ -1660,7 +1660,7 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
 	    set subVals [FillListValues nextRef $newTree $type $innerDims \
 				[concat $listDims $newIndex] $newDimPlace]
 	    if {[llength $subVals]} {
-		lappend result [incr newIndex] $subVals
+		lappend result [expr {$newIndex+1}] $subVals
 	    }
 	}
 	if {[string compare $nextRef 0]} {
@@ -1729,7 +1729,7 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 	array set arrayVals $newVals
 	set result {}
 	for {set nextDim 0} {$nextUseDim>$nextDim} \
-	        {} {
+	        {incr nextDim} {
 	    if {[info exists arrayVals($nextDim)]} {
 		set eltVals $arrayVals($nextDim)
 	    } else {
@@ -1739,7 +1739,7 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 		    [lrange $useDims 1 end] \
 		    [concat $dims $nextDim] [expr $dimPlace+1] $eltVals]
 	    if {[llength $subVals]} {
-		lappend result [incr nextDim] $subVals
+		lappend result [expr {$nextDim+1}] $subVals
 	    }
 		    
 	}
