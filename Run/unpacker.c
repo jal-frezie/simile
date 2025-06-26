@@ -276,10 +276,10 @@ void extend_list(Tcl_Obj *localObj, Tcl_Obj *indObj, Tcl_Obj *localSubObj, int d
 
 Tcl_Obj* extend_string(Tcl_Obj *localObj, Tcl_Obj *index, Tcl_Obj *localSubObj, int dir) {
   Tcl_Obj* localNewObj;
-  if (!Tcl_GetCharLength(localSubObj) || // missing single value
-      !strcmp(Tcl_GetStringFromObj(localSubObj, NULL), "{}")) // empty sublist
-    return localObj;
   if (index) {
+    if (!Tcl_GetCharLength(localSubObj) || // missing single value
+	!strcmp(Tcl_GetStringFromObj(localSubObj, NULL), "{}")) // empty sublist
+      return localObj;
     localNewObj = index;
     Tcl_AppendToObj(localNewObj, ": ", 2);
     Tcl_AppendObjToObj(localNewObj, localSubObj);
