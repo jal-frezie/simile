@@ -201,12 +201,9 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	        Mover is_of_sort box,
 		event><do_colours(Mover, seln),
 		fail;
-	    member(Mover, Movers),
-	        Mover is_of_sort box,
-		get_drawing_form(Mover, _, Box),
-		merge_box(Box),
-		fail;
-	    retract(combined_box_is(Box))),
+	     all(image, get_drawing_form,
+		 [build(Movers), build(_Styles), build([Box0 | Boxes])]),
+	       all(menu, =, [build(Boxes), unify_boxes(Box, Box0)])),
 	    
 	    (find_space_for(Box, Parent, Lighters, Pt, [Xoffset, Yoffset]),
 		all(event, adjust_posn,
@@ -223,17 +220,6 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    query(overlap(insert, components), warning, top, [ok], _),
 		restart_move)).
 
-:- dynamic([combined_box_is/1, lost_ghost_in_seln/2]).
-
-merge_box([L1, T1, R1, B1]) :-
-	(retract(combined_box_is([L2, T2, R2, B2])),
-	    L is min(L1, L2),
-	    T is min(T1, T2),
-	    R is max(R1, R2),
-	    B is max(B1, B2), !;
-	 [L, T, R, B] = [L1, T1, R1, B1]),
-	assert(combined_box_is([L, T, R, B])).
-	
 check_if_already_open(Name) :-
 	get_model_file(Model, Name),
 	Win shows_model Model,
@@ -242,15 +228,15 @@ check_if_already_open(Name) :-
 
 resize_canvas_for(Parent) :-
     setof(Box, image><contains_box(Parent, Box), [Starter | Rest]),
-    all(menu, =, [build(Rest), unify_boxes(Result, Starter)]),
+    all(menu, =, [build(Rest), unify_boxes([L, T, R, B], Starter)]),
+    all(user, is, [build(Result), build([L-30, T-30, R+30, B+30])]),
     expand_canvas(Parent, Result).
 
 unify_boxes([L1, T1, R1, B1], [L2, T2, R2, B2], [L, T, R, B]) :-
-    Margin = 30,
-    L is min(L1-Margin, L2),
-    T is min(T1-Margin, T2),
-    R is max(R1+Margin, R2),
-    B is max(B1+Margin, B2).
+    L is min(L1, L2),
+    T is min(T1, T2),
+    R is max(R1, R2),
+    B is max(B1, B2).
 /*    
 resize_canvas_for(Parent) :-
 %	(setof(Box, contains_box(Parent, Box), Boxes), !, Boxes = []),
@@ -822,6 +808,8 @@ menu_handle(Win, window, NastyAtom) :-
 % predicate not too big to fail
 % menu_handle(_, _, _).
 
+:- dynamic([lost_ghost_in_seln/2]).
+	
 record_lost_ghosts(Model) :-
 	contains(Model, Ghost),
 	find_base(Ghost, Base),
