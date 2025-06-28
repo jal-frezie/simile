@@ -95,8 +95,9 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-method Stuff {contents} {
-    if {![llength $useNodes(comp)]} return ;# node exist check failed
+    method Stuff {contents} {
+	if {[string trim $contents]==""} return ;# failure to ignore whitespace
+	if {![llength $useNodes(comp)]} return ;# node exist check failed
 	set topNode [$modelInst cget -modelNode]
 	if {$useNodes(mode) eq "relative"} {
 	    set shfPath [GetPathChoice .shf $topNode]
