@@ -712,18 +712,6 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set window_info(current) $c
     AddCanvasBindings $c $topNode
 
-    ####### Model window extensions
-    set modelWindowExtensions [itcl::find classes ::ModelWindowExtn::*]
-    #ShowMess debug info "ModelWindow $winName\n\
-    #        $modelWindowExtensions" ok
-    foreach extClass $modelWindowExtensions {
-        #ShowMess debug info "$extClass " ok
-        set extn [$extClass $winName.\#auto $winName]; # create an extension object for the new model window
-        if {[catch {$extn MergeMenu} wibble] } {
-            ShowMess debug info "Extension $extn failed to merge its menu items.\n\
-                   Details: $wibble" ok
-        }
-    }
     ################
     
     

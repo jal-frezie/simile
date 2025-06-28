@@ -873,13 +873,6 @@ proc UpdateExecution {node action} {
     Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
 
-itcl::class ModelWindowExtn {
-    variable winId
-    constructor {awinId} {
-        set winId $awinId
-    }
-}
-
 proc LoadModelWindowExtensions {} {
     set origDir [pwd]
     cd [file join $::SIMILE_PATH Extensions]
