@@ -14,7 +14,6 @@ proc LoadTrans {} {
 #    close $stm
     global parseStatus
 
-    package require xml
     set transRsrc $::SIMILE_PATH/Help/langspec.trn
     if {![file exists $transRsrc]} return
     set parseStatus(trnParser) [::xml::parser -ignorewhitespace true \

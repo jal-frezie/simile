@@ -1,5 +1,5 @@
-package require Tk 8.4;                 # minimum version for Tile
-package require tile 0.8;               # depends upon tile
+package require Tk 8.4-;                 # minimum version for Tile
+package require tile 0.8-;               # depends upon tile
 
 
 namespace eval ttk {

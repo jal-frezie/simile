@@ -1153,7 +1153,6 @@ namespace eval RunEnv {
     }
     
     if {![info exists simplify]} {
-	package require xml
 	variable parseStatus
 	set parseStatus(shfParser) \
 	    [::xml::parser -ignorewhitespace true \

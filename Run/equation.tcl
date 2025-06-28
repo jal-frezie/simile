@@ -1295,7 +1295,6 @@ proc ExmlToGenericPl {src tgt} {
     set dada [read $pStr]
     close $pStr
     global parseStatus
-    package require xml
 
     set parseStatus(pl) [::xml::parser -ignorewhitespace true \
 				-elementstartcommand StartPlElement \

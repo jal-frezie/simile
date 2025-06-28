@@ -1345,7 +1345,6 @@ proc LevelForTitle {path} {
 }
 
 if {![info exists simplify]} {
-package require xml
 set parseStatus(spfParser) [::xml::parser -ignorewhitespace true \
 				-elementstartcommand StartElement \
 				-elementendcommand FinishElement \
