@@ -296,7 +296,7 @@ itcl::class similescript::$newHelperClass {
 		UpdateByOS
 		ScrollToSee [winfo parent $topFrame] $f.label
 		lappend clickPath $type
-		$modelInst GrabClicks $this
+		$modelInst grabClicks $this
 	    } default {
 		set newLevel [UniqueId $type]
 		lappend clickPath $newLevel
@@ -613,7 +613,7 @@ itcl::class similescript::$newHelperClass {
 	variable clickPath
 	variable listStrings
 
-	$modelInst ReleaseClicks
+	$modelInst releaseClicks
 	
 	set node [IdFromTail $myNode $path -1]
 	if {$node eq "nomatch" || [GetModelClass $node] eq "SUBMODEL" || \

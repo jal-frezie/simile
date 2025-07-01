@@ -23,7 +23,7 @@ itcl::class similescript::$newHelperClass {
 	    # new instance so request data from model
 	    pack [message $winId.message \
 		      -text "Click on model component for sound"]
-	    $modelInst GrabClicks $this
+	    $modelInst grabClicks $this
 	}
     }
 
@@ -35,12 +35,12 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method Click {path} {
-	set State [list $path [$modelInst GetMinValue $path] \
-		       [$modelInst GetMaxValue $path]]
+	set State [list $path [$modelInst getMinValue $path] \
+		       [$modelInst getMaxValue $path]]
 	SetState $winId $State
 	$winId.message configure -text "Generating sound wave for $path"
 	AddWaveCommand [$modelInst getNode] [GetIdFromCaptionPath $path] "/model/"
-	$modelInst ReleaseClicks
+	$modelInst releaseClicks
 	Display 0 0 0
     }
 

@@ -253,7 +253,7 @@ itcl::class similescript::$newHelperClass {
 		    $winId.bottom.ms configure -text "Click on component with $descrip of [lindex $template 0], or enter fixed $descrip here:"
 		    pack [ttk::entry $winId.bottom.e] -side bottom
 		    bind $winId.bottom.e <Return> [list $this SetConst]
-		    $modelInst GrabClicks $this
+		    $modelInst grabClicks $this
 		} colour {
 		    if {[AmLayer] && $descrip eq "BACK"} {
 			MakeSelection null ;# never seen
@@ -264,7 +264,7 @@ itcl::class similescript::$newHelperClass {
 			      -command [list $this SetColour \
 					    [lindex $template 0] $descrip] \
 			      -text "Select fixed colour"] -side bottom
-		    $modelInst GrabClicks $this
+		    $modelInst grabClicks $this
 		} choice {
 		    $winId.bottom.ms configure -text "Choose an option for $descrip:"
 		    pack [frame $winId.bottom.e] 
@@ -280,7 +280,7 @@ itcl::class similescript::$newHelperClass {
 
     public method SetConst {} {
 	set result [$winId.bottom.e get]
-	$modelInst ReleaseClicks
+	$modelInst releaseClicks
 	destroy $winId.bottom.e
 	MakeSelection $result
     }
@@ -294,7 +294,7 @@ itcl::class similescript::$newHelperClass {
     public method SetColour {obj role} {
 	set result [tk_chooseColor -title "Colour for $role of $obj"]
 	if {$result ne ""} {
-	    $modelInst ReleaseClicks
+	    $modelInst releaseClicks
 	    destroy $winId.bottom.e
 	    MakeSelection $result
 	}
@@ -305,7 +305,7 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method Click {path} {
-	$modelInst ReleaseClicks
+	$modelInst releaseClicks
 	destroy $winId.bottom.e
 	set nodeIdCache($path) [GetIdFromCaptionPath $path]
 	MakeSelection $path
@@ -363,16 +363,16 @@ itcl::class similescript::$newHelperClass {
 	if {$arr eq "null"} {
 	    return 0
 	} elseif {[lindex $arr 0] eq ",colours"} {
-	    set min [$modelInst GetMinValue [lindex $arr 1]]
-	    set max [$modelInst GetMaxValue [lindex $arr 1]]
+	    set min [$modelInst getMinValue [lindex $arr 1]]
+	    set max [$modelInst getMaxValue [lindex $arr 1]]
 	    if {$max-$min>=536870910} { ;# probably defaults
 		set min 0
 		set max [expr {[llength $arr]-2}]
 	    }
-	    return [ColoursFor [$modelInst GetValue [lindex $arr 1] -all 1 \
+	    return [ColoursFor [$modelInst getValue [lindex $arr 1] -all 1 \
 				    -numeric 1] $min $max [lrange $arr 2 end]]
 	} elseif {![string first / $arr]} { ;# model component
-	    return [$modelInst GetValue $nodeIdCache($arr) -all 1 -numeric 1]
+	    return [$modelInst getValue $nodeIdCache($arr) -all 1 -numeric 1]
 	} else { ;# numerical, colour or choice constant
 	    return $arr
 	}
@@ -399,7 +399,7 @@ itcl::class similescript::$newHelperClass {
 #		    }
 		    foreach arr [lrange $instruct 1 end] {
 #			array set [lindex {0 x y z r} $i] \
-#			    [Flatten [lindex [$modelInst GetValue \
+#			    [Flatten [lindex [$modelInst getValue \
 #						  [lindex $instruct $i]] 0]]
 			lappend rawList [AddAsApprop $arr]
 		    }
@@ -476,7 +476,7 @@ itcl::class similescript::$newHelperClass {
 		    }
 		    for {set i 1} {$i<10} {incr i} {
 			array set [lindex {0 cx cy cz tx ty tz sx sy sz} $i] \
-			    [Flatten [$modelInst GetValue [lindex $instruct $i] -all 1]]
+			    [Flatten [$modelInst getValue [lindex $instruct $i] -all 1]]
 		    }
 		    foreach iV [array names cz] {
 			if {[llength $iV]} {
@@ -527,7 +527,7 @@ itcl::class similescript::$newHelperClass {
 		    }
 		} surface {
 		    foreach {var posn} {x 1 y 2 z 3} {
-			set $var [$modelInst GetValue [lindex $instruct $posn] \
+			set $var [$modelInst getValue [lindex $instruct $posn] \
 				      -all 1]
 		    }
 		    set bx [lindex $x 1]

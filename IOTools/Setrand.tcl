@@ -28,7 +28,7 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method Done {} {
-	$modelInst SeedRandoms [$winId.entry get]
+	$modelInst seedRandoms [$winId.entry get]
     }
 
 # No need to do anything when displays update

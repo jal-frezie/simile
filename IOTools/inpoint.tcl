@@ -48,7 +48,7 @@ itcl::class similescript::$newLayerClass {
 	set ms [winfo parent $winId].bottom.ms
 	pack [ttk::label $ms -wraplength [$winId cget -width] -text \
 		  [tr. "Click on the input parameter to set to the X co-ordinate:"]]
-	$modelInst GrabClicks $this
+	$modelInst grabClicks $this
 	set useNodes(state) xcoord
 	# need to allow modeller to click on 3-element array at this point so
 	# only a single ListToArray needed, as this appears to be bottleneck
@@ -77,7 +77,7 @@ itcl::class similescript::$newLayerClass {
 		    set useNodes(state) displaying
 	            destroy $ms
 		    destroy $bn
-		    $modelInst ReleaseClicks
+		    $modelInst releaseClicks
 
 		    AddBindings 
 		}

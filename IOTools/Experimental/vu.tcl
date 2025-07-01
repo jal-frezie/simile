@@ -21,15 +21,15 @@ itcl::class similescript::$newHelperClass {
 	    # new instance so request data from model
 	    pack [message $winId.message \
 		      -text "Click on model component for bar graph"]
-	    $modelInst GrabClicks $this
+	    $modelInst grabClicks $this
 	}
     }
 
     public method Click {path} {
-	set State [list $path [$modelInst GetMinValue $path] \
-		       [$modelInst GetMaxValue $path]]
+	set State [list $path [$modelInst getMinValue $path] \
+		       [$modelInst getMaxValue $path]]
 	destroy $winId.message
-	$modelInst ReleaseClicks
+	$modelInst releaseClicks
 	Display 0 0 0
     }
 
@@ -38,7 +38,7 @@ itcl::class similescript::$newHelperClass {
 # dispInt is time to next display call
 # step is a spare parameter
 	set min [lindex $State 1]
-	set val [expr {100*([$modelInst GetValue [lindex $State 0]]-$min) / \
+	set val [expr {100*([$modelInst getValue [lindex $State 0]]-$min) / \
 			   ([lindex $State 2]-$min)}]
 	$winId.pb configure -value $val
     }

@@ -77,14 +77,14 @@ class similescript::$newHelperClass {
     public method Click {path} {
         switch [GetState $winId] {
             adding_inputs {
-                if {[string equal SUBMODEL [$modelInst GetModelClass $path]]} {
+                if {[string equal SUBMODEL [$modelInst getModelClass $path]]} {
                     set success [AddAllVariables $path]
                 } else {
                     set success [InsertLogEntry $path 1]
                 }
                 if {[llength $success]} {
                     $winId.message configure -text {}
-                    $modelInst ReleaseClicks
+                    $modelInst releaseClicks
                 }
 	    }
 	}
@@ -99,7 +99,7 @@ class similescript::$newHelperClass {
 
     public method PrepareSaveString {} {
 	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
-	set shfPath [GetPathChoice .shf [$modelInst cget -modelNode]]
+	set shfPath [GetPathChoice .shf [$modelInst getNode]]
 	if {[catch {::fileutil::relative $shfPath $curFile} relFile]} {
 	    #puts $relFile
 	    set tdLine "<target_file mode=\"absolute\">$curFile</target_file>\n"
@@ -120,7 +120,7 @@ class similescript::$newHelperClass {
     method AddVariable {} {
         $winId.message configure -text "Click on a variable to allow its values to be logged."
         SetState $winId adding_inputs
-        $modelInst GrabClicks $this
+        $modelInst grabClicks $this
     }
     
     method InsertLogEntry {title nest} {
@@ -142,7 +142,7 @@ class similescript::$newHelperClass {
 	pack [label $f.caption -text [lindex $levels end]: -bg $lbg] -side left
 	pack [::ttk::entry $f.value] -side left -fill x -expand 1
 	set useNodes(ticker,$title) $f
-	FillTicker $title [$modelInst GetValue $title]
+	FillTicker $title [$modelInst getValue $title]
 	pack [::ttk::button $f.remove -image $useNodes(removeImg) \
 		  -command [code $this Remove $title]] -side right
 	return yes
@@ -177,7 +177,7 @@ class similescript::$newHelperClass {
 		set newFile [ChooseDatabase $winId "MySQL log table"]
 	    } else {
 		set newFile [ChooseFile log.csv [tr. {Log file}] 1 \
-				 [$modelInst cget -modelNode]]
+				 [$modelInst getNode]]
 	    }
 	    if {$newFile ne {}} break
 	}
@@ -213,7 +213,7 @@ class similescript::$newHelperClass {
 		set useNodes(common_stm) [open $curFile w]
 		set hdrs Time
 		foreach path $useNodes(logged) {
-		    PutIndexCombos hdrs [$modelInst GetValue $path] "" \
+		    PutIndexCombos hdrs [$modelInst getValue $path] "" \
 			[file tail $path]
 		}
 		puts $useNodes(common_stm) [::csv::join $hdrs $brkr]
@@ -224,7 +224,7 @@ class similescript::$newHelperClass {
 	if {[catch {$useNodes(common_stm) tables} tList]} { # writing csv
 	    set vals $time
 	    foreach path $useNodes(logged) {
-		set toLog [$modelInst GetValue $path]
+		set toLog [$modelInst getValue $path]
 		FillTicker $path $toLog
 		PutValsOnly vals $toLog
 	    }
@@ -235,7 +235,7 @@ class similescript::$newHelperClass {
 	    if {[lsearch $tList $curTab] == -1} {
 		set sqlStr "CREATE TABLE `$curTab` (`Time"
 		foreach path $useNodes(logged) {
-		    PutIndexCombos sqlStr [$modelInst GetValue $path] \
+		    PutIndexCombos sqlStr [$modelInst getValue $path] \
 			"` text, `" [file tail $path]
 		}
 		append sqlStr "` text)"
@@ -244,13 +244,13 @@ class similescript::$newHelperClass {
 	    # now add a row of values
 	    set sqlStr "INSERT INTO `$curTab` (`Time"
 	    foreach path $useNodes(logged) {
-		PutIndexCombos sqlStr [$modelInst GetValue $path] \
+		PutIndexCombos sqlStr [$modelInst getValue $path] \
 		    "`, `" [file tail $path]
 	    }
 	    append sqlStr "`) VALUES ("
 	    set sqlSubStr $time
 	    foreach path $useNodes(logged) {
-		set toLog [$modelInst GetValue $path]
+		set toLog [$modelInst getValue $path]
 		FillTicker $path $toLog
 		PutValsOnly sqlSubStr $toLog
 	    }
@@ -303,7 +303,7 @@ class similescript::$newHelperClass {
     }
 
     method Stuff {contents} {
-	set node [$modelInst cget -modelNode]
+	set node [$modelInst getNode]
 	switch $useNodes(inElt) {
 	    target_file {
 		if {$useNodes(fileMode) eq "relative"} {

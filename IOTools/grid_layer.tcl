@@ -74,12 +74,12 @@ itcl::class similescript::$newLayerClass {
 	    [tr. "Click on the variable whose values are to be displayed on the grid."]
 	$winId create window $vx $vy -window $winId.ms -anchor nw \
 	    -tag instruct
-	$modelInst GrabClicks $this
+	$modelInst grabClicks $this
 	set useNodes($winId,state) display0
     }
 
     public method Click {path} {
-        set testResult [$modelInst GetValue $path]
+        set testResult [$modelInst getValue $path]
         # This tests for the user having clicked on a suitable element
         # of the model diagram
         if {[string compare $testResult novalue]} {
@@ -91,11 +91,11 @@ itcl::class similescript::$newLayerClass {
 		    set useNodes($winId,title) "[file tail $path] (rectangular grid diagram)"
 		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
 		    SetColours useNodes $winId
-		    set useNodes($winId,tgtDims) [$modelInst GetModelDims $path]
+		    set useNodes($winId,tgtDims) [$modelInst getModelDims $path]
 		    if {[IsTwoDee $winId]} {
 			set useNodes($winId,colvals) USE_INDICES
 			set parentPath [join [lrange [split $path /] 0 end-1] /]
-			if {[$modelInst GetModelEval $parentPath] eq \
+			if {[$modelInst getModelEval $parentPath] eq \
 				"HONEYCOMB"} {
 			    set useNodes($winId,hex) 1
 			    set useNodes($winId,xscale) 1.7320508
@@ -122,7 +122,7 @@ itcl::class similescript::$newLayerClass {
     public method FinishClicking {} {
 	$winId delete instruct
 	destroy $winId.ms
-	$modelInst ReleaseClicks
+	$modelInst releaseClicks
 	set useNodes($winId,state) displaying
 	Display 0 0 0
     }
@@ -160,7 +160,7 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,nrow) \
 		[expr {[lindex $vList 0]/$useNodes($winId,ncol)}]
 	} else {
-	    set count [DoForData [$modelInst GetValue $node] colvals]
+	    set count [DoForData [$modelInst getValue $node] colvals]
 	    set useNodes($winId,ncol) [array size colvals]
 	    set useNodes($winId,nrow) \
 		[expr {$count/$useNodes($winId,ncol)}]
@@ -247,7 +247,7 @@ set repts [expr {$hex*$bpp/8}]
     public method DrawGrid7 {} {
 	set ncol $useNodes($winId,ncol)
 	set nrow $useNodes($winId,nrow)
-	set curValues [$modelInst GetValue $useNodes(nC,color) -numeric 1]
+	set curValues [$modelInst getValue $useNodes(nC,color) -numeric 1]
         if {$curValues eq "unstable"} return
         if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set colShift -1

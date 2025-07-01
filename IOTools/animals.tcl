@@ -78,7 +78,7 @@ itcl::class similescript::$newLayerClass {
 	set ms [winfo parent $winId].bottom.ms
 	pack [ttk::label $ms -wraplength [$winId cget -width] -text \
 		  [tr. "Click on the value representing the X coordinates of the individuals."]]
-	$modelInst GrabClicks $this
+	$modelInst grabClicks $this
 	set useNodes(state) xcoord
     }
 
@@ -88,7 +88,7 @@ itcl::class similescript::$newLayerClass {
 	if {$path eq ""} {
 	    set path [$bn get]
 	} else {
-	    set testResult [$modelInst GetValue $path -numeric 1]
+	    set testResult [$modelInst getValue $path -numeric 1]
         # This tests for the user having clicked on a suitable element
         # of the model diagram
 	    if {[string compare $testResult novalue]} {
@@ -119,7 +119,7 @@ itcl::class similescript::$newLayerClass {
 	    } dirval {
 		destroy $ms
 		destroy $bn
-		$modelInst ReleaseClicks
+		$modelInst releaseClicks
 		set useNodes(dir) $path
 		set useNodes(state) displaying
 		set ::helperTable(beingCalled) $host
@@ -152,7 +152,7 @@ itcl::class similescript::$newLayerClass {
 		    set temp($aspect) [ReplicateAsX $useNodes($aspect) \
 					   $temp(xcoord)]
 		} else {
-		    set temp($aspect) [$modelInst GetValue \
+		    set temp($aspect) [$modelInst getValue \
 					   $temp(nC,$useNodes($aspect))]
 		}
 	    }

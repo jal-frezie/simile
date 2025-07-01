@@ -435,6 +435,21 @@ redo with helper object
     method getNode {} {
 	return $modelNode
     }
+    
+    method seedRandoms {seedval} {
+	::SeedRandoms $modelNode $seedval
+    }
+
+# Methods for helper apps to call
+    method grabClicks {helperInst} {
+	global helperTable
+
+	set helperTable($modelNode,current) $helperInst
+	UpdateCursors hand2
+	if {[info exists ::RunEnv::variableListFrame($modelNode)]} {
+	    $::RunEnv::variableListFrame($modelNode) config -cursor hand2
+	}
+    }
 
     method hasClicks {} {
 	global helperTable
@@ -471,6 +486,28 @@ redo with helper object
 	}
 	set trans [GetCompProperty $modelNode Trans $node]
 	return [TransEnums $trans $numerics]
+    }
+    
+    method getMinValue {path} {
+        global runState
+        return [do_for_node $modelNode GetMinValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
+    }
+    
+    method getMaxValue {path} {
+        global runState
+        return [do_for_node $modelNode GetMaxValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
+    }
+   
+    method getModelEval {path} {
+        return [do_for_node $modelNode GetModelEval [do_for_node $modelNode GetIdFromCaptionPath $path]]
+    }
+    
+    method getModelDims {path} {
+        return [do_for_node $modelNode GetModelDims [do_for_node $modelNode GetIdFromCaptionPath $path]]
+    }
+    
+    method GetModelClass {path} {
+        return [do_for_node $modelNode GetModelClass [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
 
 #    method CreateSnapWindow {path} {
@@ -602,21 +639,6 @@ redo with helper object
 #        }
 #    }
 #    
-#    method SeedRandoms {seedval} {
-#	::SeedRandoms $modelNode $seedval
-#    }
-#
-## Methods for helper apps to call
-#    method GrabClicks {helperInst} {
-#	global helperTable
-#
-#	set helperTable($modelNode,current) $helperInst
-#	UpdateCursors hand2
-#	if {[info exists ::RunEnv::variableListFrame($modelNode)]} {
-#	    $::RunEnv::variableListFrame($modelNode) config -cursor hand2
-#	}
-#    }
-#    
 #    method RequestValues {args} {
 #	global runState
 #
@@ -664,31 +686,9 @@ redo with helper object
 #        return [do_for_node $modelNode GetModelValue $nodeId]
 #    }
 #    
-#    method GetMinValue {path} {
-#        global runState
-#        return [do_for_node $modelNode GetMinValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
-#    }
-#    
-#    method GetMaxValue {path} {
-#        global runState
-#        return [do_for_node $modelNode GetMaxValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
-#    }
-#    
 #    #paths
 #    method GetModelType {path} {
 #        return [do_for_node $modelNode GetModelType [do_for_node $modelNode GetIdFromCaptionPath $path]]
-#    }
-#    
-#    method GetModelEval {path} {
-#        return [do_for_node $modelNode GetModelEval [do_for_node $modelNode GetIdFromCaptionPath $path]]
-#    }
-#    
-#    method GetModelDims {path} {
-#        return [do_for_node $modelNode GetModelDims [do_for_node $modelNode GetIdFromCaptionPath $path]]
-#    }
-#    
-#    method GetModelClass {path} {
-#        return [do_for_node $modelNode GetModelClass [do_for_node $modelNode GetIdFromCaptionPath $path]]
 #    }
 #    
 #    ################################################################################

@@ -75,7 +75,7 @@ itcl::class similescript::$newHelperClass {
 	# new instance so request data from model
 	$winId.f.message config \
 	    -text "Click on model component to list its acronym and expansion"
-	$modelInst GrabClicks $this
+	$modelInst grabClicks $this
     }
 
     public method Click {path} {
@@ -90,7 +90,7 @@ itcl::class similescript::$newHelperClass {
 	}
 	$winId.t set $tabLen,1 [join $expn { }]
 	$winId.t see $tabLen,1
-	$modelInst ReleaseClicks
+	$modelInst releaseClicks
 	Display 0 0 0
     }
 

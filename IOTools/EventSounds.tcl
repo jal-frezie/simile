@@ -116,18 +116,18 @@ itcl::class similescript::$newHelperClass {
     method AddEvent {} {
         $winId.message configure -text "Click on a delayed or limit event to add a sound for it."
         SetState $winId adding_inputs
-        $modelInst GrabClicks $this
+        $modelInst grabClicks $this
     }
     
     public method Click {path} {
         switch [GetState $winId] {
             adding_inputs {
                 if {[lsearch {EVENT SQUIRT} \
-			 [$modelInst GetModelClass $path]]>-1} {
+			 [$modelInst getModelClass $path]]>-1} {
 		    set topNode [$modelInst getNode]
 		    set sound [ChooseFile sound.wav "Sound file for $path" 0 \
 				   $topNode]
-                    $modelInst ReleaseClicks
+                    $modelInst releaseClicks
                     $winId.message configure -text \
 			{Right click on caption to remove.}
 		    if {$sound eq ""} {
