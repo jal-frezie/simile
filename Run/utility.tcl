@@ -9,6 +9,14 @@
 # Thanks to tk_abandon, I sometimes put several dialogues up at once, which,
 # thanks to a bug in tcltk, gets the wrong results for the lower ones...
 
+# insert xml parser here so it is ready for use in both desktop and
+# scripted (R) cases
+
+# for script-only version
+package require xml::tcl
+package require xml::tclparser
+#package require xml
+
 proc ShowMess { title icon string resps {parent {}}} {
     set mBoxCmd [list tk_messageBox -title $title -icon $icon \
 		     -message $string -type $resps]

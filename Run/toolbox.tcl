@@ -44,10 +44,6 @@ proc ::mime::copymessage {token channel} {
 }
     
 }
-# for script-only version
-package require xml::tcl
-package require xml::tclparser
-#package require xml
 
 # package require md5 ;# mime will now load it as Trf not available
 set itclVers [package require Itcl]
