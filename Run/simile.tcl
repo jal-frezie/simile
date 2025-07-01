@@ -273,7 +273,7 @@ if {!$headless && [string match Darwin $tcl_platform(os)]} {
                 fconfigure $relayProc -blocking 0
                 fileevent $relayProc readable "HandOver $relayProc"
 # but be ready in case it fails to do so
-                set escapeDlg [after 3000 set startAnew 0]
+                set escapeDlg [after 1500 set startAnew 0]
                 tkwait variable startAnew
                 switch -- $startAnew {
                     1 {
@@ -328,7 +328,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 7.3
-set sendvars(simP) {.1}
+set sendvars(simP) {.2}
 
 if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols

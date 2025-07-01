@@ -2314,11 +2314,11 @@ proc MakeDesktopNode {} {
     global classTable
     if {[info exists ::SimileAutoObjLoaded]} {return {none dummy}} ;# called in Simile initialization
     set newInstance [UniqueId modelWin]
-    similescript::ModelWindow $newInstance
-    set node [$newInstance cget -modelNode]
+    similescript::ModelWindow create $newInstance
+    set node [$newInstance getNode]
     set classTable(model,$node) $newInstance
     set ::runState($node,updated) 0
-    return [list $node [$newInstance cget -modelCanvas]]
+    return [list $node [$newInstance getModelCanvas]]
 }
 
 proc Reopen {canvas oldFile op} {

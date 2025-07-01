@@ -3,18 +3,11 @@ if {[string equal windows $::tcl_platform(platform)]} {
     dde servername Simile
 }
 
-itcl::class similescript::ModelWindow {
-    public variable modelNode
-    public variable modelCanvas
-    variable model
-    
-    private method GetModelWindow {} {
-        global window_info
-	return $window_info($modelCanvas,parent)
-    }
+oo::class create similescript::ModelWindow {
+    variable modelNode modelCanvas model
 
     constructor {} {
-	set fromProlog [MakeNodeInProlog $this]
+	set fromProlog [MakeNodeInProlog [self object]]
         #tk_messageBox -message "ModelWin constructor"
 	set modelNode [lindex $fromProlog 0]
 	set modelCanvas [lindex $fromProlog 1]
@@ -35,23 +28,37 @@ itcl::class similescript::ModelWindow {
 	KillNodeInProlog $modelCanvas
     }
     
-    public method Hide {} {
-        wm withdraw [GetModelWindow]
+    method getModelCanvas {} {
+        global window_info
+	return $modelCanvas
     }
     
-    public method Show {} {
-        wm deiconify [GetModelWindow]
+    method getModelWindow {} {
+        global window_info
+	return $window_info([getModelCanvas],parent)
+    }
+
+    method getNode {} {
+	return $modelNode
+    }
+    
+    method Hide {} {
+        wm withdraw [getModelWindow]
+    }
+    
+    method Show {} {
+        wm deiconify [getModelWindow]
     }
     
     # File Menu
-    public method New {} {
+    method New {} {
         MenuSelect $modelCanvas file new
         if {[info exists model]} {
             unset model
         }
     }
     
-    public method FileOpenDlg {} {
+    method FileOpenDlg {} {
         #if {[info exists model]} {
         #    $this FileNew"
         #}
@@ -60,7 +67,7 @@ itcl::class similescript::ModelWindow {
         #set model $modelFile
     }
     
-    public method Open {modelFile} {
+    method Open {modelFile} {
         if {[info exists model]} {
             $this New
         }
@@ -69,15 +76,15 @@ itcl::class similescript::ModelWindow {
     }
 # disable -- there is little point printing from script as you cannot alter 
 # diagram
-#    public method Print {} {
+#    method Print {} {
 #        MenuSelect PrintNow $modelCanvas
 #    }
 #    
-    public method ListEnumTypes {} {
+    method ListEnumTypes {} {
 	GetFromProlog tk_get_info(dummy,$modelNode,enum_type_defns)
     }
 
-    public method GetEnumTypeMembers {ident} {
+    method GetEnumTypeMembers {ident} {
 	foreach typeDef [ListEnumTypes] {
 	    if {[string equal $ident [lindex $typeDef 0]]} {
 		return [lrange $typeDef 1 end]
@@ -86,7 +93,7 @@ itcl::class similescript::ModelWindow {
 	error "Model does not include type $ident"
     }
 
-    public method ChangeEnumType {args} {
+    method ChangeEnumType {args} {
 	if {[llength $args]<2} {
 	    error "Type definition needs identifier and at least one member"
 	}
@@ -94,18 +101,12 @@ itcl::class similescript::ModelWindow {
 	prolog tk_change_enum_type($modelNode,'$args')
     }
 
-    public method Destroy {} {
+    method Destroy {} {
         itcl::delete object $this
     }
     
-    private method RemoveRunControl {} {
-        if {[string match ::runControl [itcl::find object ::runControl]]} {
-            itcl::delete object ::runControl
-        }
-    }
-    
     # added for building models on web server -- do not document
-    public method ExportCppCode {cppFile} {
+    method ExportCppCode {cppFile} {
 	set ::preSelect $cppFile
         if {[catch {MenuSelect $modelCanvas code build_c} spew]} {
 	    set missingFile [lindex [split $::errorInfo \n] 2 0 3]
@@ -114,19 +115,19 @@ itcl::class similescript::ModelWindow {
     }
 
     # added for building models on web server -- do not document
-    public method BuildShareLib {shlibFile} {
+    method BuildShareLib {shlibFile} {
 	set ::preSelect $shlibFile
         MenuSelect $modelCanvas code compile_c
     }
 
     # added for diaplaying models on web server -- do not document
-    public method BuildSVGDiagram {shlibFile} {
+    method BuildSVGDiagram {shlibFile} {
 	set ::preSelect $shlibFile
 	ExportSVGDirect $modelNode
     }
 
     # Model Menu
-    public method Run {} {
+    method Run {} {
 	global botches
         # builds the model with CPP and returns a run control command/object
         #RemoveRunControl
@@ -136,7 +137,7 @@ itcl::class similescript::ModelWindow {
 	set botches(modelJustRun) $this
     }
     
-    public method Debug {} {
+    method Debug {} {
         # builds the model with Tcl and returns a run control command/object
         #RemoveRunControl
         MenuSelect $modelCanvas code run_tcl
@@ -144,11 +145,11 @@ itcl::class similescript::ModelWindow {
         #return $rc
     }
     
-    public method ListEquations {} {
+    method ListEquations {} {
         MenuSelect $modelCanvas file list_eqns
     }
     
-    public method LoadParams {filepath {smPath {}}} {
+    method LoadParams {filepath {smPath {}}} {
 	if {![file exists $filepath]} {
 	    error "Could not find file $filepath"
 	}
@@ -182,7 +183,7 @@ itcl::class similescript::HelperController {
     }
 
     public method GetNode {} {
-	return [$modelInst cget -modelNode]
+	return [$modelInst GetNode]
     }
 }
 
@@ -248,7 +249,7 @@ itcl::class similescript::Layer {
     }
 
     public method GetNode {} {
-	return [$modelInst cget -modelNode]
+	return [$modelInst getNode]
     }
 
     # All derived classes must reimplement with correct keyvalue
@@ -416,7 +417,7 @@ itcl::class similescript::RunControl {
 	if {[string equal {} $modelInst]} {
 	    set modelInst $botches(modelJustRun)
 	}
-	set modelNode [$modelInst cget -modelNode]
+	# set modelNode [$modelInst getNode] ; may not be set yet
     }
     
     public method CreateHelperWindow {helperId helperTitle} {
@@ -426,6 +427,10 @@ redo with helper object
         do_for_node $modelNode ${helperId}::initialize $winId
 	::RunEnv::ChildrenFocusParent $winId
         return $winId
+    }
+
+    public method GetNode {} {
+	return $modelNode
     }
     
     public method CreateSnapWindow {path} {

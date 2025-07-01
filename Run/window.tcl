@@ -2876,7 +2876,7 @@ proc CertainDeathNode {winId} {
     global window_info classTable
 
     set node $window_info($winId,top_node)
-    itcl::delete object $classTable(model,$node)
+    $classTable(model,$node) destroy
     unset classTable(model,$node)
 }
 
