@@ -42,7 +42,7 @@ proc MakeHelperMenu {} {
 	AddHelperSublist $fm.sub2 $lm.sub2 "Local" l
      }
     cd $oldDir
-    MakeScriptHelpers
+#    MakeScriptHelpers
 }
 
 proc ListMenuContents {menu} {

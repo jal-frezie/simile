@@ -183,7 +183,7 @@ itcl::class similescript::HelperController {
     }
 
     public method GetNode {} {
-	return [$modelInst GetNode]
+	return [$modelInst getNode]
     }
 }
 
@@ -237,8 +237,8 @@ itcl::class similescript::Layer {
 	#ShowMess debug info "Killing $winId" ok
 	global helperTable
 
-	if {[string equal $this [$modelInst HasClicks]]} {
-	    $modelInst ReleaseClicks
+	if {[string equal $this [$modelInst hasClicks]]} {
+	    $modelInst releaseClicks
 	}
 	foreach node $helperTable($this,foci) {
 	    $::runState([GetNode],inspId) HelperLeaf $node $this 0
@@ -311,8 +311,8 @@ itcl::class similescript::Helper {
 	#ShowMess debug info "Killing $winId" ok
 	global helperTable runState
 
-	if {[string equal $this [$modelInst HasClicks]]} {
-	    $modelInst ReleaseClicks
+	if {[string equal $this [$modelInst hasClicks]]} {
+	    $modelInst releaseClicks
 	}
 	set modelNode [GetNode]
 	if {[llength [array names runState $modelNode,helperId]]} {
@@ -407,9 +407,8 @@ itcl::class similescript::OldStyleHelper {
 }
 
 ### RUN OBJECT -- no longer a kind of helper
-
-itcl::class similescript::RunControl {
-    public variable modelNode
+oo::class create similescript::RunControl {
+    variable modelNode
     
     constructor {{modelInst {}}} {
 	global botches
@@ -420,7 +419,7 @@ itcl::class similescript::RunControl {
 	# set modelNode [$modelInst getNode] ; may not be set yet
     }
     
-    public method CreateHelperWindow {helperId helperTitle} {
+    method CreateHelperWindow {helperId helperTitle} {
 redo with helper object
         set winId [do_for_node $modelNode NewHelperWindow $modelNode \
 		       $helperId $helperTitle]
@@ -429,155 +428,15 @@ redo with helper object
         return $winId
     }
 
-    public method GetNode {} {
+    method setNode {node} {
+	set modelNode $node
+    }
+
+    method getNode {} {
 	return $modelNode
     }
-    
-    public method CreateSnapWindow {path} {
-redo with snap object
-        set winId [do_for_node $modelNode snap $modelNode [do_for_node $modelNode GetIdFromCaptionPath $path]]
-        return $winId
-    }
-    public method Hide {} {
-	global runState
-	wm withdraw [winfo toplevel $runState($modelNode,helperId)]
-    }
-	
-    public method Show {} {
-	global runState
-	wm deiconify [winfo toplevel $runState($modelNode,helperId)]
-    }
-	
-    public method Start {} {
-        # returns the time to complete (to run the simulation)
-	global runState helperTable
 
-#	set rcf $runState($modelNode,helperId).nb.rcf
-#        set timestr [time [list $rcf.upper.topbuttons.start invoke]]
-        set timestr [time [list $helperTable(RunControl)::SetMode $modelNode start]]
-        set musec [lindex $timestr 0]
-        return "[expr {$musec/1e6}] sec"
-    }
-    
-    public method Reset {} {
-	global runState
-
-	set rcf $runState($modelNode,helperId).nb.rcf
-	$rcf.upper.topbuttons.reset invoke
-    }
-    
-    public method MergeParams {filepath {smPath {}}} {
-        do_for_node $modelNode ZapParams $modelNode $smPath $filepath 0
-    }
-    
-    public method SetTimeUnits {units} {
-        # units: unit second minute hour day week month year Ma
-        do_for_node $modelNode set ::runState($modelNode,timeUnit) $units
-    }
-    
-    public method GetTimeUnits {} {
-        global runState
-        return [do_for_node $modelNode set ::runState($modelNode,timeUnit)]
-    }
-    
-    public method GetIntegrationMethod {} {
-        #return $runState($modelNode,intMethod)
-        return [do_for_node $modelNode set ::runState($modelNode,intMethod)]
-    }
-    public method SetIntegrationMethod {method} {
-        do_for_node $modelNode set ::runState($modelNode,intMethod) $method
-    }
-    
-    public method SetIntegrationMethodEuler {} {
-        do_for_node $modelNode set ::runState($modelNode,intMethod) Euler
-    }
-    
-    public method SetIntegrationMethodRungeKutta {} {
-        do_for_node $modelNode set ::runState($modelNode,intMethod) {4th-order Runge-Kutta}
-    }
-    
-    public method GetStepAdaptLimit {} {
-	if {[do_for_node $modelNode set ::runState($modelNode,adapt)]} {
-	    return [do_for_node $modelNode set ::runState($modelNode,errLimit)]
-	} else {
-	    return 0
-	}
-    }
-
-    public method SetStepAdaptLimit {limit} {
-	do_for_node $modelNode set ::runState($modelNode,adapt) \
-	    [expr {$limit!=0}]
-	do_for_node $modelNode set ::runState($modelNode,errLimit) $limit
-    }
-
-    public method SetExecuteFor {time} {
-        do_for_node $modelNode set ::runState($modelNode,execTime) $time
-    }
-    
-    public method GetExecuteFor {} {
-        return [do_for_node $modelNode set ::runState($modelNode,execTime)]
-    }
-    
-    public method SetTimeAtReset {time} {
-        do_for_node $modelNode set ::runState($modelNode,resetTo) $time
-    }
-    
-    public method GetTimeAtReset {} {
-        return [do_for_node $modelNode set ::runState($modelNode,resetTo)]
-    }
-    
-    public method GetCurrentTime {} {
-        return [do_for_node $modelNode set ::runState($modelNode,currentTime)]
-    }
-    
-    public method SetDisplayInterval {timeStep} {
-        do_for_node $modelNode set ::runState($modelNode,displayInt) $timeStep
-    }
-    
-    public method GetDisplayInterval {} {
-        return [do_for_node $modelNode set ::runState($modelNode,displayInt)]
-    }
-    
-    public method GetNumberOfTimeSteps {} {
-        return [do_for_node $modelNode GetPhaseCount $modelNode]
-    }
-    
-    public method SetTimeStep {index timestep} {
-        if {0<$index && $index<=[GetNumberOfTimeSteps]} {
-            do_for_node $modelNode set ::runState($modelNode,update${index}) $timestep
-        } elseif {$index==0 || $index==-1}  {
-            puts "Timestep 0 and -1 cannot be specified."
-        } else  {
-            puts "Timestep $index is not in use."
-        }
-    }
-    
-    public method GetTimeStep {index} {
-        if {0<$index && $index<=[do_for_node $modelNode GetPhaseCount $modelNode]} {
-            return [do_for_node $modelNode set ::runState($modelNode,update${index})]
-        } elseif {$index==0 || $index==-1}  {
-            puts "Timestep 0 and -1 cannot be specified."
-        } else  {
-            puts "Timestep $index is not in use."
-        }
-    }
-    
-    public method SeedRandoms {seedval} {
-	::SeedRandoms $modelNode $seedval
-    }
-
-# Methods for helper apps to call
-    public method GrabClicks {helperInst} {
-	global helperTable
-
-	set helperTable($modelNode,current) $helperInst
-	UpdateCursors hand2
-	if {[info exists ::RunEnv::variableListFrame($modelNode)]} {
-	    $::RunEnv::variableListFrame($modelNode) config -cursor hand2
-	}
-    }
-
-    public method HasClicks {} {
+    method hasClicks {} {
 	global helperTable
 
 	if {[info exists helperTable($modelNode,current)]} {
@@ -587,7 +446,7 @@ redo with snap object
 	}
     }
 
-    public method ReleaseClicks {} {
+    method releaseClicks {} {
 	global helperTable
 
 	unset helperTable($modelNode,current)
@@ -597,7 +456,7 @@ redo with snap object
 	}
     }
 
-    public method GetValue {path args} {
+    method getValue {path args} {
 	array set opts $args
 	if {[string first / $path]} { ;# already a node id
 	    set node $path
@@ -613,182 +472,248 @@ redo with snap object
 	set trans [GetCompProperty $modelNode Trans $node]
 	return [TransEnums $trans $numerics]
     }
-    
-    public method RequestValues {args} {
-	global runState
 
-	array unset runState $this,scriptReqs
-	foreach path $args {
-	    set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
-	    if {[string equal nomatch $nodeId]} {
-		error "Could not find node $path"
-	    }
-	    lappend runState($this,scriptReqs) $nodeId
-	}
-    }
-    
-    public method SetValue {path value} {
-        set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
-        switch -- [$this GetModelEval $path] {
-            INPUT {
-		PlaceInArray $modelNode $nodeId $value 0 [RunningInC $modelNode]
-                switch -glob -- [$this GetModelType $path] {
-                    FLAG {
-                        do_for_node $modelNode set ::checkStates($nodeId) $value
-                    }
-                    ENUM(*) {
-                        set comboChoices($nodeId) $defVal
-                    }
-                    default {
-                        do_for_node $modelNode set ::sliderVals($nodeId) $value
-                    }
-                }
-            }
-            TABLE {
-		PlaceInArray $modelNode $nodeId $value 0 [RunningInC $modelNode]
-		do_for_node $modelNode set ::paramData(/$modelNode$path) $value
-                do_for_node $modelNode set ::runState($modelNode,reloadParams) -1 ;# this makes sure the value is propagated in the model
-                Reset
-            }
-            default {
-                if {[string match [$this GetModelClass $path]  COMPARTMENT]} {
-                    do_for_node $modelNode SetModelValue $nodeId $value
-                } else  {
-                    puts "$path is not a parameter (variable or fixed) or compartment so its value cannot be changed."
-                }
-            }
-        }
-        return [do_for_node $modelNode GetModelValue $nodeId]
-    }
-    
-    public method GetMinValue {path} {
-        global runState
-        return [do_for_node $modelNode GetMinValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
-    }
-    
-    public method GetMaxValue {path} {
-        global runState
-        return [do_for_node $modelNode GetMaxValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
-    }
-    
-    #paths
-    public method GetModelType {path} {
-        return [do_for_node $modelNode GetModelType [do_for_node $modelNode GetIdFromCaptionPath $path]]
-    }
-    
-    public method GetModelEval {path} {
-        return [do_for_node $modelNode GetModelEval [do_for_node $modelNode GetIdFromCaptionPath $path]]
-    }
-    
-    public method GetModelDims {path} {
-        return [do_for_node $modelNode GetModelDims [do_for_node $modelNode GetIdFromCaptionPath $path]]
-    }
-    
-    public method GetModelClass {path} {
-        return [do_for_node $modelNode GetModelClass [do_for_node $modelNode GetIdFromCaptionPath $path]]
-    }
-    
-    ################################################################################
-    # # what would a scripter do with this?
-    #     public method GetObjectList {} {
-    #         return [do_for_node $modelNode GetObjectList $winId]
-    #     }
-    ################################################################################
-    
-    # any use??
-    public method GetPhaseCount {} {
-        return [do_for_node $modelNode GetPhaseCount $modelNode]
-    }
-    
-    public method GetAllPaths {} {
-        set nodes [do_for_node $modelNode GetObjectList]
-        set paths {}
-        foreach node $nodes {
-            lappend paths [do_for_node $modelNode GetCaptionPathFromId $node]
-        }
-        return $paths
-    }
+#    method CreateSnapWindow {path} {
+#redo with snap object
+#        set winId [do_for_node $modelNode snap $modelNode [do_for_node $modelNode GetIdFromCaptionPath $path]]
+#        return $winId
+#    }
+#    method Hide {} {
+#	global runState
+#	wm withdraw [winfo toplevel $runState($modelNode,helperId)]
+#    }
+#	
+#    method Show {} {
+#	global runState
+#	wm deiconify [winfo toplevel $runState($modelNode,helperId)]
+#    }
+#	
+#    method Start {} {
+#        # returns the time to complete (to run the simulation)
+#	global runState helperTable
+#
+##	set rcf $runState($modelNode,helperId).nb.rcf
+##        set timestr [time [list $rcf.upper.topbuttons.start invoke]]
+#        set timestr [time [list $helperTable(RunControl)::SetMode $modelNode start]]
+#        set musec [lindex $timestr 0]
+#        return "[expr {$musec/1e6}] sec"
+#    }
+#    
+#    method Reset {} {
+#	global runState
+#
+#	set rcf $runState($modelNode,helperId).nb.rcf
+#	$rcf.upper.topbuttons.reset invoke
+#    }
+#    
+#    method MergeParams {filepath {smPath {}}} {
+#        do_for_node $modelNode ZapParams $modelNode $smPath $filepath 0
+#    }
+#    
+#    method SetTimeUnits {units} {
+#        # units: unit second minute hour day week month year Ma
+#        do_for_node $modelNode set ::runState($modelNode,timeUnit) $units
+#    }
+#    
+#    method GetTimeUnits {} {
+#        global runState
+#        return [do_for_node $modelNode set ::runState($modelNode,timeUnit)]
+#    }
+#    
+#    method GetIntegrationMethod {} {
+#        #return $runState($modelNode,intMethod)
+#        return [do_for_node $modelNode set ::runState($modelNode,intMethod)]
+#    }
+#    method SetIntegrationMethod {method} {
+#        do_for_node $modelNode set ::runState($modelNode,intMethod) $method
+#    }
+#    
+#    method SetIntegrationMethodEuler {} {
+#        do_for_node $modelNode set ::runState($modelNode,intMethod) Euler
+#    }
+#    
+#    method SetIntegrationMethodRungeKutta {} {
+#        do_for_node $modelNode set ::runState($modelNode,intMethod) {4th-order Runge-Kutta}
+#    }
+#    
+#    method GetStepAdaptLimit {} {
+#	if {[do_for_node $modelNode set ::runState($modelNode,adapt)]} {
+#	    return [do_for_node $modelNode set ::runState($modelNode,errLimit)]
+#	} else {
+#	    return 0
+#	}
+#    }
+#
+#    method SetStepAdaptLimit {limit} {
+#	do_for_node $modelNode set ::runState($modelNode,adapt) \
+#	    [expr {$limit!=0}]
+#	do_for_node $modelNode set ::runState($modelNode,errLimit) $limit
+#    }
+#
+#    method SetExecuteFor {time} {
+#        do_for_node $modelNode set ::runState($modelNode,execTime) $time
+#    }
+#    
+#    method GetExecuteFor {} {
+#        return [do_for_node $modelNode set ::runState($modelNode,execTime)]
+#    }
+#    
+#    method SetTimeAtReset {time} {
+#        do_for_node $modelNode set ::runState($modelNode,resetTo) $time
+#    }
+#    
+#    method GetTimeAtReset {} {
+#        return [do_for_node $modelNode set ::runState($modelNode,resetTo)]
+#    }
+#    
+#    method GetCurrentTime {} {
+#        return [do_for_node $modelNode set ::runState($modelNode,currentTime)]
+#    }
+#    
+#    method SetDisplayInterval {timeStep} {
+#        do_for_node $modelNode set ::runState($modelNode,displayInt) $timeStep
+#    }
+#    
+#    method GetDisplayInterval {} {
+#        return [do_for_node $modelNode set ::runState($modelNode,displayInt)]
+#    }
+#    
+#    method GetNumberOfTimeSteps {} {
+#        return [do_for_node $modelNode GetPhaseCount $modelNode]
+#    }
+#    
+#    method SetTimeStep {index timestep} {
+#        if {0<$index && $index<=[GetNumberOfTimeSteps]} {
+#            do_for_node $modelNode set ::runState($modelNode,update${index}) $timestep
+#        } elseif {$index==0 || $index==-1}  {
+#            puts "Timestep 0 and -1 cannot be specified."
+#        } else  {
+#            puts "Timestep $index is not in use."
+#        }
+#    }
+#    
+#    method GetTimeStep {index} {
+#        if {0<$index && $index<=[do_for_node $modelNode GetPhaseCount $modelNode]} {
+#            return [do_for_node $modelNode set ::runState($modelNode,update${index})]
+#        } elseif {$index==0 || $index==-1}  {
+#            puts "Timestep 0 and -1 cannot be specified."
+#        } else  {
+#            puts "Timestep $index is not in use."
+#        }
+#    }
+#    
+#    method SeedRandoms {seedval} {
+#	::SeedRandoms $modelNode $seedval
+#    }
+#
+## Methods for helper apps to call
+#    method GrabClicks {helperInst} {
+#	global helperTable
+#
+#	set helperTable($modelNode,current) $helperInst
+#	UpdateCursors hand2
+#	if {[info exists ::RunEnv::variableListFrame($modelNode)]} {
+#	    $::RunEnv::variableListFrame($modelNode) config -cursor hand2
+#	}
+#    }
+#    
+#    method RequestValues {args} {
+#	global runState
+#
+#	array unset runState $this,scriptReqs
+#	foreach path $args {
+#	    set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
+#	    if {[string equal nomatch $nodeId]} {
+#		error "Could not find node $path"
+#	    }
+#	    lappend runState($this,scriptReqs) $nodeId
+#	}
+#    }
+#    
+#    method SetValue {path value} {
+#        set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
+#        switch -- [$this GetModelEval $path] {
+#            INPUT {
+#		PlaceInArray $modelNode $nodeId $value 0 [RunningInC $modelNode]
+#                switch -glob -- [$this GetModelType $path] {
+#                    FLAG {
+#                        do_for_node $modelNode set ::checkStates($nodeId) $value
+#                    }
+#                    ENUM(*) {
+#                        set comboChoices($nodeId) $defVal
+#                    }
+#                    default {
+#                        do_for_node $modelNode set ::sliderVals($nodeId) $value
+#                    }
+#                }
+#            }
+#            TABLE {
+#		PlaceInArray $modelNode $nodeId $value 0 [RunningInC $modelNode]
+#		do_for_node $modelNode set ::paramData(/$modelNode$path) $value
+#                do_for_node $modelNode set ::runState($modelNode,reloadParams) -1 ;# this makes sure the value is propagated in the model
+#                Reset
+#            }
+#            default {
+#                if {[string match [$this GetModelClass $path]  COMPARTMENT]} {
+#                    do_for_node $modelNode SetModelValue $nodeId $value
+#                } else  {
+#                    puts "$path is not a parameter (variable or fixed) or compartment so its value cannot be changed."
+#                }
+#            }
+#        }
+#        return [do_for_node $modelNode GetModelValue $nodeId]
+#    }
+#    
+#    method GetMinValue {path} {
+#        global runState
+#        return [do_for_node $modelNode GetMinValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
+#    }
+#    
+#    method GetMaxValue {path} {
+#        global runState
+#        return [do_for_node $modelNode GetMaxValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
+#    }
+#    
+#    #paths
+#    method GetModelType {path} {
+#        return [do_for_node $modelNode GetModelType [do_for_node $modelNode GetIdFromCaptionPath $path]]
+#    }
+#    
+#    method GetModelEval {path} {
+#        return [do_for_node $modelNode GetModelEval [do_for_node $modelNode GetIdFromCaptionPath $path]]
+#    }
+#    
+#    method GetModelDims {path} {
+#        return [do_for_node $modelNode GetModelDims [do_for_node $modelNode GetIdFromCaptionPath $path]]
+#    }
+#    
+#    method GetModelClass {path} {
+#        return [do_for_node $modelNode GetModelClass [do_for_node $modelNode GetIdFromCaptionPath $path]]
+#    }
+#    
+#    ################################################################################
+#    # # what would a scripter do with this?
+#    #     method GetObjectList {} {
+#    #         return [do_for_node $modelNode GetObjectList $winId]
+#    #     }
+#    ################################################################################
+#    
+#    # any use??
+#    method GetPhaseCount {} {
+#        return [do_for_node $modelNode GetPhaseCount $modelNode]
+#    }
+#    
+#    method GetAllPaths {} {
+#        set nodes [do_for_node $modelNode GetObjectList]
+#        set paths {}
+#        foreach node $nodes {
+#            lappend paths [do_for_node $modelNode GetCaptionPathFromId $node]
+#        }
+#        return $paths
+#    }
     
     #proc GetModelGraph {node}
     #proc SetModelGraph {node args}
     #proc GetModelTime {}
     #proc GetModelEndTime {}
-}
-
-#set keyvalue tabular11510
-#set winId [$modelWindow CreateHelperWindow $keyvalue {Table}]
-#Hide
-#chain
-#SetUpdateAtDisplayInterval false
-
-proc MakeScriptHelpers {} {
-# cannot do until GUI helpers are loaded
-itcl::class similescript::TableHelper {    
-    inherit $::helperTable(TableViewer)
-    
-    constructor {modelWindow winTitle} {
-        $::helperTable(TableViewer)::constructor $modelWindow $winTitle
-    } {
-        #puts "TableHelperImpl constr: $modelWindow [KeyValue] $winTitle"
-    }
-    
-    # procs do not inherit
-    public proc Identify {} {
-	return [$::helperTable(TableViewer)::identify]
-    }
-
-#    public method KeyValue {} {
-#        return tabular11510
-#    }
-#    
-    public method AddVariable {path} {
-        do_for_node [GetNode] set ::helperTable([GetNode],current) $winId
-        do_for_node [GetNode] [KeyValue]::click $winId [do_for_node [GetNode] GetIdFromCaptionPath $path] $path
-    }
-    
-    public method RemoveVariable {path} {
-        set var $path; # prop needs nodeId TODO
-        do_for_node [GetNode] [KeyValue]::Remove $winId $var
-    }
-    
-    public method SetUpdateAtDisplayInterval {value} {
-        # value 0 or 1
-        do_for_node [GetNode] set [KeyValue]::displayUpdate($winId) $value
-    }
-    
-    public method GetUpdateAtDisplayInterval {} {
-        return  [do_for_node [GetNode] set [KeyValue]::displayUpdate($winId)]
-    }
-    
-    public method SetShowingRowsForTimes {value} {
-        # value 0 or 1
-	if {$value} {
-	    set timeHdr rows
-	} else {
-	    set timeHdr none
-	}
-        do_for_node [GetNode] lset [KeyValue]::orientList($winId) 0 $timeHdr
-	do_for_node [GetNode] [KeyValue]::Reconbobulate $winId	
-    }
-    
-    public method GetShowingRowsForTimes {} {
-        return [string equal rows [lindex \
-	    [do_for_node [GetNode] set [KeyValue]::orientList($winId)] 0]]
-    }
-    
-    public method Update {} {
-        do_for_node [GetNode] [KeyValue]::Update $winId
-    }
-    
-    public method SaveToFile {filename} {
-        Update
-        do_for_node [GetNode] [KeyValue]::SaveToNamedFile $winId $filename
-    }
-    
-    public method AppendToFile {filename sectionId} {
-        Update
-        do_for_node [GetNode] [KeyValue]::SaveToNamedFile \
-	    $winId $filename $sectionId
-    }
-}
 }

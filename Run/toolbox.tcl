@@ -2289,7 +2289,7 @@ proc MakeNodeInProlog {newInstance} {
     prolog tk_make_desktop_node($::headless)
 # secret run instance for use by system helpers
     set newRunInstance [UniqueId modelRun]
-    similescript::RunControl $newRunInstance $newInstance
+    similescript::RunControl create $newRunInstance $newInstance
     set node [lindex $fromProlog 0]
 
     set lookers [list generic compartment channel text \
@@ -2305,7 +2305,7 @@ proc MakeNodeInProlog {newInstance} {
 
     set classTable(run,$node) $newRunInstance
 #this didn't work so stomp it
-    $newRunInstance configure -modelNode $node
+    $newRunInstance setNode $node
     return $fromProlog
 }
 

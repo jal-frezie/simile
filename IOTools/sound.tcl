@@ -17,7 +17,7 @@ itcl::class similescript::$newHelperClass {
 	    pack [message $winId.message \
 		      -text "Generating sound wave for [lindex $State 0]"]
 	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
-	    AddWaveCommand [$modelInst cget -modelNode] $useNode "/model/"
+	    AddWaveCommand [$modelInst getNode] $useNode "/model/"
 	    Display 0 0 0
 	} else {
 	    # new instance so request data from model
@@ -29,7 +29,7 @@ itcl::class similescript::$newHelperClass {
 
     destructor {
 	if {[info exists State]} {
-	    catch {AddWaveCommand [$modelInst cget -modelNode]
+	    catch {AddWaveCommand [$modelInst getNode]
 		[GetIdFromCaptionPath [lindex $State 0]] "/none/"}
 	}
     }
@@ -39,7 +39,7 @@ itcl::class similescript::$newHelperClass {
 		       [$modelInst GetMaxValue $path]]
 	SetState $winId $State
 	$winId.message configure -text "Generating sound wave for $path"
-	AddWaveCommand [$modelInst cget -modelNode] [GetIdFromCaptionPath $path] "/model/"
+	AddWaveCommand [$modelInst getNode] [GetIdFromCaptionPath $path] "/model/"
 	$modelInst ReleaseClicks
 	Display 0 0 0
     }
@@ -47,7 +47,7 @@ itcl::class similescript::$newHelperClass {
     public method Reset {} {
 	# node id may be out of date or lost due to rebuild --
 	if {[info exists State]} {
-	    set topNode [$modelInst cget -modelNode]
+	    set topNode [$modelInst getNode]
 	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
 	    AddWaveCommand $topNode $useNode "/model/"
 	}
@@ -57,7 +57,7 @@ itcl::class similescript::$newHelperClass {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
-	set wav [$modelInst GetValue [lindex $State 0]]
+	set wav [$modelInst getValue [lindex $State 0]]
 	set min [lindex $State 1]
 	if {[llength $wav]==1} {
 	    set val [expr {200*($wav-$min) \

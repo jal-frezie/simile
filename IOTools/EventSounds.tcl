@@ -45,7 +45,7 @@ itcl::class similescript::$newHelperClass {
     }
 
     destructor {
-	set topNode [$modelInst cget -modelNode]
+	set topNode [$modelInst getNode]
 	foreach {path act} $useNodes(sounds) {
 	    catch {AddWaveCommand $topNode [GetIdFromCaptionPath $path] \
 		       "/none/"}
@@ -61,7 +61,7 @@ itcl::class similescript::$newHelperClass {
     public method SetSound {} {
 	set resonorize [IndFromY]
 	set path [lindex $useNodes(sounds) $resonorize]
-	set topNode [$modelInst cget -modelNode]
+	set topNode [$modelInst getNode]
 	set sound [ChooseFile sound.wav "New sound file for $path" 0 $topNode]
 	lset useNodes(sounds) [incr resonorize] $sound
 	AddWaveCommand $topNode [GetIdFromCaptionPath $path] \
@@ -73,7 +73,7 @@ itcl::class similescript::$newHelperClass {
 	set oblit [IndFromY]
 	set path [lindex $useNodes(sounds) $oblit]
 	$winId.traces delete $path
-	set topNode [$modelInst cget -modelNode]
+	set topNode [$modelInst getNode]
 	AddWaveCommand $topNode [GetIdFromCaptionPath $path] "/none/"
 	set useNodes(sounds) [lreplace $useNodes(sounds) $oblit $oblit+1]
 	while {$oblit<[llength $useNodes(sounds)]} {
@@ -98,7 +98,7 @@ itcl::class similescript::$newHelperClass {
     method Stuff {contents} {
 	if {[string trim $contents]==""} return ;# failure to ignore whitespace
 	if {![llength $useNodes(comp)]} return ;# node exist check failed
-	set topNode [$modelInst cget -modelNode]
+	set topNode [$modelInst getNode]
 	if {$useNodes(mode) eq "relative"} {
 	    set shfPath [GetPathChoice .shf $topNode]
 	    set soundFile [file normalize [file join $shfPath $contents]]
@@ -124,7 +124,7 @@ itcl::class similescript::$newHelperClass {
             adding_inputs {
                 if {[lsearch {EVENT SQUIRT} \
 			 [$modelInst GetModelClass $path]]>-1} {
-		    set topNode [$modelInst cget -modelNode]
+		    set topNode [$modelInst getNode]
 		    set sound [ChooseFile sound.wav "Sound file for $path" 0 \
 				   $topNode]
                     $modelInst ReleaseClicks
@@ -152,7 +152,7 @@ public method AddSoundFor {topNode path sound} {
 
     public method PrepareSaveString {} {
 	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
-	set shfPath [GetPathChoice .shf [$modelInst cget -modelNode]]
+	set shfPath [GetPathChoice .shf [$modelInst getNode]]
 	foreach {path file} $useNodes(sounds) {	    
 	    append State "<sound component=\"$path\" "
 	    # puts "::fileutil::relative $shfPath $file"
@@ -184,7 +184,7 @@ public method AddSoundFor {topNode path sound} {
 	set useNodes(lastDisp) [GetModelTime]
 	# Sounds will have been cleared if model rebuilt, due to possible node
 	# id changes, so reinstate them
-	set topNode [$modelInst cget -modelNode]
+	set topNode [$modelInst getNode]
 	foreach {path file} $useNodes(sounds) {	    
 	    set node [GetIdFromCaptionPath $path]
 	    AddWaveCommand $topNode $node [file nativename $file]
