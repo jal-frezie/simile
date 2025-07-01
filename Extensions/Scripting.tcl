@@ -27,134 +27,134 @@ oo::class create similescript::ModelWindow {
 # following replaces above...
 	KillNodeInProlog $modelCanvas
     }
+
+    method getNode {} {
+	return $modelNode
+    }
     
     method getModelCanvas {} {
         global window_info
 	return $modelCanvas
     }
     
-    method getModelWindow {} {
-        global window_info
-	return $window_info([getModelCanvas],parent)
-    }
-
-    method getNode {} {
-	return $modelNode
-    }
-    
-    method Hide {} {
-        wm withdraw [getModelWindow]
-    }
-    
-    method Show {} {
-        wm deiconify [getModelWindow]
-    }
-    
-    # File Menu
-    method New {} {
-        MenuSelect $modelCanvas file new
-        if {[info exists model]} {
-            unset model
-        }
-    }
-    
-    method FileOpenDlg {} {
-        #if {[info exists model]} {
-        #    $this FileNew"
-        #}
-        #$c local open_all
-        MenuSelect $modelCanvas local open_all
-        #set model $modelFile
-    }
-    
-    method Open {modelFile} {
-        if {[info exists model]} {
-            $this New
-        }
-        Reopen $modelCanvas $modelFile reopen
-        set model $modelFile
-    }
-# disable -- there is little point printing from script as you cannot alter 
-# diagram
-#    method Print {} {
-#        MenuSelect PrintNow $modelCanvas
+#    method getModelWindow {} {
+#        global window_info
+#	return $window_info([getModelCanvas],parent)
 #    }
 #    
-    method ListEnumTypes {} {
-	GetFromProlog tk_get_info(dummy,$modelNode,enum_type_defns)
-    }
-
-    method GetEnumTypeMembers {ident} {
-	foreach typeDef [ListEnumTypes] {
-	    if {[string equal $ident [lindex $typeDef 0]]} {
-		return [lrange $typeDef 1 end]
-	    }
-	}
-	error "Model does not include type $ident"
-    }
-
-    method ChangeEnumType {args} {
-	if {[llength $args]<2} {
-	    error "Type definition needs identifier and at least one member"
-	}
-	GetEnumTypeMembers [lindex $args 0] ;# check it exists
-	prolog tk_change_enum_type($modelNode,'$args')
-    }
-
-    method Destroy {} {
-        itcl::delete object $this
-    }
-    
-    # added for building models on web server -- do not document
-    method ExportCppCode {cppFile} {
-	set ::preSelect $cppFile
-        if {[catch {MenuSelect $modelCanvas code build_c} spew]} {
-	    set missingFile [lindex [split $::errorInfo \n] 2 0 3]
-	    puts [glob [file join [file dirname $missingFile] *]]
-	}
-    }
-
-    # added for building models on web server -- do not document
-    method BuildShareLib {shlibFile} {
-	set ::preSelect $shlibFile
-        MenuSelect $modelCanvas code compile_c
-    }
-
-    # added for diaplaying models on web server -- do not document
-    method BuildSVGDiagram {shlibFile} {
-	set ::preSelect $shlibFile
-	ExportSVGDirect $modelNode
-    }
-
-    # Model Menu
-    method Run {} {
-	global botches
-        # builds the model with CPP and returns a run control command/object
-        #RemoveRunControl
-        MenuSelect $modelCanvas code run_c
-        #set rc [similescript::RunControl ::runControl $this]
-        #return $rc
-	set botches(modelJustRun) $this
-    }
-    
-    method Debug {} {
-        # builds the model with Tcl and returns a run control command/object
-        #RemoveRunControl
-        MenuSelect $modelCanvas code run_tcl
-        #set rc [similescript::RunControl ::runControl $this]
-        #return $rc
-    }
-    
-    method ListEquations {} {
-        MenuSelect $modelCanvas file list_eqns
-    }
-    
-    method LoadParams {filepath {smPath {}}} {
-	if {![file exists $filepath]} {
-	    error "Could not find file $filepath"
-	}
-        do_for_node $modelNode set ::projectParams($smPath) $filepath
-    }
+#    method Hide {} {
+#        wm withdraw [getModelWindow]
+#    }
+#    
+#    method Show {} {
+#        wm deiconify [getModelWindow]
+#    }
+#    
+#    # File Menu
+#    method New {} {
+#        MenuSelect $modelCanvas file new
+#        if {[info exists model]} {
+#            unset model
+#        }
+#    }
+#    
+#    method FileOpenDlg {} {
+#        #if {[info exists model]} {
+#        #    $this FileNew"
+#        #}
+#        #$c local open_all
+#        MenuSelect $modelCanvas local open_all
+#        #set model $modelFile
+#    }
+#    
+#    method Open {modelFile} {
+#        if {[info exists model]} {
+#            $this New
+#        }
+#        Reopen $modelCanvas $modelFile reopen
+#        set model $modelFile
+#    }
+## disable -- there is little point printing from script as you cannot alter 
+## diagram
+##    method Print {} {
+##        MenuSelect PrintNow $modelCanvas
+##    }
+##    
+#    method ListEnumTypes {} {
+#	GetFromProlog tk_get_info(dummy,$modelNode,enum_type_defns)
+#    }
+#
+#    method GetEnumTypeMembers {ident} {
+#	foreach typeDef [ListEnumTypes] {
+#	    if {[string equal $ident [lindex $typeDef 0]]} {
+#		return [lrange $typeDef 1 end]
+#	    }
+#	}
+#	error "Model does not include type $ident"
+#    }
+#
+#    method ChangeEnumType {args} {
+#	if {[llength $args]<2} {
+#	    error "Type definition needs identifier and at least one member"
+#	}
+#	GetEnumTypeMembers [lindex $args 0] ;# check it exists
+#	prolog tk_change_enum_type($modelNode,'$args')
+#    }
+#
+#    method Destroy {} {
+#        itcl::delete object $this
+#    }
+#    
+#    # added for building models on web server -- do not document
+#    method ExportCppCode {cppFile} {
+#	set ::preSelect $cppFile
+#        if {[catch {MenuSelect $modelCanvas code build_c} spew]} {
+#	    set missingFile [lindex [split $::errorInfo \n] 2 0 3]
+#	    puts [glob [file join [file dirname $missingFile] *]]
+#	}
+#    }
+#
+#    # added for building models on web server -- do not document
+#    method BuildShareLib {shlibFile} {
+#	set ::preSelect $shlibFile
+#        MenuSelect $modelCanvas code compile_c
+#    }
+#
+#    # added for diaplaying models on web server -- do not document
+#    method BuildSVGDiagram {shlibFile} {
+#	set ::preSelect $shlibFile
+#	ExportSVGDirect $modelNode
+#    }
+#
+#    # Model Menu
+#    method Run {} {
+#	global botches
+#        # builds the model with CPP and returns a run control command/object
+#        #RemoveRunControl
+#        MenuSelect $modelCanvas code run_c
+#        #set rc [similescript::RunControl ::runControl $this]
+#        #return $rc
+#	set botches(modelJustRun) $this
+#    }
+#    
+#    method Debug {} {
+#        # builds the model with Tcl and returns a run control command/object
+#        #RemoveRunControl
+#        MenuSelect $modelCanvas code run_tcl
+#        #set rc [similescript::RunControl ::runControl $this]
+#        #return $rc
+#    }
+#    
+#    method ListEquations {} {
+#        MenuSelect $modelCanvas file list_eqns
+#    }
+#    
+#    method LoadParams {filepath {smPath {}}} {
+#	if {![file exists $filepath]} {
+#	    error "Could not find file $filepath"
+#	}
+#        do_for_node $modelNode set ::projectParams($smPath) $filepath
+#    }
 }
 
 itcl::class similescript::HelperController {
