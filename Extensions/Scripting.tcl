@@ -314,6 +314,7 @@ itcl::class similescript::Helper {
 	if {[string equal $this [$modelInst hasClicks]]} {
 	    $modelInst releaseClicks
 	}
+	if {[string match *_3dinst $this]} return
 	set modelNode [GetNode]
 	if {[llength [array names runState $modelNode,helperId]]} {
 	    # 'info exists' buggy in itcl4
@@ -327,7 +328,6 @@ itcl::class similescript::Helper {
 	}
 	bind $winId <Destroy> {} ;# prevent destructor calling itself when...
 	# (done by base destructor)	    destroy $winId
-	if {[string match *_3dinst $this]} return
 	unset helperTable($winId,whichInstance)
 	unset helperTable($this,foci)
     }
