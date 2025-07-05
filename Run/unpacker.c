@@ -345,7 +345,12 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
 	} else
 	  IndObj = Tcl_NewStringObj((*enums)->members[indices[depth]-1], -1);
       else
-	IndObj = Tcl_NewIntObj(indices[depth]);
+	if (jsonic==1) {
+	  IndObj = Tcl_NewStringObj("\"", 1);
+	  Tcl_AppendObjToObj(IndObj, Tcl_NewIntObj(indices[depth]));
+	  Tcl_AppendToObj(IndObj, "\"", 1);
+	} else
+	  IndObj = Tcl_NewIntObj(indices[depth]);
       if (jsonic)
 	localObj = extend_string(localObj, IndObj, localSubObj, dir);
       else

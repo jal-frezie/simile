@@ -399,13 +399,13 @@ Layers2D.prototype.resize = function (x,y) {
 }
 
 function ToRadians (axis) {
+    if ((ct = ["e", "ne", "n", "nw", "w", "sw", "s", "se"].indexOf(axis)) > -1)
+	return ct*6.28/8;
+    if ((ct = ["3h", "2h", "1h", "12h", "11h", "10h", "9h", "8h", "7h", "6h", "5h", "4h"].indexOf(axis)) > -1)
+	return ct*6.28/12;
     fl = parseFloat(axis);
     if (!isNaN(fl))
 	return fl;
-    else if ((ct = ["e", "ne", "n", "nw", "w", "sw", "s", "se"].indexOf(axis)) > -1)
-	return ct*6.28/8;
-    else if ((ct = ["3h", "2h", "1h", "12h", "11h", "10h", "9h", "8h", "7h", "6h", "5h", "4h"].indexOf(axis)) > -1)
-	return ct*6.28/12;
     else
 	console.log("Unrecognized axis " + axis);
 }

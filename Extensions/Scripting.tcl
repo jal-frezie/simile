@@ -506,7 +506,7 @@ redo with helper object
         return [do_for_node $modelNode GetModelDims [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
-    method GetModelClass {path} {
+    method getModelClass {path} {
         return [do_for_node $modelNode GetModelClass [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
 
