@@ -281,7 +281,16 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 			pts = pts + xpt + "," + -ypt + " ";
 		    }
 		} else {
+		    xObj = latest[layerSpec.xcoord];
+		    yObj = latest[layerSpec.ycoord];
 		    // get poly vertices from model
+		    for (i=0; i<indArr.length-1; i++) { // last ind is 'm'
+			xObj = xObj[indArr[i]];
+			yObj = yObj[indArr[i]];
+		    }
+		    for (var j in yObj) {
+			pts = pts + xObj[j] + "," + -yObj[j] + " ";
+		    }
 		}
 		colFract = Math.floor((colours[inds]-layerSpec.min)*colScaler);
 		colSpec = colorFrom(layerSpec.cMap, colFract);

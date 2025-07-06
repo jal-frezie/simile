@@ -37,7 +37,7 @@ itcl::class similescript::$newLayerClass {
 	} else {
 	    set useNodes($winId,title) [Identify]
 	    set useNodes($winId,editMode) 0
-	    set useNodes($winId,legendSide) n
+	    set useNodes($winId,legendSide) n ;# meaning none
 	    set useNodes($winId,imgs) 0
 	    set useNodes($winId,displayRetile) 0
 	    set useNodes($winId,displayUpdate) 1
@@ -94,8 +94,7 @@ itcl::class similescript::$newLayerClass {
 		    set useNodes($winId,color) $path
 		    set useNodes($winId,title) "[file tail $path] (polygon diagram)"
 		    set parentPath [join [lrange [split $path /] 0 end-1] /]
-		    if {[llength [$modelInst getModelDims $parentPath]]==3 && \
-			    [$modelInst getModelEval $parentPath] eq "HONEYCOMB"} {
+		    if {[$modelInst getModelEval $parentPath] eq "HONEYCOMB"} {
 			set useNodes($winId,xcoord) HEX_CTRS
 			FinishClicking
 		    } else {
