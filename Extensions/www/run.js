@@ -380,7 +380,7 @@ function createInitialHelpers() {
 	data: { "base":fileBase, "act":"GetXMLHelperSetup"}
     })
 	.done(function( returnedXML ) {
-	    helperElt = {nodeName:'notebook',children:[]};
+	    useHelperElt = {nodeName:'notebook',children:[]};
 	    if (returnedXML == '') {
 		// no .shf, so just create notebook + model diagram
 	    } else {
@@ -418,8 +418,14 @@ function createInitialHelpers() {
 		} else {
 		    helperElt = $(hlpDoc).find("shf")[0].lastElementChild;
 		}
+		if (helperElt.nodeName == 'container') {
+		    pageTwo = helperElt;
+		} else {
+		    pageTwo = 'unused';
+		    useHelperElt = helperElt;
+		}
 	    }
-	    AddHelperHierarchy('right', helperElt);
+	    AddHelperHierarchy('right', useHelperElt);
 	    ResizeAll();
 //	    tclHelpers = $(hlpDoc).find("container");
 //	    for (var i=0; i<tclHelpers.length; ++i) {
@@ -488,8 +494,12 @@ function AddHelperHierarchy(win, xml) {
 		// top-level notebook, add model diagram tab!
 		var newId = new_tab(winGrp, "Model Diagram");
 		winGrp.tabs("option", "active", 0);
-		insert_helper(newId, "diagram");
+		insert_helper(newId, "diagram");	
 		currentHelpers[newId] = currentHelper;
+		if (pageTwo != 'unused') {
+		    newId = new_tab(winGrp, "I/O Tools");
+		    AddHelperHierarchy(newId, pageTwo);
+		}
 	    }
 	    var tabs = xml.children;
 	    for (var j=0; j<tabs.length; ++j) {
