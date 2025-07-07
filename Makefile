@@ -682,7 +682,6 @@ install:
 		help/index.htm \
 		help/new/index.htm \
 		help/run \
-		help/scripting \
 		help/start \
 		help/submodels
 	cd "$(DESTDIR)"$(INSTALL_TGT); \
@@ -702,8 +701,6 @@ install:
 		$(SYSDIR)/bin/simile \
 		$(PROLOGSTATE) \
 		$(PROLOG_DB) \
-		$(SYSDIR)/lib/SimileAutoObj/SimileAutoObj.itcl \
-		$(SYSDIR)/lib/SimileAutoObj/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg1.2/can2svg.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg1.2/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg1.2/uriencode.tcl \
