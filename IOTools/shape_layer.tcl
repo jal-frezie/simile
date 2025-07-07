@@ -2,14 +2,13 @@
 # 2-d shapes layer helper -- basically will use the 3-d engine with
 # 0 for the z coords
 
-itcl::class similescript::ShapeLayer {
-    inherit Layer
-    variable useNodes
+oo::class create iotool::ShapeLayer {
+    superclass iotool::Layer
+    variable host useNodes winId engine
     
     constructor {modelInst mainCanvas type xzoom yzoom {state {}}} {
-# perverse extra body because base class constructor has args
-	Layer::constructor $modelInst $mainCanvas
-    } {
+	next $modelInst $mainCanvas
+	
 	set useNodes(curZoom) [list $xzoom $yzoom]
 	if {[lindex $state end 0] eq "layer_transform"} {
 	    # recent enough to have transform info
@@ -18,61 +17,33 @@ itcl::class similescript::ShapeLayer {
 	} else {
 	    set useNodes(transform) {0 0 1 1}
 	}
-	SetScaling
-	::similescript::Shapes3D20141208 ${this}_3dinst $modelInst \
+	my SetScaling
+	set engine [self object]_3dinst
+	::iotool::Shapes3D20141208 create $engine $modelInst \
 	    [list layer $type $winId $host $xzoom $yzoom] $state
     }
 
-    destructor {
-	itcl::delete object ${this}_3dinst
-	$winId delete [namespace tail $this].main
-    }
-
-    public method GetTitle {} {
-	return [GetSortTitle abstract]
-    }
-
-    public method GetSortTitle {sort} {
-	return "$sort for [join [lrange [split [${this}_3dinst cget -inTitle] /] end-1 end] /]"
-    }
-
-    public method Display {time dispInt step} {
-	SetScaling ;# avoid interference from other shape layers
-	${this}_3dinst Display $time $dispInt $step
-    }
-
-    public method SetScaling {} {
-	set subWin [winfo parent $winId]
-	foreach {x y} $useNodes(curZoom) {}
-	foreach {xo yo xs ys} $useNodes(transform) {} ;# add use later
-	array set ::gen3d1::scaleVector \
-	    [list $subWin,xoff [expr {(250.0/$x-$xo)/$xs}] \
-		 $subWin,yoff [expr {-(250.0/$y+$yo)/$ys}] \
-		 $subWin,xmag [expr {500.0/$xs/$x}] \
-		 $subWin,ymag [expr {500.0/$ys/$y}]]
-    }
-    
-    public method ZoomTo {x y} {
+### Public methods ###
+    method zoomTo {x y} {
 	set useNodes(curZoom) [list $x $y]
-	SetScaling
+	my SetScaling
+    }
+
+    method display {time dispInt step} {
+	my SetScaling ;# avoid interference from other shape layers
+	$engine display $time $dispInt $step
     }
     
-    public method PrepareSaveString {} {
-	set State [${this}_3dinst cget -State]
+    method prepareSaveString {} {
+	set State [$engine getState]
 	lappend State [concat layer_transform $useNodes(transform)]
 	# will not break legacy drawing, at end to avoid inTitle choice
+	return $State
     }
 
-    public method AdjRange {rg} {
-	set useNodes(transform) [list [$rg.exo get]  [$rg.eyo get] \
-				     [$rg.exs get]  [$rg.eys get]]
-	SetScaling
-	Display 0 0 0
-    }
-
-    public method Settings {} {
+    method settings {} {
 	set dlg [PutItThere .shapeprop [winfo toplevel $winId]]
-	wm title $dlg "[GetTitle] properties"
+	wm title $dlg "[my getTitle] properties"
         
 	set rg [labelframe $dlg.relgeom -text "Offset and scaling"]
 	grid [label $rg.lxo -text [tr. {X offset:}]] \
@@ -89,10 +60,38 @@ itcl::class similescript::ShapeLayer {
 	}
 	pack [frame $dlg.btns] -fill x
 	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
-		  -command [list $this AdjRange $rg]] -side left
+		  -command [namespace code [list my AdjRange $rg]]] \
+		  -side left
         pack [ttk::button $dlg.btns.done -text [tr. Done] \
 		  -command "set polyProps(xdone) 1"] -side right
 	LetItShow $dlg polyProps(xdone)
 	PackItUp $dlg
+    }
+
+### Private methods ###
+    method GetTitle {} {
+	return [GetSortTitle abstract]
+    }
+
+    method GetSortTitle {sort} {
+	return "$sort for [join [lrange [split [$engine getInTitle] /] end-1 end] /]"
+    }
+
+    method SetScaling {} {
+	set subWin [winfo parent $winId]
+	foreach {x y} $useNodes(curZoom) {}
+	foreach {xo yo xs ys} $useNodes(transform) {} ;# add use later
+	array set ::gen3d1::scaleVector \
+	    [list $subWin,xoff [expr {(250.0/$x-$xo)/$xs}] \
+		 $subWin,yoff [expr {-(250.0/$y+$yo)/$ys}] \
+		 $subWin,xmag [expr {500.0/$xs/$x}] \
+		 $subWin,ymag [expr {500.0/$ys/$y}]]
+    }
+
+    method AdjRange {rg} {
+	set useNodes(transform) [list [$rg.exo get]  [$rg.eyo get] \
+				     [$rg.exs get]  [$rg.eys get]]
+	my SetScaling
+	my display 0 0 0
     }
 }

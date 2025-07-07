@@ -2,25 +2,22 @@
 # functionality
 
 set newHelperClass DIYInspector20210125
-itcl::class similescript::$newHelperClass {
-    inherit Helper
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
 
-    public variable topFrame
-    public variable permMembers
+    variable topFrame permMembers paramEdits winId
     
-    proc Identify {} {
-	return "Explorer (DIY version)"
+    self {
+	method identify {} {
+	    return "Explorer (DIY version)"
+	}
     }
     
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
 	global iconImages
-	variable chop
-	variable cMenu
-	variable decor
-	variable paramEdits
+	variable chop cMenu decor
 
 	set chop [string length $state]
 	set doPops 0
@@ -65,11 +62,11 @@ itcl::class similescript::$newHelperClass {
 		set iMenu [menu $cMenu.insert -tearoff 0]
 		foreach {key txt img} $decor {
 		    $iMenu add command -label $txt -compound left \
-			-image $iconImages($img) -command "$this InsertLevel $key"
+			-image $iconImages($img) -command "[self object] InsertLevel $key"
 		}
 		$cMenu add cascade -label [tr. Insert] -menu $iMenu
 		$cMenu add command -label [tr. Delete] \
-		    -command "$this delete"
+		    -command "[self object] delete"
 	    }
 	    
 	    set f [MakeSubFrames $::myNode $topFrame [list $::myNode {}] \
@@ -78,7 +75,7 @@ itcl::class similescript::$newHelperClass {
 		-image $iconImages(globe) -compound left
 	    pack $f.head.label -side left -expand 0
 
-	    set f [MakeSubFrames $this $topFrame [list ${::myNode}_expt {}] \
+	    set f [MakeSubFrames [self object] $topFrame [list ${::myNode}_expt {}] \
 		       [namespace current] 0]
 	    $f.head.label configure -text [tr. {Experimental conditions}] \
 		-image $iconImages(flask) -compound left
@@ -117,10 +114,12 @@ itcl::class similescript::$newHelperClass {
 		}
 		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
 			   {} 0]
-		bind $f <Button-1> [::itcl::code ProdIfComp %W $winId $component \
-					[string range $fullCapt $chop end] 0]
-		bind $f <Double-1> [::itcl::code ProdIfComp %W $winId $component \
-					[string range $fullCapt $chop end] 1]
+		bind $f <Button-1> \
+		    [namespace code [list my ProdIfComp %W $winId $component \
+					 [string range $fullCapt $chop end] 0]]
+		bind $f <Double-1> \
+		    [namespace code [list my ProdIfComp %W $winId $component \
+					 [string range $fullCapt $chop end] 1]]
 		bind $f <Button-2> {puts "Behold the %W"}
 		if {$type eq "SUBMODEL"} {
 		    set label $f.head.label
@@ -161,13 +160,12 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     destructor {
-	variable paramEdits
-
 	if {$paramEdits} {
-	    array unset ::widgetNames /[GetNode]/*
-	    array unset ::widgetNames /[GetNode]_expt/*
+	    array unset ::widgetNames /[my GetNode]/*
+	    array unset ::widgetNames /[my GetNode]_expt/*
 	}
 	destroy .expt_context
+	next
     }
 
     proc ProdIfComp {widg winId component capEnd isDbl} {
@@ -215,7 +213,7 @@ itcl::class similescript::$newHelperClass {
 	return [concat $result $bases] ;# Combos of most members first
     }
 
-    public method ExtendPerms {src case levels} {
+    method ExtendPerms {src case levels} {
 	if {$levels eq {}} return
 	set lvl [lindex $levels end]
 	if {[TypeFromLevel frame$lvl] eq "perm"} {
@@ -232,7 +230,7 @@ itcl::class similescript::$newHelperClass {
 	    }
 	    foreach oldCombo [Combinations $oldMembers] { ;# only add new ones
 		set oldCase [join [lsort $oldCombo] +]
-		AddCase [GetNode] [join [lsort [linsert $oldCombo end $case]] +] $oldCase
+		AddCase [my GetNode] [join [lsort [linsert $oldCombo end $case]] +] $oldCase
 	    }
 	    if {!$added} {
 		array set permMembers [list $lvl,$src [list $case]]
@@ -242,7 +240,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method ReducePerms {src case levels} {
+    method ReducePerms {src case levels} {
 	if {$levels eq {}} return
 	set lvl [lindex $levels end]
 	if {[TypeFromLevel frame$lvl] eq "perm"} {
@@ -263,7 +261,7 @@ itcl::class similescript::$newHelperClass {
 		}
 	    }
 	    foreach oldCombo [Combinations $oldMembers] { ;# only add new ones
-		DeleteCase [GetNode] [join [lsort [linsert $oldCombo end $case]] +]
+		DeleteCase [my GetNode] [join [lsort [linsert $oldCombo end $case]] +]
 	    }
 	} else {
 	    ReducePerms $src $case [lrange $levels 0 end-1]
@@ -280,7 +278,7 @@ itcl::class similescript::$newHelperClass {
 	
 	switch -regexp $type {
 	    param|plist {
-		set f [MakeSubFrames $this $topFrame [concat $clickPath {{}}] \
+		set f [MakeSubFrames [self object] $topFrame [concat $clickPath {{}}] \
 			   [namespace current] 0]
 		if {[CaseForExpt $myNode $clickPath] ne ""} {
 		} elseif {$type eq "param"} {
@@ -296,11 +294,11 @@ itcl::class similescript::$newHelperClass {
 		UpdateByOS
 		ScrollToSee [winfo parent $topFrame] $f.label
 		lappend clickPath $type
-		$modelInst grabClicks $this
+		$modelInst grabClicks [self object]
 	    } default {
 		set newLevel [UniqueId $type]
 		lappend clickPath $newLevel
-		set f [MakeSubFrames $this $topFrame [concat $clickPath {{}}] \
+		set f [MakeSubFrames [self object] $topFrame [concat $clickPath {{}}] \
 			   [namespace current] 0]
 		set lab $f.head.label
 		set leafName [lindex $decor $anchor+1]
@@ -320,7 +318,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method delete {} {
+    method delete {} {
 	# needs to handle case lists
 	global myNode compCases
 	variable clickPath
@@ -358,7 +356,7 @@ itcl::class similescript::$newHelperClass {
 		set lvl [string range $subF [string length ${f}.] end]
 		if {[string first frame $lvl]} continue
 		set clickPath [concat $safePath [list [string range $lvl 5 end]]]
-		$this delete ;# does child
+		[self object] delete ;# does child
 	    }
 	}
 	after 40 [list destroy $f] ;# destroying inline inexplicably fails
@@ -390,7 +388,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method StartElement {type avPairs} {
+    method StartElement {type avPairs} {
 	variable clickPath
 	variable preSelected
 	variable filling
@@ -405,7 +403,7 @@ itcl::class similescript::$newHelperClass {
 	
 	switch $type {
 	    sxf {
-		set clickPath [GetNode]_expt
+		set clickPath [my GetNode]_expt
 		set skip_this 0
 	    } value {
 		$filling.e insert end " [list $attrs(index) $attrs(value)]"
@@ -421,7 +419,7 @@ itcl::class similescript::$newHelperClass {
 		    }
 		}
 		if {$type eq "plist" || [info exists attrs(val)]} {
-		    set f [MakeSubFrames $this $topFrame $clickPath \
+		    set f [MakeSubFrames [self object] $topFrame $clickPath \
 			       [namespace current] 0]
 		    $f.e delete 0 end
 		    if {$type eq "plist"} {
@@ -441,7 +439,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method FinishElement {type} {
+    method FinishElement {type} {
 	variable clickPath
 	variable filling
 	variable skip_this
@@ -464,13 +462,13 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    proc Open {inst path} {
+    method open {path} {
 	variable sxfParser
 	set sxfParser [::xml::parser -ignorewhitespace true \
-			   -elementstartcommand [list $inst StartElement] \
-			   -elementendcommand [list $inst FinishElement]]
+			   -elementstartcommand [namespace code [list my StartElement]] \
+			   -elementendcommand [namespace code [list my FinishElement]]]
 	set title [tr. {Load experiment setup from:}]
-	set topNode [$inst GetNode]
+	set topNode [my GetNode]
         set exptFile [ChooseFile model.sxf $title 0 $topNode]
 	if {[llength $exptFile]} {
 	    set pStr [open $exptFile r]
@@ -480,9 +478,9 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    proc Save {inst path} {
+    method save {path} {
 	set title [tr. {Save experiment setup as:}]
-	set topNode [$inst GetNode]
+	set topNode [my GetNode]
         set metaFile [ChooseFile model.sxf $title 1 $topNode]
 	if {[llength $metaFile]} {
 	    set SimileProject(expt_setup,$topNode/) $metaFile
@@ -491,9 +489,9 @@ itcl::class similescript::$newHelperClass {
 	    puts $pStr {<?xml version="1.0"?>}
 	    puts $pStr {<?xml-stylesheet type="text/xsl" href="sxf1.xsl"?>}
 	    puts $pStr "<sxf simile_version=\"$::env(SIMILE_VERSION)\">"
-	    set topF [MakeSubFrames $inst [$inst cget -topFrame] \
+	    set topF [MakeSubFrames [self] $topFrame \
 			  ${topNode}_expt {} 0]
-	    SaveLevel $topF $pStr "  "
+	    my SaveLevel $topF $pStr "  "
 	    puts $pStr {</sxf>}
 	    close $pStr
 	}
@@ -507,7 +505,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    proc SaveLevel {topF pStr indent} {
+    method SaveLevel {topF pStr indent} {
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]
 	    if {[lsearch {head body tree caption label tick cross} $lvl]>-1} continue
@@ -521,7 +519,7 @@ itcl::class similescript::$newHelperClass {
 		    set compCase ""
 		}
 		puts $pStr "$indent<$type label=\"[string range $lvl 5 end]\"$compCase>"
-		SaveLevel $subF $pStr "  $indent"
+		my SaveLevel $subF $pStr "  $indent"
 		puts $pStr "$indent</$type>"
 		continue
 	    }
@@ -561,7 +559,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method GetCaseName {path} {
+    method GetCaseName {path} {
 	variable preSelected
 	if {[info exists preSelected]} {
 	    set result $preSelected
@@ -607,7 +605,7 @@ itcl::class similescript::$newHelperClass {
 	
     }
 
-    public method Click {path} {
+    method Click {path} {
 	global myNode compCases
 	variable curFrame
 	variable clickPath
@@ -629,9 +627,9 @@ itcl::class similescript::$newHelperClass {
 	    set f [AddEntry $winId $myNode $node $clickPath 0 0 s]
 	    # just like a regular entry except...
 	    $f.caption configure -image $::iconImages(list) -compound left
-	    $f.tick configure -command [list $this DecodeListSpec \
+	    $f.tick configure -command [list [self object] DecodeListSpec \
 					    $f $path $clickPath]
-	    $f.cross configure -command [list $this RevertListSpec $f $path]
+	    $f.cross configure -command [list [self object] RevertListSpec $f $path]
 	} else {
 	    set caseName ""
 	    if {[string match param* [lindex $clickPath end]]} {
@@ -658,21 +656,21 @@ itcl::class similescript::$newHelperClass {
 	return 1
     }
 
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
     }
 
 
-    public method RevertListSpec {box path} {
+    method RevertListSpec {box path} {
 	variable listStrings
 
 	$box.e delete 0 end
 	$box.e insert 0 $listStrings($path)
     }
 
-    public method InterpList {name listExpr} {
+    method InterpList {name listExpr} {
 	set range [scan $listExpr "%f to %f step %f" start end step]
 	if {$range>1} {
 	    if {$range==2} {
@@ -711,7 +709,7 @@ itcl::class similescript::$newHelperClass {
 	return $compound
     }
 
-    public method DecodeListSpec {box path hitPath} {
+    method DecodeListSpec {box path hitPath} {
 	global myNode compCases
 	variable listStrings
 	variable clickPath
@@ -762,7 +760,7 @@ itcl::class similescript::$newHelperClass {
 	#bind $box.e <FocusOut> [list $box.tick invoke]
     }
 		
-    public method HelperLeaf {node hlpr add} {
+    method HelperLeaf {node hlpr add} {
 	set id [[$hlpr info class]::Identify]
 	array set hlprIcons {Plotter graph \
 				 "XY Plotter" plotxy \
@@ -780,7 +778,7 @@ itcl::class similescript::$newHelperClass {
 
 	set fullCapt [GetCaptionPathFromId $node]
 	set levels [split $fullCapt /]
-	set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 [GetNode]] \
+	set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 [my GetNode]] \
 		   {} 0]
 	set cmd [list ::RunEnv::FocusTool $hlpr]
 	foreach prev [winfo children $f] {

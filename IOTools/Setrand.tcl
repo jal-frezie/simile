@@ -6,17 +6,18 @@
 # sequence
 
 set newHelperClass setrand92383
-itcl::class similescript::$newHelperClass {
-    inherit Helper
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
 
-    proc Identify {} {
-	return "Initialize pseudo-random"
+    self {
+	method identify {} {
+	    return "Initialize pseudo-random"
+	}
     }
 
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
 	set ms [message $winId.intro -aspect 400 -text "Enter an integer value for the random number seed:"]
 	pack $ms -padx 4 -pady 4
 	set exit [list $this Done]
@@ -27,11 +28,11 @@ itcl::class similescript::$newHelperClass {
 	pack $bt -padx 4 -pady 4
     }
 
-    public method Done {} {
+    method Done {} {
 	$modelInst seedRandoms [$winId.entry get]
     }
 
 # No need to do anything when displays update
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
     }
 } ;# end of helper class

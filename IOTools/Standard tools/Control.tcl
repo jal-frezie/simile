@@ -58,10 +58,10 @@ namespace eval runcontrol33857 {
         global debugImg
         #	global runState
 
-	upvar 1 this4 inst ;# note Itcl 4 bug workaround
-	set node [lindex [$inst GetNode] 0]
+#	upvar 1 this4 inst ;# note Itcl 4 bug workaround
+#	set node [lindex [$inst getNode] 0]
 # if cannot do above because trying to live without RunControl instance
-#	upvar 2 node node
+	upvar 2 node node
 	if {![info exists runState($node,intMethod)]} {
 	    set runState($node,intMethod) Euler
 	}
@@ -520,12 +520,12 @@ namespace eval runcontrol33857 {
 		}
                 if {$redoPhase($node) < 1} {
 		    if {$display} {
-			TellAllHelpers $node {} 1 Reset
+			TellAllHelpers $node {} 1 reset
 		    }
 		    set runState($node,currentMode) stop
                 }
                 if {$display} {
-		    TellAllHelpers $node {} 1 Display $current $display 1
+		    TellAllHelpers $node {} 1 display $current $display 1
 		}
 	    } else {
 		set runState($node,currentMode) exit

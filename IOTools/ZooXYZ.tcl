@@ -2,26 +2,23 @@
 # interface.
 
 set newHelperClass Shapes3D20141208
-itcl::class similescript::$newHelperClass {
-    inherit Helper
-    public variable inTitle tbc
-    variable template {}
-    variable nodeIdCache
-    variable lower
-    variable upper
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
+    variable inTitle tbc template nodeIdCache lower upper winId State modelInst
     
-    proc Identify {} {
-	return "3-D Shape Plotter"
+    self {
+	method identify {} {
+	    return "3-D Shape Plotter"
+	}
     }
 
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
 	variable ::gen3d1::scaleVector
 	variable ::gen3d1::viewVector
 	
-	if {[AmLayer]} {
+	if {[my AmLayer]} {
 	    set winId [winfo parent [lindex $winTitle 2]]
 #	    foreach {x y} [lrange $winTitle 4 5] {}
 	    array set scaleVector [list $winId,zoff 0 $winId,zmag 150.0]
@@ -46,17 +43,17 @@ itcl::class similescript::$newHelperClass {
 	set pi 3.14
 #	scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
 #	    -resolution 0.01 \
-#	    -command "$this TweakScale elevation"
+#	    -command "[self] TweakScale elevation"
 	#	$winId.elv set 0.5
 	set State {}
 
-	if {[AmLayer]} {
+	if {[my AmLayer]} {
 	    # layer tool will have already verified paths
 	    if {![string length $state]} {
 		AddItem [lindex $winTitle 1]
 		tkwait window $winId.bottom.ms
 	    } else {
-		CacheNodeIds [lindex $state 0]
+		my CacheNodeIds [lindex $state 0]
 		set State $state
 	    }
 	    array set titlePosns {spheres 4 lines 7 ellipses 4 polygons 5}
@@ -65,15 +62,15 @@ itcl::class similescript::$newHelperClass {
 		set inTitle [lindex $inTitle 1]
 	    }
 	    set ::helperTable(beingCalled) [lindex $winTitle 3]
-	    Display 0 0 0
+	    my Display 0 0 0
 	    return
 	}	
 
 	foreach itemSet $state { ;# we are restoring
 	    set ident [lindex $itemSet 0]
-	    set updatedSet [::gen3d1::VerifyVariables [GetNode] $ident [lrange $itemSet 1 end]]
+	    set updatedSet [::gen3d1::VerifyVariables [my GetNode] $ident [lrange $itemSet 1 end]]
 	    if {[llength $updatedSet]} {
-		CacheNodeIds $updatedSet
+		my CacheNodeIds $updatedSet
 		lappend State [linsert $updatedSet 0 $ident]
 	    } else {
 		tk_messageBox -message "Set of [lindex $itemSet 0] not restored"
@@ -86,7 +83,7 @@ itcl::class similescript::$newHelperClass {
 #	pack [label $winId.bottom.anglab -text "View angle:"] -side left
 #	scale $winId.bottom.ang -orient h -from -$pi -to $pi \
 #	    -resolution 0.01 \
-#	    -command "$this TweakScale angle"
+#	    -command "[self] TweakScale angle"
 #	$winId.bottom.ang set -0.3
 #	pack $winId.bottom.ang -side left -fill x -expand true
 #	pack [label $winId.bottom.elvlab -text "View\nelev."] -side right
@@ -98,7 +95,7 @@ itcl::class similescript::$newHelperClass {
 #	set ::frameCount 10000
 #	package require img::window
 
-	bind $winId.c <Configure> "$this WindowSizeChanged"
+	bind $winId.c <Configure> "[self] windowSizeChanged"
 # New Three.js-style drag controls
 	bind $winId.c <Button-1> \
 	    [list namespace eval ::gen3d1 "DropAnchor $winId l %x %y"]
@@ -111,16 +108,24 @@ itcl::class similescript::$newHelperClass {
 	    [list namespace eval ::gen3d1 "Zoom $winId %D %x %y"]
 
 	menu $winId.m -tearoff 0
-	$winId.m add command -label "Sphere" -command "$this AddItem spheres"
-	$winId.m add command -label "Line" -command "$this AddItem lines"
-	$winId.m add command -label "Polygon" -command "$this AddItem polygons"
-	$winId.m add command -label "Ellipse" -command "$this AddItem ellipses"
-	$winId.m add command -label "Surface" -command "$this AddItem surface"
-	# $winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
+	$winId.m add command -label "Sphere" -command "[self] AddItem spheres"
+	$winId.m add command -label "Line" -command "[self] AddItem lines"
+	$winId.m add command -label "Polygon" -command "[self] AddItem polygons"
+	$winId.m add command -label "Ellipse" -command "[self] AddItem ellipses"
+	$winId.m add command -label "Surface" -command "[self] AddItem surface"
+	# $winId.m add command -label "Old Ellipse" -command "[self] AddItem oldellipses"
 	pack [::ttk::menubutton $winId.bottom.mb -text "Select new item type" \
 		  -menu $winId.m]
     }
 
+    method getInTitle {} {
+	return $inTitle
+    }
+    
+    method display {t s x} {
+	my Display $t $s $x
+    }
+    
     method CacheNodeIds {possPaths} {
 	foreach showable $possPaths {
 	    if {![string first / $showable]} {
@@ -129,8 +134,8 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method AddItem {type} {
-	if {![AmLayer]} {
+    method AddItem {type} {
+	if {![my AmLayer]} {
 	    pack forget $winId.bottom.mb
 	}
 	array set all_templates \
@@ -191,7 +196,7 @@ itcl::class similescript::$newHelperClass {
 	MakeSelection $type
     }
 
-    public method MakeSelection {selected} {
+    method MakeSelection {selected} {
 	for {set i 0} {$i < [llength $template]} {incr i} {
 	    if {[lsearch {type component colour choice} \
 		     [lindex $template $i 0]]>-1} {
@@ -239,38 +244,38 @@ itcl::class similescript::$newHelperClass {
 	if {$i == [llength $template]} { ;# finished
 	    lappend State $template
 	    destroy $winId.bottom.ms
-	    if {![AmLayer]} {
+	    if {![my AmLayer]} {
 		pack $winId.bottom.mb
 	    }
 	} else {
 	    set descrip [lindex $template $i 1]
 	    switch [lindex $template $i 0] {
 		component {
-		    if {[AmLayer] && [lsearch {"Z positions" "start Z positions" "end Z positions" "Z vertex position lists" "centre Z positions" "X rotations" "Y rotations"} $descrip]>-1} {
+		    if {[my AmLayer] && [lsearch {"Z positions" "start Z positions" "end Z positions" "Z vertex position lists" "centre Z positions" "X rotations" "Y rotations"} $descrip]>-1} {
 			MakeSelection null
 			return
 		    }
 		    $winId.bottom.ms configure -text "Click on component with $descrip of [lindex $template 0], or enter fixed $descrip here:"
 		    pack [ttk::entry $winId.bottom.e] -side bottom
-		    bind $winId.bottom.e <Return> [list $this SetConst]
-		    $modelInst grabClicks $this
+		    bind $winId.bottom.e <Return> [list [self] SetConst]
+		    $modelInst grabClicks [self]
 		} colour {
-		    if {[AmLayer] && $descrip eq "BACK"} {
+		    if {[my AmLayer] && $descrip eq "BACK"} {
 			MakeSelection null ;# never seen
 			return
 		    }	
 		    $winId.bottom.ms configure -text "Click on component setting colour of $descrip of [lindex $template 0], or here:"
 		    pack [ttk::button $winId.bottom.e \
-			      -command [list $this SetColour \
+			      -command [list [self] SetColour \
 					    [lindex $template 0] $descrip] \
 			      -text "Select fixed colour"] -side bottom
-		    $modelInst grabClicks $this
+		    $modelInst grabClicks [self]
 		} choice {
 		    $winId.bottom.ms configure -text "Choose an option for $descrip:"
 		    pack [frame $winId.bottom.e] 
 		    foreach option [lrange [lindex $template $i] 2 end] {
 			pack [ttk::button $winId.bottom.e.b$option \
-				  -command [list $this SetChoice $option] \
+				  -command [list [self] SetChoice $option] \
 			          -text $option] -side left
 		    }
 		}
@@ -278,20 +283,20 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method SetConst {} {
+    method SetConst {} {
 	set result [$winId.bottom.e get]
 	$modelInst releaseClicks
 	destroy $winId.bottom.e
 	MakeSelection $result
     }
 
-    public method SetChoice {option} {
+    method SetChoice {option} {
 	set result $option
 	destroy $winId.bottom.e
 	MakeSelection $result
     }
 
-    public method SetColour {obj role} {
+    method SetColour {obj role} {
 	set result [tk_chooseColor -title "Colour for $role of $obj"]
 	if {$result ne ""} {
 	    $modelInst releaseClicks
@@ -300,18 +305,18 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     
-    public method GetCanvas {} {
+    method GetCanvas {} {
         return $winId.c
     }
 
-    public method Click {path} {
+    method Click {path} {
 	$modelInst releaseClicks
 	destroy $winId.bottom.e
 	set nodeIdCache($path) [GetIdFromCaptionPath $path]
 	MakeSelection $path
     }
 
-#    public method Flatten {pairs} {
+#    method Flatten {pairs} {
 #	if {[llength $pairs]==1} {
 #	    return [list {} $pairs]
 #	} else {
@@ -335,7 +340,7 @@ itcl::class similescript::$newHelperClass {
 #		    set allz [expr {$allz+$nz}]
 #		}
 #	    lappend op [AddAsApprop [lindex $tail 0]] \
-#		[AddAsApprop [lindex $tail 1]]
+#		[my AddAsApprop [lindex $tail 1]]
 #	    puts $op
 #	    return [list $op]
 #	} else {
@@ -353,7 +358,7 @@ itcl::class similescript::$newHelperClass {
 			  int([llength $map]*($values-$min)/($max-$min))))}]]
 	} else {
 	    foreach {ind val} $values {
-		lappend result $ind [ColoursFor $val $min $max $map]
+		lappend result $ind [my ColoursFor $val $min $max $map]
 	    }
 	}
 	return $result
@@ -369,7 +374,7 @@ itcl::class similescript::$newHelperClass {
 		set min 0
 		set max [expr {[llength $arr]-2}]
 	    }
-	    return [ColoursFor [$modelInst getValue [lindex $arr 1] -all 1 \
+	    return [my ColoursFor [$modelInst getValue [lindex $arr 1] -all 1 \
 				    -numeric 1] $min $max [lrange $arr 2 end]]
 	} elseif {![string first / $arr]} { ;# model component
 	    return [$modelInst getValue $nodeIdCache($arr) -all 1 -numeric 1]
@@ -378,14 +383,14 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
 	variable ::gen3d1::grid
 	variable ::gen3d1::viewVector
 
 # time is current model time
 # dispInt is time to next display call
 	# step is a spare parameter, now -1 if handling a view change
-	set layerId [namespace tail [string range $this 0 end-7]].main
+	set layerId [namespace tail [string range [self] 0 end-7]].main
 	$winId.c delete -withtag $layerId
 	if {![info exists upper] || $step > -1} {
 	set lower {}
@@ -401,7 +406,7 @@ itcl::class similescript::$newHelperClass {
 #			array set [lindex {0 x y z r} $i] \
 #			    [Flatten [lindex [$modelInst getValue \
 #						  [lindex $instruct $i]] 0]]
-			lappend rawList [AddAsApprop $arr]
+			lappend rawList [my AddAsApprop $arr]
 		    }
 		    set quadlist {}
 		    eval [list ::maptools2::GetQuadList {}] $rawList
@@ -426,7 +431,7 @@ itcl::class similescript::$newHelperClass {
 #			array unset $arr
 #		    }
 		    foreach arr [lrange $instruct 1 end] {
-			lappend rawList [AddAsApprop $arr]
+			lappend rawList [my AddAsApprop $arr]
 		    }
 		    set quadlist {}
 		    eval [list ::maptools2::GetQuadList {}] $rawList
@@ -449,7 +454,7 @@ itcl::class similescript::$newHelperClass {
 		    # reverse list to avoid flattening vertex arrays...er...
 		    # will only work if fill colour set from models!
 		    foreach arr [lreverse [lrange $instruct 1 end]] {
-			lappend rawList [AddAsApprop $arr]
+			lappend rawList [my AddAsApprop $arr]
 		    }
 		    set quadlist {}
 		    eval [list ::maptools2::GetQuadList {}] $rawList
@@ -497,7 +502,7 @@ itcl::class similescript::$newHelperClass {
 		    }
 		} ellipses {
 		    foreach arr [lrange $instruct 1 end] {
-			lappend rawList [AddAsApprop $arr]
+			lappend rawList [my AddAsApprop $arr]
 		    }
 		    set quadlist {}
 		    eval [list ::maptools2::GetQuadList {}] $rawList
@@ -566,7 +571,7 @@ itcl::class similescript::$newHelperClass {
 	::gen3d1::DrawShapes $winId $front $layerId
     }
 
-    public method TweakScale {which where} {
+    method TweakScale {which where} {
 	variable ::gen3d1::viewVector
 
 	set viewVector($winId,$which) $where
@@ -578,25 +583,25 @@ itcl::class similescript::$newHelperClass {
 	    [expr sin($viewVector($winId,elevation))]
 	$winId.c delete -withtag graticule
 	::gen3d1::DrawGrid $winId graticule
-	if {![AmLayer]} {
-	    set ::helperTable(beingCalled) $this
+	if {![my AmLayer]} {
+	    set ::helperTable(beingCalled) [self]
 	}
-	Display 0 0 -1
+	my Display 0 0 -1
     }    
-    public method WindowSizeChanged {} {
+    method windowSizeChanged {} {
 	variable ::gen3d1::viewVector
 
 	set viewVector($winId,X) [winfo width $winId.c]
 	set viewVector($winId,Y) [winfo height $winId.c]
 	$winId.c delete -withtag graticule
 	::gen3d1::DrawGrid $winId graticule
-	if {![AmLayer]} {
-	    set ::helperTable(beingCalled) $this
+	if {![my AmLayer]} {
+	    set ::helperTable(beingCalled) [self]
 	}
-	Display 0 0 -1
+	my Display 0 0 -1
     }
 
-    public method AmLayer {} {
-	return [string match *_3dinst $this]
+    method AmLayer {} {
+	return [string match *_3dinst [self]]
     }
 }

@@ -2,21 +2,21 @@
 # 0 for the z coords
 
 set newLayerClass Ellipses20171122
-itcl::class similescript::$newLayerClass {
-    inherit ShapeLayer
+oo::class create iotool::$newLayerClass {
+    superclass iotool::ShapeLayer
 
-    proc Identify {} {
-	return "Ellipse Plotter"
+    # need to insert type as extra arg to constructor
+    constructor {modelInst mainCanvas args} {
+	eval [list next $modelInst $mainCanvas ellipses] $args
+    }
+ 
+    self {
+	method identify {} {
+	    return "Ellipse Plotter"
+	}
     }
 
-    constructor {modelInst mainCanvas xzoom yzoom {state {}}} {
-# perverse extra body because base class constructor has args
-	ShapeLayer::constructor $modelInst $mainCanvas ellipses \
-	    $xzoom $yzoom $state
-	    
-    } { }
-
-    public method GetTitle {} {
-	return [GetSortTitle Ellipses]
+    method getTitle {} {
+	return [my GetSortTitle Ellipses]
     }
 }

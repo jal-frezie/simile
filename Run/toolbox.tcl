@@ -46,7 +46,7 @@ proc ::mime::copymessage {token channel} {
 }
 
 # package require md5 ;# mime will now load it as Trf not available
-set itclVers [package require Itcl]
+# set itclVers [package require Itcl] ; switched to TclOO (in core)
 if {!$headless} {
 if {![info exists simplify]} {
 # BWidget should be removed in favour of native Tk commands and the
@@ -162,7 +162,7 @@ if {[string match windows $tcl_platform(platform)]} {
     # Not clear why this need only be set on MacOS, but it seems to work
     # without on other platforms so no sense in tinkering.  Probably
     # because of different auto_path setting mechanisms.
-    set env(ITCL_LIBRARY) $libDir/itcl$itclVers
+    # set env(ITCL_LIBRARY) $libDir/itcl$itclVers
 
     # MacOS 10.11 dynamic loader has stopped searching the /usr/lib
     # directory by default, so Trf fails to load libcrypto. But it

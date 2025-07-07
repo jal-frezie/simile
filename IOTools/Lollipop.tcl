@@ -170,7 +170,7 @@ proc Restore {winId} {
     initialize $winId
     if {[string match displaying [lindex $state 0]]} {
 #	$winId.buttons.ang set [lindex $state 1]
-	set topNode [$::helperTable($winId,whichInstance) GetNode]
+	set topNode [$::helperTable($winId,whichInstance) getNode]
 	foreach path [lrange $state 3 end] {
 	    if {$path eq "/annotation/"} {
 		# next entry (currently always last) is note date

@@ -2,78 +2,55 @@
 # interface.
 
 set newLayerClass Photo20131023
-itcl::class similescript::$newLayerClass {
-    inherit Layer
-    variable transform
+oo::class create iotool::$newLayerClass {
+    superclass iotool::Layer
+    variable transform State winId
 
-    proc Identify {} {
-	return "Background photo"
+    self {
+	method identify {} {
+	    return "Background photo"
+	}
     }
 
     constructor {modelInst mainCanvas xzoom yzoom {state {}}} {
-# perverse extra body because base class constructor has args
-	Layer::constructor $modelInst $mainCanvas
-    } {
+	next $modelInst $mainCanvas
+	
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 	if {[string length $state]} { ;# we are restoring 
 	    set State $state ;# keep it local
 	    # format of state is offx offy zoomx zoomy pngdata
-	    image create photo $this.orig \
+	    image create photo [self].orig \
 		-data [base64::decode [lindex $State 5]] -format png
-	    PutSize $this.orig
+	    PutSize [self].orig
 	} else {
 	    # new instance so request data from model
 	    set photoFile [ChooseFile aerial.gif "Image for base photo:" 0 \
 			       [GetNode]]
-	    image create photo $this.orig -file $photoFile
-	    PutSize $this.orig
+	    image create photo [self].orig -file $photoFile
+	    PutSize [self].orig
 # scale down image if would be very large
 	    set scale 1.0
-	    while {[$this.orig cget -width]*$xzoom*$scale>1000} {
+	    while {[[self].orig cget -width]*$xzoom*$scale>1000} {
 		set scale [expr {$scale/10}]
 	    }
 	    set State [list 0 0 $scale $scale [file tail $photoFile] \
-			   [base64::encode [$this.orig data -format png]]]
+			   [base64::encode [[self].orig data -format png]]]
 	}
-#	puts [$this.orig configure]
-	ZoomTo $xzoom $yzoom
+#	puts [[self].orig configure]
+	my zoomTo $xzoom $yzoom
     }
 
     destructor {
-	$winId delete $this.main
-	image delete $this.derived $this.orig
-    }
-
-    public method ZoomTo {xzoom yzoom} {
-	array set transform [list xzoom $xzoom yzoom $yzoom]
-	set stickX [expr {[lindex $State 0]*$xzoom}]
-	set stickY [expr {[lindex $State 1]*$yzoom}]
-	set tmpImg [GrowImage $this.orig \
-			[expr {int([$this.orig cget -width]*[lindex $State 2]*$xzoom)}] \
-			[expr {int([$this.orig cget -height]*[lindex $State 3]*$yzoom)}]]
-	set myTag [namespace tail $this].main
-	if {[catch {$this.derived blank}]} { ;# not yet exist
-	    image create photo $this.derived
-	    $winId create image $stickX $stickY -anchor sw -tag $myTag \
-						 -image $this.derived
-	} else {
-	    $winId coords [$winId find withtag $myTag] [list $stickX $stickY]
+	foreach mine {derived orig} {
+	    if {[lsearch [image names] [self].$mine]>=0} {
+		image delete [self].$mine
+	    }
 	}
-	$this.derived copy $tmpImg -shrink
+	next
     }
 
-    public method GetTitle {} {
-	return "Photo: [lindex $State 4]"
-    }
-
-    public method Display {time dispInt step} {
-# nothing to do at display time -- it's a photo
-#	if {[string equal displaying $useNodes($winId,state)]} {
-	    $winId raise [namespace tail $this].main
-#	}
-    }
-
-    public method Settings {} {
+### Public methods ###
+    method settings {} {
 	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
 	wm title $dlg [tr. "Photo layer properties"]
         
@@ -92,14 +69,47 @@ itcl::class similescript::$newLayerClass {
 	}
 	pack [frame $dlg.btns] -fill x
 	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
-		  -command [list $this AdjRange $rg]] -side left
+		  -command [list [self] AdjRange $rg]] -side left
         pack [ttk::button $dlg.btns.done -text [tr. Done] \
 		  -command "set polyProps(xdone) 1"] -side right
 	LetItShow $dlg polyProps(xdone)
 	PackItUp $dlg
     }
 
-    public method AdjRange {rg} {
+    method zoomTo {xzoom yzoom} {
+	array set transform [list xzoom $xzoom yzoom $yzoom]
+	set stickX [expr {[lindex $State 0]*$xzoom}]
+	set stickY [expr {[lindex $State 1]*$yzoom}]
+	set tmpImg [GrowImage [self].orig \
+			[expr {int([[self].orig cget -width]*[lindex $State 2]*$xzoom)}] \
+			[expr {int([[self].orig cget -height]*[lindex $State 3]*$yzoom)}]]
+	set myTag [namespace tail [self]].main
+	if {[catch {[self].derived blank}]} { ;# not yet exist
+	    image create photo [self].derived
+	    $winId create image $stickX $stickY -anchor sw -tag $myTag \
+						 -image [self].derived
+	} else {
+	    $winId coords [$winId find withtag $myTag] [list $stickX $stickY]
+	}
+	[self].derived copy $tmpImg -shrink
+    }
+
+    method display {time dispInt step} {
+# nothing to do at display time -- it's a photo
+#	if {[string equal displaying $useNodes($winId,state)]} {
+	    $winId raise [namespace tail [self]].main
+#	}
+    }
+    
+    method prepareSaveString {} {
+	return $State
+    }
+
+    method getTitle {} {
+	return "Photo: [lindex $State 4]"
+    }
+    
+    method AdjRange {rg} {
 	set rg .polyprop.relgeom
 
 	lset State 0 [$rg.exo get]
@@ -107,6 +117,6 @@ itcl::class similescript::$newLayerClass {
 	lset State 2 [$rg.exs get]
 	lset State 3 [$rg.eys get]
 
-	ZoomTo $transform(xzoom) $transform(yzoom)
+	my zoomTo $transform(xzoom) $transform(yzoom)
     }
 }

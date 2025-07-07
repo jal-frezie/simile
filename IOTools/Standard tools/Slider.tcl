@@ -50,7 +50,7 @@ namespace eval slide139 {
     proc Restore {winId} {
         set oldCapts [GetState $winId]
         initialize $winId
-	set topNode [$::helperTable($winId,whichInstance) GetNode]
+	set topNode [$::helperTable($winId,whichInstance) getNode]
         foreach flatCapt $oldCapts {
 	    set sortedPath [ExistCheck $topNode [RestoreCrs $flatCapt] {} -2 \
 				"saved setup"]
@@ -563,7 +563,7 @@ namespace eval slide139 {
 
 	set smPath [string range $smPath 1 end] ;# submodels in toplevel style
 	# (MergeParams will fix if .spf saved by this tool)
-	set topNode [$helperTable($winId,whichInstance) GetNode]
+	set topNode [$helperTable($winId,whichInstance) getNode]
         set metaFile [ChooseFile params.spf  [tr. "Load parameters from:"] \
 			  0 $topNode]
         if {[llength $metaFile]} {
@@ -577,7 +577,7 @@ namespace eval slide139 {
 
         #puts "Saving submodel $smPath inputs"
 	set smPath [string range $smPath 1 end]/ ;# submodels in relative style
-	set topNode [$helperTable($winId,whichInstance) GetNode]
+	set topNode [$helperTable($winId,whichInstance) getNode]
         set metaFile [ChooseFile inputs.spf  [tr. "Save input values as:"] \
 			  1 $topNode]
         if {[llength $metaFile]} {
@@ -702,10 +702,10 @@ namespace eval slide139 {
             set dims $sliderDoes($title,dims)
 
 #            set valGroup [InputVarFor [$helperTable($winId,whichInstance) \
-#					   GetNode] $node]
+#					   getNode] $node]
 #            upvar \#0 $valGroup valArray
 #            if {[string equal comboChoices $valGroup]} {}
-	    set model [$helperTable($winId,whichInstance) GetNode]
+	    set model [$helperTable($winId,whichInstance) getNode]
 	    if {[string match ENUM(*) $type]} {
                 # will need widget address to update it!
                 set f [MakeSubFrames $winId $::topSFrame($winId) \
@@ -752,7 +752,7 @@ namespace eval slide139 {
             }
         }
 	if {[info exists widgetSeln(resetting)]} {
-	    set topNode [$helperTable($winId,whichInstance) GetNode]
+	    set topNode [$helperTable($winId,whichInstance) getNode]
 	    array unset widgetSeln resetting
 	    RepeatReset $topNode $time
 	    RedoRatesAndDisplay $topNode

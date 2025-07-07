@@ -345,7 +345,7 @@ namespace eval ::polygon375 {
 
     proc ScrollMe {winId way args} {
 	eval {$winId.viewport.${way}sc set} $args
-	reposn_scale [namespace current] $winId
+	reposn_scale $::helperTable($winId,whichInstance) $winId
     }
 
 	

@@ -19,7 +19,7 @@ namespace eval ::$keyValue {
     }
 
     proc GetTopNode {w} {
-	return [$::helperTable($w,whichInstance) GetNode]
+	return [$::helperTable($w,whichInstance) getNode]
     }
     
     proc initialize {w} {

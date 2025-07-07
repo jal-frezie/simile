@@ -1,23 +1,22 @@
 # This is a dead simple helper designed to test the object-oriented helper app
 # interface.
 
-namespace import itcl::*
 set newHelperClass DataLogger20111205
-class similescript::$newHelperClass {
-    inherit Helper
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
 
-    public variable curFile
-    variable useNodes
+    variable curFile useNodes
 
-    proc Identify {} {
-	return "Data logger"
+    self {
+	method identify {} {
+	    return "Data logger"
+	}
     }
 
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
 	global SIMILE_PATH
+	next $modelInst $winTitle
+
         set useNodes(removeImg) \
 	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/remove.gif"]
 	set toolbarItems \
@@ -59,7 +58,7 @@ class similescript::$newHelperClass {
 	CloseAllFiles
     }
 
-    public method Reset {} {
+    method Reset {} {
 	if {[info exists useNodes(common_stm)]} {
 	    incr useNodes(runCount)
 	    if {[catch {$useNodes(common_stm) tables}]} { # not database
@@ -74,7 +73,7 @@ class similescript::$newHelperClass {
 	}
     }
     
-    public method Click {path} {
+    method Click {path} {
         switch [GetState $winId] {
             adding_inputs {
                 if {[string equal SUBMODEL [$modelInst getModelClass $path]]} {
@@ -90,14 +89,14 @@ class similescript::$newHelperClass {
 	}
     }
 
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
 	UpdateCombined $time
     }
 
-    public method PrepareSaveString {} {
+    method PrepareSaveString {} {
 	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
 	set shfPath [GetPathChoice .shf [$modelInst getNode]]
 	if {[catch {::fileutil::relative $shfPath $curFile} relFile]} {

@@ -495,7 +495,7 @@ namespace eval $keyValue {
 	if {[info exists editMode($winId)]} {
 	    return $editMode($winId)
 	} else {
-	    return [$helperTable($winId,whichInstance) GetNode]
+	    return [$helperTable($winId,whichInstance) getNode]
 	}
     }
 

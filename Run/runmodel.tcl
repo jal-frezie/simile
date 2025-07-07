@@ -77,7 +77,7 @@ proc RedoRatesAndDisplay {node} {
     set runState($node,currentMode) stop
     # ...and display new rates
     $runState($node,cnvs) configure -foreground blue
-    TellAllHelpers $node {} 1 Display $runState($node,currentTime) \
+    TellAllHelpers $node {} 1 display $runState($node,currentTime) \
 	$runState($node,displayInt) 1
     $runState($node,cnvs) configure -foreground [RestingColour $node]
     return 0
@@ -155,28 +155,28 @@ proc AddHelperSublist {fm lm title ct} {
 # This is an old-style helper, so create object wrapper for it
 	    set newHelperClass [ClassFromKey $keyValue]
 	    set ::gKeyValue $keyValue ;# make global so decl picks it up
-	    itcl::class similescript::$newHelperClass {
-		inherit OldStyleHelper
-		proc KeyValue {} [list return $gKeyValue]
-		public proc Identify {} {return [[KeyValue]::identify]}
-		constructor {modelWin winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-		    OldStyleHelper::constructor $modelWin $winTitle $state
-		} {}
+	    oo::class create iotool::$newHelperClass {
+		superclass iotool::OldStyleHelper
+		variable winId oldSpace
+		self {
+		    method KeyValue {} [list return $gKeyValue]
+		    method identify {} {return [[my KeyValue]::identify]}
+		}
+
 		if {[llength [namespace which ${gKeyValue}::clear]]} {
 		    # override do-nothing clear in base class defn
-		    public method Clear {} {
-			::[KeyValue]::clear $winId
+		    method Clear {} {
+			${oldSpace}::clear $winId
 		    }
 		}
 		if {[llength [namespace which ${gKeyValue}::GetCanvas]]} {
-		    public method GetCanvas {} {
-			::[KeyValue]::GetCanvas $winId
+		    method getCanvas {} {
+			${oldSpace}::GetCanvas $winId
 		    }
-		    public method Print {} {
+		    method print {} {
 			PrintRandomCanvas [GetCanvas]
 		    }
-		    public method CopyToClipboard {} {
+		    method copyToClipboard {} {
 #			if {[string match windows $tcl_platform(platform)]} {
 			    CopyCanvasToWindowsClipboard [GetCanvas] 0
 #			}
@@ -184,25 +184,25 @@ proc AddHelperSublist {fm lm title ct} {
 		} ;# else use inherited warning message
 		if {[llength [namespace which ${gKeyValue}::Print]]} {
 		    # override canvas-based print above
-		    public method Print {} {
-			::[KeyValue]::Print $winId
+		    method print {} {
+			${oldSpace}::Print $winId
 		    }
 		}
 		if {[llength [namespace which ${gKeyValue}::CopyToClipboard]]} {
 		    # override canvas-based copy above
-		    public method CopyToClipboard {} {
-			::[KeyValue]::CopyToClipboard $winId
+		    method copyToClipboard {} {
+			${oldSpace}::CopyToClipboard $winId
 		    }
 		}
 		if {[llength [namespace which \
 				  ${gKeyValue}::PrepareSaveString]]} {
-		    public method PrepareSaveString {} {
-			::[KeyValue]::PrepareSaveString $winId
+		    method prepareSaveString {} {
+			${oldSpace}::PrepareSaveString $winId
 		    }
 		}
 		# botch to get swatch drawing compatible old/new style
-		public method GetSwatchColour {swId} {
-		    variable ::[KeyValue]::useNodes
+		method getSwatchColour {swId} {
+		    variable ${oldSpace}::useNodes
 		    ::maptools2::SetSwatchColour ::$this $winId $swId
 		}
 
@@ -210,7 +210,7 @@ proc AddHelperSublist {fm lm title ct} {
 	    unset keyValue
 	}
 	if {[info exists newHelperClass]} {
-	    set action [similescript::${newHelperClass}::Identify]
+	    set action [iotool::${newHelperClass} identify]
 	    set actions [list {Run control} {Explorer (DIY version)} \
 			     {PEST interface} {Plotter} {Slider control} \
 			     {Data table} {Explorer (Tablelist version)}]
@@ -223,7 +223,7 @@ proc AddHelperSublist {fm lm title ct} {
 	    lappend fentries [list $newHelperClass $action [tr. $action]]
 	    unset newHelperClass
 	} elseif {[info exists newLayerClass]} {
-	    set action [similescript::${newLayerClass}::Identify]
+	    set action [iotool::${newLayerClass} identify]
 	    lappend lentries [list $newLayerClass $action [tr. $action]]
 	    unset newLayerClass
 	}
@@ -283,10 +283,10 @@ proc CreateHelperWindow {helperId helperTitle {state {}}} {
     set modelObj $classTable(run,[GetNodeFromFocus])
     set inst [UniqueId helper]
     set helperTable(beingCalled) ::$inst
-    similescript::$helperId $inst $modelObj $helperTitle $state
+    iotool::$helperId create $inst $modelObj $helperTitle $state
     set helperTable(beingCalled) {}
 
-    set winId [$inst cget -winId]
+    set winId [$inst getWinId]
     set holder [winfo parent $winId]
     ::RunEnv::SetCurrentContainer $holder
     ::RunEnv::ChildrenFocusParent $winId
@@ -313,7 +313,7 @@ proc GrabClicks {winId} {
     global helperTable
 
     set inst $helperTable($winId,whichInstance)
-    set node [$inst GetNode]
+    set node [$inst getNode]
     set helperTable($node,current) $inst
     UpdateCursors hand2
     if {[info exists ::RunEnv::variableListFrame($node)]} {
@@ -326,7 +326,7 @@ proc ReleaseClicks {winId} {
     global helperTable
 
     set inst $helperTable($winId,whichInstance)
-    set node [$inst GetNode]
+    set node [$inst getNode]
     unset helperTable($node,current)
     UpdateCursors $::window_info(defCurs)
     if {[info exists ::RunEnv::variableListFrame($node)]} {
@@ -337,13 +337,13 @@ proc ReleaseClicks {winId} {
 # Two more old-style wrapper funx
 proc GetState {winId} {
     global helperTable
-    $helperTable($winId,whichInstance) cget -State
+    $helperTable($winId,whichInstance) getState
 }
 
 proc SetState {winId newState} {
     global helperTable custom
 
-    $helperTable($winId,whichInstance) configure -State $newState
+    $helperTable($winId,whichInstance) setState $newState
     ::RunEnv::PreserveSetup 1
 }
 
@@ -357,8 +357,8 @@ proc ProdObj {topNode nodeId caption} {
 # than just values
 #	switch -regexp [GetCompProperty $topNode Type $nodeId] {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
-	MyRaise [winfo toplevel [$inst cget -winId]]
-	SystemHelperCall $inst $topNode Click $useCapt
+#	MyRaise [winfo toplevel [$inst cget -winId]]
+	SystemHelperCall $inst $topNode click $useCapt
 #	    } default {
 #		ShowMess "Clicked on $caption" error \
 #                    "This component cannot be selected for an I/O tool because it has no associated value." ok
@@ -394,8 +394,8 @@ proc ExDestroyHelpers {node} {
 proc KillHelpers {node} {
     global helperTable
     foreach helperInst [array names helperTable *,whichInstance] {
-	if {[string equal $node [$helperTable($helperInst) GetNode]]} {
-	    itcl::delete object $helperTable($helperInst)
+	if {[string equal $node [$helperTable($helperInst) getNode]]} {
+	    $helperTable($helperInst) destroy
 	}
     }
 }
@@ -404,7 +404,7 @@ proc ClearView {} {
     global helperTable myNode
 
     foreach {name inst} [array get helperTable *,whichInstance] {
-	if {[string equal $myNode [$inst GetNode]]} { 
+	if {[string equal $myNode [$inst getNode]]} { 
 	    $inst Clear
 	}
     }
@@ -420,15 +420,15 @@ proc SaveView {} {
 	set metaList {}
         foreach displayBox [array name helperTable *,whichInstance] {
             set helperId $helperTable($displayBox)
-	    set winId [$helperId cget -winId]
-            if {[string equal $topNode [$helperId GetNode]] && \
+	    set winId [$helperId getWinId]
+            if {[string equal $topNode [$helperId getNode]] && \
 		    ![string match $winId $runState($topNode,helperId)]} {
-                lappend metaList [namespace tail [$helperId info class]]
+                lappend metaList [namespace tail [info object class $helperId]]
                 lappend metaList [wm title $winId]
                 lappend metaList [wm geometry $winId]
                 set clickedPaths {}
 		$helperId PrepareSaveString
-		lappend metaList [$helperId cget -State]
+		lappend metaList [$helperId getState]
             }
         }
 	MimifySHF $metaList $helperTable($topNode,stateName) many_windows
@@ -552,7 +552,7 @@ proc CreateView {node oldPath} {
 	if {[string equal abort $inst]} {
 	    break
 	} elseif {![string equal more $inst]} {
-	    wm geometry [$inst cget -winId] $geometry
+	    wm geometry [$inst getWinId] $geometry
 	}
     }
 }
@@ -564,7 +564,7 @@ proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
     if {$origVersion<5.0} {
 	set helperId [ClassFromKey $helperId]
     }
-    set addClass [itcl::find class ::similescript::$helperId]
+    set addClass ::iotool::$helperId ;# do I need any transform here?
     if {![llength $addClass]} {
 	return [Query [list missing_iotool_type $helperId] \
 		    warning helpers {} abort]
@@ -573,7 +573,7 @@ proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
 	if {[string equal aborted $inst]} {
 	    return abort
 	}
-	return [Query [list iotool_restore_fail [${addClass}::Identify] \
+	return [Query [list iotool_restore_fail [${addClass} identify] \
 			   $::errorInfo] warning helpers {} abort]
     } else {
 	return $inst
@@ -620,7 +620,7 @@ proc ShiftDisplays {node payload current display doAll} {
 	$helperTable(RunControl)::UpdateBar $node $current blue
 	# UpdateIfFreezy $node
 	set result [TellAllHelpers $node $payload $doAll \
-			Display $current $display 1]
+			display $current $display 1]
 	
 	if {$runState($node,splimit)} {
 	    set minStep [expr {round(1000/$runState($node,speedLimit))}]
@@ -688,17 +688,15 @@ proc TellAllHelpers {node payload doAll fun args} {
     if {$doScrog} {
 	$helperTable(pestInterface)::ScrogOutputs [lindex $args 0]
     }
-    foreach helperInst [array names helperTable *,whichInstance] {
-	set inst $helperTable($helperInst)
+    foreach {helperInst inst} [array get helperTable *,whichInstance] {
 	set winId [string range $helperInst 0 end-14]
-	if {[string equal $node [$inst GetNode]] && \
+	if {[string equal $node [$inst getNode]] && \
 		 ($doAll || [info exists helperTable($winId,wantEvents)])} {
 	    set helperTable(beingCalled) $inst
-#	    puts [concat $inst $fun $args]
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		puts $::errorInfo
-		Query [list iotool_run_fail [[$inst info class]::Identify] \
-			   $fun $::errorInfo [$inst cget -State]] \
+		Query [list iotool_run_fail [[info object class $inst] identify] \
+			   $fun $::errorInfo [$inst getState]] \
 		    warning helpers {} ok
 		set failure 1
 	    }
@@ -1455,8 +1453,8 @@ proc StartRun {node} {
 #	${defHelper}::initialize $helperId
 	set ::RunEnv::CurrentContainer $RunEnv::runControlFrame($node)
 	set hlp [UniqueId helper]
-	similescript::$defHelper $hlp $runClass "Run control for $topCapt"
-	set runState($node,helperId) [$hlp cget -winId]
+	iotool::$defHelper create $hlp $runClass "Run control for $topCapt"
+	set runState($node,helperId) [$hlp getWinId]
     }
 # Do not put up mre, sliders, etc if model has failed to start
 #    if {![info exists running_c]} {
@@ -1479,28 +1477,28 @@ proc StartRun {node} {
     set ::RunEnv::CurrentContainer $RunEnv::variableListFrame($node)
     set oldInsp helperTable($::RunEnv::CurrentContainer.container,whichInstance)
     if {[info exists $oldInsp]} {
-	itcl::delete object [set $oldInsp] ;# model components may have changed
+	[set $oldInsp] destroy ;# model components may have changed
     }
-    set helperId similescript::$helperTable(VariableList)
+    set helperId iotool::$helperTable(VariableList)
     set hlp [UniqueId helper]
-    $helperId $hlp $runClass outputs
+    $helperId create $hlp $runClass outputs
     set runState($node,inspId) $hlp
 
     
     set ::RunEnv::CurrentContainer $RunEnv::paramFrame($node)
     set oldInsp helperTable($::RunEnv::CurrentContainer.container,whichInstance)
     if {[info exists $oldInsp]} {
-	itcl::delete object [set $oldInsp] ;# model components may have changed
+	[set $oldInsp] destroy ;# model components may have changed
     }
-    set helperId similescript::$helperTable(ParamEditor)
+    set helperId iotool::$helperTable(ParamEditor)
     set hlp [UniqueId helper $hlp]
-    $helperId $hlp $runClass explorer
+    $helperId create $hlp $runClass explorer
     set runState($node,parmsId) $hlp
     
     set savedExpt [file join $::simtmpdir temp.sxf]
     if {[file exists $savedExpt]} {
 	set ::preSelect $savedExpt
-	${helperId}::Open $hlp ${node}_expt
+	$hlp open ${node}_expt
 	file delete $savedExpt
     }
     StartNow $node reset ;# do again so exptl values loaded

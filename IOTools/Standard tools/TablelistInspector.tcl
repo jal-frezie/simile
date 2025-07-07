@@ -3,18 +3,19 @@
 # overload
 
 set newHelperClass TablelistInspector20240911
-itcl::class similescript::$newHelperClass {
-    inherit Helper
-    variable curHelpers
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
+    variable curHelpers winId State
 
-    proc Identify {} {
-	return "Explorer (Tablelist version)"
+    self {
+	method identify {} {
+	    return "Explorer (Tablelist version)"
+	}
     }
-
+    
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
 	global iconImages
 
 	package require tablelist 5-
@@ -60,7 +61,7 @@ itcl::class similescript::$newHelperClass {
 	    $tbl rowconfig $new -name [GetNode]
 	    $tbl cellconfig $new,0 -image $iconImages(new)
 	}
-	set context [GetState $winId] ;# caption path of submodel to go at top
+	set context $State ;# caption path of submodel to go at top
 	set chop [string length $context]
 	set universe {}
         foreach component [GetObjectList] {
@@ -89,7 +90,12 @@ itcl::class similescript::$newHelperClass {
 		    }
 		}
 
-		set path [PreparePath $context [lindex $pair 1]]
+		set SubbedCompList [split [lindex $pair 1] /]
+		if {[string length $context]} {
+		    set path [concat $context [lrange $SubbedCompList 1 end]]
+		} else {
+		    set path [lrange $SubbedCompList 1 end]
+		}
 		set pathLength [llength $path]
 		if {$pathLength == 1} {
 		    set parent root
@@ -111,21 +117,21 @@ itcl::class similescript::$newHelperClass {
 		set curHelpers($component) {}
 	    }
 	}
-	bind [$tbl bodytag] <Button-1> [::itcl::code $this ProdIfComp %W %x %y 0]
-	bind [$tbl bodytag] <Double-1> [::itcl::code $this ProdIfComp %W %x %y 1]
-	bind [$tbl bodytag] <Motion> [::itcl::code $this MoveInInsp %W %X %Y %x %y]
+	bind [$tbl bodytag] <Button-1> [namespace code [list my ProdIfComp %W %x %y 0]]
+	bind [$tbl bodytag] <Double-1> [namespace code [list my ProdIfComp %W %x %y 1]]
+	bind [$tbl bodytag] <Motion> [namespace code [list my MoveInInsp %W %X %Y %x %y]]
 	bind [$tbl bodytag] <Leave> RemovePopup
     }
 
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
     }
 
-    public method HelperLeaf {node hlpr add} {
+    method helperLeaf {node hlpr add} {
 	if {![info exists curHelpers($node)]} return
-	set id [[$hlpr info class]::Identify]
+	set id [[info object class $hlpr] identify]
 	array set hlprIcons {Plotter graph \
 				 "XY Plotter" plotxy \
 				 "Polygon diagram" polys \
@@ -149,7 +155,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     
-    proc ProdIfComp {w x y isDbl} {
+    method ProdIfComp {w x y isDbl} {
 	foreach {tbl x y} [tablelist::convEventFields $w $x $y] {}
 	set pair [$tbl containingcell $x $y]
 	foreach {row col} [split $pair ,] {}
@@ -172,7 +178,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     
-    proc DoInspPopup {winId X Y x y} {
+    method DoInspPopup {winId X Y x y} {
 	global helperTable runState myNode
 
 	set plName $helperTable($winId,whatPopped)
@@ -195,7 +201,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     
-    proc MoveInInsp {w X Y x y} {
+    method MoveInInsp {w X Y x y} {
 	global helperTable
 	
 	foreach {tbl x y} [tablelist::convEventFields $w $x $y] {}
@@ -208,7 +214,7 @@ itcl::class similescript::$newHelperClass {
 
 	set plName [$tbl rowcget $row -name]
 	if {$col==1 && [llength $curHelpers($plName)]} {
-	    set toShow [[$curHelpers($plName) info class]::Identify]
+	    set toShow [[info object class $curHelpers($plName)] identify]
 	    RemovePopup
 	    eval QueuePopup AddWidgetPopup $tbl $X $Y [list $toShow]
 	    return
@@ -221,16 +227,6 @@ itcl::class similescript::$newHelperClass {
 	set helperTable($tbl,whatPopped) $plName
 	    # changed row; renew popup
 	RemovePopup
-	eval QueuePopup [namespace code DoInspPopup] $tbl $X $Y $x $y
-    }
-
-    proc PreparePath {context SubbedComp} {
-	# substitute " " for <cr>s so entry goes on one line # no - need the crs
-	set SubbedCompList [split $SubbedComp /]
-	if {[string length $context]} {
-	    set path [concat $context [lrange $SubbedCompList 1 end]]
-	} else {
-	    set path [lrange $SubbedCompList 1 end]
-	}
+	eval QueuePopup [namespace code [list my DoInspPopup]] $tbl $X $Y $x $y
     }
 }

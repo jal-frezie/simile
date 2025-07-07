@@ -2,19 +2,19 @@
 # interface.
 
 set newLayerClass Polygon20131026
-itcl::class similescript::$newLayerClass {
-    inherit Layer
-    public variable useNodes
-    variable transform
+oo::class create iotool::$newLayerClass {
+    superclass iotool::Layer
+    variable useNodes transform modelInst winId host
 
-    proc Identify {} {
-	return "Polygon map"
+    self {
+	method identify {} {
+	    return "Polygon map"
+	}
     }
 
-    constructor {modelInst layerTool xzoom yzoom {state {}}} {
-# perverse extra body because base class constructor has args
-	Layer::constructor $modelInst $layerTool
-    } {
+    constructor {modelWindow layerTool xzoom yzoom {state {}}} {
+	next $modelWindow $layerTool
+	
 	namespace import -force ::maptools2::*
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 	set useNodes($winId,stipple) none
@@ -31,7 +31,7 @@ itcl::class similescript::$newLayerClass {
             }
 	    incr useNodes($winId,nswatches)
 	    if {$useNodes($winId,state) eq "displaying"} {
-		ReTile
+		my ReTile
 		return
 	    }
 	} else {
@@ -59,16 +59,129 @@ itcl::class similescript::$newLayerClass {
 	AddVariable
     }
 
-    destructor {
-	$winId delete [namespace tail $this].main
-	$winId delete [namespace tail $this].legend
+### public methods ###   
+    method getTitle {} {
+	return $useNodes($winId,title)
     }
 
-    public method GetCanvas {} {
+    method zoomTo {xzoom yzoom} {
+	array set transform [list xzoom $xzoom yzoom $yzoom]
+# will adjust line widths
+    }
+
+    method getNewLegendSide {} {
+	if {$useNodes($winId,legendSide) ne "n"} {
+	    recolour_scale [self object] $winId
+	}
+	return $useNodes($winId,legendSide)
+    }
+	    
+    method display {time dispInt step} {
+# nothing to do at display time -- it's a photo
+	if {[string equal displaying $useNodes($winId,state)] && \
+		($useNodes($winId,displayUpdate) || $useNodes($winId,resetDone))} {
+	    set useNodes(temp,curValues) \
+		[$modelInst getValue $useNodes(nC,color) -numeric 1]
+	    if {$useNodes($winId,displayRetile)} {
+		my ReTile
+		return
+	    }
+#	    DoForData {} ColourPolygon $useNodes(temp,curValues)
+	    # very slow because needs to search for every polygon by tag
+	    foreach tgt [$winId find withtag [namespace tail [self object]].main] {
+		set key [my SeekValue [split [my TagToId [$winId gettags $tgt]] ,] \
+			     $useNodes(temp,curValues)]
+		$winId itemconfigure $tgt -fill [my ColourFor $winId $key]
+	    }
+	}
+	$winId raise [namespace tail [self object]].main
+	set useNodes($winId,resetDone) 0
+    }
+
+    method settings {} {
+	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
+	wm title $dlg [tr. "Polygon display properties"]
+        
+        # copy display parameters to temp values
+        # colours are stored by frames used as example colour swatch (eg $coloursF.lowcolourF.colF)
+        set min($winId) $useNodes($winId,min)
+        set max($winId) $useNodes($winId,max)
+        
+        #create widgets
+        set coloursF [labelframe $dlg.colours -text "Colour scale"]
+	pack [button $coloursF.change -text "Edit colour key" \
+		  -command [namespace code [list [self object] EditKey $dlg]]]
+#	foreach {ptName ptId} {Low bot Middle mid High top} {
+#	    pack [ttk::labelframe $coloursF.${ptId}colourF \
+#		      -text "$ptName  colour"] -fill x -padx 10
+#	    frame $coloursF.${ptId}colourF.colF -width 20 -height 15 \
+#		-bg $useNodes($winId,c${ptId})
+#	    pack [button $coloursF.${ptId}colourF.cbutton -text "..." \
+#		      -command [list [self object] Recolour $ptId \
+#				    $coloursF.${ptId}colourF.colF]] -side right
+#	    pack $coloursF.${ptId}colourF.colF -side right -padx 10
+#        }
+        pack $coloursF -padx 10 -pady 10 -fill x
+        
+        set stippleF [labelframe $dlg.stipple -text "Stipple pattern"]
+	pack [ttk::combobox $dlg.stipple.cbox \
+		  -values {none gray75 gray50 gray25 gray12} \
+		  -textvar [self namespace]::useNodes($winId,stipple)]
+	bind $dlg.stipple.cbox <<ComboboxSelected>> [list [self object] Restipple]
+        pack $stippleF -padx 10 -pady 10 -fill x
+        
+        set borderF [labelframe $dlg.border -text "Borders"]
+        pack [ttk::labelframe $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
+        pack [entry $borderF.widF.entry -textvar [self namespace]::useNodes($winId,bw) -width 20] -side left -padx 10
+	pack [ttk::checkbutton $borderF.smth -text "Smooth" \
+		  -variable [self namespace]::useNodes($winId,smooth)] -fill x -padx 10
+        pack [ttk::labelframe $borderF.colourF -text "Colour"] -fill x -padx 10
+        frame $borderF.colourF.colF -width 20 -height 15 -bg $useNodes($winId,cbord)
+        pack [button $borderF.colourF.cbutton -text "..." \
+		  -command [list [self object] Recolour bord $borderF.colourF.colF]] -side right
+        pack $borderF.colourF.colF -side right -padx 10
+        pack $borderF -padx 10 -pady 10
+        
+        set rangeF [labelframe $dlg.range -text "Scale range"]
+        pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,datamin)"] -fill x  -padx 10
+        pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,datamax)"] -fill x  -padx 10
+        pack [ttk::labelframe $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
+        pack [ttk::entry $rangeF.minF.entry -width 20] -side right -padx 10
+	$rangeF.minF.entry insert 0 $useNodes($winId,min)
+        pack [ttk::labelframe $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
+        pack [ttk::entry $rangeF.maxF.entry -width 20] -side right -padx 10
+	$rangeF.maxF.entry insert 0 $useNodes($winId,max)
+        pack $rangeF -padx 10 -pady 10
+        pack [ttk::checkbutton $dlg.retile -text "Re-tile at display intervals" \
+		  -variable [self namespace]::useNodes($winId,displayRetile)]
+        pack [ttk::checkbutton $dlg.update -text "Update at display intervals" \
+		  -variable [self namespace]::useNodes($winId,displayUpdate)]
+        
+        set oriF [labelframe $dlg.orient -text "Legend position:"]
+	foreach legendPosn {l t r b n} desc {Left Top Right Bottom None} {
+	    radiobutton $oriF.$legendPosn -text $desc -value $legendPosn \
+		-var [self namespace]::useNodes($winId,legendSide)
+	}
+	grid x $oriF.t
+	grid $oriF.l $oriF.n $oriF.r
+	grid x $oriF.b
+        pack $oriF -padx 10 -pady 10 -fill x
+	pack [frame $dlg.btns] -fill x
+	set adjCmd [namespace code [list my AdjRange $rangeF]]
+	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
+		  -command $adjCmd] -side left
+        pack [ttk::button $dlg.btns.done -text [tr. Done] \
+		  -command "set polyProps(xdone) 1"] -side right
+	LetItShow $dlg polyProps(xdone)
+	PackItUp $dlg
+    }
+    
+    method getCanvas {} {
 	return $winId
     }
+### private methods ###
 
-    public method AddVariable {} {
+    method AddVariable {} {
 	
 	set vx [$winId canvasx 0]
 	set vy [$winId canvasy 0]
@@ -76,11 +189,11 @@ itcl::class similescript::$newLayerClass {
 	    [tr. "Click on a value to determine the colour of the polygons."]
 	$winId create window $vx $vy -window $winId.ms -anchor nw \
 	    -tag instruct
-	$modelInst grabClicks $this
+	$modelInst grabClicks [self object]
 	set useNodes($winId,state) sizeval
     }
 
-    public method Click {path} {
+    method Click {path} {
         set testResult [$modelInst getValue $path]
         # This tests for the user having clicked on a suitable element
         # of the model diagram
@@ -127,11 +240,7 @@ itcl::class similescript::$newLayerClass {
 	    [GetIdFromCaptionPath $useNodes($winId,color)]
 	SetColours useNodes $winId
 	set useNodes($winId,state) displaying
-	ReTile
-    }
-
-    public method GetTitle {} {
-	return $useNodes($winId,title)
+	my ReTile
     }
 #
 #    method SeekValue {inds vals} {
@@ -143,29 +252,30 @@ itcl::class similescript::$newLayerClass {
 #	}
 #    }
 	    
-    public method CurrentPopup {} {
-	set indices [TagToId [$winId gettags current]]
+    method CurrentPopup {} {
+	set indices [my TagToId [$winId gettags current]]
 	set value [TransValue $useNodes($winId,dataETs) \
-		       [SeekValue [split $indices ,] $useNodes(temp,curValues)]]
+		       [my SeekValue [split $indices ,] $useNodes(temp,curValues)]]
 	return "Index: $indices Value: $value"
     }
 
-    public method ReTile {} {
-	set myTag [namespace tail $this].main
+    method ReTile {} {
+	set myTag [namespace tail [self object]].main
 	$winId delete $myTag
 	set useNodes(temp,curValues) \
 	    [$modelInst getValue $useNodes(nC,color) -numeric 1]
 	if {$useNodes($winId,xcoord) eq "HEX_CTRS"} {
-	    DoForData {} AddPolygon $useNodes(temp,curValues)
+	    my DoForData {} AddPolygon $useNodes(temp,curValues)
 	} else {
-	    DoForXYData {} AddPolygon $useNodes(temp,curValues) \
+	    my DoForXYData {} AddPolygon $useNodes(temp,curValues) \
 		[$modelInst getValue $useNodes(nC,ycoord)] \
 		[$modelInst getValue $useNodes(nC,xcoord)]
 	}
+	set popCmd "\[[namespace code [list my CurrentPopup]]\]"
 	$winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %W %X %Y \
-					\[$this CurrentPopup\]"
+					$popCmd"
 	$winId bind $myTag <Leave> RemovePopup
-	$this Restipple
+	my Restipple
     }
 
     method SeekValue {idList data} {
@@ -174,38 +284,16 @@ itcl::class similescript::$newLayerClass {
 	} else {
 	    foreach {ind subData} $data {
 		if {$ind eq [lindex $idList 0]} {
-		    return [SeekValue [lrange $idList 1 end] $subData]
+		    return [my SeekValue [lrange $idList 1 end] $subData]
 		}
 	    }
 	    return nil
 	}
     }
 
-    public method Reset {} {
+    method Reset {} {
 	# want to update display even if updates over time disabled
 	set useNodes($winId,resetDone) 1
-    }
-	    
-    public method Display {time dispInt step} {
-# nothing to do at display time -- it's a photo
-	if {[string equal displaying $useNodes($winId,state)] && \
-		($useNodes($winId,displayUpdate) || $useNodes($winId,resetDone))} {
-	    set useNodes(temp,curValues) \
-		[$modelInst getValue $useNodes(nC,color) -numeric 1]
-	    if {$useNodes($winId,displayRetile)} {
-		ReTile
-		return
-	    }
-#	    DoForData {} ColourPolygon $useNodes(temp,curValues)
-	    # very slow because needs to search for every polygon by tag
-	    foreach tgt [$winId find withtag [namespace tail $this].main] {
-		set key [SeekValue [split [TagToId [$winId gettags $tgt]] ,] \
-			     $useNodes(temp,curValues)]
-		$winId itemconfigure $tgt -fill [ColourFor $winId $key]
-	    }
-	}
-	$winId raise [namespace tail $this].main
-	set useNodes($winId,resetDone) 0
     }
 
     method Flatten2D {tree} {
@@ -219,18 +307,14 @@ itcl::class similescript::$newLayerClass {
 	}
     }
 
-    public method ZoomTo {xzoom yzoom} {
-	array set transform [list xzoom $xzoom yzoom $yzoom]
-# will adjust line widths
-    }
-
-    public method PrepareSaveString {} {
+    method prepareSaveString {} {
 	incr useNodes($winId,nswatches) -1
 	regsub -all $winId [array get useNodes $winId,*] /WIN/ State
 	incr useNodes($winId,nswatches)
+	set State
     }
 
-    public method EditKey {parent} {
+    method EditKey {parent} {
 	set subDlg [PutItThere .colourkey $parent]
 	wm title $subDlg [tr. "Colour key editor"]
 	set flc 0
@@ -264,84 +348,7 @@ itcl::class similescript::$newLayerClass {
 	PackItUp $subDlg
     }
 
-    public method Settings {} {
-	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
-	wm title $dlg [tr. "Polygon display properties"]
-        
-        # copy display parameters to temp values
-        # colours are stored by frames used as example colour swatch (eg $coloursF.lowcolourF.colF)
-        set min($winId) $useNodes($winId,min)
-        set max($winId) $useNodes($winId,max)
-        
-        #create widgets
-        set coloursF [labelframe $dlg.colours -text "Colour scale"]
-	pack [button $coloursF.change -text "Edit colour key" \
-		  -command [namespace code [list $this EditKey $dlg]]]
-#	foreach {ptName ptId} {Low bot Middle mid High top} {
-#	    pack [ttk::labelframe $coloursF.${ptId}colourF \
-#		      -text "$ptName  colour"] -fill x -padx 10
-#	    frame $coloursF.${ptId}colourF.colF -width 20 -height 15 \
-#		-bg $useNodes($winId,c${ptId})
-#	    pack [button $coloursF.${ptId}colourF.cbutton -text "..." \
-#		      -command [list $this Recolour $ptId \
-#				    $coloursF.${ptId}colourF.colF]] -side right
-#	    pack $coloursF.${ptId}colourF.colF -side right -padx 10
-#        }
-        pack $coloursF -padx 10 -pady 10 -fill x
-        
-        set stippleF [labelframe $dlg.stipple -text "Stipple pattern"]
-	pack [ttk::combobox $dlg.stipple.cbox \
-		  -values {none gray75 gray50 gray25 gray12} \
-		  -textvar [itcl::scope useNodes($winId,stipple)]] 
-	bind $dlg.stipple.cbox <<ComboboxSelected>> [list $this Restipple]
-        pack $stippleF -padx 10 -pady 10 -fill x
-        
-        set borderF [labelframe $dlg.border -text "Borders"]
-        pack [ttk::labelframe $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
-        pack [entry $borderF.widF.entry -textvar [itcl::scope useNodes($winId,bw)] -width 20] -side left -padx 10
-	pack [ttk::checkbutton $borderF.smth -text "Smooth" \
-		  -variable [itcl::scope useNodes($winId,smooth)]] -fill x -padx 10
-        pack [ttk::labelframe $borderF.colourF -text "Colour"] -fill x -padx 10
-        frame $borderF.colourF.colF -width 20 -height 15 -bg $useNodes($winId,cbord)
-        pack [button $borderF.colourF.cbutton -text "..." \
-		  -command [list $this Recolour bord $borderF.colourF.colF]] -side right
-        pack $borderF.colourF.colF -side right -padx 10
-        pack $borderF -padx 10 -pady 10
-        
-        set rangeF [labelframe $dlg.range -text "Scale range"]
-        pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,datamin)"] -fill x  -padx 10
-        pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,datamax)"] -fill x  -padx 10
-        pack [ttk::labelframe $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
-        pack [ttk::entry $rangeF.minF.entry -width 20] -side right -padx 10
-	$rangeF.minF.entry insert 0 $useNodes($winId,min)
-        pack [ttk::labelframe $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
-        pack [ttk::entry $rangeF.maxF.entry -width 20] -side right -padx 10
-	$rangeF.maxF.entry insert 0 $useNodes($winId,max)
-        pack $rangeF -padx 10 -pady 10
-        pack [ttk::checkbutton $dlg.retile -text "Re-tile at display intervals" \
-		  -variable [itcl::scope useNodes($winId,displayRetile)]]
-        pack [ttk::checkbutton $dlg.update -text "Update at display intervals" \
-		  -variable [itcl::scope useNodes($winId,displayUpdate)]]
-        
-        set oriF [labelframe $dlg.orient -text "Legend position:"]
-	foreach legendPosn {l t r b n} desc {Left Top Right Bottom None} {
-	    radiobutton $oriF.$legendPosn -text $desc -value $legendPosn \
-		-var [itcl::scope useNodes($winId,legendSide)]
-	}
-	grid x $oriF.t
-	grid $oriF.l $oriF.n $oriF.r
-	grid x $oriF.b
-        pack $oriF -padx 10 -pady 10 -fill x
-	pack [frame $dlg.btns] -fill x
-	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
-		  -command [list $this AdjRange $rangeF]] -side left
-        pack [ttk::button $dlg.btns.done -text [tr. Done] \
-		  -command "set polyProps(xdone) 1"] -side right
-	LetItShow $dlg polyProps(xdone)
-	PackItUp $dlg
-    }
-
-    public method AdjRange {rangeF} {
+    method AdjRange {rangeF} {
 	set min [$rangeF.minF.entry get]
 	set max [$rangeF.maxF.entry get]
 
@@ -359,7 +366,7 @@ itcl::class similescript::$newLayerClass {
         set useNodes($winId,max) $max
         set useNodes($winId,range) [expr {$max-$min}]
 #	SetColours useNodes $winId
-	ReTile
+	my ReTile
 	switch -regexp $useNodes($winId,legendSide) {
 	    l|r {
 		set useNodes($winId,orient) v
@@ -368,21 +375,14 @@ itcl::class similescript::$newLayerClass {
 	    }
 	}
 	# now a callback to layer manager to draw and posn it
-	$host PosnLegends
+	$host posnLegends
     }
 
-    public method GetSwatchColour {swId} {
-	::maptools2::SetSwatchColour ::$this $winId $swId
+    method GetSwatchColour {swId} {
+	::maptools2::SetSwatchColour ::[self object] $winId $swId
     }
 
-    public method GetNewLegendSide {} {
-	if {$useNodes($winId,legendSide) ne "n"} {
-	    recolour_scale ::$this $winId
-	}
-	return $useNodes($winId,legendSide)
-    }
-
-    public method Recolour {whichCol exampleWidget} {
+    method Recolour {whichCol exampleWidget} {
 	set col [tk_chooseColor -parent .polyprop \
 		     -initialcolor $useNodes($winId,c$whichCol)]
 	if {![string length $col]} return
@@ -392,7 +392,7 @@ itcl::class similescript::$newLayerClass {
 #	    if {$useNodes($winId,bw)<=0} {
 #		set useNodes($winId,cbord) {}
 #	    }
-	    ReTile
+	    my ReTile
 	} else {
 	    SetColours useNodes $winId
 #	    recolour_scale [namespace current] $winId
@@ -400,17 +400,17 @@ itcl::class similescript::$newLayerClass {
 	Display 0 0 0
     }
 
-    public method DoForData {inds proc key} {
+    method DoForData {inds proc key} {
 	if {[llength $key]==1} {
-	    $proc $inds $key
+	    my $proc $inds $key
 	} else {
 	    foreach {ind val} $key {
-		DoForData [concat $inds $ind] $proc $val
+		my DoForData [concat $inds $ind] $proc $val
 	    }
 	}
     }
 
-    public method ColourPolygon {inds key} {
+    method ColourPolygon {inds key} {
 	if {$key<$useNodes($winId,datamin)} {
 	    set useNodes($winId,datamin) $key
 	}
@@ -418,19 +418,19 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,datamax) $key
 	}
 
-	set newColour [ColourFor $winId $key]
-	set tgt [$winId find withtag [IdToTag $inds]] ;# faster? er, no
+	set newColour [my ColourFor $winId $key]
+	set tgt [$winId find withtag [my IdToTag $inds]] ;# faster? er, no
 	$winId itemconfigure $tgt -fill $newColour
 #	CanvasBindPopup $winId $tgt [list Index $inds Value \
 #			 [TransValue $useNodes($winId,dataETs) $key]]
     }
 
-    public method DoForXYData {inds proc key argx argy} {
+    method DoForXYData {inds proc key argx argy} {
 	if {[llength $key]==1} {
-	    $proc $inds $key $argx $argy
+	    my $proc $inds $key $argx $argy
 	} else {
 	    foreach {ind val} $key {spare1 x} $argx {spare2 y} $argy {
-		DoForXYData [concat $inds $ind] $proc $val $x $y
+		my DoForXYData [concat $inds $ind] $proc $val $x $y
 	    }
 	}
     }
@@ -446,9 +446,9 @@ itcl::class similescript::$newLayerClass {
 	return [list $yval $xval]
     }
 
-    public method AddPolygon {inds key args} {
+    method AddPolygon {inds key args} {
 	if {$args eq {}} {
-	    set args [eval VerticesFromInds $inds]
+	    set args [eval my VerticesFromInds $inds]
 	}
 	foreach {yverts xverts} $args {}
 	if {[llength $yverts] == 1 || [llength $xverts] == 1} {
@@ -463,7 +463,7 @@ itcl::class similescript::$newLayerClass {
 	    lappend outlist \
 		[expr $transform(xzoom)*$xval] [expr -$transform(yzoom)*$yval]
 	}
-	set newColour [ColourFor $winId $key]
+	set newColour [my ColourFor $winId $key]
 	if {$useNodes($winId,bw)} {
 	    set newBord $useNodes($winId,cbord)
 	} else {
@@ -471,10 +471,10 @@ itcl::class similescript::$newLayerClass {
 	}
 	$winId create polygon $outlist -outline $newBord -fill $newColour \
 	    -width $useNodes($winId,bw) -smooth $useNodes($winId,smooth) \
-	    -tag [list [namespace tail $this].main [IdToTag $inds]]
+	    -tag [list [namespace tail [self object]].main [my IdToTag $inds]]
     }
 
-      public method ColourFor {winId value} {
+      method ColourFor {winId value} {
 	  if {$value eq "nil"} {
 	      set newColour {}
         } else {
@@ -490,23 +490,23 @@ itcl::class similescript::$newLayerClass {
     
     method Restipple {} {
 	if {$useNodes($winId,stipple) eq "none"} {
-	    $winId itemconfig [namespace tail $this].main -stipple {}
+	    $winId itemconfig [namespace tail [self object]].main -stipple {}
 	} else {
-	    $winId itemconfig [namespace tail $this].main \
+	    $winId itemconfig [namespace tail [self object]].main \
 		-stipple $useNodes($winId,stipple)
 	}
     }
 
-    public method IdToTag {ids} {
+    method IdToTag {ids} {
 	set result {}
 	foreach id $ids {
 	    lappend result [format %06d $id]
 	}
-	return $[namespace tail $this]BLK[join $result ,]
+	return $[namespace tail [self object]]BLK[join $result ,]
     }
 
-    public method TagToId {tags} {
-	set myTag $[namespace tail $this]BLK
+    method TagToId {tags} {
+	set myTag $[namespace tail [self object]]BLK
 	set end [expr [string first $myTag $tags]+[string length $myTag]]
 	set idTag [lindex [string range $tags $end end] 0]
 	foreach val [split $idTag ,] {

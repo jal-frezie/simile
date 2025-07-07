@@ -2,23 +2,22 @@
 # interface.
 
 set newLayerClass RectGrid20131119
-itcl::class similescript::$newLayerClass {
-    inherit Layer
-    variable useNodes
-    variable transform
-    variable curValues
+oo::class create iotool::$newLayerClass {
+    superclass iotool::Layer
+    variable useNodes transform curValues modelInst winId host
     
-    proc Identify {} {
-	return "Grid map"
+    self {
+	method identify {} {
+	    return "Grid map"
+	}
     }
 
-    constructor {modelInst mainCanvas xzoom yzoom {state {}}} {
-# perverse extra body because base class constructor has args
-	Layer::constructor $modelInst $mainCanvas
-    } {
+    constructor {modelWindow mainCanvas xzoom yzoom {state {}}} {
+	next $modelWindow $mainCanvas
+
 	namespace import -force ::maptools2::*
 	array set transform [list xzoom $xzoom yzoom $yzoom]
-	image create photo $this.original 
+	image create photo [self object].original 
 	set useNodes($winId,resetDone) 1 ;# always do one update
 	if {[string length $state]} { ;# we are restoring
 	    set useNodes($winId,bpp) 8 ;# in case saved before this invented
@@ -30,7 +29,7 @@ itcl::class similescript::$newLayerClass {
 	    }
 	    incr useNodes($winId,nswatches)
 	    if {$useNodes($winId,state) eq "displaying"} {
-		Display 0 0 0
+		my Display 0
 		return
 	    }
 	} else {
@@ -39,7 +38,7 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,xscale) 1
 	    set useNodes($winId,yscale) 1
 	    set useNodes($winId,hex) 0
-	    set useNodes($winId,title) [Identify]
+	    set useNodes($winId,title) [my identify]
 	    set useNodes($winId,editMode) 0
 	    set useNodes($winId,legendSide) n
 	    set useNodes($winId,imgs) 0
@@ -55,395 +54,15 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,cmid) red
 	    set useNodes($winId,ctop) white
 	}
-	AddVariable
+	my AddVariable
     }
 
-    destructor {
-	$winId delete [namespace tail $this].main
-	$winId delete [namespace tail $this].legend
-    }
-
-    public method GetCanvas {} {
-	return $winId
-    }
-
-    public method AddVariable {} {
-	set vx [$winId canvasx 0]
-	set vy [$winId canvasy 0]
-	label $winId.ms -bg white -text \
-	    [tr. "Click on the variable whose values are to be displayed on the grid."]
-	$winId create window $vx $vy -window $winId.ms -anchor nw \
-	    -tag instruct
-	$modelInst grabClicks $this
-	set useNodes($winId,state) display0
-    }
-
-    public method Click {path} {
-        set testResult [$modelInst getValue $path]
-        # This tests for the user having clicked on a suitable element
-        # of the model diagram
-        if {[string compare $testResult novalue]} {
-            set compon [GetIdFromCaptionPath $path]
-	    switch $useNodes($winId,state) {
-		display0 {
-                    set useNodes(nC,color) $compon
-                    set useNodes($winId,color) $path
-		    set useNodes($winId,title) "[file tail $path] (rectangular grid diagram)"
-		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
-		    SetColours useNodes $winId
-		    set useNodes($winId,tgtDims) [$modelInst getModelDims $path]
-		    if {[IsTwoDee $winId]} {
-			set useNodes($winId,colvals) USE_INDICES
-			set parentPath [join [lrange [split $path /] 0 end-1] /]
-			if {[$modelInst getModelEval $parentPath] eq \
-				"HONEYCOMB"} {
-			    set useNodes($winId,hex) 1
-			    set useNodes($winId,xscale) 1.7320508
-			    set useNodes($winId,yscale) 1.5
-			}
-			FinishClicking
-		    } else {
-			$winId.ms configure -text "Now click on a variable giving the column IDs."
-			set useNodes($winId,state) display1
-		    }
-		} display1 {
-                    NumDistinct $winId $compon
-                    set useNodes(nC,colvals) $compon
-		    set useNodes($winId,colvals) $path ;# not that it gets used
-		    FinishClicking
-		}
-	    }
-	} else {
-            $winId.ms configure -text \
-		"This component does not have a value; please choose a compartment, variable or flow."
-        }
-    }
-   
-    public method FinishClicking {} {
-	$winId delete instruct
-	destroy $winId.ms
-	$modelInst releaseClicks
-	set useNodes($winId,state) displaying
-	Display 0 0 0
-    }
-
-    public method GetTitle {} {
+### Public methods ###
+    method getTitle {} {
 	return $useNodes($winId,title)
     }
 
-    public method IsTwoDee {winId} {
-	foreach dim $useNodes($winId,tgtDims) {
-	    if {[string is integer -strict $dim]} {
-		foreach space [list useNodes($winId,nrow) \
-				   useNodes($winId,ncol) subxel terminator] {
-		    if {![info exists $space]} {
-			set $space $dim
-			break
-		    }
-		}
-	    }
-	}
-	set useNodes($winId,bpp) 8
-	if {[info exists subxel]} {
-	    if {!$subxel} {return 1} ;# 2-D array of values
-	    if {$subxel==3 && !$terminator} {
-		set useNodes($winId,bpp) 24
-		return 1
-	    } ;# of triplets
-	}
-	return 0
-    }
-
-    public method NumDistinct {winId node} {
-	if {![catch {ListDistinctModelValues $node} vList]} {
-	    set useNodes($winId,ncol) [llength [lrange $vList 1 end]]
-	    set useNodes($winId,nrow) \
-		[expr {[lindex $vList 0]/$useNodes($winId,ncol)}]
-	} else {
-	    set count [DoForData [$modelInst getValue $node] colvals]
-	    set useNodes($winId,ncol) [array size colvals]
-	    set useNodes($winId,nrow) \
-		[expr {$count/$useNodes($winId,ncol)}]
-# puts "prang $vList col $useNodes($winId,ncol) row $useNodes($winId,nrow)"
-	}
-    }
-
-    public method Reset {} {
-	# want to update display even if updates over time disabled
-	set useNodes($winId,resetDone) 1
-    }
-	    
-    public method Display {time dispInt step} {
-	if {[string equal displaying $useNodes($winId,state)] && \
-		($useNodes($winId,displayUpdate) || $useNodes($winId,resetDone))} {
-            DrawGrid8
-# will update visible part of canvas if whole scrollregion not displayed
-	    ZoomTo $transform(xzoom) $transform(yzoom)
-	    $winId raise [namespace tail $this].main
-	}
-	set useNodes($winId,resetDone) 0
-    }
-
-    public method DrawGrid8 {} {
-# do not use image mode for inputs cos we will want to edit them...
-# hah, just fixed it so we can anyway
-	set node $useNodes(nC,color)
-	set bpp $useNodes($winId,bpp)
-	set hex $useNodes($winId,hex)
-set repts [expr {$hex*$bpp/8}]
-	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
-		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
-			$useNodes($winId,max) $repts} rawBinary]} {
-	    DrawGrid7
-	    return
-	}
-#puts "Binary is of size [string bytelength $rawBinary]"
-	set rows $useNodes($winId,nrow)
-	set cols [expr {$useNodes($winId,ncol)*(1+$hex)}]
-	set bitCols [expr 4*int(($bpp*$cols+31)/32)]
-	set fullSize [expr 1078+$bitCols*$rows]
-	set bmpData [binary format a2is2iiiissiiiiii \
-		 BM $fullSize {0 0} 1078 40 $cols $rows 1 $bpp 0 0 0 0 0 0]
-	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
-	    set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
-	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
-	    append bmpData [binary format H2H2H2c \
-				[string range $colourStr 9 12] \
-				[string range $colourStr 5 8] \
-				[string range $colourStr 1 4] 0]
-	}
-	set colBytes [expr {$cols*$bpp/8}]
-	set filling [string repeat 0 [expr $bitCols-$colBytes]]
-	if {[string length $filling] || $hex} {
-	    for {set row 0} {$row<$rows} {incr row} {
-		if {$hex && !($row%2)} {
-		    append bmpData \
-			[string range $rawBinary [expr $row*$colBytes] \
-			     [expr $row*$colBytes+$bpp/8-1]] \
-			[string range $rawBinary [expr $row*$colBytes] \
-			     [expr ($row+1)*$colBytes-$bpp/8-1]] $filling
-		} else {
-		    append bmpData \
-			[string range $rawBinary [expr $row*$colBytes] \
-			     [expr ($row+1)*$colBytes-1]] $filling
-		}
-	    }
-	} else {
-	    append bmpData $rawBinary
-	}
-        $this.original configure -data $bmpData -width $cols \
-            -height $useNodes($winId,nrow)
-#        if {$useNodes($winId,hex)} {
-#	    set w [$this.original cget -width]
-#	    set h [$this.original cget -height]
-#	    $this.original configure -width [expr 2*$w]
-#	    $this.original copy $this.original -zoom 2 1
-#	    for {set shift 0} {$shift < $h} {incr shift 2} {
-#		$this.original copy $this.original -from 0 $shift $w [expr {$shift+1}] -to 1 $shift
-#	    }
-#	}
-    }
-
-    public method DrawGrid7 {} {
-	set ncol $useNodes($winId,ncol)
-	set nrow $useNodes($winId,nrow)
-	set curValues [$modelInst getValue $useNodes(nC,color) -numeric 1]
-        if {$curValues eq "unstable"} return
-        if {$useNodes($winId,colvals) eq "USE_INDICES"} {
-	    set colShift -1
-	    if {$useNodes($winId,hex)} {
-		incr colShift $ncol
-	    }
-	    $this.original blank
-	    foreach {y row} $curValues {
-		set tgtRow [expr {$nrow-$y}]
-		foreach {x celval} $row {
-		    $this.original put [ForGrid $celval] \
-			-to [incr x $colShift] $tgtRow
-		}
-		if {$useNodes($winId,hex)} {
-		    set xShift [expr {$y%2}]
-		    $this.original copy $this.original -from $ncol $tgtRow \
-			[expr {2*$ncol}] [expr {$tgtRow+1}] \
-			-to $xShift $tgtRow -zoom 2 1 -compositingrule set
-		}
-	    }
-	    $this.original config -height $nrow \
-		-width [expr {$useNodes($winId,hex)?2*$ncol+1:$ncol}] \
-		
-	} else {
-	    set values [Flatten $curValues]
-        
-	    set allData {}
-	    for {set row 1} {$row<=$nrow} {incr row} {
-		set rowData($row) {}
-		for {set col 1} {$col<=$ncol} {incr col} {
-		    set cell [expr ($row-1)*$ncol+$col-1]
-		    set celval [lindex [lindex $values $cell] 1]
-		    set length [llength $celval]
-                
-		    if {$length} {
-			lappend rowData($row) [ForGrid $celval]
-		    } else {
-			lappend rowData($row) grey
-		    }
-		}
-	    }
-	    for {set row $nrow} {$row>=1} {incr row -1} {
-		lappend allData $rowData($row)
-	    }
-	    $this.original put $allData
-	    PutSize $this.original
-        }
-    }
-
-    public method ForGrid {celval} {
-        set min $useNodes($winId,min)
-	set max $useNodes($winId,max)
-        set range [expr {$max-$min}]
-	set nswatches [expr {$useNodes($winId,nswatches)-1}]
-
-        if {$useNodes($winId,bpp)==24} {
-	    return [eval format {#%6$.2X%4$.2X%2$.2X} $celval]
-	}
-	if {$celval<$useNodes($winId,datamin)} {
-	    set useNodes($winId,datamin) $celval
-	}
-	if {$celval>$useNodes($winId,datamax)} {
-	    set useNodes($winId,datamax) $celval
-	}
-	if {$celval<=$min} {
-	    set icolour 0
-	} elseif {$celval>=$max} {
-	    set icolour $nswatches
-	} else {
-	    set icolour [expr {int($nswatches*($celval-$min)/$range)}]
-	}
-	return $useNodes($winId,c$icolour)
-    }
-
-    method SeekValue {inds} {
-	set col [expr {[lindex $inds 1]-1}]
-	if {$useNodes($winId,hex)} {
-	    set col [expr {2*$col}]
-	}
-	set rgb [$this.original get $col \
-		     [expr {$useNodes($winId,nrow)-[lindex $inds 0]}]]
-	if {$useNodes($winId,bpp)==24} {
-	    foreach level [lreverse $rgb] {
-		lappend result [expr {$useNodes($winId,min) + $level*($useNodes($winId,max)-$useNodes($winId,min))/255}]
-	    }
-	} else {
-	    for {set chkSw 0} {$chkSw < $useNodes($winId,nswatches)} {incr chkSw} {
-		scan $useNodes($winId,c$chkSw) "#%2x%2x%2x%2x%2x%2x" r z g z b z
-		if {$rgb eq "$r $g $b"} {
-		    # breaks if same colour reappears later in legend
-		    set wayThrough [expr {1.0*$chkSw/$useNodes($winId,nswatches)}]
-		    set result [expr {$useNodes($winId,max)*$wayThrough + \
-					  $useNodes($winId,min)*(1-$wayThrough)}]
-		    break
-		}
-	    }
-	}
-	return $result
-# old version needed value array
-	if {$inds eq ""} {
-	    return $vals
-	} else {
-	    array set indexed $vals
-	    set subL indexed([lindex $inds 0])
-	    if {![info exists $subL]} {
-		return "no instance"
-	    }
-	    return [SeekValue [lrange $inds 1 end] [set $subL]]
-	}
-    }
-	    
-    method CurrentPopup {x y} {
-	set col [expr int(1+([$winId canvasx $x]/$transform(xzoom)-$useNodes($winId,xoff))/$useNodes($winId,xscale))]
-	set row [expr int(1+(-[$winId canvasy $y]/$transform(yzoom)-$useNodes($winId,yoff))/$useNodes($winId,yscale))]
-	set col [expr {min(max($col, 1), $useNodes($winId,ncol))}]
-	set row [expr {min(max($row, 1), $useNodes($winId,nrow))}]
-	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
-	    set inds [list $row $col]
-	    set value [SeekValue $inds]
-	} else {
-	    set inds [expr {$useNodes($winId,ncol)*($row-1)+$col}]
-	    set value [lindex [lindex [Flatten $curValues] $inds] 1]
-	}
-	return "Index $col,$row Value $value"
-    }
-
-    public method ZoomTo {xzoom yzoom} {
-	array set transform [list xzoom $xzoom yzoom $yzoom]
-# will adjust line widths
-	set stickIt [list [expr {$useNodes($winId,xoff)*$xzoom}] \
-			 [expr {-$useNodes($winId,yoff)*$yzoom}]]
-	if {$useNodes($winId,hex)} {
-	    set xzoom [expr {$xzoom/2.0}]
-	}
-	set tmpImg [GrowImage $this.original \
-	    [expr {round([$this.original cget -width]*$useNodes($winId,xscale)*$xzoom)}] \
-	    [expr {round([$this.original cget -height]*$useNodes($winId,yscale)*$yzoom)}]]
-	set myTag [namespace tail $this].main
-	if {[catch {$this.derived blank}]} { ;# not yet exist
-	    image create photo $this.derived
-	    $winId create image $stickIt -anchor sw -image $this.derived \
-						 -tag $myTag
-	    set popCmd "\[[namespace code [list $this CurrentPopup %x %y]]\]"
-	    $winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %W %X %Y \
-					$popCmd"
-	    $winId bind $myTag <Motion> "QueuePopup AddWidgetPopup %W %X %Y \
-					$popCmd"
-	    $winId bind $myTag <Leave> RemovePopup
-	    
-	} else {
-	    $winId coords [$winId find withtag $myTag] $stickIt
-	}
-	$this.derived copy $tmpImg -shrink
-    }
-
-    public method PrepareSaveString {} {
-	incr useNodes($winId,nswatches) -1
-	regsub -all $winId, [array get useNodes] {} State
-	incr useNodes($winId,nswatches)
-    }
-
-    public method EditKey {parent} {
-	set subDlg [PutItThere .colourkey $parent]
-	wm title $subDlg [tr. "Colour key editor"]
-	set flc 0
-	while {[info exists useNodes($winId,c$flc)]} {
-	    lappend map $useNodes($winId,c$flc)
-	    incr flc
-	}
-	if {[info exists map]} {
-	    ::EditLegend::ReverseEngineerFlags $map
-	} else {
-	    set ::EditLegend::flags {{0 black} {16 red} {31 white}}
-	}
-	set ::EditLegend::nswatches \
-	    [expr {[lindex $::EditLegend::flags end 0]+1}]
-	::EditLegend::Initialize $subDlg
-	LetItShow $subDlg
-	grab $subDlg
-	tkwait variable ::EditLegend::done
-	grab release $subDlg
-
-	if {$::EditLegend::done} {
-	    # OK button was clicked -- import results
-	    set map [::EditLegend::MakeColours]
-	    set useNodes($winId,nswatches) [llength $map]
-	    for {set prog 0} {$prog<$useNodes($winId,nswatches)} {incr prog} {
-		set useNodes($winId,c$prog) [lindex $map $prog]
-	    }
-	    array unset useNodes $winId,c$prog ;# leave gap to stop loading
-	    Display 0 0 0	    
-	}
-	PackItUp $subDlg
-    }
-
-    public method Settings {} {
+    method settings {} {
 	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
 	wm title $dlg [tr. "Grid display properties"]
         
@@ -455,14 +74,14 @@ set repts [expr {$hex*$bpp/8}]
         #create widgets
         set coloursF [labelframe $dlg.colours -text "Colour scale"]
 	pack [button $coloursF.change -text "Edit colour key" \
-		  -command [namespace code [list $this EditKey $dlg]]]
+		  -command [namespace code [list [self object] EditKey $dlg]]]
 #	foreach {ptName ptId} {Low bot Middle mid High top} {
 #	    pack [ttk::labelframe $coloursF.${ptId}colourF \
 #		      -text "$ptName  colour"] -fill x -padx 10
 #	    frame $coloursF.${ptId}colourF.colF -width 20 -height 15 \
 #		-bg $useNodes($winId,c${ptId})
 #	    pack [button $coloursF.${ptId}colourF.cbutton -text "..." \
-#		      -command [list $this Recolour $ptId \
+#		      -command [list [self object] Recolour $ptId \
 #				    $coloursF.${ptId}colourF.colF]] -side right
 #	    pack $coloursF.${ptId}colourF.colF -side right -padx 10
 #        }
@@ -509,15 +128,402 @@ set repts [expr {$hex*$bpp/8}]
         pack $oriF -padx 10 -pady 10 -fill x
         
 	pack [frame $dlg.btns] -fill x
+	set adjCmd "\[[namespace code [list my AdjRange $rangeF]]\]"
 	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
-		  -command [list $this AdjRange $rangeF]] -side left
+		  -command $adjCmd] -side left
         pack [ttk::button $dlg.btns.done -text [tr. Done] \
 		  -command "set polyProps(xdone) 1"] -side right
 	LetItShow $dlg polyProps(xdone)
 	PackItUp $dlg
     }
+
+    method zoomTo {x y} {
+	my ZoomTo $x $y
+    }
     
-    public method AdjRange {rangeF} {
+    method display {time dispInt step} {
+	my Display $time
+    }
+    
+    method prepareSaveString {} {
+	incr useNodes($winId,nswatches) -1
+	regsub -all $winId, [array get useNodes] {} State
+	incr useNodes($winId,nswatches)
+	return $State
+    }
+
+### Private methods ###
+    method GetCanvas {} {
+	return $winId
+    }
+
+    method AddVariable {} {
+	set vx [$winId canvasx 0]
+	set vy [$winId canvasy 0]
+	label $winId.ms -bg white -text \
+	    [tr. "Click on the variable whose values are to be displayed on the grid."]
+	$winId create window $vx $vy -window $winId.ms -anchor nw \
+	    -tag instruct
+	$modelInst grabClicks [self object]
+	set useNodes($winId,state) display0
+    }
+
+    method Click {path} {
+        set testResult [$modelInst getValue $path]
+        # This tests for the user having clicked on a suitable element
+        # of the model diagram
+        if {[string compare $testResult novalue]} {
+            set compon [GetIdFromCaptionPath $path]
+	    switch $useNodes($winId,state) {
+		display0 {
+                    set useNodes(nC,color) $compon
+                    set useNodes($winId,color) $path
+		    set useNodes($winId,title) "[file tail $path] (rectangular grid diagram)"
+		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
+		    SetColours useNodes $winId
+		    set useNodes($winId,tgtDims) [$modelInst getModelDims $path]
+		    if {[IsTwoDee $winId]} {
+			set useNodes($winId,colvals) USE_INDICES
+			set parentPath [join [lrange [split $path /] 0 end-1] /]
+			if {[$modelInst getModelEval $parentPath] eq \
+				"HONEYCOMB"} {
+			    set useNodes($winId,hex) 1
+			    set useNodes($winId,xscale) 1.7320508
+			    set useNodes($winId,yscale) 1.5
+			}
+			FinishClicking
+		    } else {
+			$winId.ms configure -text "Now click on a variable giving the column IDs."
+			set useNodes($winId,state) display1
+		    }
+		} display1 {
+                    NumDistinct $winId $compon
+                    set useNodes(nC,colvals) $compon
+		    set useNodes($winId,colvals) $path ;# not that it gets used
+		    FinishClicking
+		}
+	    }
+	} else {
+            $winId.ms configure -text \
+		"This component does not have a value; please choose a compartment, variable or flow."
+        }
+    }
+   
+    method FinishClicking {} {
+	$winId delete instruct
+	destroy $winId.ms
+	$modelInst releaseClicks
+	set useNodes($winId,state) displaying
+	my Display 0
+    }
+
+    method IsTwoDee {winId} {
+	foreach dim $useNodes($winId,tgtDims) {
+	    if {[string is integer -strict $dim]} {
+		foreach space [list useNodes($winId,nrow) \
+				   useNodes($winId,ncol) subxel terminator] {
+		    if {![info exists $space]} {
+			set $space $dim
+			break
+		    }
+		}
+	    }
+	}
+	set useNodes($winId,bpp) 8
+	if {[info exists subxel]} {
+	    if {!$subxel} {return 1} ;# 2-D array of values
+	    if {$subxel==3 && !$terminator} {
+		set useNodes($winId,bpp) 24
+		return 1
+	    } ;# of triplets
+	}
+	return 0
+    }
+
+    method NumDistinct {winId node} {
+	if {![catch {ListDistinctModelValues $node} vList]} {
+	    set useNodes($winId,ncol) [llength [lrange $vList 1 end]]
+	    set useNodes($winId,nrow) \
+		[expr {[lindex $vList 0]/$useNodes($winId,ncol)}]
+	} else {
+	    set count [DoForData [$modelInst getValue $node] colvals]
+	    set useNodes($winId,ncol) [array size colvals]
+	    set useNodes($winId,nrow) \
+		[expr {$count/$useNodes($winId,ncol)}]
+# puts "prang $vList col $useNodes($winId,ncol) row $useNodes($winId,nrow)"
+	}
+    }
+
+    method Reset {} {
+	# want to update display even if updates over time disabled
+	set useNodes($winId,resetDone) 1
+    }
+	    
+    method Display {time} {
+	if {[string equal displaying $useNodes($winId,state)] && \
+		($useNodes($winId,displayUpdate) || $useNodes($winId,resetDone))} {
+            my DrawGrid8
+# will update visible part of canvas if whole scrollregion not displayed
+	    my ZoomTo $transform(xzoom) $transform(yzoom)
+	    $winId raise [namespace tail [self object]].main
+	}
+	set useNodes($winId,resetDone) 0
+    }
+
+    method DrawGrid8 {} {
+# do not use image mode for inputs cos we will want to edit them...
+# hah, just fixed it so we can anyway
+	set node $useNodes(nC,color)
+	set bpp $useNodes($winId,bpp)
+	set hex $useNodes($winId,hex)
+set repts [expr {$hex*$bpp/8}]
+	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
+		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
+			$useNodes($winId,max) $repts} rawBinary]} {
+	    my DrawGrid7
+	    return
+	}
+#puts "Binary is of size [string bytelength $rawBinary]"
+	set rows $useNodes($winId,nrow)
+	set cols [expr {$useNodes($winId,ncol)*(1+$hex)}]
+	set bitCols [expr 4*int(($bpp*$cols+31)/32)]
+	set fullSize [expr 1078+$bitCols*$rows]
+	set bmpData [binary format a2is2iiiissiiiiii \
+		 BM $fullSize {0 0} 1078 40 $cols $rows 1 $bpp 0 0 0 0 0 0]
+	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
+	    set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
+	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
+	    append bmpData [binary format H2H2H2c \
+				[string range $colourStr 9 12] \
+				[string range $colourStr 5 8] \
+				[string range $colourStr 1 4] 0]
+	}
+	set colBytes [expr {$cols*$bpp/8}]
+	set filling [string repeat 0 [expr $bitCols-$colBytes]]
+	if {[string length $filling] || $hex} {
+	    for {set row 0} {$row<$rows} {incr row} {
+		if {$hex && !($row%2)} {
+		    append bmpData \
+			[string range $rawBinary [expr $row*$colBytes] \
+			     [expr $row*$colBytes+$bpp/8-1]] \
+			[string range $rawBinary [expr $row*$colBytes] \
+			     [expr ($row+1)*$colBytes-$bpp/8-1]] $filling
+		} else {
+		    append bmpData \
+			[string range $rawBinary [expr $row*$colBytes] \
+			     [expr ($row+1)*$colBytes-1]] $filling
+		}
+	    }
+	} else {
+	    append bmpData $rawBinary
+	}
+        [self object].original configure -data $bmpData -width $cols \
+            -height $useNodes($winId,nrow)
+#        if {$useNodes($winId,hex)} {
+#	    set w [[self object].original cget -width]
+#	    set h [[self object].original cget -height]
+#	    [self object].original configure -width [expr 2*$w]
+#	    [self object].original copy [self object].original -zoom 2 1
+#	    for {set shift 0} {$shift < $h} {incr shift 2} {
+#		[self object].original copy [self object].original -from 0 $shift $w [expr {$shift+1}] -to 1 $shift
+#	    }
+#	}
+    }
+
+    method DrawGrid7 {} {
+	set ncol $useNodes($winId,ncol)
+	set nrow $useNodes($winId,nrow)
+	set curValues [$modelInst getValue $useNodes(nC,color) -numeric 1]
+        if {$curValues eq "unstable"} return
+        if {$useNodes($winId,colvals) eq "USE_INDICES"} {
+	    set colShift -1
+	    if {$useNodes($winId,hex)} {
+		incr colShift $ncol
+	    }
+	    [self object].original blank
+	    foreach {y row} $curValues {
+		set tgtRow [expr {$nrow-$y}]
+		foreach {x celval} $row {
+		    [self object].original put [ForGrid $celval] \
+			-to [incr x $colShift] $tgtRow
+		}
+		if {$useNodes($winId,hex)} {
+		    set xShift [expr {$y%2}]
+		    [self object].original copy [self object].original -from $ncol $tgtRow \
+			[expr {2*$ncol}] [expr {$tgtRow+1}] \
+			-to $xShift $tgtRow -zoom 2 1 -compositingrule set
+		}
+	    }
+	    [self object].original config -height $nrow \
+		-width [expr {$useNodes($winId,hex)?2*$ncol+1:$ncol}] \
+		
+	} else {
+	    set values [Flatten $curValues]
+        
+	    set allData {}
+	    for {set row 1} {$row<=$nrow} {incr row} {
+		set rowData($row) {}
+		for {set col 1} {$col<=$ncol} {incr col} {
+		    set cell [expr ($row-1)*$ncol+$col-1]
+		    set celval [lindex [lindex $values $cell] 1]
+		    set length [llength $celval]
+                
+		    if {$length} {
+			lappend rowData($row) [ForGrid $celval]
+		    } else {
+			lappend rowData($row) grey
+		    }
+		}
+	    }
+	    for {set row $nrow} {$row>=1} {incr row -1} {
+		lappend allData $rowData($row)
+	    }
+	    [self object].original put $allData
+	    PutSize [self object].original
+        }
+    }
+
+    method ForGrid {celval} {
+        set min $useNodes($winId,min)
+	set max $useNodes($winId,max)
+        set range [expr {$max-$min}]
+	set nswatches [expr {$useNodes($winId,nswatches)-1}]
+
+        if {$useNodes($winId,bpp)==24} {
+	    return [eval format {#%6$.2X%4$.2X%2$.2X} $celval]
+	}
+	if {$celval<$useNodes($winId,datamin)} {
+	    set useNodes($winId,datamin) $celval
+	}
+	if {$celval>$useNodes($winId,datamax)} {
+	    set useNodes($winId,datamax) $celval
+	}
+	if {$celval<=$min} {
+	    set icolour 0
+	} elseif {$celval>=$max} {
+	    set icolour $nswatches
+	} else {
+	    set icolour [expr {int($nswatches*($celval-$min)/$range)}]
+	}
+	return $useNodes($winId,c$icolour)
+    }
+
+    method SeekValue {inds} {
+	set col [expr {[lindex $inds 1]-1}]
+	if {$useNodes($winId,hex)} {
+	    set col [expr {2*$col}]
+	}
+	set rgb [[self object].original get $col \
+		     [expr {$useNodes($winId,nrow)-[lindex $inds 0]}]]
+	if {$useNodes($winId,bpp)==24} {
+	    foreach level [lreverse $rgb] {
+		lappend result [expr {$useNodes($winId,min) + $level*($useNodes($winId,max)-$useNodes($winId,min))/255}]
+	    }
+	} else {
+	    for {set chkSw 0} {$chkSw < $useNodes($winId,nswatches)} {incr chkSw} {
+		scan $useNodes($winId,c$chkSw) "#%2x%2x%2x%2x%2x%2x" r z g z b z
+		if {$rgb eq "$r $g $b"} {
+		    # breaks if same colour reappears later in legend
+		    set wayThrough [expr {1.0*$chkSw/$useNodes($winId,nswatches)}]
+		    set result [expr {$useNodes($winId,max)*$wayThrough + \
+					  $useNodes($winId,min)*(1-$wayThrough)}]
+		    break
+		}
+	    }
+	}
+	return $result
+# old version needed value array
+	if {$inds eq ""} {
+	    return $vals
+	} else {
+	    array set indexed $vals
+	    set subL indexed([lindex $inds 0])
+	    if {![info exists $subL]} {
+		return "no instance"
+	    }
+	    return [my SeekValue [lrange $inds 1 end] [set $subL]]
+	}
+    }
+	    
+    method CurrentPopup {x y} {
+	set col [expr int(1+([$winId canvasx $x]/$transform(xzoom)-$useNodes($winId,xoff))/$useNodes($winId,xscale))]
+	set row [expr int(1+(-[$winId canvasy $y]/$transform(yzoom)-$useNodes($winId,yoff))/$useNodes($winId,yscale))]
+	set col [expr {min(max($col, 1), $useNodes($winId,ncol))}]
+	set row [expr {min(max($row, 1), $useNodes($winId,nrow))}]
+	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
+	    set inds [list $row $col]
+	    set value [my SeekValue $inds]
+	} else {
+	    set inds [expr {$useNodes($winId,ncol)*($row-1)+$col}]
+	    set value [lindex [lindex [Flatten $curValues] $inds] 1]
+	}
+	return "Index $col,$row Value $value"
+    }
+
+    method ZoomTo {xzoom yzoom} {
+	array set transform [list xzoom $xzoom yzoom $yzoom]
+# will adjust line widths
+	set stickIt [list [expr {$useNodes($winId,xoff)*$xzoom}] \
+			 [expr {-$useNodes($winId,yoff)*$yzoom}]]
+	if {$useNodes($winId,hex)} {
+	    set xzoom [expr {$xzoom/2.0}]
+	}
+	set tmpImg [GrowImage [self object].original \
+	    [expr {round([[self object].original cget -width]*$useNodes($winId,xscale)*$xzoom)}] \
+	    [expr {round([[self object].original cget -height]*$useNodes($winId,yscale)*$yzoom)}]]
+	set myTag [namespace tail [self object]].main
+	if {[catch {[self object].derived blank}]} { ;# not yet exist
+	    image create photo [self object].derived
+	    $winId create image $stickIt -anchor sw -image [self object].derived \
+						 -tag $myTag
+	    set popCmd "\[[namespace code [list my CurrentPopup %x %y]]\]"
+	    $winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %W %X %Y \
+					$popCmd"
+	    $winId bind $myTag <Motion> "QueuePopup AddWidgetPopup %W %X %Y \
+					$popCmd"
+	    $winId bind $myTag <Leave> RemovePopup
+	    
+	} else {
+	    $winId coords [$winId find withtag $myTag] $stickIt
+	}
+	[self object].derived copy $tmpImg -shrink
+    }
+
+    method EditKey {parent} {
+	set subDlg [PutItThere .colourkey $parent]
+	wm title $subDlg [tr. "Colour key editor"]
+	set flc 0
+	while {[info exists useNodes($winId,c$flc)]} {
+	    lappend map $useNodes($winId,c$flc)
+	    incr flc
+	}
+	if {[info exists map]} {
+	    ::EditLegend::ReverseEngineerFlags $map
+	} else {
+	    set ::EditLegend::flags {{0 black} {16 red} {31 white}}
+	}
+	set ::EditLegend::nswatches \
+	    [expr {[lindex $::EditLegend::flags end 0]+1}]
+	::EditLegend::Initialize $subDlg
+	LetItShow $subDlg
+	grab $subDlg
+	tkwait variable ::EditLegend::done
+	grab release $subDlg
+
+	if {$::EditLegend::done} {
+	    # OK button was clicked -- import results
+	    set map [::EditLegend::MakeColours]
+	    set useNodes($winId,nswatches) [llength $map]
+	    for {set prog 0} {$prog<$useNodes($winId,nswatches)} {incr prog} {
+		set useNodes($winId,c$prog) [lindex $map $prog]
+	    }
+	    array unset useNodes $winId,c$prog ;# leave gap to stop loading
+	    my Display 0
+	}
+	PackItUp $subDlg
+    }
+    
+    method AdjRange {rangeF} {
 	set min [$rangeF.minF.entry get]
 	set max [$rangeF.maxF.entry get]
 
@@ -535,7 +541,7 @@ set repts [expr {$hex*$bpp/8}]
         set useNodes($winId,max) $max
         set useNodes($winId,range) [expr {$max-$min}]
 	#	SetColours useNodes $winId
-	Display 0 0 0
+	my Display 0
 	switch -regexp $useNodes($winId,legendSide) {
 	    l|r {
 		set useNodes($winId,orient) v
@@ -547,19 +553,19 @@ set repts [expr {$hex*$bpp/8}]
 	$host PosnLegends
     }
 
-    public method GetSwatchColour {swId} {
-	::maptools2::SetSwatchColour ::$this $winId $swId
+    method GetSwatchColour {swId} {
+	::maptools2::SetSwatchColour ::[self object] $winId $swId
 	$host PosnLegends
     }
 
-    public method GetNewLegendSide {} {
+    method GetNewLegendSide {} {
 	if {$useNodes($winId,legendSide) ne "n"} {
-	    recolour_scale ::$this $winId
+	    recolour_scale ::[self object] $winId
 	}
 	return $useNodes($winId,legendSide)
     }
 
-    public method Recolour {whichCol exampleWidget} {
+    method Recolour {whichCol exampleWidget} {
 	set col [tk_chooseColor -parent .polyprop \
 		     -initialcolor $useNodes($winId,c$whichCol)]
 	if {![string length $col]} return
@@ -574,10 +580,10 @@ set repts [expr {$hex*$bpp/8}]
 	    SetColours useNodes $winId
 #	    recolour_scale [namespace current] $winId
 	}
-	Display 0 0 0
+	my Display 0
     }
 
-    public method DoForData {key return} {
+    method DoForData {key return} {
 	upvar 1 $return dest
 	if {[llength $key]==1} {
 	    set dest($key) 1
@@ -591,7 +597,7 @@ set repts [expr {$hex*$bpp/8}]
 	}
     }
 
-#     public method ColourFor {winId value} {
+#     method ColourFor {winId value} {
 #        if {[string match nil $value]} {
 #            set newColour gray
 #        } else {
@@ -605,16 +611,16 @@ set repts [expr {$hex*$bpp/8}]
 ##puts "Colour for $value is $colNum (range $useNodes($winId,range))"
 #    }
 #    
-    public method IdToTag {ids} {
+    method IdToTag {ids} {
 	set result {}
 	foreach id $ids {
 	    lappend result [format %06d $id]
 	}
-	return $[namespace tail $this]BLK[join $result ,]
+	return $[namespace tail [self object]]BLK[join $result ,]
     }
 
-    public method TagToId {tags} {
-	set myTag $[namespace tail $this]
+    method TagToId {tags} {
+	set myTag $[namespace tail [self object]]
 	set end [expr [string first $myTag $tags]+[string length $myTag]]
 	set idTag [lindex [string range $tags $end end] 0]
 	foreach val [split $idTag ,] {

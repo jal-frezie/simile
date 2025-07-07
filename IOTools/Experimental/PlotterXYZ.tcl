@@ -2,17 +2,18 @@
 # interface.
 
 set newHelperClass Graph3D200800820
-itcl::class similescript::$newHelperClass {
-    inherit Helper
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
 
-    proc Identify {} {
-	return "3-D Graph Plotter"
+    self {
+	method identify {} {
+	    return "3-D Graph Plotter"
+	}
     }
 
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
 	variable ::gen3d1::viewVector
 	set pi 3.14
 	array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
@@ -51,7 +52,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method Click {path} {
+    method Click {path} {
 	set State [list $path [$modelInst getMinValue $path] \
 		       [$modelInst getMaxValue $path]]
 	destroy $winId.message
@@ -59,7 +60,7 @@ itcl::class similescript::$newHelperClass {
 	Display 0 0 0
     }
 
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
@@ -75,7 +76,7 @@ itcl::class similescript::$newHelperClass {
 	::gen3d1::DrawShapes $winId $bars graph
     }
 
-    public method TweakScale {which where} {
+    method TweakScale {which where} {
 	variable ::gen3d1::viewVector
 
 	set viewVector($winId,$which) $where
@@ -87,7 +88,7 @@ itcl::class similescript::$newHelperClass {
 	    [expr sin($viewVector($winId,elevation))]
 	Display 0 0 0
     }    
-    public method WindowSizeChanged {} {
+    method WindowSizeChanged {} {
 	variable ::gen3d1::viewVector
 
 	set viewVector($winId,X) [winfo width $winId.c]

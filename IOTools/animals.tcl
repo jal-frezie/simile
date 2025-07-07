@@ -2,25 +2,26 @@
 # interface.
 
 set newLayerClass Animals20131029
-itcl::class similescript::$newLayerClass {
-    inherit Layer
-    variable useNodes
-    variable transform
-    variable temp
+oo::class create iotool::$newLayerClass {
+    superclass iotool::Layer
+    variable useNodes transform temp modelInst winId
 
-    proc Identify {} {
-	return "Moving individuals"
+    self {
+	method identify {} {
+	    return "Moving individuals"
+	}
     }
 
-    constructor {modelInst mainCanvas xzoom yzoom {state {}}} {
-# perverse extra body because base class constructor has args
-	Layer::constructor $modelInst $mainCanvas
-    } {
+    constructor {modelWindow mainCanvas xzoom yzoom {state {}}} {
+# perverse extra body because base class constructor has args (not in TclOO)
+	next $modelWindow $mainCanvas
+
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 	set useNodes(transform) {0 0 1 1}
-	$winId bind [namespace tail $this].main <Enter> \
-	    "QueuePopup AddWidgetPopup %W %X %Y \[$this CurrentPopup\]"
-	$winId bind [namespace tail $this].main <Leave> RemovePopup
+	set popCmd "\[[namespace code [list my CurrentPopup]]\]"
+	$winId bind [namespace tail [self object]].main <Enter> \
+	    "QueuePopup AddWidgetPopup %W %X %Y $popCmd"
+	$winId bind [namespace tail [self object]].main <Leave> RemovePopup
 	if {[string length $state]} { ;# we are restoring 
 	    array set useNodes $state
 	    foreach {attr showable} $state {
@@ -30,21 +31,62 @@ itcl::class similescript::$newLayerClass {
 		}
 	    }
 	    if {$useNodes(state) eq "displaying"} {
-		Display 0 0 0
+		my Display 0
 		return
 	    }
 	} else {
 	}
-	AddVariable
+	my AddVariable
+    }
+    
+### public methods ###   
+    method getTitle {} {
+	return $useNodes(title)
     }
 
-    destructor {
-	$winId delete [namespace tail $this].main
+    method zoomTo {xzoom yzoom} {
+	array set transform [list xzoom $xzoom yzoom $yzoom]
+# will adjust line widths
     }
 
+    method display {time dispInt step} {
+	my Display $time
+    }
+
+    method prepareSaveString {} {
+	array get useNodes
+    }
+
+    method settings {} {
+	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
+	wm title $dlg "[GetTitle] properties"
+        
+	set rg [labelframe $dlg.relgeom -text "Offset and scaling"]
+	grid [label $rg.lxo -text [tr. {X offset:}]] \
+	    [ttk::entry $rg.exo -width 8] \
+	    [label $rg.lyo -text [tr. {Y offset:}]] \
+	    [ttk::entry $rg.eyo -width 8]
+	grid [label $rg.lxs -text [tr. {X scale:}]] \
+	    [ttk::entry $rg.exs -width 8] \
+	    [label $rg.lys -text [tr. {Y scale:}]] \
+	    [ttk::entry $rg.eys -width 8]
+	pack $rg -fill x
+	foreach key {exo eyo exs eys} elt $useNodes(transform) {
+	    $rg.$key insert 0 $elt
+	}
+	pack [frame $dlg.btns] -fill x
+	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
+		  -command [list [self object] AdjRange $rg]] -side left
+        pack [ttk::button $dlg.btns.done -text [tr. Done] \
+		  -command "set polyProps(xdone) 1"] -side right
+	LetItShow $dlg polyProps(xdone)
+	PackItUp $dlg
+    }
+    
+### private methods ###
     method CurrentPopup {} {
-	set ind [TagToId [$winId gettags current]]
-	return "Index: [join $ind ,] x: [SeekValue $ind $temp(xcoord)] y: [SeekValue $ind $temp(ycoord)] Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
+	set ind [my TagToId [$winId gettags current]]
+	return "Index: [join $ind ,] x: [my SeekValue $ind $temp(xcoord)] y: [my SeekValue $ind $temp(ycoord)] Size: [my SeekValue $ind $temp(size)] Heading: [my SeekValue $ind $temp(dir)]"
     }
 
     method SeekValue {inds vals} {
@@ -52,12 +94,13 @@ itcl::class similescript::$newLayerClass {
 	    return $vals
 	} else {
 	    array set indexed $vals
-	    return [SeekValue [lrange $inds 1 end] $indexed([lindex $inds 0])]
+	    return [my SeekValue [lrange $inds 1 end] $indexed([lindex $inds 0])]
 	}
     }
 	    
-    public method AddVariable {} {
-	set cnvFile [ChooseFile animal.cnv "Image for individuals:" 0 [GetNode]]
+    method AddVariable {} {
+	set cnvFile [ChooseFile animal.cnv "Image for individuals:" 0 \
+			 [my GetNode]]
 	set useNodes(title) [file rootname [file tail $cnvFile]]s
 	set stm [open $cnvFile r]
 	set c [canvas .procGraphics]
@@ -78,11 +121,11 @@ itcl::class similescript::$newLayerClass {
 	set ms [winfo parent $winId].bottom.ms
 	pack [ttk::label $ms -wraplength [$winId cget -width] -text \
 		  [tr. "Click on the value representing the X coordinates of the individuals."]]
-	$modelInst grabClicks $this
+	$modelInst grabClicks [self object]
 	set useNodes(state) xcoord
     }
 
-    public method Click {{path {}}} {
+    method Click {{path {}}} {
 	set ms [winfo parent $winId].bottom.ms
 	set bn [winfo parent $winId].bottom.bn
 	if {$path eq ""} {
@@ -107,7 +150,7 @@ itcl::class similescript::$newLayerClass {
 	    } ycoord {
 		$ms configure -text "Now select a component whose value determines the size of the animals, or enter fixed value here:"
 		pack [ttk::entry $bn] -side bottom
-		bind $bn <Return> [list $this Click]
+		bind $bn <Return> [list [self object] Click]
 		set useNodes(ycoord) $path
 		set useNodes(state) sizeval
 	    } sizeval {
@@ -123,60 +166,52 @@ itcl::class similescript::$newLayerClass {
 		set useNodes(dir) $path
 		set useNodes(state) displaying
 		set ::helperTable(beingCalled) $host
-		Display 0 0 0
+		my Display 0 0 0
 	    }
 	}
     }
-   
-    public method GetTitle {} {
-	return $useNodes(title)
-    }
 
-    proc ReplicateAsX {replicand x} {
+    method ReplicateAsX {replicand x} {
 	if {[llength $x]==1} {
 	    return $replicand
 	} else {
 	    foreach {i subx} $x {
-		lappend result $i [ReplicateAsX $replicand $subx]
+		lappend result $i [my ReplicateAsX $replicand $subx]
 	    }
 	    return $result
 	}
     }
 
-    public method Display {time dispInt step} {
+    method Display {time} {
 # nothing to do at display time -- it's a photo
 	if {$useNodes(state) eq "displaying"} {
-	    $winId delete [namespace tail $this].main
+	    $winId delete [namespace tail [self object]].main
 	    foreach aspect {xcoord ycoord size dir} {
 		if {[string first / $useNodes($aspect)]} {
-		    set temp($aspect) [ReplicateAsX $useNodes($aspect) \
+		    set temp($aspect) [my ReplicateAsX $useNodes($aspect) \
 					   $temp(xcoord)]
 		} else {
 		    set temp($aspect) [$modelInst getValue \
 					   $temp(nC,$useNodes($aspect))]
 		}
 	    }
-	    DoForRXYData {} DrawAnimal $temp(size) $temp(dir) \
+	    my DoForRXYData {} DrawAnimal $temp(size) $temp(dir) \
 		$temp(xcoord) $temp(ycoord)
 	}
     }
 
-    public method PrepareSaveString {} {
-	set State [array get useNodes]
-    }
-
-    public method DoForRXYData {inds proc size dir argx argy} {
+    method DoForRXYData {inds proc size dir argx argy} {
 	if {[llength $size]==1} {
-	    $proc $inds $size $dir $argx $argy
+	    my $proc $inds $size $dir $argx $argy
 	} else {
 	    foreach {ind val} $size {spare0 r} $dir \
 		{spare1 x} $argx {spare2 y} $argy {
-		DoForRXYData [concat $inds $ind] $proc $val $r $x $y
+		my DoForRXYData [concat $inds $ind] $proc $val $r $x $y
 	    }
 	}
     }
 
-    public method ToRadians {axis} {
+    method ToRadians {axis} {
         if {[string is double -strict $axis]} {
             return $axis
         } elseif {[set ct [lsearch {e ne n nw w sw s se} \
@@ -190,17 +225,17 @@ itcl::class similescript::$newLayerClass {
         }
     }
 
-    public method AdjRange {rg} {
+    method AdjRange {rg} {
 	set useNodes(transform) [list [$rg.exo get]  [$rg.eyo get] \
 				     [$rg.exs get]  [$rg.eys get]]
-	Display 0 0 0
+	my Display 0
     }
 
-    public method DrawAnimal {inds key dir xposn yposn} {
+    method DrawAnimal {inds key dir xposn yposn} {
 	set c $winId
 	eval $useNodes(cmds)
 	foreach {hotx hoty} $hotspot {} ;# sets them
-        set dir [expr {[ToRadians $dir]-[ToRadians $axis]}]
+        set dir [expr {[my ToRadians $dir]-[my ToRadians $axis]}]
 	set compx [expr cos($dir)]
 	set compy [expr sin($dir)]
 	foreach newItem [$winId find withtag unpositioned] {
@@ -239,43 +274,12 @@ itcl::class similescript::$newLayerClass {
 #	set ybase [expr {($yposn-$key*$hoty)*$transform(yzoom)/(1-$yscale)}]
 #	$winId scale unpositioned $xbase $ybase $xscale $yscale
 # also try keeping data and moving individuals?
-	$winId addtag [namespace tail $this].main withtag unpositioned
-	$winId addtag [IdToTag $inds] withtag unpositioned
+	$winId addtag [namespace tail [self object]].main withtag unpositioned
+	$winId addtag [my IdToTag $inds] withtag unpositioned
 	$winId dtag unpositioned
     }
 
-    public method Settings {} {
-	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
-	wm title $dlg "[GetTitle] properties"
-        
-	set rg [labelframe $dlg.relgeom -text "Offset and scaling"]
-	grid [label $rg.lxo -text [tr. {X offset:}]] \
-	    [ttk::entry $rg.exo -width 8] \
-	    [label $rg.lyo -text [tr. {Y offset:}]] \
-	    [ttk::entry $rg.eyo -width 8]
-	grid [label $rg.lxs -text [tr. {X scale:}]] \
-	    [ttk::entry $rg.exs -width 8] \
-	    [label $rg.lys -text [tr. {Y scale:}]] \
-	    [ttk::entry $rg.eys -width 8]
-	pack $rg -fill x
-	foreach key {exo eyo exs eys} elt $useNodes(transform) {
-	    $rg.$key insert 0 $elt
-	}
-	pack [frame $dlg.btns] -fill x
-	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
-		  -command [list $this AdjRange $rg]] -side left
-        pack [ttk::button $dlg.btns.done -text [tr. Done] \
-		  -command "set polyProps(xdone) 1"] -side right
-	LetItShow $dlg polyProps(xdone)
-	PackItUp $dlg
-    }
-
-    public method ZoomTo {xzoom yzoom} {
-	array set transform [list xzoom $xzoom yzoom $yzoom]
-# will adjust line widths
-    }
-
-    public method IdToTag {ids} {
+    method IdToTag {ids} {
 	set result {}
 	foreach id $ids {
 	    if {[string is integer -strict $id]} {
@@ -284,14 +288,14 @@ itcl::class similescript::$newLayerClass {
 		lappend result $id
 	    }
 	}
-	return [namespace tail $this]BLK[join $result ,]
+	return [namespace tail [self object]]BLK[join $result ,]
     }
 
-public method TagToId {tags} {
-    set myTag [namespace tail $this]BLK
-    set mixTag [lsearch -inline $tags ${myTag}*]
-    set idTag [string range $mixTag [string length $myTag] end]
-    set result {}
+    method TagToId {tags} {
+	set myTag [namespace tail [self object]]BLK
+	set mixTag [lsearch -inline $tags ${myTag}*]
+	set idTag [string range $mixTag [string length $myTag] end]
+	set result {}
 	foreach val [split $idTag ,] {
 	    if {![scan $val %06d index]} {
 		set index $val

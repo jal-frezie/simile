@@ -2,32 +2,33 @@
 # interface.
 
 set newHelperClass EventSounds20180124
-itcl::class similescript::$newHelperClass {
-    inherit Helper
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
 
-    variable useNodes
+    variable useNodes winId modelInst
 
-    proc Identify {} {
-	return "Event sounds"
+    self {
+	method identify {} {
+	    return "Event sounds"
+	}
     }
 
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
 	set ::helperTable($winId,wantEvents) 1
 	set toolbarItems \
-                [list [list new.gif "Clear" [code $this Clear]] \
+	    [list [list new.gif "Clear" [namespace code [list my Clear]]] \
                 [list add.gif "Set sound for event" \
-                [code $this AddEvent]]]
+		     [namespace code [list my AddEvent]]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
 	pack [message $winId.message -aspect 500 -text {}]
 	pack [canvas $winId.traces -bg white] -fill both -expand 1
 	menu $winId.traces.context -tearoff 0
 	$winId.traces.context add command -label "Change sound" \
-	    -command [code $this SetSound]
+	    -command [namespace code [list my SetSound]]
 	$winId.traces.context add command -label "Remove" \
-	    -command [code $this Remove]
+	    -command [namespace code [list my Remove]]
 	CrossPlatformBind $winId.traces {tk_popup %W.context %X %Y}
 	set useNodes(lastDisp) [GetModelTime]
 	set useNodes(sounds) {}
@@ -37,19 +38,20 @@ itcl::class similescript::$newHelperClass {
 	    #puts $state
 	    package require xml
 	    set hsfParser [::xml::parser -ignorewhitespace true \
-				-elementstartcommand [code $this StartElement] \
-				-characterdatacommand [code $this Stuff]]
+			       -elementstartcommand [namespace code [list my StartElement]] \
+			       -characterdatacommand [namespace code [list my Stuff]]]
 	    $hsfParser parse $state
 	    SetState $winId displaying
 	}
     }
 
     destructor {
-	set topNode [$modelInst getNode]
+	set topNode [my getNode]
 	foreach {path act} $useNodes(sounds) {
 	    catch {AddWaveCommand $topNode [GetIdFromCaptionPath $path] \
 		       "/none/"}
 	}
+	next
     }
 
     method IndFromY {} {
@@ -58,10 +60,10 @@ itcl::class similescript::$newHelperClass {
 	return [expr {min(int($canvY/50)*2, [llength $useNodes(sounds)]-2)}]
     }
 
-    public method SetSound {} {
+    method SetSound {} {
 	set resonorize [IndFromY]
 	set path [lindex $useNodes(sounds) $resonorize]
-	set topNode [$modelInst getNode]
+	set topNode [my getNode]
 	set sound [ChooseFile sound.wav "New sound file for $path" 0 $topNode]
 	lset useNodes(sounds) [incr resonorize] $sound
 	AddWaveCommand $topNode [GetIdFromCaptionPath $path] \
@@ -69,11 +71,11 @@ itcl::class similescript::$newHelperClass {
 	$winId.traces itemconfig $path&&capt -text "$path ([file tail $sound])"
     }
 
-    public method Remove {} {
+    method Remove {} {
 	set oblit [IndFromY]
 	set path [lindex $useNodes(sounds) $oblit]
 	$winId.traces delete $path
-	set topNode [$modelInst getNode]
+	set topNode [my getNode]
 	AddWaveCommand $topNode [GetIdFromCaptionPath $path] "/none/"
 	set useNodes(sounds) [lreplace $useNodes(sounds) $oblit $oblit+1]
 	while {$oblit<[llength $useNodes(sounds)]} {
@@ -86,7 +88,7 @@ itcl::class similescript::$newHelperClass {
 	foreach {att val} $attList {
 	    switch $att {
 		component {
-		    set useNodes(comp) [::gen3d1::VerifyVariables [GetNode] \
+		    set useNodes(comp) [::gen3d1::VerifyVariables [my getNode] \
 					    Sound [list $val]]
 		} mode {
 		    set useNodes(mode) $val
@@ -98,7 +100,7 @@ itcl::class similescript::$newHelperClass {
     method Stuff {contents} {
 	if {[string trim $contents]==""} return ;# failure to ignore whitespace
 	if {![llength $useNodes(comp)]} return ;# node exist check failed
-	set topNode [$modelInst getNode]
+	set topNode [my getNode]
 	if {$useNodes(mode) eq "relative"} {
 	    set shfPath [GetPathChoice .shf $topNode]
 	    set soundFile [file normalize [file join $shfPath $contents]]
@@ -106,7 +108,7 @@ itcl::class similescript::$newHelperClass {
 	} else {
 	    set soundFile $contents
 	}
-    AddSoundFor $topNode [lindex $useNodes(comp) 0] $soundFile
+    my AddSoundFor $topNode [lindex $useNodes(comp) 0] $soundFile
     }
 
     method Clear {} {
@@ -116,15 +118,15 @@ itcl::class similescript::$newHelperClass {
     method AddEvent {} {
         $winId.message configure -text "Click on a delayed or limit event to add a sound for it."
         SetState $winId adding_inputs
-        $modelInst grabClicks $this
+        $modelInst grabClicks [self]
     }
     
-    public method Click {path} {
+    method Click {path} {
         switch [GetState $winId] {
             adding_inputs {
                 if {[lsearch {EVENT SQUIRT} \
 			 [$modelInst getModelClass $path]]>-1} {
-		    set topNode [$modelInst getNode]
+		    set topNode [my  getNode]
 		    set sound [ChooseFile sound.wav "Sound file for $path" 0 \
 				   $topNode]
                     $modelInst releaseClicks
@@ -133,14 +135,14 @@ itcl::class similescript::$newHelperClass {
 		    if {$sound eq ""} {
 			return
 		    }
-		    AddSoundFor $topNode $path $sound
+		    my AddSoundFor $topNode $path $sound
 		    SetState $winId displaying
                 }
 	    }
 	}
     }
 
-public method AddSoundFor {topNode path sound} {
+method AddSoundFor {topNode path sound} {
 	set ytext [expr {[llength $useNodes(sounds)]*25+25}]
 	$winId.traces create text 25 $ytext -text "$path ([file tail $sound])" \
 	    -fill gray -anchor w -tag [list $path capt]
@@ -150,9 +152,9 @@ public method AddSoundFor {topNode path sound} {
 	GetModelValue $node ;# to add it to foci
     }
 
-    public method PrepareSaveString {} {
-	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
-	set shfPath [GetPathChoice .shf [$modelInst getNode]]
+    method PrepareSaveString {} {
+	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[[self] info class]\">\n"
+	set shfPath [GetPathChoice .shf [my getNode]]
 	foreach {path file} $useNodes(sounds) {	    
 	    append State "<sound component=\"$path\" "
 	    # puts "::fileutil::relative $shfPath $file"
@@ -180,18 +182,18 @@ public method AddSoundFor {topNode path sound} {
 	}
     }
 
-    public method Reset {} {
+    method Reset {} {
 	set useNodes(lastDisp) [GetModelTime]
 	# Sounds will have been cleared if model rebuilt, due to possible node
 	# id changes, so reinstate them
-	set topNode [$modelInst getNode]
+	set topNode [my getNode]
 	foreach {path file} $useNodes(sounds) {	    
 	    set node [GetIdFromCaptionPath $path]
 	    AddWaveCommand $topNode $node [file nativename $file]
 	}
     }
     
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
 	set count 0
 	set rhs [expr {[winfo width $winId.traces]-1}]
 	foreach {path sound} $useNodes(sounds) {

@@ -2,20 +2,21 @@
 # 0 for the z coords
 
 set newLayerClass Lines20171122
-itcl::class similescript::$newLayerClass {
-    inherit ShapeLayer
+oo::class create iotool::$newLayerClass {
+    superclass iotool::ShapeLayer
 
-    proc Identify {} {
-	return "Line Plotter"
+    # need to insert type as extra arg to constructor
+    constructor {modelInst mainCanvas args} {
+	eval [list next $modelInst $mainCanvas lines] $args
+    }
+    
+    self {
+	method identify {} {
+	    return "Line Plotter"
+	}
     }
 
-    constructor {modelInst mainCanvas xzoom yzoom {state {}}} {
-# perverse extra body because base class constructor has args
-	ShapeLayer::constructor $modelInst $mainCanvas lines \
-	    $xzoom $yzoom $state
-    } { }
-
-    public method GetTitle {} {
-	return [GetSortTitle Lines]
+    method getTitle {} {
+	return [my GetSortTitle Lines]
     }
 }

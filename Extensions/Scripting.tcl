@@ -60,7 +60,7 @@ oo::class create similescript::ModelWindow {
 #    
 #    method FileOpenDlg {} {
 #        #if {[info exists model]} {
-#        #    $this FileNew"
+#        #    [self object] FileNew"
 #        #}
 #        #$c local open_all
 #        MenuSelect $modelCanvas local open_all
@@ -69,7 +69,7 @@ oo::class create similescript::ModelWindow {
 #    
 #    method Open {modelFile} {
 #        if {[info exists model]} {
-#            $this New
+#            [self object] New
 #        }
 #        Reopen $modelCanvas $modelFile reopen
 #        set model $modelFile
@@ -102,7 +102,7 @@ oo::class create similescript::ModelWindow {
 #    }
 #
 #    method Destroy {} {
-#        itcl::delete object $this
+#        itcl::delete object [self object]
 #    }
 #    
 #    # added for building models on web server -- do not document
@@ -132,16 +132,16 @@ oo::class create similescript::ModelWindow {
 #        # builds the model with CPP and returns a run control command/object
 #        #RemoveRunControl
 #        MenuSelect $modelCanvas code run_c
-#        #set rc [similescript::RunControl ::runControl $this]
+#        #set rc [similescript::RunControl ::runControl [self object]]
 #        #return $rc
-#	set botches(modelJustRun) $this
+#	set botches(modelJustRun) [self object]
 #    }
 #    
 #    method Debug {} {
 #        # builds the model with Tcl and returns a run control command/object
 #        #RemoveRunControl
 #        MenuSelect $modelCanvas code run_tcl
-#        #set rc [similescript::RunControl ::runControl $this]
+#        #set rc [similescript::RunControl ::runControl [self object]]
 #        #return $rc
 #    }
 #    
@@ -155,255 +155,6 @@ oo::class create similescript::ModelWindow {
 #	}
 #        do_for_node $modelNode set ::projectParams($smPath) $filepath
 #    }
-}
-
-itcl::class similescript::HelperController {
-    # Class providing basic control of existing helpers
-    # The constructor DOES NOT create a helper use class Helper
-    public variable winId;    #Tk path to RunControl window
-    variable modelInst
-    
-    destructor {
-        if {![string match *_3dinst $this]} {
-	    destroy $winId
-	}
-    }
-    
-    public method Show {} {
-	if {[string equal $winId [winfo toplevel $winId]]} {
-	    do_for_node [GetNode] wm deiconify $winId
-	}
-    }
-    
-    public method Hide {} {
-        #puts "HelperController Hide $winId; $modelNode"
-	if {[string equal $winId [winfo toplevel $winId]]} {
-	    do_for_node [GetNode] wm withdraw $winId
-	}
-    }
-
-    public method GetNode {} {
-	return [$modelInst getNode]
-    }
-}
-
-itcl::class similescript::Snap {
-    
-    inherit HelperController
-    
-    variable myNode
-    constructor {modelWindow path} {
-        set winId [$modelWindow CreateSnapWindow $path]
-	set myNode $path
-        Hide
-    }
-
-    public method SaveCurrent {filename} {
-	do_for_node [GetNode] SaveSnapToFile $winId $myNode $filename
-    }
-
-    public method Update {} {
-	set updateCmd [$winId.bbframe.buttonBox itemcget 1 -command]
-	uplevel #0 $updateCmd
-    }
-
-    public method StartLogging {filename} {
-	set myId [do_for_node [GetNode] GetIdFromCaptionPath $myNode]
-	do_for_node [GetNode] StartLogging $winId [GetNode] $myId $filename
-    }
-
-    public method StopLogging {} {
-	set myId [do_for_node [GetNode] GetIdFromCaptionPath $myNode]
-	do_for_node [GetNode] StopLogging $winId [GetNode] $myId
-    }
-}
-    
-itcl::class similescript::Layer {
-    public variable State {}
-    public variable host;
-    public variable winId;    # canvas 
-    variable modelInst
-    
-    constructor {modelWindow layerTool} {
-	global helperTable
-
-	set modelInst $modelWindow
-	set host $layerTool
-	set winId [$host GetCanvas]
-	set helperTable($this,foci) {}
-     }
-
-    destructor {
-	#ShowMess debug info "Killing $winId" ok
-	global helperTable
-
-	if {[string equal $this [$modelInst hasClicks]]} {
-	    $modelInst releaseClicks
-	}
-	foreach node $helperTable($this,foci) {
-	    $::runState([GetNode],inspId) HelperLeaf $node $this 0
-	}
-	unset helperTable($this,foci)
-	bind $winId <Destroy> {} ;# prevent destructor calling itself when...
-	# (done by base destructor)	    destroy $winId
-    }
-
-    public method GetNode {} {
-	return [$modelInst getNode]
-    }
-
-    # All derived classes must reimplement with correct keyvalue
-    public method KeyValue {} {
-        return abstractLayer
-    }
-# only old-style helpers have keyvalues, but this is needed for some reason
-
-    # likewise
-    public method Identify {} {
-        return abstractLayerTitle
-    }
-
-# This is optional, some helpers do not store earlier values
-    public method Clear {} {
-    }
-
-# This is optional, some helpers do not distinguish data from different runs
-    public method Reset {} {
-    }
-
-# This is optional, some helpers may keep their state permanently up to date
-    public method PrepareSaveString {} {
-    }
-
-# default is no legend
-    public method GetNewLegendSide {} {
-	return n
-    }
-
-}
-
-itcl::class similescript::Helper {
-    inherit HelperController
-    public variable State {}
-    
-    constructor {modelWindow helperTitle} {
-	global tcl_platform SimileAutoObjLoaded helperTable
-
-	set modelInst $modelWindow
-        #puts "Helper constr $modelWindow [KeyValue] $winTitle"
-
-	# ShowMessage debug info "Making $helperId $helperTitle" ok
-	if {[string match *_3dinst $this]} {
-	    set winId placeholder
-	    return
-	} else {
-	    set winId ${::RunEnv::CurrentContainer}.container
-	    pack [ttk::frame $winId] -fill both -expand true
-	    bind $winId <Destroy>  "itcl::delete object $this"
-# needed because gui can remove parent widget
-	}
-	set helperTable($this,foci) {}
-	set helperTable($winId,whichInstance) $this
-        #puts "Helper constr $this winId $winId"
-    }
-    
-    destructor {
-	#ShowMess debug info "Killing $winId" ok
-	global helperTable runState
-
-	if {[string equal $this [$modelInst hasClicks]]} {
-	    $modelInst releaseClicks
-	}
-	if {[string match *_3dinst $this]} return
-	set modelNode [GetNode]
-	if {[llength [array names runState $modelNode,helperId]]} {
-	    # 'info exists' buggy in itcl4
-	    if {[string equal $winId $runState($modelNode,helperId)]} {
-		unset runState($modelNode,cnvs)
-		unset runState($modelNode,helperId)
-	    }
-	    foreach node $helperTable($this,foci) {
-		$runState($modelNode,inspId) HelperLeaf $node $this 0
-	    }
-	}
-	bind $winId <Destroy> {} ;# prevent destructor calling itself when...
-	# (done by base destructor)	    destroy $winId
-	unset helperTable($winId,whichInstance)
-	unset helperTable($this,foci)
-    }
-
-    # All derived classes must reimplement with correct keyvalue
-    public method KeyValue {} {
-        return abstractHelper
-    }
-# only old-style helpers have keyvalues, but this is needed for some reason
-
-    # likewise
-    public method Identify {} {
-        return abstractTitle
-    }
-
-# This is optional, some helpers do not store earlier values
-    public method Clear {} {
-    }
-
-# This is optional, some helpers do not distinguish data from different runs
-    public method Reset {} {
-    }
-
-# This is optional, some helpers may keep their state permanently up to date
-    public method PrepareSaveString {} {
-    }
-
-    public method Introspect {cmd} {
-	return [eval $cmd]
-    }
-}
-
-itcl::class similescript::OldStyleHelper {
-    inherit Helper
-    
-# compulsory
-    public proc Identify {} {
-	return [[KeyValue]::identify]
-    }
-
-    constructor {modelWindow winTitle {state {}}} {
-	Helper::constructor $modelWindow $winTitle
-    } {
-	global helperTable
-
-	set this4 $this ;# flagrant Itcl4 bug workaround
-	set helperTable(beingCalled) $this
-	if {[llength $state]} {
-	    set State $state
-	# need to catch error here because catching later leaves inconsistency
-	    if {[catch {[KeyValue]::Restore $winId} hiccup]} {
-		Query [list iotool_restore_fail [[KeyValue]::identify] \
-                           $::errorInfo] warning helpers {} abort
-	    }
-	} else {
-	    [KeyValue]::initialize $winId
-	}
-	set helperTable(beingCalled) {}
-    }
-
-# optional (but all old-style helpers have it)
-    public method Reset {} {
-	return [[KeyValue]::reset $winId]
-    }
-
-# optional (but all old-style helpers have it)
-    public method Display {current display update} {
-	return [[KeyValue]::display $winId $current $display $update]
-    }
-
-# optional if you never call GrabClicks (but all old-style helpers have it)
-    public method Click {path} {
-	set node [do_for_node [GetNode] GetIdFromCaptionPath $path]
-	set caption [lindex [split $path /] end]
-	return [[KeyValue]::click $winId $node $caption]
-    }
 }
 
 ### RUN OBJECT -- no longer a kind of helper
@@ -642,22 +393,22 @@ redo with helper object
 #    method RequestValues {args} {
 #	global runState
 #
-#	array unset runState $this,scriptReqs
+#	array unset runState [self object],scriptReqs
 #	foreach path $args {
 #	    set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
 #	    if {[string equal nomatch $nodeId]} {
 #		error "Could not find node $path"
 #	    }
-#	    lappend runState($this,scriptReqs) $nodeId
+#	    lappend runState([self object],scriptReqs) $nodeId
 #	}
 #    }
 #    
 #    method SetValue {path value} {
 #        set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
-#        switch -- [$this GetModelEval $path] {
+#        switch -- [[self object] GetModelEval $path] {
 #            INPUT {
 #		PlaceInArray $modelNode $nodeId $value 0 [RunningInC $modelNode]
-#                switch -glob -- [$this GetModelType $path] {
+#                switch -glob -- [[self object] GetModelType $path] {
 #                    FLAG {
 #                        do_for_node $modelNode set ::checkStates($nodeId) $value
 #                    }
@@ -676,7 +427,7 @@ redo with helper object
 #                Reset
 #            }
 #            default {
-#                if {[string match [$this GetModelClass $path]  COMPARTMENT]} {
+#                if {[string match [[self object] GetModelClass $path]  COMPARTMENT]} {
 #                    do_for_node $modelNode SetModelValue $nodeId $value
 #                } else  {
 #                    puts "$path is not a parameter (variable or fixed) or compartment so its value cannot be changed."
@@ -716,4 +467,279 @@ redo with helper object
     #proc SetModelGraph {node args}
     #proc GetModelTime {}
     #proc GetModelEndTime {}
+}
+
+oo::class create iotool::HelperController {
+    # Class providing basic control of existing helpers
+    # The constructor DOES NOT create a helper use class Helper
+    variable modelInst winId;    #Tk path to RunControl window
+    
+    destructor {
+        if {![string match *_3dinst [self object]]} {
+	    destroy $winId
+	}
+    }
+
+    method getWinId {} {
+	return $winId
+    }
+    
+    method Show {} {
+	if {[string equal $winId [winfo toplevel $winId]]} {
+	    do_for_node [my GetNode] wm deiconify $winId
+	}
+    }
+    
+    method Hide {} {
+        #puts "HelperController Hide $winId; $modelNode"
+	if {[string equal $winId [winfo toplevel $winId]]} {
+	    do_for_node [my GetNode] wm withdraw $winId
+	}
+    }
+
+    method GetNode {} {
+	return [$modelInst getNode]
+    }
+}
+
+oo::class create iotool::Snap {
+    
+    superclass iotool::HelperController
+    
+    variable myNode winId
+    constructor {modelWindow path} {
+        set winId [$modelWindow CreateSnapWindow $path]
+	set myNode $path
+        Hide
+    }
+
+    method SaveCurrent {filename} {
+	do_for_node [my GetNode] SaveSnapToFile $winId $myNode $filename
+    }
+
+    method Update {} {
+	set updateCmd [$winId.bbframe.buttonBox itemcget 1 -command]
+	uplevel #0 $updateCmd
+    }
+
+    method StartLogging {filename} {
+	set myId [do_for_node [my GetNode] GetIdFromCaptionPath $myNode]
+	do_for_node [my GetNode] StartLogging $winId [my GetNode] $myId $filename
+    }
+
+    method StopLogging {} {
+	set myId [do_for_node [my GetNode] GetIdFromCaptionPath $myNode]
+	do_for_node [my GetNode] StopLogging $winId [my GetNode] $myId
+    }
+}
+    
+oo::class create iotool::Layer {
+    variable State host modelInst winId;    # canvas 
+    
+    constructor {modelWindow layerTool} {
+	global helperTable
+
+	set State {}
+	set modelInst $modelWindow
+	set host $layerTool
+	set winId [$host getCanvas]
+	set helperTable([self object],foci) {}
+     }
+
+    destructor {
+	#ShowMess debug info "Killing $winId" ok
+	global helperTable
+
+	if {[string equal [self object] [$modelInst hasClicks]]} {
+	    $modelInst releaseClicks
+	}
+	foreach node $helperTable([self object],foci) {
+	    $::runState([my GetNode],inspId) helperLeaf $node [self object] 0
+	}
+	unset helperTable([self object],foci)
+	if {[winfo exists $winId]} {
+	    $winId delete [namespace tail [self object]].main
+	    $winId delete [namespace tail [self object]].legend
+	} ;# otherwise called by deletion of window
+    }
+
+    method getNode {} {
+	return [$modelInst getNode]
+    }
+
+    # All derived classes must reimplement with correct keyvalue
+    method keyValue {} {
+        return abstractLayer
+    }
+# only old-style helpers have keyvalues, but this is needed for some reason
+
+    # likewise
+    method identify {} {
+        return abstractLayerTitle
+    }
+
+# This is optional, some helpers do not store earlier values
+    method clear {} {
+    }
+
+# This is optional, some helpers do not distinguish data from different runs
+    method reset {} {
+    }
+
+# This is optional, some helpers may keep their state permanently up to date
+    method prepareSaveString {} {
+	set State
+    }
+    
+# default is no legend
+    method getNewLegendSide {} {
+	return n
+    }
+
+}
+
+oo::class create iotool::Helper {
+    superclass iotool::HelperController
+    variable State modelInst winId
+    
+    constructor {modelWindow helperTitle} {
+	global tcl_platform SimileAutoObjLoaded helperTable
+
+	set State {}
+	set modelInst $modelWindow
+        #puts "Helper constr $modelWindow [KeyValue] $winTitle"
+
+	# ShowMessage debug info "Making $helperId $helperTitle" ok
+	set helperTable([self object],foci) {}
+	if {[string match *_3dinst [self object]]} {
+	    set winId placeholder
+	    return
+	} else {
+	    set winId ${::RunEnv::CurrentContainer}.container
+	    pack [ttk::frame $winId] -fill both -expand true
+	    bind $winId <Destroy>  "[self object] destroy"
+# needed because gui can remove parent widget
+	}
+	set helperTable($winId,whichInstance) [self object]
+        #puts "Helper constr [self object] winId $winId"
+    }
+    
+    destructor {
+	#ShowMess debug info "Killing $winId" ok
+	global helperTable runState
+
+	if {[string equal [self object] [$modelInst hasClicks]]} {
+	    $modelInst releaseClicks
+	}
+	set modelNode [my GetNode]
+	if {[llength [array names runState $modelNode,helperId]]} {
+	    # 'info exists' buggy in itcl4
+	    if {[string equal $winId $runState($modelNode,helperId)]} {
+		unset runState($modelNode,cnvs)
+		unset runState($modelNode,helperId)
+	    }
+	    foreach node $helperTable([self object],foci) {
+		$runState($modelNode,inspId) helperLeaf $node [self object] 0
+	    }
+	}
+	# bind $winId <Destroy> {} ;# prevent destructor calling itself when...
+	# (done by base destructor)	    destroy $winId
+	if {[string match *_3dinst [self object]]} return
+	unset helperTable($winId,whichInstance)
+	unset helperTable([self object],foci)
+	next
+    }
+
+    method getNode {} {
+	$modelInst getNode
+    }
+
+    method getState {} {
+	set State
+    }
+
+    method setState {new} {
+	set State $new
+    }
+
+    method reset {} {
+    }
+    
+    method display {a1 a2 a3} {
+    }
+
+    # All derived classes must reimplement with correct keyvalue
+    #method KeyValue {} {
+    #    return abstractHelper
+    #}
+# only old-style helpers have keyvalues, but this is needed for some reason
+
+    # likewise
+    #method Identify {} {
+    #    return abstractTitle
+    #}
+
+# This is optional, some helpers do not store earlier values
+    method Clear {} {
+    }
+
+# This is optional, some helpers may keep their state permanently up to date
+    method prepareSaveString {} {
+    }
+
+    method Introspect {cmd} {
+	return [eval $cmd]
+    }
+}
+
+oo::class create iotool::OldStyleHelper {
+    superclass iotool::Helper
+    variable winId oldSpace
+    
+# compulsory
+    self {
+	method identify {} {
+	    return [[my KeyValue]::identify]
+	}
+    }
+
+    constructor {modelWindow winTitle {state {}}} {
+	global helperTable
+
+	next $modelWindow $winTitle
+	variable State
+
+#	set this4 [my GetNode] ;# flagrant Itcl4 bug workaround
+	set helperTable(beingCalled) [self]
+	set oldSpace [string map {_dot_ .} \
+			  [namespace tail [info object class [self object]]]]
+	if {[llength $state]} {
+	    set State $state
+	# need to catch error here because catching later leaves inconsistency
+	    if {[catch {${oldSpace}::Restore $winId} hiccup]} {
+		Query [list iotool_restore_fail [${oldSpace}::identify] \
+                           $::errorInfo] warning helpers {} abort
+	    }
+	} else {
+	    ${oldSpace}::initialize $winId
+	}
+	set helperTable(beingCalled) {}
+    }
+
+# optional (but all old-style helpers have it)
+    method reset {} {
+	return [${oldSpace}::reset $winId]
+    }
+    
+# optional (but all old-style helpers have it)
+    method display {current display update} {
+	return [${oldSpace}::display $winId $current $display $update]
+    }
+
+# optional if you never call GrabClicks (but all old-style helpers have it)
+    method click {path} {
+	set node [do_for_node [my GetNode] GetIdFromCaptionPath $path]
+	set caption [lindex [split $path /] end]
+	return [${oldSpace}::click $winId $node $caption]
+    }
 }

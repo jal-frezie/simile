@@ -421,16 +421,16 @@ namespace eval RunEnv {
 
 	set inst $helperTable($CurrentContainer.container,whichInstance)
 # need to test, still called from cut if not available
-	if {![catch {$inst info function CopyToClipboard}]} {
-	    $inst CopyToClipboard
-	}
+#	if {![catch {$inst info function CopyToClipboard}]} {
+	    $inst copyToClipboard
+#	}
 
 	set copyfile $simtmpdir/mrecopy.txts
 # If helper includes a PrepareSaveString command, call it
-	$inst PrepareSaveString
+	$inst prepareSaveString
 	set stream [NetOpen $copyfile w]
 	puts $stream [namespace tail [$inst info class]]
-	puts $stream [StripCrs [$inst cget -State]]
+	puts $stream [StripCrs [$inst getState]]
 	close $stream
     }
     
@@ -469,10 +469,10 @@ namespace eval RunEnv {
         #ShowMess debug info "DeleteHelperContainer: $containerId\n \
         #        children $children\n \
         #        parentType $parentType" ok; ##################
-	set children [winfo children $containerId]
-        if {[lsearch $children *.container]>-1} {
-	    set oldObj $helperTable($containerId.container,whichInstance)
-	    itcl::delete object $oldObj ;# this deletes widget
+	set winId $containerId.container
+        if {[winfo exists $winId]} {
+	    set oldObj $helperTable($winId,whichInstance)
+	    $oldObj destroy ;# this deletes widget
         } else {
 	    set parentPath [FindParentpanedwindowOrNotebook $containerId]
 	    set parentType [winfo class $parentPath]
@@ -481,7 +481,7 @@ namespace eval RunEnv {
                 } [PanedWClass] {DeletePane $parentPath $containerId}
         }
 	PreserveSetup 1
-        if {[winfo exists $containerId]} {SetCurrentContainer $containerId }
+        if {[winfo exists $containerId]} {SetCurrentContainer $containerId}
     }
     
     proc DeleteHelperCurrentContainer {} {
@@ -667,7 +667,7 @@ namespace eval RunEnv {
     }
 
     proc FocusTool {hlpr} {
-	set cont [$hlpr cget -winId]
+	set cont [$hlpr getWinId]
 	SetCurrentContainer $cont
 	while {[set page [FindParentNotebookPage $cont]] ne ""} {
 	    set cont [winfo parent $page]
@@ -768,7 +768,6 @@ namespace eval RunEnv {
 	variable dp0
 	variable addMenuLocn
 
-#puts "SetCurrentContainer $win"
         set mainframe $helperTable($currentNode,whichRunEnv)
         set mreMenu ${mainframe}top
         set pw [winfo parent $win]
@@ -793,13 +792,13 @@ namespace eval RunEnv {
 
 	    set inst $helperTable($win.container,whichInstance)
 	    # now reset add menu in case
-	    set allFns [$inst info function]
-	    if {[lsearch $allFns *CustomizeAddMenu]<0} {
+	    set allFns [info object methods $inst -all]
+	    if {[lsearch $allFns *customizeAddMenu]<0} {
 		set AddAbility disabled
 		$mreMenu insert $addMenuLocn cascade -label [tr. "Add"] \
 		    -menu .helpers.sub2
 	    } else {
-		set AddAbility [$inst CustomizeAddMenu $mreMenu $addMenuLocn]
+		set AddAbility [$inst customizeAddMenu $mreMenu $addMenuLocn]
 	    }
 		
 		
@@ -1121,7 +1120,7 @@ namespace eval RunEnv {
 	upvar 1 metaStream metaStream
 
 	set inst $helperTable($winId,whichInstance)
-        set helperId [$inst info class]
+        set helperId [info object class $inst]
         puts $metaStream "$indent <container type=\"[namespace tail $helperId]\">"
         # substitute <cr>s so entry goes on one line
         # not a toplevel #lappend metaList [StripCrs [wm title $winId]]
@@ -1131,13 +1130,13 @@ namespace eval RunEnv {
 # expanded before executing helper namespace so window Id is copied from local 
 # variable.
 #	namespace eval ::$helperId set winId $winId {;
-#	    if {[llength [info procs PrepareSaveString]]} {
+#	    if {[llength [info procs prepareSaveString]]} {
 #		PrepareSaveString $winId
 #	    }
 #	}
-	$inst PrepareSaveString
+	$inst prepareSaveString
 	puts -nonewline $metaStream "  $indent<!\[CDATA\["
-	puts -nonewline $metaStream [$inst cget -State]
+	puts -nonewline $metaStream [$inst getState]
 	puts $metaStream "\]\]>"
 	puts $metaStream "$indent</container>"
     }

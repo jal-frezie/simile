@@ -217,14 +217,14 @@ proc AddToWatched {node} {
     if {$helperTable(beingCalled) eq ""} return
     lappend helperTable($helperTable(beingCalled),foci) $node
 #    $helperTable(VariableList)::AddHelperLeaf $RunEnv::variableListFrame($myNode).container $node $helperTable(beingCalled)
-    $::runState($myNode,inspId) HelperLeaf $node $helperTable(beingCalled) 1
+    $::runState($myNode,inspId) helperLeaf $node $helperTable(beingCalled) 1
 }
 
 proc ListFoci {node} {
 	global helperTable runState
 
 	foreach {name inst} [array get helperTable *,whichInstance] {
-	    if {[string equal $node [$inst GetNode]]} {
+	    if {[string equal $node [$inst getNode]]} {
 		foreach focus $helperTable($inst,foci) {
 		    set allFoci($focus) 1
 		}
@@ -464,7 +464,7 @@ proc ProdFromHelper {winId node caption} {
 	set ::paramData(newPath,done) [list $caption $node]
     } else {
 	set inst $helperTable($winId,whichInstance)
-	ProdObj [$inst GetNode] $node $caption
+	ProdObj [$inst getNode] $node $caption
     }
 }
 

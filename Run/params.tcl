@@ -43,8 +43,8 @@ proc FileParamDialogue {topNode topWin mustShow} {
     set helperId $::helperTable(ParamEditor)
     set runClass $::classTable(run,$topNode)
     array unset widgetNames /$topNode/*
-    do_for_node $topNode similescript::$helperId $hlp $runClass parameters
-
+    do_for_node $topNode iotool::$helperId create $hlp $runClass parameters
+    
     if {$mustShow || [llength $paramData(needed)]} {
         pack [set bfrm [frame .fpdialogue.buttons ]] -fill x
         pack [label $bfrm.banner -fg red -text [tr. "All values with red captions must be set to run the model."]]

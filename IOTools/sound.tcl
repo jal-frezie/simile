@@ -2,23 +2,26 @@
 # interface.
 
 set newHelperClass Sound20220921
-itcl::class similescript::$newHelperClass {
-    inherit Helper
-    proc Identify {} {
-	return "Sound wave output"
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
+    variable winId modelInst State
+    
+    self {
+	method identify {} {
+	    return "Sound wave output"
+	}
     }
 
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
 	if {[string length $state]} { ;# we are restoring 
 	    set State $state ;# keep it local
 	    pack [message $winId.message \
 		      -text "Generating sound wave for [lindex $State 0]"]
 	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
 	    AddWaveCommand [$modelInst getNode] $useNode "/model/"
-	    Display 0 0 0
+	    my display 0 0 0
 	} else {
 	    # new instance so request data from model
 	    pack [message $winId.message \
@@ -32,19 +35,20 @@ itcl::class similescript::$newHelperClass {
 	    catch {AddWaveCommand [$modelInst getNode]
 		[GetIdFromCaptionPath [lindex $State 0]] "/none/"}
 	}
+	next
     }
 
-    public method Click {path} {
+    method Click {path} {
 	set State [list $path [$modelInst getMinValue $path] \
 		       [$modelInst getMaxValue $path]]
 	SetState $winId $State
 	$winId.message configure -text "Generating sound wave for $path"
 	AddWaveCommand [$modelInst getNode] [GetIdFromCaptionPath $path] "/model/"
 	$modelInst releaseClicks
-	Display 0 0 0
+	my display 0 0 0
     }
 
-    public method Reset {} {
+    method Reset {} {
 	# node id may be out of date or lost due to rebuild --
 	if {[info exists State]} {
 	    set topNode [$modelInst getNode]
@@ -53,7 +57,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method Display {time dispInt step} {
+    method display {time dispInt step} {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter

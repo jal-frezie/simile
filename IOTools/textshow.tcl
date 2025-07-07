@@ -2,27 +2,28 @@
 # interface.
 
 set newHelperClass TextView20140827
-itcl::class similescript::$newHelperClass {
-    inherit Helper
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
 
-    proc Identify {} {
-	return "Text viewer"
+    self {
+	method identify {} {
+	    return "Text viewer"
+	}
     }
 
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
 	pack [text $winId.tx] -fill both -expand 1
 	if {[string length $state]} { ;# we are restoring 
 	    $winId.tx insert end $state
 	}
     }
 
-    public method PrepareSaveString {} {
+    method PrepareSaveString {} {
 	set State [$winId.tx get 1.0 end]
     }
 
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
     }
 }

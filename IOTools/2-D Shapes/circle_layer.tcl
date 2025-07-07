@@ -2,21 +2,21 @@
 # 0 for the z coords
 
 set newLayerClass Circles20171122
-itcl::class similescript::$newLayerClass {
-    inherit ShapeLayer
+oo::class create iotool::$newLayerClass {
+    superclass iotool::ShapeLayer
 
-    proc Identify {} {
-	return "Circle Plotter"
+    # need to insert type as extra arg to constructor
+    constructor {modelInst mainCanvas args} {
+	eval [list next $modelInst $mainCanvas spheres] $args
     }
 
-    constructor {modelInst mainCanvas xzoom yzoom {state {}}} {
-# perverse extra body because base class constructor has args
-	ShapeLayer::constructor $modelInst $mainCanvas spheres \
-	    $xzoom $yzoom $state
-	    
-    } { }
+    self {
+	method identify {} {
+	    return "Circle Plotter"
+	}
+    }
 
-    public method GetTitle {} {
-	return [GetSortTitle Circles]
+    method getTitle {} {
+	return [my GetSortTitle Circles]
     }
 }

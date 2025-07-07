@@ -1516,8 +1516,7 @@ proc MenuSelect { window button item } {
 		wm withdraw $helperTable($node,whichRunEnv)
 
 		set ::preSelect [file join $::simtmpdir temp.sxf]
-		similescript::$helperTable(ParamEditor)::Save \
-		    $::runState($node,parmsId) ${node}_expt
+		$::runState($node,parmsId) save ${node}_expt
 	    } else {
 		set mreIsNew 1
 	    }

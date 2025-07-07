@@ -2,17 +2,18 @@
 # interface.
 
 set newHelperClass VUMeter200070828
-itcl::class similescript::$newHelperClass {
-    inherit Helper
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
 
-    proc Identify {} {
-	return "Level indicator"
+    self {
+	method identify {} {
+	    return "Level indicator"
+	}
     }
 
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
 	pack [::ttk::progressbar $winId.pb -orient v] -fill both -expand true
 	if {[string length $state]} { ;# we are restoring 
 	    set State $state ;# keep it local
@@ -25,7 +26,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method Click {path} {
+    method Click {path} {
 	set State [list $path [$modelInst getMinValue $path] \
 		       [$modelInst getMaxValue $path]]
 	destroy $winId.message
@@ -33,7 +34,7 @@ itcl::class similescript::$newHelperClass {
 	Display 0 0 0
     }
 
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter

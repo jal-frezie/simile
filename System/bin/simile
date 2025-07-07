@@ -17,9 +17,9 @@ if {![catch {file link $invoc} tgt]} { ;# it's a link
 
 set goScript [file join [file dirname [file dirname [file dirname $invoc]]] \
 		  Run simile.tcl]
-if {[catch {source $goScript} gotErr]} {
-    lappend allFails {} $errorInfo
-foreach versSuffix {8.6} {
+#if {[catch {source $goScript} gotErr]} {
+#    lappend allFails {} $errorInfo
+foreach versSuffix {9.0 8.6} {
     if {[catch {exec tclsh$versSuffix $goScript {*}$argv} gotErr]} {
 	lappend allFails $versSuffix $errorInfo
     } else {

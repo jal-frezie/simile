@@ -881,7 +881,7 @@ namespace eval grid005 {
 	variable useNodes
 
         eval {$winId.${axis}scroll set} $args
-        reposn_scale [namespace current] $winId
+        reposn_scale $::helperTable($winId,whichInstance) $winId
 	if {$axis eq "v" && ![info exists useNodes($winId,groJob)]} {
 	    set useNodes($winId,groJob) \
 		[after 10 [namespace code [list FillCanvas $winId]]]

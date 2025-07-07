@@ -2,18 +2,19 @@
 # interface.
 
 set newHelperClass AcroExp20080408
-itcl::class similescript::$newHelperClass {
-    inherit Helper
-    public variable table
+oo::class create iotool::$newHelperClass {
+    superclass iotool::Helper
+    variable table
 
-    proc Identify {} {
-	return "Acronym expander"
+    self {
+	method identify {} {
+	    return "Acronym expander"
+	}
     }
 
     constructor {modelInst winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-	Helper::constructor $modelInst $winTitle
-    } {
+	next $modelInst $winTitle
+
         set toolbarItems [list \
                 [list clear.gif "Clear" [namespace code "clear $winId"] ] \
                 [list add.gif "Add a variable" \
@@ -29,7 +30,7 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method LoadAcros {} {
+    method LoadAcros {} {
 	set acroTable [ChooseFile acronyms.txt \
 			   [tr. "Acronym definition file:"] 0 [GetNode]]
 	set acroFile [open $acroTable r]
@@ -71,14 +72,14 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
-    public method AddVariable {} {
+    method AddVariable {} {
 	# new instance so request data from model
 	$winId.f.message config \
 	    -text "Click on model component to list its acronym and expansion"
 	$modelInst grabClicks $this
     }
 
-    public method Click {path} {
+    method Click {path} {
 	lappend State $path
 	$winId.f.message config -text {}
 	set capt [split [lindex [split $path /] end] " \n\t"]
@@ -94,7 +95,7 @@ itcl::class similescript::$newHelperClass {
 	Display 0 0 0
     }
 
-    public method Display {time dispInt step} {
+    method Display {time dispInt step} {
     }
 
     proc CreateTable {winId} {

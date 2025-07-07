@@ -110,7 +110,7 @@ namespace eval ::maptools2 {
 	upvar 1 useNodes useNodes
 
         #ShowMess debug info "recolour_scale " ok
-	set cnv [$parentSpc GetCanvas]
+	set cnv [$parentSpc getCanvas]
         $cnv delete colour_scale
 #        if {$useNodes($winId,nrow)>$useNodes($winId,ncol)} then {
 #            set n $useNodes($winId,nrow)
@@ -221,7 +221,7 @@ namespace eval ::maptools2 {
     }
     
     proc reposn_scale {parentSpc winId} {
-	set cnv [${parentSpc}::GetCanvas $winId]
+	set cnv [$parentSpc getCanvas]
         set rightSc [$cnv canvasx [winfo width $cnv]]
         set bottomSc [$cnv canvasy [winfo height $cnv]]
 	
