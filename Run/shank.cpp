@@ -1893,9 +1893,9 @@ void ExecutingModel::start_in_thread(void *action(void *)) {
 void ExecutingModel::signal_complete(xmList* args) {
     set_completion(1);
     pthread_mutex_lock(&args->mtx);
-    set_completion(2);
     pthread_cond_signal(&args->cond);
     pthread_mutex_unlock(&args->mtx);
+    set_completion(2);
 }
 
 excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
