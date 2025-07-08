@@ -616,6 +616,7 @@ install:
 		IOTools/edit_colour_key.tcl \
 		IOTools/inpoint.tcl \
 		IOTools/maps2.tcl \
+		IOTools/sound.tcl \
 		IOTools/threedtools.tcl \
 		IOTools/textshow.tcl \
 		IOTools/timeprofiles.tcl \
@@ -705,7 +706,7 @@ install:
 		$(SYSDIR)/lib/Stubs/can2svg1.2/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg1.2/uriencode.tcl \
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
-		$(SYSDIR)/lib/Stubs/Trf/pkgIndex.tcl \
+		$(SYSDIR)/lib/Stubs/Trf2.1/pkgIndex.tcl \
 		$(SHIM) \
 		$(UNPK) \
 		$(SLDIR)/$(SHANK) \
