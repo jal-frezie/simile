@@ -425,7 +425,7 @@ oo::class create iotool::$newHelperClass {
 	if {$vscale<$scale} {
 	    set scale $vscale
 	}
-	Zoom $scale $scale
+	my Zoom $scale $scale
 	my posnLegends
     }
 
