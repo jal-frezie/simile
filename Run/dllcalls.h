@@ -108,6 +108,10 @@ typedef unsigned char BOOLEAN;
 #define SIMILE_VERSION	"7.3"
 #define NEST 32
 
+#if TCL_MAJOR_VERSION<9
+typedef int Tcl_Size;
+#endif
+
 #define SIM_PAR_EXEC 1
 #ifdef SIM_PAR_EXEC
     #include <pthread.h>

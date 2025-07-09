@@ -1806,11 +1806,12 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
      interfaceCmd, graphCmd, handleDataCmd, freeDataHandleCmd, listobjCmd,
      randseedCmd, random01Cmd, addWaveCommandCmd};
   int cmdNo;
-  // char pkgName[16];
+  char pkgName[16];
 
-  // sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
+  sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   // Use the Tcl Stubs mechanism --version is earliest we expect to work
-  if (!Tcl_InitStubs(interp, "9.0", 0)) return TCL_ERROR;
+  if (!Tcl_InitStubs(interp, pkgName, 0))
+    return TCL_ERROR;
   proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
   for (cmdNo = 0; cmdNo < 34; ++cmdNo) {
     Tcl_CreateObjCommand(interp, allNames[cmdNo], allProcs[cmdNo], 
