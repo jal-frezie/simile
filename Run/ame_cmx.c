@@ -704,7 +704,8 @@ FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
 
 // converts a Tcl list of integers into a 0-teminated c array of them
 int  ints_from_list(Tcl_Interp *interp, Tcl_Obj *const obList, int indxs[]) {
-  int i, count, error;
+  int i, error;
+  Tcl_Size count;
   Tcl_Obj* elt;
 
   if ((error = Tcl_ListObjLength(interp, obList, &count)) != TCL_OK)
@@ -933,7 +934,8 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *const argv[]) {
-  int count, error, squirtPtr = 0, num_bytes, *dims;
+  int count, error, squirtPtr = 0, *dims;
+  Tcl_Size num_bytes;
   void* fpHandle;
   char **ptBytes;
   unsigned char *holder;
@@ -1315,7 +1317,8 @@ of arrays. It will put shorter lists in front of longer, though they should
 always be the same length. */
 
 int obj_compare_instance_status(Tcl_Obj* Obj, Tcl_Obj* RefObj) {
-  int count, num1, num2, val1, val2;
+  int count, val1, val2;
+  Tcl_Size num1, num2;
   Tcl_Obj **objVals, **refVals;
 
   Tcl_ListObjGetElements(NULL, Obj, &num1, &objVals);
@@ -1807,7 +1810,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
 
   // sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   // Use the Tcl Stubs mechanism --version is earliest we expect to work
-  if (!Tcl_InitStubs(interp, "8.5", 0)) return TCL_ERROR;
+  if (!Tcl_InitStubs(interp, "9.0", 0)) return TCL_ERROR;
   proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
   for (cmdNo = 0; cmdNo < 34; ++cmdNo) {
     Tcl_CreateObjCommand(interp, allNames[cmdNo], allProcs[cmdNo], 

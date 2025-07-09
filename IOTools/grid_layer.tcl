@@ -74,13 +74,13 @@ oo::class create iotool::$newLayerClass {
         #create widgets
         set coloursF [labelframe $dlg.colours -text "Colour scale"]
 	pack [button $coloursF.change -text "Edit colour key" \
-		  -command [namespace code [list [self object] EditKey $dlg]]]
+		  -command [namespace code [list my EditKey $dlg]]]
 #	foreach {ptName ptId} {Low bot Middle mid High top} {
 #	    pack [ttk::labelframe $coloursF.${ptId}colourF \
 #		      -text "$ptName  colour"] -fill x -padx 10
 #	    frame $coloursF.${ptId}colourF.colF -width 20 -height 15 \
 #		-bg $useNodes($winId,c${ptId})
-#	    pack [button $coloursF.${ptId}colourF.cbutton -text "..." \
+#	    pack [button $colploursF.${ptId}colourF.cbutton -text "..." \
 #		      -command [list [self object] Recolour $ptId \
 #				    $coloursF.${ptId}colourF.colF]] -side right
 #	    pack $coloursF.${ptId}colourF.colF -side right -padx 10
@@ -90,16 +90,16 @@ oo::class create iotool::$newLayerClass {
 	set rg [labelframe $dlg.relgeom -text "Offset and scaling"]
 	grid [label $rg.lxo -text [tr. {X offset:}]] \
 	    [ttk::entry $rg.exo -width 8 \
-		 -textvar [itcl::scope useNodes($winId,xoff)]] \
+		 -textvar [self namespace]::useNodes($winId,xoff)] \
 	    [label $rg.lyo -text [tr. {Y offset:}]] \
 	    [ttk::entry $rg.eyo -width 8 \
-		 -textvar [itcl::scope useNodes($winId,yoff)]]
+		 -textvar [self namespace]::useNodes($winId,yoff)]
 	grid [label $rg.lxs -text [tr. {X scale:}]] \
 	    [ttk::entry $rg.exs -width 8 \
-		 -textvar [itcl::scope useNodes($winId,xscale)]] \
+		 -textvar [self namespace]::useNodes($winId,xscale)] \
 	    [label $rg.lys -text [tr. {Y scale:}]] \
 	    [ttk::entry $rg.eys -width 8 \
-		 -textvar [itcl::scope useNodes($winId,yscale)]]
+		 -textvar [self namespace]::useNodes($winId,yscale)]
 	pack $rg -fill x
 
         set rangeF [labelframe $dlg.range -text "Scale range"]
@@ -113,14 +113,14 @@ oo::class create iotool::$newLayerClass {
 	$rangeF.maxF.entry insert 0 $useNodes($winId,max)
         pack $rangeF -padx 10 -pady 10
         pack [ttk::checkbutton $dlg.update -text "Update at display intervals" \
-		  -variable [itcl::scope useNodes($winId,displayUpdate)]]
+		  -variable [self namespace]::useNodes($winId,displayUpdate)]
         pack [ttk::checkbutton $dlg.popups -text "Pop up indices and values" \
-		  -variable [itcl::scope useNodes($winId,doPopup)]]
+		  -variable [self namespace]::useNodes($winId,doPopup)]
         
         set oriF [labelframe $dlg.orient -text "Legend position:"]
 	foreach legendPosn {l t r b n} desc {Left Top Right Bottom None} {
 	    radiobutton $oriF.$legendPosn -text $desc -value $legendPosn \
-		-var [itcl::scope useNodes($winId,legendSide)]
+		-var [self namespace]::useNodes($winId,legendSide)
 	}
 	grid x $oriF.t
 	grid $oriF.l $oriF.n $oriF.r
@@ -128,7 +128,7 @@ oo::class create iotool::$newLayerClass {
         pack $oriF -padx 10 -pady 10 -fill x
         
 	pack [frame $dlg.btns] -fill x
-	set adjCmd "\[[namespace code [list my AdjRange $rangeF]]\]"
+	set adjCmd [namespace code [list my AdjRange $rangeF]]
 	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
 		  -command $adjCmd] -side left
         pack [ttk::button $dlg.btns.done -text [tr. Done] \
@@ -168,7 +168,7 @@ oo::class create iotool::$newLayerClass {
 	set useNodes($winId,state) display0
     }
 
-    method Click {path} {
+    method click {path} {
         set testResult [$modelInst getValue $path]
         # This tests for the user having clicked on a suitable element
         # of the model diagram
@@ -182,7 +182,7 @@ oo::class create iotool::$newLayerClass {
 		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
 		    SetColours useNodes $winId
 		    set useNodes($winId,tgtDims) [$modelInst getModelDims $path]
-		    if {[IsTwoDee $winId]} {
+		    if {[my IsTwoDee $winId]} {
 			set useNodes($winId,colvals) USE_INDICES
 			set parentPath [join [lrange [split $path /] 0 end-1] /]
 			if {[$modelInst getModelEval $parentPath] eq \
@@ -191,7 +191,7 @@ oo::class create iotool::$newLayerClass {
 			    set useNodes($winId,xscale) 1.7320508
 			    set useNodes($winId,yscale) 1.5
 			}
-			FinishClicking
+			my FinishClicking
 		    } else {
 			$winId.ms configure -text "Now click on a variable giving the column IDs."
 			set useNodes($winId,state) display1
@@ -200,7 +200,7 @@ oo::class create iotool::$newLayerClass {
                     NumDistinct $winId $compon
                     set useNodes(nC,colvals) $compon
 		    set useNodes($winId,colvals) $path ;# not that it gets used
-		    FinishClicking
+		    my FinishClicking
 		}
 	    }
 	} else {
@@ -317,7 +317,7 @@ set repts [expr {$hex*$bpp/8}]
 	} else {
 	    append bmpData $rawBinary
 	}
-        [self object].original configure -data $bmpData -width $cols \
+        [self object].original configure -format bmp -data $bmpData -width $cols \
             -height $useNodes($winId,nrow)
 #        if {$useNodes($winId,hex)} {
 #	    set w [[self object].original cget -width]
@@ -344,7 +344,7 @@ set repts [expr {$hex*$bpp/8}]
 	    foreach {y row} $curValues {
 		set tgtRow [expr {$nrow-$y}]
 		foreach {x celval} $row {
-		    [self object].original put [ForGrid $celval] \
+		    [self object].original put [my ForGrid $celval] \
 			-to [incr x $colShift] $tgtRow
 		}
 		if {$useNodes($winId,hex)} {
@@ -369,7 +369,7 @@ set repts [expr {$hex*$bpp/8}]
 		    set length [llength $celval]
                 
 		    if {$length} {
-			lappend rowData($row) [ForGrid $celval]
+			lappend rowData($row) [my ForGrid $celval]
 		    } else {
 			lappend rowData($row) grey
 		    }
@@ -550,12 +550,12 @@ set repts [expr {$hex*$bpp/8}]
 	    }
 	}
 	# now a callback to layer manager to draw and posn it
-	$host PosnLegends
+	$host posnLegends
     }
 
     method GetSwatchColour {swId} {
 	::maptools2::SetSwatchColour ::[self object] $winId $swId
-	$host PosnLegends
+	$host posnLegends
     }
 
     method GetNewLegendSide {} {

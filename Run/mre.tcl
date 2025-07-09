@@ -915,9 +915,10 @@ namespace eval RunEnv {
 	variable CurrentContainer
 
 	set inst $helperTable($CurrentContainer.container,whichInstance)
-	set lvl [$inst LocateCascade $CurrentContainer.container.add $usedMenu]
-	$inst NewLayer ::similescript::$layerType $lvl
+	set lvl [$inst locateCascade $CurrentContainer.container.add $usedMenu]
+	$inst newLayer ::iotool::$layerType $lvl
     }
+    
     proc CreateDisplayPageContextMenu {} {
         if  {![winfo exists .pageContextMenu]} {
             set m [menu .pageContextMenu -tearoff 0]

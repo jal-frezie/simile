@@ -260,7 +260,7 @@ BOOLEAN unp_base_type(int dim) {
 }
 
 void extend_list(Tcl_Obj *localObj, Tcl_Obj *indObj, Tcl_Obj *localSubObj, int dir) {
-  int arrayOut;
+  Tcl_Size arrayOut;
 
   Tcl_ListObjLength(NULL, localSubObj, &arrayOut);
   if (arrayOut) {
@@ -542,7 +542,8 @@ void make_sub_block_sizes(int *dims, int *sizes) {
 // same as version in ame_cmx.c except terminates array with -1 because it is
 // for indices, which may be zero
 int ints_from_list(Tcl_Interp *interp, Tcl_Obj *const obList, int indxs[]) {
-  int i, count, error;
+  int i, error;
+  Tcl_Size count;
   Tcl_Obj* elt;
 
   if ((error = Tcl_ListObjLength(interp, obList, &count)) != TCL_OK)
@@ -746,7 +747,7 @@ hash_entry* hash_lookup(lzwParms* encodeState, unsigned char id) {
 }
 
 void write_bits(lzwParms* encodeState, uint16_t add) {
-  int curLen;
+  Tcl_Size curLen;
   unsigned char *curTgt;
 
   encodeState->tail += add << encodeState->tbits;
@@ -1140,7 +1141,7 @@ FINDABLE EXPORT int Unpacker_Init(Tcl_Interp *interp) {
 
   // sprintf(pkgName, "%d.d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   // Use the Tcl Stubs mechanism --version is earliest we expect to work
-  if (!Tcl_InitStubs(interp, "8.5", 0)) return TCL_ERROR;
+  if (!Tcl_InitStubs(interp, "9.0", 0)) return TCL_ERROR;
   Tcl_CreateObjCommand(interp, "c_testlicense", testlicenseCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 

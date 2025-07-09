@@ -497,7 +497,7 @@ oo::class create iotool::HelperController {
 	}
     }
 
-    method GetNode {} {
+    method getNode {} {
 	return [$modelInst getNode]
     }
 }
@@ -563,7 +563,7 @@ oo::class create iotool::Layer {
 	} ;# otherwise called by deletion of window
     }
 
-    method getNode {} {
+    method GetNode {} {
 	return [$modelInst getNode]
     }
 
@@ -650,7 +650,7 @@ oo::class create iotool::Helper {
 	next
     }
 
-    method getNode {} {
+    method GetNode {} {
 	$modelInst getNode
     }
 

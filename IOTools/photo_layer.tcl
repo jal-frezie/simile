@@ -25,7 +25,7 @@ oo::class create iotool::$newLayerClass {
 	} else {
 	    # new instance so request data from model
 	    set photoFile [ChooseFile aerial.gif "Image for base photo:" 0 \
-			       [GetNode]]
+			       [my GetNode]]
 	    image create photo [self].orig -file $photoFile
 	    PutSize [self].orig
 # scale down image if would be very large
@@ -69,7 +69,7 @@ oo::class create iotool::$newLayerClass {
 	}
 	pack [frame $dlg.btns] -fill x
 	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
-		  -command [list [self] AdjRange $rg]] -side left
+		  -command [namespace code [list my AdjRange $rg]]] -side left
         pack [ttk::button $dlg.btns.done -text [tr. Done] \
 		  -command "set polyProps(xdone) 1"] -side right
 	LetItShow $dlg polyProps(xdone)

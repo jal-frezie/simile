@@ -83,7 +83,7 @@ oo::class create iotool::$newHelperClass {
 		    set updatedLS [::gen3d1::VerifyVariables [my GetNode] \
 				       $layerName $layerState]
 		    if {[llength $updatedLS]} {
-			if {[catch {my NewLayer $layerType 0 $updatedLS}]} {
+			if {[catch {my newLayer $layerType 0 $updatedLS}]} {
 			    if {[string equal abort \
 				     [Query [list iotool_restore_fail \
 						 "layer $layerName" \
@@ -186,7 +186,7 @@ oo::class create iotool::$newHelperClass {
 	# }
     }
 
-    method LocateCascade {parentMenu subMenu} {
+    method locateCascade {parentMenu subMenu} {
 	for {set serialActive 0} {$serialActive <= [$parentMenu index end]} \
 	    {incr serialActive} {
 		if {[$parentMenu entrycget $serialActive -menu] eq $subMenu} {
@@ -207,7 +207,7 @@ oo::class create iotool::$newHelperClass {
 	    -menu $newEntries
     }
     
-    method NewLayer {type lvl {state {}}} {
+    method newLayer {type lvl {state {}}} {
 	set id [UniqueId layer]
 	pack forget $winId.viewport.bottom.message
 	set layerObj [$type create $id $modelInst [self] \
@@ -224,7 +224,7 @@ oo::class create iotool::$newHelperClass {
     }
 
     method TweakLayer {action calledFrom} {
-	set serialActive [my LocateCascade $winId.add $calledFrom]
+	set serialActive [my locateCascade $winId.add $calledFrom]
 	set oldIdx [expr {[llength $planes]-1-$serialActive/2}]
 	set layerObj [lindex $planes $oldIdx]
 	switch $action {

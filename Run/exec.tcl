@@ -471,7 +471,7 @@ proc ResetModel {myNode howInt initTime redo} {
 
 proc RepeatReset {myNode time} {
     global model_id instance_id
-    if {[string bytelength $model_id]} {
+    if {[string length $model_id]} {
 #	    set model_id $myNode
 	c_repeatreset $model_id $instance_id $time
     } else {
@@ -691,7 +691,7 @@ if {[info exists masterId]} { ;# we are in separate thread
 
 proc RunningInC {myNode} {
     global model_id
-    return [string bytelength $model_id] ;# it is ready
+    return [string length $model_id] ;# it is ready
 } 
 
 proc getnodeid {modelId capt} {
@@ -818,7 +818,7 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 				  [lrange $list 3 end-4] [lindex $list end]]]
 	    if {$when} {
 		set uftsi [lindex $list end-3]
-		while {$offset < [string bytelength $rawData]} {
+		while {$offset < [string length $rawData]} {
 		    binary scan $rawData @${offset}d spit
 		    lappend newList [expr {$uftsi*$spit}]
 		    incr offset 8
@@ -1425,7 +1425,7 @@ proc ExScrubRun {node} {
     #	error Bombed
     #    }
     if {[info exists model_id]} {
-        if {[string bytelength $model_id]} {
+        if {[string length $model_id]} {
             if {[info exists instance_id]} {
                 #ShowMess debug info "Exiting $model_id $instance_id" ok
                 c_exitmodel $model_id $instance_id

@@ -47,7 +47,7 @@ proc MakeHelperMenu {} {
 
 proc ListMenuContents {menu} {
     set e [$menu index last]
-    if {$e eq "none"} return {}
+    if {$e eq "none" || $e eq ""} return {}
     for {set item 0} {$item <= $e} {incr item} {
 	set type [$menu type $item]
 	set entry [list $type [$menu entrycget $item -label]]
@@ -159,17 +159,17 @@ proc AddHelperSublist {fm lm title ct} {
 		superclass iotool::OldStyleHelper
 		variable winId oldSpace
 		self {
-		    method KeyValue {} [list return $gKeyValue]
+		    method KeyValue {} [list return $::gKeyValue]
 		    method identify {} {return [[my KeyValue]::identify]}
 		}
 
-		if {[llength [namespace which ${gKeyValue}::clear]]} {
+		if {[llength [namespace which ${::gKeyValue}::clear]]} {
 		    # override do-nothing clear in base class defn
 		    method Clear {} {
 			${oldSpace}::clear $winId
 		    }
 		}
-		if {[llength [namespace which ${gKeyValue}::GetCanvas]]} {
+		if {[llength [namespace which ${::gKeyValue}::GetCanvas]]} {
 		    method getCanvas {} {
 			${oldSpace}::GetCanvas $winId
 		    }
@@ -182,20 +182,20 @@ proc AddHelperSublist {fm lm title ct} {
 #			}
 		    }
 		} ;# else use inherited warning message
-		if {[llength [namespace which ${gKeyValue}::Print]]} {
+		if {[llength [namespace which ${::gKeyValue}::Print]]} {
 		    # override canvas-based print above
 		    method print {} {
 			${oldSpace}::Print $winId
 		    }
 		}
-		if {[llength [namespace which ${gKeyValue}::CopyToClipboard]]} {
+		if {[llength [namespace which ${::gKeyValue}::CopyToClipboard]]} {
 		    # override canvas-based copy above
 		    method copyToClipboard {} {
 			${oldSpace}::CopyToClipboard $winId
 		    }
 		}
 		if {[llength [namespace which \
-				  ${gKeyValue}::PrepareSaveString]]} {
+				  ${::gKeyValue}::PrepareSaveString]]} {
 		    method prepareSaveString {} {
 			${oldSpace}::PrepareSaveString $winId
 		    }
