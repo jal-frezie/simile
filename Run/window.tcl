@@ -1134,7 +1134,11 @@ proc BindMouseWheel {tgt ctrl cmd} {
     } else {
 	set prefx {}
     }
-    switch [tk windowingsystem] {
+    set case [tk windowingsystem]
+    if {$case eq "x11" && [package vcompare [info tclversion] 9.0]>=0} {
+	set case default
+    }
+    switch $case {
 	x11 {
 	    bind $tgt <${prefx}Button-4> [string map {%D -5} $cmd]
 	    bind $tgt <${prefx}Button-5> [string map {%D 5} $cmd]
