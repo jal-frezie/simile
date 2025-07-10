@@ -285,8 +285,8 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #		       [expr {$hm-$rad*109.0/300}] [expr {$vm-$rad*250.0/300}] \
 #		       [expr {$hm+$rad*109.0/300}] [expr {$vm-$rad*250.0/300}] \
 #		       [expr {$hm+$rad*177.0/300}] [expr {$vm-$rad*177.0/300}]]
-	    eval {$w create polygon $hm $vm} $curve $fuzz {-fill $fCol -tags \
-							     "$tagSet has_info"}
+	    eval {$w create polygon $hm $vm} $curve $fuzz \
+		{-outline {} -fill $fCol -tags "$tagSet has_info"}
 	    eval {$w create line} $curve $fuzz {-width [expr {$splurge*$rad}] \
 		       -smooth 1 -fill $fCol -tags "$tagSet has_info noflash"}
 	    set curve [list [expr {$hm-$point}] [expr {$vm+$point}] \
@@ -298,8 +298,8 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #		       [expr {$hm-$rad*109.0/300}] [expr {$vm+$rad*250.0/300}] \
 #		       [expr {$hm+$rad*109.0/300}] [expr {$vm+$rad*250.0/300}] \
 #		       [expr {$hm+$rad*177.0/300}] [expr {$vm+$rad*177.0/300}]]
-	    eval {$w create polygon $hm $vm} $curve $fuzz {-fill $fCol -tags \
-							     "$tagSet has_info"}
+	    eval {$w create polygon $hm $vm} $curve $fuzz \
+		{-outline {} -fill $fCol -tags "$tagSet has_info"}
 	    eval {$w create line} $curve $fuzz {-width [expr {$splurge*$rad}] \
 		       -smooth 1 -fill $fCol -tags "$tagSet has_info noflash"}
 	}
