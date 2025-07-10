@@ -36,7 +36,6 @@ oo::class create iotool::$newHelperClass {
 	    -text "Use + button to add sounds to model events"
 	if {[string length $state]} { ;# we are restoring 
 	    #puts $state
-	    package require xml
 	    set hsfParser [::xml::parser -ignorewhitespace true \
 			       -elementstartcommand [namespace code [list my StartElement]] \
 			       -characterdatacommand [namespace code [list my Stuff]]]
