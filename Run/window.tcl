@@ -350,7 +350,7 @@ proc ClickObj { x y winId X Y action} {
 		    set equationbar(enumTypes) $enumTypes
 		    set lname $bar.function.menu.enumtypes
 # empty previous ones
-		    while {![string equal none [$lname index end]]} {
+		    while {![lsearch {{} none} [$lname index end]]==-1} {
 			destroy [$lname entrycget end -menu]
 			$lname delete end
 		    }
