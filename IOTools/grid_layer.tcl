@@ -278,11 +278,15 @@ oo::class create iotool::$newLayerClass {
 	set hex $useNodes($winId,hex)
 set repts [expr {$hex*$bpp/8}]
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
-		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
-			$useNodes($winId,max) $repts} rawBinary]} {
+		[catch {GetBinaryModelValue $node linear $useNodes($winId,min) \
+			$useNodes($winId,max)} useNodes($winId,rawBinary)]} {
 	    my DrawGrid7
 	    return
 	}
+        grid005::ConcoctImage $winId $node [self object].original
+        unset useNodes($winId,rawBinary)
+	return
+
 #puts "Binary is of size [string bytelength $rawBinary]"
 	set rows $useNodes($winId,nrow)
 	set cols [expr {$useNodes($winId,ncol)*(1+$hex)}]

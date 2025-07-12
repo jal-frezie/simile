@@ -796,6 +796,38 @@ namespace eval grid005 {
 	return $useNodes($winId,c$icolour)
     }
 
+    proc ConcoctImage {winId node tgt} {
+	upvar 1 useNodes useNodes
+	set rows $useNodes($winId,nrow)
+	set cols $useNodes($winId,ncol)
+	set bpp $useNodes($winId,bpp)
+	if {$bpp==24} { ;# make a PPM
+	    set ppmData [binary format a2aa*aa*aa3a \
+			     P6 { } $cols { } $rows { } 255 { }]
+	    append ppmData $useNodes($winId,rawBinary)
+	    $tgt configure -format ppm -data $ppmData \
+		     -width $cols -height $rows
+	} else { ;# otherwise make a GIF
+	    set gifData [binary format a6ssccc \
+			     GIF89a $cols $rows 0xf7 0 0]
+	    for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
+		set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
+		set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
+		append gifData [binary format H2H2H2 \
+				    [string range $colourStr 1 4] \
+				    [string range $colourStr 5 8] \
+				    [string range $colourStr 9 12]]
+	    }
+	    append gifData [binary format csssscc \
+				0x2c 0 0 $cols $rows 0 8]
+	    append gifData [GetBinaryModelValue $node gif \
+			 $useNodes($winId,min) $useNodes($winId,max)]
+	    append gifData [binary format ca 0 \;]
+	    $tgt configure -format gif -data $gifData \
+		     -width $cols -height $rows
+	}
+    }
+	    
     proc DrawGrid6 {winId node} {
         variable useNodes
 
@@ -803,15 +835,15 @@ namespace eval grid005 {
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
-		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
+		[catch {GetBinaryModelValue $node linear $useNodes($winId,min) \
 			$useNodes($winId,max)} useNodes($winId,rawBinary)]} {
 	    DrawGrid5 $winId $node
 	    return
 	}
 #puts "Binary is of size [string bytelength $useNodes($winId,rawBinary)]"
-	set rows $useNodes($winId,nrow)
-	set cols $useNodes($winId,ncol)
-	set bpp $useNodes($winId,bpp)
+	ConcoctImage $winId $node $useNodes($winId,hiddenMap)
+	return
+	    
 	set bitCols [expr 4*int(($bpp*$cols+31)/32)]
 	set fullSize [expr 1078+$bitCols*$rows]
 	set bmpData [binary format a2is2iiiissiiiiii \
@@ -910,7 +942,7 @@ namespace eval grid005 {
         $winId.c coords 1 [$winId.c canvasx $atLeft] [$winId.c canvasy $atTop]
 	$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB \
-	    -to 0 0 -zoom $mult $sqz -shrink
+	    -to 0 0 -zoom $mult $sqz -subsample 1 -1 -shrink
 	if {$useNodes($winId,hex) && $mult>1} {
 	    set firstShifted [expr {$dataB-($useNodes($winId,nrow)-$dataB)%2-1}]
 	    for {set line $firstShifted} {$line>=$dataT} {incr line -2} {
