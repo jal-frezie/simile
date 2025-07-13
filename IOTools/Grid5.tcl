@@ -826,6 +826,7 @@ namespace eval grid005 {
 	    $tgt configure -format gif -data $gifData \
 		     -width $cols -height $rows
 	}
+	$tgt copy $tgt -subsample 1 -1 ;# flip image so row 1 at bottom
     }
 	    
     proc DrawGrid6 {winId node} {
@@ -842,32 +843,6 @@ namespace eval grid005 {
 	}
 #puts "Binary is of size [string bytelength $useNodes($winId,rawBinary)]"
 	ConcoctImage $winId $node $useNodes($winId,hiddenMap)
-	return
-	    
-	set bitCols [expr 4*int(($bpp*$cols+31)/32)]
-	set fullSize [expr 1078+$bitCols*$rows]
-	set bmpData [binary format a2is2iiiissiiiiii \
-		 BM $fullSize {0 0} 1078 40 $cols $rows 1 $bpp 0 0 0 0 0 0]
-	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
-	    set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
-	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
-	    append bmpData [binary format H2H2H2c \
-				[string range $colourStr 9 12] \
-				[string range $colourStr 5 8] \
-				[string range $colourStr 1 4] 0]
-	}
-	set colBytes [expr {$cols*$bpp/8}]
-	set filling [string repeat 0 [expr $bitCols-$colBytes]]
-	if {[string length $filling]} {
-	    for {set row 0} {$row<$rows} {incr row} {
-		append bmpData [string range $useNodes($winId,rawBinary) \
-				    [expr $row*$colBytes] \
-				    [expr $row*$colBytes+$colBytes-1]] $filling
-	    }
-	} else {
-	    append bmpData $useNodes($winId,rawBinary)
-	}
-	$useNodes($winId,hiddenMap) configure -data $bmpData
     }
 
     proc zoomio {winId factor} {
@@ -942,7 +917,7 @@ namespace eval grid005 {
         $winId.c coords 1 [$winId.c canvasx $atLeft] [$winId.c canvasy $atTop]
 	$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB \
-	    -to 0 0 -zoom $mult $sqz -subsample 1 -1 -shrink
+	    -to 0 0 -zoom $mult $sqz -shrink
 	if {$useNodes($winId,hex) && $mult>1} {
 	    set firstShifted [expr {$dataB-($useNodes($winId,nrow)-$dataB)%2-1}]
 	    for {set line $firstShifted} {$line>=$dataT} {incr line -2} {

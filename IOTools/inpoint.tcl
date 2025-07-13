@@ -100,13 +100,13 @@ oo::class create iotool::$newLayerClass {
 #	set temp(act) [list $x $y $action]
 #	if {$action} {
 	    my SendPosn $x $y $action
-	    RedoRatesAndDisplay [my getNode]
+	    RedoRatesAndDisplay [my GetNode]
 #	}
     }
 
 
     method SendPosn {x y action} {
-	set myNode [my getNode]
+	set myNode [my GetNode]
 	set InC [RunningInC $myNode]
 	set col [expr {1+([$winId canvasx $x]/$transform(xzoom)-$useNodes(xoff))/$useNodes(xscale)}]
         set row [expr {1+(-[$winId canvasy $y]/$transform(yzoom)-$useNodes(yoff))/$useNodes(yscale)}]
@@ -172,7 +172,7 @@ oo::class create iotool::$newLayerClass {
 	PackItUp $dlg
     }
 
-    method ZoomTo {xzoom yzoom} {
+    method zoomTo {xzoom yzoom} {
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 # will adjust line widths
     }

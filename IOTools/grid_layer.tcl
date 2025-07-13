@@ -285,53 +285,16 @@ set repts [expr {$hex*$bpp/8}]
 	}
         grid005::ConcoctImage $winId $node [self object].original
         unset useNodes($winId,rawBinary)
-	return
 
-#puts "Binary is of size [string bytelength $rawBinary]"
-	set rows $useNodes($winId,nrow)
-	set cols [expr {$useNodes($winId,ncol)*(1+$hex)}]
-	set bitCols [expr 4*int(($bpp*$cols+31)/32)]
-	set fullSize [expr 1078+$bitCols*$rows]
-	set bmpData [binary format a2is2iiiissiiiiii \
-		 BM $fullSize {0 0} 1078 40 $cols $rows 1 $bpp 0 0 0 0 0 0]
-	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
-	    set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
-	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
-	    append bmpData [binary format H2H2H2c \
-				[string range $colourStr 9 12] \
-				[string range $colourStr 5 8] \
-				[string range $colourStr 1 4] 0]
-	}
-	set colBytes [expr {$cols*$bpp/8}]
-	set filling [string repeat 0 [expr $bitCols-$colBytes]]
-	if {[string length $filling] || $hex} {
-	    for {set row 0} {$row<$rows} {incr row} {
-		if {$hex && !($row%2)} {
-		    append bmpData \
-			[string range $rawBinary [expr $row*$colBytes] \
-			     [expr $row*$colBytes+$bpp/8-1]] \
-			[string range $rawBinary [expr $row*$colBytes] \
-			     [expr ($row+1)*$colBytes-$bpp/8-1]] $filling
-		} else {
-		    append bmpData \
-			[string range $rawBinary [expr $row*$colBytes] \
-			     [expr ($row+1)*$colBytes-1]] $filling
-		}
+        if {$useNodes($winId,hex)} {
+	    set w [expr 2*{[[self object].original cget -width]}]
+	    set h [[self object].original cget -height]
+	    [self object].original configure -width $w
+	    [self object].original copy [self object].original -zoom 2 1
+	    for {set shift [expr {$h-1}]} {$shift >= 0} {incr shift -2} {
+		[self object].original copy [self object].original -from 0 $shift $w [expr {$shift+1}] -to 1 $shift
 	    }
-	} else {
-	    append bmpData $rawBinary
 	}
-        [self object].original configure -format bmp -data $bmpData -width $cols \
-            -height $useNodes($winId,nrow)
-#        if {$useNodes($winId,hex)} {
-#	    set w [[self object].original cget -width]
-#	    set h [[self object].original cget -height]
-#	    [self object].original configure -width [expr 2*$w]
-#	    [self object].original copy [self object].original -zoom 2 1
-#	    for {set shift 0} {$shift < $h} {incr shift 2} {
-#		[self object].original copy [self object].original -from 0 $shift $w [expr {$shift+1}] -to 1 $shift
-#	    }
-#	}
     }
 
     method DrawGrid7 {} {
