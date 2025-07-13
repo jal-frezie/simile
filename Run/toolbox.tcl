@@ -2114,8 +2114,7 @@ proc SaveProjectFile {topNode path tgt} {
 
 	set ::preSelect [file join $path model.sxf]
 	RecordPathChoice .sxf $tgt $topNode
-	similescript::$::helperTable(ParamEditor)::Save \
-	    $runState($topNode,parmsId) ${topNode}_expt
+	$runState($topNode,parmsId) save {}
     }
 
     set projectF [NetOpen $ProjectFile w]

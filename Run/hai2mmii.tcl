@@ -319,18 +319,26 @@ proc DefFrom {hdlList} {
     }
 }
 
-proc GetBinaryModelValue { node args } {
+proc GetBinaryModelValue { node flavor args } {
     global myNode subbedPlots
     if {[info exists subbedPlots($node)]} {
 	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
-	    return [eval extract_binary [DefFrom [lindex $subbedPlots($node) 2]] \
-		       $args]
+	    switch $flavor {
+		linear {
+		    return [eval extract_binary \
+				[DefFrom [lindex $subbedPlots($node) 2]] $args]
+		} gif {
+		    return [eval extract_gif_tail \
+				[DefFrom [lindex $subbedPlots($node) 2]] $args]
+		}
+	    }
 	} else { # from tcl model or measured value from pest interface
 	    error "binary values not available"
 	}
     }
     AddToWatched $node
-    return [eval GetCompExecData $myNode Binary $node $args]
+    return [eval GetCompExecData $myNode \
+		[string map {linear Binary gif GIF} $flavor] $node $args]
 }
 
 proc ListDistinctModelValues { node } {
@@ -486,6 +494,9 @@ proc GetCompExecData {topNode prop args} {
 		set result [list [ExtractCList [DefFrom $hdl] 16777216 0]]
 	    } Binary {
 		set result [eval extract_binary [DefFrom $hdl] \
+				[lrange $args 1 end]]
+	    } GIF {
+		set result [eval extract_gif_tail [DefFrom $hdl] \
 				[lrange $args 1 end]]
 	    } Distinct {
 		set result [distinct_values $hdl]

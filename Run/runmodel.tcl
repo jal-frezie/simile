@@ -250,7 +250,7 @@ proc AddHelperSublist {fm lm title ct} {
             incr nct
         }
     }
-    if {[string equal none [$m index 0]]} {
+    if {[lsearch {{} none} [$m index 0]]>=0} {
 	destroy $m
     } else {
 	$fm add cascade -label $title -menu $m
