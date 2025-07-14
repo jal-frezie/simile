@@ -4,7 +4,7 @@
 #   set sign {}
 #}
 $c create text 0 0 -text {?} -anchor c \
-   	-tag "unscaled $title realwidth(300)" \
+   	-tag "unscaled $title shape_text realwidth(300)" \
 	-font "-family helvetica -weight bold -slant roman -size 25"
 # query
 
