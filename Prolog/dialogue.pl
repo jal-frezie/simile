@@ -927,7 +927,12 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    member('/tm/', PsUsed),
 	    DimL = LRefs,
 	    Recurse = 0;
-	instance><build_table_ref(table_const(1), Param, DoneExpr);
+	instance><build_table_ref(table_const(1), Param, DoneExpr, Dimty),
+	    table_data_is(TableData),
+	    member(dims=TableDims, TableData),
+	    length(Picked, Dimty),
+	    append(Picked, Dims, TableDims),
+	    append(Dims, _, DimL);
 	expand_library(Param, DoneExpr),
 	    Recurse = 1.
 

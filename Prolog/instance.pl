@@ -751,7 +751,7 @@ process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
 	    member(Ref, Refs), !;
 	NewExpr = Var),
 	    Recurse = 0;
-	(build_table_ref(table_const(1), OldVar, NewExpr);
+	(build_table_ref(table_const(1), OldVar, NewExpr, _D);
 	  member(OldVar-NewExpr, [channel_is(Ch)-channel_is(latency(Ch)),
 		traffic(Ch)-ceil(Ch-latency(Ch))]),
 	  atom(Ch)),
@@ -785,12 +785,13 @@ process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
 	expand_library(OldVar, NewExpr),
 	    Recurse = 1. % that's all the recursion we need
 
-build_table_ref(Table, NoArgs, Table) :-
+build_table_ref(Table, NoArgs, Table, 0) :-
         member(NoArgs, [table, table('')]), !.
 
-build_table_ref(Table, TableFn, RefTable) :-
+build_table_ref(Table, TableFn, RefTable, Dimty) :-
 	TableFn =.. [table, Ind1 | IndN], ShortTableFn =.. [table | IndN],
-	build_table_ref(element(Table,Ind1), ShortTableFn, RefTable).
+	build_table_ref(element(Table,Ind1), ShortTableFn, RefTable, SD),
+        Dimty is SD+1.
 
 process_references(Arg, ArgCapt, FragSm,
 		   sub(InPairs, BuildArrs, Refs)) :-
