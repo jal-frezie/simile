@@ -1327,11 +1327,12 @@ proc EditTableData {startLine capt dims trans} {
     global table_entry
     upvar 0 table_entry(values) values
 
+    set forEqn [expr {$dims eq [lrepeat 7 0]}]
     if {$table_entry(fileName) ne {}} {
 	AcquireTableData 0 $startLine
-    } elseif {$values eq {} || $table_entry(source)==-2} {
+    } elseif {$values eq {} || !$forEqn && $table_entry(source)==-2} {
 	# No file data selected, fill table with empties unless values there
-	if {$dims eq [lrepeat 7 0] || [lsearch $dims RECORDS]>-1} {
+	if {$forEqn || [lsearch $dims RECORDS]>-1} {
 	    set dims \
 		[GetDimOrTimePtList .table [tr. {Dimensions for new table}] \
 		   [tr. {Enter dimensions for new table, separated by commas:}]]
