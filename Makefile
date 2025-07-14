@@ -48,7 +48,7 @@ CFLAGS += $(OPT)
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
-VERS = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
+VERS = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh8.6)
 # 8.5 stubs work in 8.6 better than vice versa
 PT = .
 
