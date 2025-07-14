@@ -165,7 +165,7 @@ proc AddHelperSublist {fm lm title ct} {
 
 		if {[llength [namespace which ${::gKeyValue}::clear]]} {
 		    # override do-nothing clear in base class defn
-		    method Clear {} {
+		    method clear {} {
 			${oldSpace}::clear $winId
 		    }
 		}
@@ -405,7 +405,7 @@ proc ClearView {} {
 
     foreach {name inst} [array get helperTable *,whichInstance] {
 	if {[string equal $myNode [$inst getNode]]} { 
-	    $inst Clear
+	    $inst clear
 	}
     }
 }

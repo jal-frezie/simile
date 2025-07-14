@@ -680,7 +680,7 @@ oo::class create iotool::Helper {
     #}
 
 # This is optional, some helpers do not store earlier values
-    method Clear {} {
+    method clear {} {
     }
 
 # This is optional, some helpers may keep their state permanently up to date
