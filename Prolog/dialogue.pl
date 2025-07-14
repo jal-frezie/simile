@@ -680,9 +680,10 @@ reverse_engineer(Table, [Trans | MoreTrans], Here, TclRep) :-
 	make_e_t(Table, Trans, TclRep).
 
 make_e_t(Table, Trans, TclRep) :-
-	nth0(Table, Trans, Enum) ->
-	    append_atoms(['{"', Enum, '"}'], TclRep);
-	TclRep = Table.
+    integer(Table), % avoid excp in SWI
+    nth0(Table, Trans, Enum) ->
+	append_atoms(['{"', Enum, '"}'], TclRep);
+      TclRep = Table.
 
 check_bound(Eqn_st, FieldName, Function, Needed,
             Alternatives, Eqn, Value, Base, Error) :-
