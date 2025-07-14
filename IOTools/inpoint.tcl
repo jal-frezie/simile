@@ -132,7 +132,7 @@ oo::class create iotool::$newLayerClass {
 	}
     }
 
-    method PrepareSaveString {} {
+    method prepareSaveString {} {
 	    foreach comp {xcoord ycoord tgt} {
 		set useNodes($comp) [GetCaptionPathFromId $temp($comp)]
 	    }
