@@ -12,7 +12,7 @@ License:	Proprietary
 URL:		http://simulistics.com
 source:		simile_7.3.3.tar.gz
 
-BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, (redhat-lsb-core or redhat-lsb or lsb-release), tcl-devel >= 8.5, (tcl-devel >= 8.5 or tcl8-devel), libXcursor-devel >= 1.0, portaudio-devel >= 19
+BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, redhat-lsb-core, tcl-devel >= 8.5, tk-devel >= 8.5, libXcursor-devel >= 1.0, portaudio-devel >= 19
 # tk needed for building tkdnd and tktable
 Requires:       tk >= 8.5, gcc-c++ >= 4.0, tcl-tclxml >= 3.2, tcllib >= 1.11, tklib >= 0.5, tkimg >= 1.3, portaudio >= 19
 
