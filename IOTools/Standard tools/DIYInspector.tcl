@@ -145,7 +145,7 @@ oo::class create iotool::$newHelperClass {
 		    bindtags $label [linsert [bindtags $label] 0 $f]
 		    }		    
 		    if {$doPops} {
-			InspLabelPopup $label $component $capt
+			my InspLabelPopup $label $component $capt
 		}
 	    }
 	}
@@ -362,12 +362,13 @@ oo::class create iotool::$newHelperClass {
 	after 40 [list destroy $f] ;# destroying inline inexplicably fails
     }
     
-    proc InspLabelPopup {widget node capt} {
-	bind $widget <Enter> [::itcl::code AddPopup %W %X %Y $::myNode $node]
+    method InspLabelPopup {widget node capt} {
+	bind $widget <Enter> [namespace code \
+				  [list my AddPopup %W %X %Y $::myNode $node]]
 	bind $widget <Leave> RemovePopup
     }
 
-    proc AddPopup {wid X Y node capt} {
+    method AddPopup {wid X Y node capt} {
 	PostPopup $wid $X $Y
 	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt
     }
@@ -760,8 +761,8 @@ oo::class create iotool::$newHelperClass {
 	#bind $box.e <FocusOut> [list $box.tick invoke]
     }
 		
-    method HelperLeaf {node hlpr add} {
-	set id [[$hlpr info class]::Identify]
+    method helperLeaf {node hlpr add} {
+	set id [[info object class $hlpr] identify]
 	array set hlprIcons {Plotter graph \
 				 "XY Plotter" plotxy \
 				 "Polygon diagram" polys \
