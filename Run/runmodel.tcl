@@ -174,11 +174,11 @@ proc AddHelperSublist {fm lm title ct} {
 			${oldSpace}::GetCanvas $winId
 		    }
 		    method print {} {
-			PrintRandomCanvas [GetCanvas]
+			PrintRandomCanvas [${oldSpace}::GetCanvas $winId]
 		    }
 		    method copyToClipboard {} {
 #			if {[string match windows $tcl_platform(platform)]} {
-			    CopyCanvasToWindowsClipboard [GetCanvas] 0
+			    CopyCanvasToWindowsClipboard [${oldSpace}::GetCanvas $winId] 0
 #			}
 		    }
 		} ;# else use inherited warning message

@@ -21,8 +21,8 @@ override_dh_auto_clean:
 	dh_auto_clean --
 
 override_dh_auto_configure:
-#	cd Extensions/tkdnd; dh_auto_configure; cd ..
-	dh_auto_configure -- -C Extensions/tkdnd
+	cd Extensions/tkdnd; dh_auto_configure; cd ..
+#	dh_auto_configure -- -C Extensions/tkdnd
 
 # Likewise when making
 override_dh_auto_build:

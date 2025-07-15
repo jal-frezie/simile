@@ -429,7 +429,7 @@ namespace eval RunEnv {
 # If helper includes a PrepareSaveString command, call it
 	$inst prepareSaveString
 	set stream [NetOpen $copyfile w]
-	puts $stream [namespace tail [$inst info class]]
+	puts $stream [namespace tail [info object class $inst]]
 	puts $stream [StripCrs [$inst getState]]
 	close $stream
     }
