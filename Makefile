@@ -706,7 +706,7 @@ install:
 		$(SYSDIR)/lib/Stubs/can2svg1.2/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg1.2/uriencode.tcl \
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
-		$(SYSDIR)/lib/Stubs/Trf2.1/pkgIndex.tcl \
+		$(SYSDIR)/lib/Stubs/Trf/pkgIndex.tcl \
 		$(SHIM) \
 		$(UNPK) \
 		$(SLDIR)/$(SHANK) \
