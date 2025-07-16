@@ -18,9 +18,9 @@ oo::class create similescript::ModelWindow {
     }
     
     destructor {
-        if {![string match "" [itcl::find object similescript::RunControl]]} {
-            delete object similescript::RunControl
-        }
+#        if {![string match "" [itcl::find object similescript::RunControl]]} {
+#            delete object similescript::RunControl
+#        }
         #tk_messageBox -message "model win destructor"
         #Exit
 #        MenuClose $modelCanvas

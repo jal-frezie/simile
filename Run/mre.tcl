@@ -90,6 +90,9 @@ namespace eval RunEnv {
 	    if {[info exists helperTable($node,whereRunEnv)]} {
 		wm geometry $mreId $helperTable($node,whereRunEnv)
 		unset helperTable($node,whereRunEnv)
+		after idle WindUpQuery $mreId
+		Query model_stuck info execution $mreId ok
+		RestoreSashes $node $mreId
 	    }
         } else {
             set mreId .mre[newInt]
@@ -1548,7 +1551,45 @@ namespace eval RunEnv {
 #        }
 #       return $basename$i
 #    }
+
 } ;# end of namespace RunEnv
+
+    proc SashPosns {win} {
+	set result {}
+	if {[winfo class $win] eq "TPanedwindow"} {
+	    for {set n [expr {[llength [$win panes]]-2}]} {$n>=0} {incr n -1} {
+		lappend result "$win sashpos $n [$win sashpos $n];"
+	    }
+	}
+	foreach child [winfo children $win] {
+	    lappend result {*}[SashPosns $child]
+	}
+	return $result
+    }
+
+proc RestoreSashes {node mreId} {
+    global helperTable
+    
+    if {$helperTable($node,botchRunEnv) ne \
+	    [SashPosns $mreId.mainpw.mainDisplayPane]} {
+	eval {*}$helperTable($node,botchRunEnv)
+	after 10 RestoreSashes $node $mreId
+    } else {
+	unset helperTable($node,botchRunEnv)
+    }
+}
+
+proc WindUpQuery {mreId} {
+    if {[grab current] eq "$mreId.shortDlg" && \
+	    [winfo viewable $mreId.shortDlg]} {
+	foreach loser [after info] {
+	    after cancel $loser
+	}
+	SetDlgRes $mreId ok
+    } else {
+	after 10 WindUpQuery $mreId
+    }
+}
 
 proc RaiseMREFor {node} {
     global helperTable
@@ -1572,6 +1613,7 @@ proc MyRaise {top} {
 	catch {tclAE::send -s misc actv}
     }
 }
+
 # A top level window to contain the helpers
 # overrides mre.tcl Makemre
 proc Makemre { node } {

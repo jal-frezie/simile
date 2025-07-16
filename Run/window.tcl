@@ -1517,8 +1517,10 @@ proc MenuSelect { window button item } {
 		    [lsearch {build_c compile_c} $item]==-1} {
 		set helperTable($node,whereRunEnv) \
 		    [wm geometry $helperTable($node,whichRunEnv)]
+		set helperTable($node,botchRunEnv) \
+		    [SashPosns \
+			 $helperTable($node,whichRunEnv).mainpw.mainDisplayPane]
 		wm withdraw $helperTable($node,whichRunEnv)
-
 		set ::preSelect [file join $::simtmpdir temp.sxf]
 		$::runState($node,parmsId) save ${node}_expt
 	    } else {
