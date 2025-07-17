@@ -145,7 +145,7 @@ oo::class create iotool::$newLayerClass {
 	my display 0 0 0
     }
 
-    method Settings {} {
+    method settings {} {
 	set dlg [PutItThere .inpprop [winfo toplevel $winId]]
 	wm title $dlg "[my getTitle] properties"
         
@@ -165,7 +165,7 @@ oo::class create iotool::$newLayerClass {
         
 	pack [frame $dlg.btns] -fill x
 	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
-		  -command [namespace code [list my AdjRange $rg]] -side left
+		  -command [namespace code [list my AdjRange $rg]]] -side left
         pack [ttk::button $dlg.btns.done -text [tr. Done] \
 		  -command "set inpProps(xdone) 1"] -side right
 	LetItShow $dlg inpProps(xdone)
