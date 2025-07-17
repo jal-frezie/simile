@@ -153,7 +153,7 @@ oo::class create iotool::$newLayerClass {
     }
 
 ### Private methods ###
-    method GetCanvas {} {
+    method getCanvas {} {
 	return $winId
     }
 
@@ -529,7 +529,7 @@ set repts [expr {$hex*$bpp/8}]
 	$host posnLegends
     }
 
-    method GetNewLegendSide {} {
+    method getNewLegendSide {} {
 	if {$useNodes($winId,legendSide) ne "n"} {
 	    recolour_scale ::[self object] $winId
 	}

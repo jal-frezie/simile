@@ -62,7 +62,7 @@ oo::class create iotool::$newHelperClass {
         canvas $vp.c -xscrollcommand [namespace code [list my SetWithLegends x]] \
 					  -yscrollcommand [namespace code [list my SetWithLegends y]] -bg beige
 	::canvasnotes20070919::MakeCanvasAnnotatable $vp.c
-			     bind $vp.c <Configure> [namespace code [list my posnLegends]]
+	bind $vp.c <Configure> [namespace code [list my posnLegends]]
         pack $vp.c -fill both -expand true
 
 	set planes {}
