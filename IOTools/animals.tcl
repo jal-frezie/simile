@@ -4,7 +4,7 @@
 set newLayerClass Animals20131029
 oo::class create iotool::$newLayerClass {
     superclass iotool::Layer
-    variable useNodes transform temp modelInst winId
+    variable useNodes transform temp modelInst winId host
 
     self {
 	method identify {} {
@@ -59,7 +59,7 @@ oo::class create iotool::$newLayerClass {
 
     method settings {} {
 	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
-	wm title $dlg "[GetTitle] properties"
+	wm title $dlg "[my getTitle] properties"
         
 	set rg [labelframe $dlg.relgeom -text "Offset and scaling"]
 	grid [label $rg.lxo -text [tr. {X offset:}]] \
@@ -125,7 +125,7 @@ oo::class create iotool::$newLayerClass {
 	set useNodes(state) xcoord
     }
 
-    method Click {{path {}}} {
+    method click {{path {}}} {
 	set ms [winfo parent $winId].bottom.ms
 	set bn [winfo parent $winId].bottom.bn
 	if {$path eq ""} {
@@ -150,7 +150,7 @@ oo::class create iotool::$newLayerClass {
 	    } ycoord {
 		$ms configure -text "Now select a component whose value determines the size of the animals, or enter fixed value here:"
 		pack [ttk::entry $bn] -side bottom
-		bind $bn <Return> [list [self object] Click]
+		bind $bn <Return> [list [self object] click]
 		set useNodes(ycoord) $path
 		set useNodes(state) sizeval
 	    } sizeval {
@@ -166,7 +166,7 @@ oo::class create iotool::$newLayerClass {
 		set useNodes(dir) $path
 		set useNodes(state) displaying
 		set ::helperTable(beingCalled) $host
-		my Display 0 0 0
+		my Display 0
 	    }
 	}
     }

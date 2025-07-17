@@ -38,7 +38,7 @@ oo::class create iotool::$newLayerClass {
 	    set useNodes($winId,xscale) 1
 	    set useNodes($winId,yscale) 1
 	    set useNodes($winId,hex) 0
-	    set useNodes($winId,title) [my identify]
+	    set useNodes($winId,title) [[self class] identify]
 	    set useNodes($winId,editMode) 0
 	    set useNodes($winId,legendSide) n
 	    set useNodes($winId,imgs) 0
@@ -388,7 +388,11 @@ set repts [expr {$hex*$bpp/8}]
 	    }
 	} else {
 	    for {set chkSw 0} {$chkSw < $useNodes($winId,nswatches)} {incr chkSw} {
-		scan $useNodes($winId,c$chkSw) "#%2x%2x%2x%2x%2x%2x" r z g z b z
+		if {[scan $useNodes($winId,c$chkSw) "#%2x%2x%2x%2x%2x%2x" \
+			 r n g z b z]==3} { ;# 8-bit colour
+		    set b $g
+		    set g $n
+		}
 		if {$rgb eq "$r $g $b"} {
 		    # breaks if same colour reappears later in legend
 		    set wayThrough [expr {1.0*$chkSw/$useNodes($winId,nswatches)}]
@@ -424,7 +428,7 @@ set repts [expr {$hex*$bpp/8}]
 	    set inds [expr {$useNodes($winId,ncol)*($row-1)+$col}]
 	    set value [lindex [lindex [Flatten $curValues] $inds] 1]
 	}
-	return "Index $col,$row Value $value"
+	return "Index $row,$col Value $value"
     }
 
     method ZoomTo {xzoom yzoom} {

@@ -574,8 +574,10 @@ oo::class create iotool::Layer {
 # only old-style helpers have keyvalues, but this is needed for some reason
 
     # likewise
-    method identify {} {
-        return abstractLayerTitle
+    self {
+	method identify {} {
+	    return abstractLayerTitle
+	}
     }
 
 # This is optional, some helpers do not store earlier values

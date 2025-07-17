@@ -35,7 +35,7 @@ oo::class create iotool::$newLayerClass {
 		return
 	    }
 	} else {
-	    set useNodes($winId,title) [Identify]
+	    set useNodes($winId,title) [[self class] identify]
 	    set useNodes($winId,editMode) 0
 	    set useNodes($winId,legendSide) n ;# meaning none
 	    set useNodes($winId,imgs) 0
@@ -56,7 +56,7 @@ oo::class create iotool::$newLayerClass {
 	    set useNodes($winId,scalex) 1.0
 	    set useNodes($winId,scaley) 1.0
 	}
-	AddVariable
+	my AddVariable
     }
 
 ### public methods ###   
@@ -193,7 +193,7 @@ oo::class create iotool::$newLayerClass {
 	set useNodes($winId,state) sizeval
     }
 
-    method Click {path} {
+    method click {path} {
         set testResult [$modelInst getValue $path]
         # This tests for the user having clicked on a suitable element
         # of the model diagram
@@ -209,7 +209,7 @@ oo::class create iotool::$newLayerClass {
 		    set parentPath [join [lrange [split $path /] 0 end-1] /]
 		    if {[$modelInst getModelEval $parentPath] eq "HONEYCOMB"} {
 			set useNodes($winId,xcoord) HEX_CTRS
-			FinishClicking
+			my FinishClicking
 		    } else {
 			set useNodes($winId,state) xcoord
 		    }
@@ -223,7 +223,7 @@ oo::class create iotool::$newLayerClass {
 		    set useNodes(nC,ycoord) $compon
 		    set useNodes($winId,ycoord) $path
 		    set useNodes($winId,state) sizeval
-		    FinishClicking
+		    my FinishClicking
 		}
 	    }
 	} else {
