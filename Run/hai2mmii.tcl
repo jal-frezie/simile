@@ -247,7 +247,6 @@ proc ListFoci {node} {
 }
 
 proc ExtractCList {dH count loseZeros {inds {}} {newVals {}}} {
-    puts [info level 0]
     if {[llength $dH]==1} {
 	return [extract_list $dH $count $loseZeros 0 $inds] ;# skip trans
     } ;# else
