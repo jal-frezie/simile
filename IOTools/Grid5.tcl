@@ -639,7 +639,8 @@ namespace eval grid005 {
 	
 	set ncol $useNodes($winId,ncol)
 	set nrow $useNodes($winId,nrow)
-	if {[catch {GetBinaryModelValue $useNodes($winId,color) 0 0} fltData]} {
+	if {[catch {GetBinaryModelValue $useNodes($winId,color) linear 0 0} \
+		 fltData]} {
 	    if {[info exists useNodes($winId,values)]} {
 		set values $useNodes($winId,values)
 	    } else {
@@ -801,6 +802,7 @@ namespace eval grid005 {
 	set rows $useNodes($winId,nrow)
 	set cols $useNodes($winId,ncol)
 	set bpp $useNodes($winId,bpp)
+	set rpt [expr {$bpp*$useNodes($winId,hex)/8}]
 	if {$bpp==24} { ;# make a PPM
 	    set ppmData [binary format a2aa*aa*aa3a \
 			     P6 { } $cols { } $rows { } 255 { }]
@@ -988,22 +990,24 @@ namespace eval grid005 {
 		}
 		$msg config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
 	    } else { # get approx value from raw data
-		set cell [expr ($row-1)*$ncol+$col-1]
-		if {$useNodes($winId,bpp)==24} {
-		    set cell [expr {3*$cell}]
-		    if {[binary scan $useNodes($winId,rawBinary) \
-			     x${cell}H2H2H2 hexb hexg hexr]!=3} return
-		    set hexo [list $hexr $hexg $hexb]
-		} else {
-		    if {![binary scan $useNodes($winId,rawBinary) \
-			      x${cell}H2 hexo]} return
-		}
-		foreach gun $hexo {
-		    set numValue [expr $useNodes($winId,min)+0x$gun*($useNodes($winId,range))/255]
-		    lappend value [TransValue $useNodes($winId,dataETs) $numValue]
-		}
+		set value [GetModelValue $useNodes($winId,color) 0 1 \
+			       [list $row $col]]
+		#set cell [expr ($row-1)*$ncol+$col-1]
+		#if {$useNodes($winId,bpp)==24} {
+		#    set cell [expr {3*$cell}]
+		#    if {[binary scan $useNodes($winId,rawBinary) \
+		#	     x${cell}H2H2H2 hexb hexg hexr]!=3} return
+		#    set hexo [list $hexr $hexg $hexb]
+		#} else {
+		#    if {![binary scan $useNodes($winId,rawBinary) \
+		#	      x${cell}H2 hexo]} return
+		#}
+		#foreach gun $hexo {
+		#    set numValue [expr $useNodes($winId,min)+0x$gun*($useNodes($winId,range))/255]
+		#    lappend value [TransValue $useNodes($winId,dataETs) $numValue]
+		#}
 #puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
-		$msg config -text "Col,row=($col,$row)\nValue=$value approx"
+		$msg config -text "Col,row=($col,$row)\nValue=$value"
             }
             UpdateByOS
         }

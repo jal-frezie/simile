@@ -299,21 +299,22 @@ Tcl_Obj* extend_string(Tcl_Obj *localObj, Tcl_Obj *index, Tcl_Obj *localSubObj, 
 }
 
 /* next two call convert_to_tcl, which calls them, so declare in advance */
-Tcl_Obj* convert_to_tcl(int*, int*, char*, BOOLEAN, const enum_type_data**, BOOLEAN, int*, int);
+Tcl_Obj* convert_to_tcl(int*, int*, char*, BOOLEAN, const enum_type_data**, BOOLEAN, int*, int*, int);
 
 Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
 			     int* subBlocks, int *members, char** block,
 			     BOOLEAN loseZeros, const enum_type_data** enums,
 			     BOOLEAN translateEnums, int* toGet, int jsonic) {
   Tcl_Obj *localObj, *localSubObj, *IndObj;
-  int count, dir;
+  int count, dir, dummyInd = -1;
 
   dir = *toGet>0?1:-1;
   if (depth==dimty) {
     if (*members) {
       *block += dimty*sizeof(int);
       localObj = convert_to_tcl(dims, subBlocks, *block,
-				loseZeros, enums, translateEnums, toGet, jsonic);
+				loseZeros, enums, translateEnums, &dummyInd,
+				toGet, jsonic);
       if (dir>0) {
 	*block += subBlocks[0];
       } else {
@@ -372,7 +373,7 @@ append_array_members(int membership, int* dims, int* subBlocks, char* block,
 		     BOOLEAN loseZeros, const enum_type_data** enums,
 		     BOOLEAN translateEnums, int* count, int jsonic) {
   Tcl_Obj *localObj, *localSubObj, *IndObj;
-  int offset, start, end, dir, trans;
+  int offset, start, end, dir, trans, dummyInd = -1;
 
   localObj = Tcl_NewListObj(0, NULL);
   dir = *count>0?1:-1;
@@ -385,7 +386,8 @@ append_array_members(int membership, int* dims, int* subBlocks, char* block,
   for (offset = start; offset != end; offset += dir) {
     if (!*count) break;
     localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0],
-				 loseZeros, enums+1, translateEnums, count, jsonic);
+				 loseZeros, enums+1, translateEnums,
+				 &dummyInd, count, jsonic);
     if (trans)
       if (jsonic==1) {
 	IndObj = Tcl_NewStringObj("\"", 1);
@@ -419,19 +421,22 @@ append_array_members(int membership, int* dims, int* subBlocks, char* block,
   
 Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
 			BOOLEAN loseZeros, const enum_type_data** enums,
-			BOOLEAN translateEnums, int* count, int jsonic) {
+			BOOLEAN translateEnums, int* indxs,
+			int* count, int jsonic) {
   Tcl_Obj *localObj;
   int membership, *indices;
   char *newBlock;
 
   if (dims[0] > 0) { // it's an array bound
-//    if (indxs[0]>-1) // Select element by index
-//      printf("indxs start %d,%d...\n", indxs[0], indxs[1]);
-//      localObj = convert_to_tcl(dims+1, subBlocks+1, block+indxs[0]*subBlocks[0],
-//				 loseZeros, indxs+1, count, jsonic);
-//    else
-    localObj = append_array_members(dims[0], dims+1, subBlocks+1, block, 
-				    loseZeros, enums, translateEnums, count, jsonic);
+    if (indxs[0]>-1) { // Select element by index
+      //      printf("indxs start %d,%d...sublocks %d %d...\n", indxs[0], indxs[1],
+      //	     subBlocks[0],subBlocks[1]);
+      localObj = convert_to_tcl(dims+1,subBlocks+1, block+indxs[0]*subBlocks[1],
+				loseZeros, enums+1, translateEnums, indxs+1,
+				count, jsonic);
+    } else
+      localObj = append_array_members(dims[0], dims+1, subBlocks+1, block, 
+				      loseZeros, enums, translateEnums, count, jsonic);
   } else {
     switch (dims[0]) {
     case OWNSIZED:
@@ -540,7 +545,7 @@ void make_sub_block_sizes(int *dims, int *sizes) {
 }
 
 // same as version in ame_cmx.c except terminates array with -1 because it is
-// for indices, which may be zero
+// for indices, which may be zero (but are supplied starting from 1)
 int ints_from_list(Tcl_Interp *interp, Tcl_Obj *const obList, int indxs[]) {
   int i, error;
   Tcl_Size count;
@@ -553,6 +558,8 @@ int ints_from_list(Tcl_Interp *interp, Tcl_Obj *const obList, int indxs[]) {
       return error;
     if ((error = Tcl_GetIntFromObj(interp, elt, indxs + i)) != TCL_OK)
       return error;
+    else
+      indxs[i]--;
   }
   indxs[i]=-1; // terminate array
   return TCL_OK;
@@ -567,10 +574,10 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   int dims[32], path[32], notBool;
   enum_type_data* usedTypes[32];
   nodeValues* c_result;
-  BOOLEAN loseZeros, translateEnums;
+  BOOLEAN loseZeros, transEnums;
 
-  if (argc < 3 || argc > 5) {
-    Tcl_WrongNumArgs(interp, 1, argv, "data_handle value_count ?lose_zeros? ?translate_enums?");
+  if (argc < 3 || argc > 6) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle value_count ?lose_zeros? ?trans_enums? ?from_indices?");
     return TCL_ERROR;
   }
 
@@ -593,15 +600,21 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
     if (error != TCL_OK) {
       return error;
     }
-    translateEnums = (BOOLEAN)notBool;
+    transEnums = (BOOLEAN)notBool;
   } else
-    translateEnums = 0;
-  
+    transEnums = 0;
+
+  if (argc >= 6) {
+    if ((error = ints_from_list(interp, argv[5], indxs)) != TCL_OK)
+    return error;
+  } else
+    indxs[0] = -1;
+
   int subBlocks[32];
   make_sub_block_sizes(c_result->dimSpecs, subBlocks);
   resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents,
-			     loseZeros, c_result->enumKey, translateEnums, &count,
-			     (intptr_t)clientData);
+			     loseZeros, c_result->enumKey, transEnums, indxs,
+			     &count, (intptr_t)clientData);
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }

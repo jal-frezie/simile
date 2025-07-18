@@ -246,15 +246,16 @@ proc ListFoci {node} {
 	return [array names allFoci]
 }
 
-proc ExtractCList {dH count loseZeros} {
+proc ExtractCList {dH count loseZeros {inds {}} {newVals {}}} {
+    puts [info level 0]
     if {[llength $dH]==1} {
-	return [extract_list $dH $count $loseZeros]
+	return [extract_list $dH $count $loseZeros 0 $inds] ;# skip trans
     } ;# else
     set runTot {}
     set ortho -1
     set snip [expr {2*$count/[llength $dH]}]
     foreach {case hdl} $dH {
-	set sector [extract_list $hdl $snip $loseZeros]
+	set sector [extract_list $hdl $snip $loseZeros 0 $inds] ;# skip trans
 	lappend runTot [incr ortho] $sector ;# 1st is 0
     }
     return $runTot
@@ -282,7 +283,7 @@ proc ExtractJList {dH count loseZeros doTrans loseQuotes} {
 # the node is an array or list, and 'novalue' if it does not have one, e.g., a
 # cloud or submodel.
 
-proc GetModelValue { node {keepEvtZeros 0} {defCaseOnly 0}} {
+proc GetModelValue { node {keepEvtZeros 0} {defCaseOnly 0} {fromInds {}}} {
     global subbedPlots
 
     if {[info exists subbedPlots($node)]} {
@@ -294,21 +295,21 @@ proc GetModelValue { node {keepEvtZeros 0} {defCaseOnly 0}} {
 	    if {$defCaseOnly} {
 		set hdl [DefFrom $hdl]
 	    }
-	    return [list [ExtractCList $hdl 16777216 $loseZeros]] ;# enough I hope
+	    return [list [ExtractCList $hdl 16777216 $loseZeros $fromInds]] ;# enough I hope
 	} else { # from tcl model or measured value from pest interface
 	    return [list $subbedPlots($node)]
 	}
     } 
     AddToWatched $node
-    return [SetModelValue $node {} $defCaseOnly]
+    return [SetModelValue $node {} $defCaseOnly $fromInds]
 }
 
-proc SetModelValue { node newVals {defCaseOnly 0}} {
+proc SetModelValue { node newVals {defCaseOnly 0} {inds {}}} {
     global myNode
 
     set getWhat Value
     if {$defCaseOnly} {set getWhat DefVal}
-    return [GetCompExecData $myNode $getWhat $node $newVals]
+    return [GetCompExecData $myNode $getWhat $node $inds $newVals]
 }
 
 proc DefFrom {hdlList} {
@@ -489,9 +490,11 @@ proc GetCompExecData {topNode prop args} {
 	}
 	switch -regexp $prop {
 	    Value {
-		set result [list [ExtractCList $hdl 16777216 0]]
+		lappend result [eval ExtractCList $hdl 16777216 0 \
+				[lrange $args 1 end]]
 	    } DefVal {
-		set result [list [ExtractCList [DefFrom $hdl] 16777216 0]]
+		lappend result [eval ExtractCList [DefFrom $hdl] 16777216 0 \
+				[lrange $args 1 end]]
 	    } Binary {
 		set result [eval extract_binary [DefFrom $hdl] \
 				[lrange $args 1 end]]
