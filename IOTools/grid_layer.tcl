@@ -278,13 +278,10 @@ oo::class create iotool::$newLayerClass {
 	set hex $useNodes($winId,hex)
 set repts [expr {$hex*$bpp/8}]
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
-		[catch {GetBinaryModelValue $node linear $useNodes($winId,min) \
-			$useNodes($winId,max)} useNodes($winId,rawBinary)]} {
+		[catch {grid005::ConcoctImage $winId $node [self object].original}]} {
 	    my DrawGrid7
 	    return
 	}
-        grid005::ConcoctImage $winId $node [self object].original
-        unset useNodes($winId,rawBinary)
 
         if {$useNodes($winId,hex)} {
 	    set w [expr 2*{[[self object].original cget -width]}]
@@ -387,6 +384,9 @@ set repts [expr {$hex*$bpp/8}]
 		lappend result [expr {$useNodes($winId,min) + $level*($useNodes($winId,max)-$useNodes($winId,min))/255}]
 	    }
 	} else {
+	    if {[lsearch $useNodes($winId,tgtDims) START_VM]==-1} {
+		set result [GetModelValue $useNodes(nC,color) 0 1 $inds]
+	    } else {
 	    for {set chkSw 0} {$chkSw < $useNodes($winId,nswatches)} {incr chkSw} {
 		if {[scan $useNodes($winId,c$chkSw) "#%2x%2x%2x%2x%2x%2x" \
 			 r n g z b z]==3} { ;# 8-bit colour
@@ -401,19 +401,9 @@ set repts [expr {$hex*$bpp/8}]
 		    break
 		}
 	    }
+	    }
 	}
 	return $result
-# old version needed value array
-	if {$inds eq ""} {
-	    return $vals
-	} else {
-	    array set indexed $vals
-	    set subL indexed([lindex $inds 0])
-	    if {![info exists $subL]} {
-		return "no instance"
-	    }
-	    return [my SeekValue [lrange $inds 1 end] [set $subL]]
-	}
     }
 	    
     method CurrentPopup {x y} {

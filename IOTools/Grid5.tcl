@@ -806,7 +806,8 @@ namespace eval grid005 {
 	if {$bpp==24} { ;# make a PPM
 	    set ppmData [binary format a2aa*aa*aa3a \
 			     P6 { } $cols { } $rows { } 255 { }]
-	    append ppmData $useNodes($winId,rawBinary)
+	    append ppmData [GetBinaryModelValue $node linear \
+			 $useNodes($winId,min) $useNodes($winId,max)]
 	    $tgt configure -format ppm -data $ppmData \
 		     -width $cols -height $rows
 	} else { ;# otherwise make a GIF
@@ -838,13 +839,10 @@ namespace eval grid005 {
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
-		[catch {GetBinaryModelValue $node linear $useNodes($winId,min) \
-			$useNodes($winId,max)} useNodes($winId,rawBinary)]} {
+		[catch {ConcoctImage $winId $node $useNodes($winId,hiddenMap)}]} {
 	    DrawGrid5 $winId $node
-	    return
 	}
 #puts "Binary is of size [string bytelength $useNodes($winId,rawBinary)]"
-	ConcoctImage $winId $node $useNodes($winId,hiddenMap)
     }
 
     proc zoomio {winId factor} {
