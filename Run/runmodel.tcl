@@ -202,8 +202,8 @@ proc AddHelperSublist {fm lm title ct} {
 		}
 		# botch to get swatch drawing compatible old/new style
 		method getSwatchColour {swId} {
-		    variable ${oldSpace}::useNodes
-		    ::maptools2::SetSwatchColour ::$this $winId $swId
+		    variable ::${oldSpace}::useNodes
+		    ::maptools2::SetSwatchColour [self] $winId $swId
 		}
 
 	    }

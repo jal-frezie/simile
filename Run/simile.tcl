@@ -390,7 +390,7 @@ proc OldGrowImage {fCol mw mh} {
     return spare2
 }
 
-proc GrowImage {fCol mw mh} {
+proc GrowImage {fCol mw mh {ysense {1}}} {
     set srcWidth [$fCol cget -width]
     set srcHeight [$fCol cget -height]
     # Resize X and Y axes separately to avoid making too large an
@@ -416,7 +416,11 @@ proc GrowImage {fCol mw mh} {
     set srcCol [expr {($srcWidth+$cols-1)/$cols}]
     for {set row 0} {$row<$rows} {incr row} {
 	set st [expr {$row*$srcHeight/$rows}]
-	set mt [expr {$st*$mh/$srcHeight}]
+	if {$ysense==-1} {
+	    set mt [expr {($rows-1-$row)*$mh/$rows}]
+	} else {
+	    set mt [expr {$row*$mh/$rows}]
+	}
 # These were for displaying only a section of the zoomed image (args ltrb)
 #	if {[llength $args] && ($mt>[lindex $args 3] || \
 #				    $mt+$mh/$rows<[lindex $args 1])} continue
@@ -429,7 +433,7 @@ proc GrowImage {fCol mw mh} {
 	    spare1 copy $fCol -from $sl $st [expr {$sl+$srcCol}] \
 		[expr {$st+$srcRow}] -to 0 0 -zoom [lindex $xrat 0] 1 -shrink
 	    spare2 blank
-	    spare2 copy spare1 -zoom 1 [lindex $yrat 0] -subsample [lindex $xrat 1] 1 -shrink
+	    spare2 copy spare1 -zoom 1 [lindex $yrat 0] -subsample [lindex $xrat 1] $ysense -shrink
 	    spare3 copy spare2 -to $ml $mt -subsample 1 [lindex $yrat 1]
 	}    
     }
@@ -442,7 +446,7 @@ proc GrowImage {fCol mw mh} {
     # spare3 config -height $srcHeight
     # spare3 config -width $mw -height $mh
     set mWidth [expr {$ml + $srcCol*[lindex $xrat 0]/[lindex $xrat 1]}]
-    set mHeight [expr {$mt + $srcRow*[lindex $yrat 0]/[lindex $yrat 1]}]
+    set mHeight [expr {($rows-1)*$mh/$rows + $srcRow*[lindex $yrat 0]/[lindex $yrat 1]}]
     spare3 config -width $mWidth -height $mHeight
     return spare3
 }
