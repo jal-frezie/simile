@@ -193,7 +193,7 @@ namespace eval ::maptools2 {
 			 [TransValue $useNodes($winId,dataETs) $newVal] \
 			 (doubleclick to change)]
 	    $cnv bind $polyId <Double-Button-1> \
-		"$parentSpc GetSwatchColour $icolour"
+		"$parentSpc getSwatchColour $icolour"
         }
         $cnv raise annotation
 	$cnv raise caption
