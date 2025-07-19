@@ -268,6 +268,7 @@ oo::class create iotool::$newHelperClass {
 		set id [lindex $planes $oldIdx]
 		$id destroy
 		set planes [lreplace $planes $oldIdx $oldIdx]
+		$winId.viewport.c delete $id.legend
 		$winId.add delete $serialActive [incr serialActive]
 	    } EditCurrent {
 # space here seems to improve reliability

@@ -416,10 +416,9 @@ proc GrowImage {fCol mw mh {ysense {1}}} {
     set srcCol [expr {($srcWidth+$cols-1)/$cols}]
     for {set row 0} {$row<$rows} {incr row} {
 	set st [expr {$row*$srcHeight/$rows}]
+	set mt [expr {$st*$mh/$srcHeight}] ;# [expr {$row*$mh/$rows}]
 	if {$ysense==-1} {
-	    set mt [expr {($rows-1-$row)*$mh/$rows}]
-	} else {
-	    set mt [expr {$row*$mh/$rows}]
+	    set st [expr {$srcHeight-$st-$srcRow}]
 	}
 # These were for displaying only a section of the zoomed image (args ltrb)
 #	if {[llength $args] && ($mt>[lindex $args 3] || \

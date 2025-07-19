@@ -276,7 +276,6 @@ oo::class create iotool::$newLayerClass {
 	set node $useNodes(nC,color)
 	set bpp $useNodes($winId,bpp)
 	set hex $useNodes($winId,hex)
-set repts [expr {$hex*$bpp/8}]
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {grid005::ConcoctImage $winId $node [self object].original}]} {
 	    my DrawGrid7
@@ -288,7 +287,7 @@ set repts [expr {$hex*$bpp/8}]
 	    set h [[self object].original cget -height]
 	    [self object].original configure -width $w
 	    [self object].original copy [self object].original -zoom 2 1
-	    for {set shift [expr {$h-1}]} {$shift >= 0} {incr shift -2} {
+	    for {set shift 0} {$shift < $h} {incr shift 2} {
 		[self object].original copy [self object].original -from 0 $shift $w [expr {$shift+1}] -to 1 $shift
 	    }
 	}
@@ -305,22 +304,21 @@ set repts [expr {$hex*$bpp/8}]
 		incr colShift $ncol
 	    }
 	    [self object].original blank
+	    [self object].original config -height $nrow \
+		-width [expr {$useNodes($winId,hex)?2*$ncol+1:$ncol}]
+		
 	    foreach {y row} $curValues {
-		set tgtRow [expr {$nrow-$y}]
 		foreach {x celval} $row {
 		    [self object].original put [my ForGrid $celval] \
-			-to [incr x $colShift] $tgtRow
+			-to [incr x $colShift] [expr {$y-1}]
 		}
 		if {$useNodes($winId,hex)} {
 		    set xShift [expr {$y%2}]
-		    [self object].original copy [self object].original -from $ncol $tgtRow \
-			[expr {2*$ncol}] [expr {$tgtRow+1}] \
-			-to $xShift $tgtRow -zoom 2 1 -compositingrule set
+		    [self object].original copy [self object].original -from $ncol [expr {$y-1}] \
+			[expr {2*$ncol}] $y \
+			-to $xShift [expr {$y-1}] -zoom 2 1 -compositingrule set
 		}
 	    }
-	    [self object].original config -height $nrow \
-		-width [expr {$useNodes($winId,hex)?2*$ncol+1:$ncol}] \
-		
 	} else {
 	    set values [Flatten $curValues]
         
@@ -339,11 +337,11 @@ set repts [expr {$hex*$bpp/8}]
 		    }
 		}
 	    }
-	    for {set row $nrow} {$row>=1} {incr row -1} {
+	    for {set row 1} {$row<=$nrow} {incr row} {
 		lappend allData $rowData($row)
 	    }
 	    [self object].original put $allData
-	    PutSize [self object].original
+	    # PutSize [self object].original
         }
     }
 
@@ -371,52 +369,26 @@ set repts [expr {$hex*$bpp/8}]
 	}
 	return $useNodes($winId,c$icolour)
     }
-
-    method SeekValue {inds} {
-	set col [expr {[lindex $inds 1]-1}]
-	if {$useNodes($winId,hex)} {
-	    set col [expr {2*$col}]
-	}
-	set rgb [[self object].original get $col \
-		     [expr {$useNodes($winId,nrow)-[lindex $inds 0]}]]
-	if {$useNodes($winId,bpp)==24} {
-	    foreach level [lreverse $rgb] {
-		lappend result [expr {$useNodes($winId,min) + $level*($useNodes($winId,max)-$useNodes($winId,min))/255}]
-	    }
-	} else {
-	    if {[lsearch $useNodes($winId,tgtDims) START_VM]==-1} {
-		set result [GetModelValue $useNodes(nC,color) 0 1 $inds]
-	    } else {
-	    for {set chkSw 0} {$chkSw < $useNodes($winId,nswatches)} {incr chkSw} {
-		if {[scan $useNodes($winId,c$chkSw) "#%2x%2x%2x%2x%2x%2x" \
-			 r n g z b z]==3} { ;# 8-bit colour
-		    set b $g
-		    set g $n
-		}
-		if {$rgb eq "$r $g $b"} {
-		    # breaks if same colour reappears later in legend
-		    set wayThrough [expr {1.0*$chkSw/$useNodes($winId,nswatches)}]
-		    set result [expr {$useNodes($winId,max)*$wayThrough + \
-					  $useNodes($winId,min)*(1-$wayThrough)}]
-		    break
-		}
-	    }
-	    }
-	}
-	return $result
-    }
 	    
     method CurrentPopup {x y} {
 	set col [expr int(1+([$winId canvasx $x]/$transform(xzoom)-$useNodes($winId,xoff))/$useNodes($winId,xscale))]
 	set row [expr int(1+(-[$winId canvasy $y]/$transform(yzoom)-$useNodes($winId,yoff))/$useNodes($winId,yscale))]
 	set col [expr {min(max($col, 1), $useNodes($winId,ncol))}]
 	set row [expr {min(max($row, 1), $useNodes($winId,nrow))}]
-	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
-	    set inds [list $row $col]
-	    set value [my SeekValue $inds]
+	if {[info exists curValues]} {
+	    if {$useNodes($winId,colvals) eq "USE_INDICES"} {
+		array set curArr $curValues
+		array set rowArr $curArr($row)
+		if {[catch {set value $rowArr($col)}]} {
+		    set value none
+		}
+	    } else {
+		set inds [expr {$useNodes($winId,ncol)*($row-1)+$col-1}]
+		set value [lindex [lindex [Flatten $curValues] $inds] 1]
+	    }
 	} else {
-	    set inds [expr {$useNodes($winId,ncol)*($row-1)+$col}]
-	    set value [lindex [lindex [Flatten $curValues] $inds] 1]
+	    set value [GetModelValue $useNodes(nC,color) 0 1 \
+			   [list $row $col]]
 	}
 	return "Index $row,$col Value $value"
     }
@@ -431,7 +403,7 @@ set repts [expr {$hex*$bpp/8}]
 	}
 	set tmpImg [GrowImage [self object].original \
 	    [expr {round([[self object].original cget -width]*$useNodes($winId,xscale)*$xzoom)}] \
-	    [expr {round([[self object].original cget -height]*$useNodes($winId,yscale)*$yzoom)}]]
+	    [expr {round([[self object].original cget -height]*$useNodes($winId,yscale)*$yzoom)}] -1]
 	set myTag [namespace tail [self object]].main
 	if {[catch {[self object].derived blank}]} { ;# not yet exist
 	    image create photo [self object].derived
@@ -514,7 +486,7 @@ set repts [expr {$hex*$bpp/8}]
 	$host posnLegends
     }
 
-    method GetSwatchColour {swId} {
+    method getSwatchColour {swId} {
 	::maptools2::SetSwatchColour ::[self object] $winId $swId
 	$host posnLegends
     }

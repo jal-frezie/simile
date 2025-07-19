@@ -217,7 +217,7 @@ namespace eval ::maptools2 {
 	recolour_scale $parentSpc $winId
 	set useNodes($winId,colourMapTweaked) 1
 	#	    ${parentSpc}::UpdateState $winId
-	$parentSpc Display 0 0 0
+	$parentSpc display 0 0 0
     }
     
     proc reposn_scale {parentSpc winId} {

@@ -50,7 +50,7 @@ oo::class create iotool::$newHelperClass {
 	if {[my AmLayer]} {
 	    # layer tool will have already verified paths
 	    if {![string length $state]} {
-		AddItem [lindex $winTitle 1]
+		my AddItem [lindex $winTitle 1]
 		tkwait window $winId.bottom.ms
 	    } else {
 		my CacheNodeIds [lindex $state 0]
@@ -193,7 +193,7 @@ oo::class create iotool::$newHelperClass {
 			  {colour fill}}}
 	set template $all_templates($type)
 	pack [message $winId.bottom.ms -aspect 400] -side left
-	MakeSelection $type
+	my MakeSelection $type
     }
 
     method MakeSelection {selected} {
@@ -252,22 +252,22 @@ oo::class create iotool::$newHelperClass {
 	    switch [lindex $template $i 0] {
 		component {
 		    if {[my AmLayer] && [lsearch {"Z positions" "start Z positions" "end Z positions" "Z vertex position lists" "centre Z positions" "X rotations" "Y rotations"} $descrip]>-1} {
-			MakeSelection null
+			my MakeSelection null
 			return
 		    }
 		    $winId.bottom.ms configure -text "Click on component with $descrip of [lindex $template 0], or enter fixed $descrip here:"
 		    pack [ttk::entry $winId.bottom.e] -side bottom
-		    bind $winId.bottom.e <Return> [list [self] SetConst]
+		    bind $winId.bottom.e <Return> [namespace code [list my SetConst]]
 		    $modelInst grabClicks [self]
 		} colour {
 		    if {[my AmLayer] && $descrip eq "BACK"} {
-			MakeSelection null ;# never seen
+			my MakeSelection null ;# never seen
 			return
 		    }	
 		    $winId.bottom.ms configure -text "Click on component setting colour of $descrip of [lindex $template 0], or here:"
 		    pack [ttk::button $winId.bottom.e \
-			      -command [list [self] SetColour \
-					    [lindex $template 0] $descrip] \
+			      -command [namespace code [list my SetColour \
+							    [lindex $template 0] $descrip]] \
 			      -text "Select fixed colour"] -side bottom
 		    $modelInst grabClicks [self]
 		} choice {
@@ -287,13 +287,13 @@ oo::class create iotool::$newHelperClass {
 	set result [$winId.bottom.e get]
 	$modelInst releaseClicks
 	destroy $winId.bottom.e
-	MakeSelection $result
+	my MakeSelection $result
     }
 
     method SetChoice {option} {
 	set result $option
 	destroy $winId.bottom.e
-	MakeSelection $result
+	my MakeSelection $result
     }
 
     method SetColour {obj role} {
@@ -301,7 +301,7 @@ oo::class create iotool::$newHelperClass {
 	if {$result ne ""} {
 	    $modelInst releaseClicks
 	    destroy $winId.bottom.e
-	    MakeSelection $result
+	    my MakeSelection $result
 	}
     }
     
@@ -313,7 +313,7 @@ oo::class create iotool::$newHelperClass {
 	$modelInst releaseClicks
 	destroy $winId.bottom.e
 	set nodeIdCache($path) [GetIdFromCaptionPath $path]
-	MakeSelection $path
+	my MakeSelection $path
     }
 
 #    method Flatten {pairs} {

@@ -378,8 +378,9 @@ oo::class create iotool::$newLayerClass {
 	$host posnLegends
     }
 
-    method GetSwatchColour {swId} {
+    method getSwatchColour {swId} {
 	::maptools2::SetSwatchColour ::[self object] $winId $swId
+	$host posnLegends
     }
 
     method Recolour {whichCol exampleWidget} {

@@ -738,7 +738,7 @@ namespace eval grid005 {
 
 	    foreach {y row} [lindex [GetModelValue $node] 0] {
 		foreach {x celval} $row {
-		    lset allData [list $nrow-$y $x-1] [ForGrid $winId $celval]
+		    lset allData [list $y-1 $x-1] [ForGrid $winId $celval]
 		    set useNodes($winId,values,$y,$x) \
 			[list [list $y $x] $celval]
 		}
@@ -761,7 +761,7 @@ namespace eval grid005 {
 		    }
 		}
 	    }
-	    for {set row $nrow} {$row>=1} {incr row -1} {
+	    for {set row 1} {$row<=$nrow} {incr row} {
 		lappend allData $rowData($row)
 	    }
         }
@@ -802,12 +802,12 @@ namespace eval grid005 {
 	set rows $useNodes($winId,nrow)
 	set cols $useNodes($winId,ncol)
 	set bpp $useNodes($winId,bpp)
-	set rpt [expr {$bpp*$useNodes($winId,hex)/8}]
+	set rpt 0 ;# [expr {$bpp*$useNodes($winId,hex)/8}]
 	if {$bpp==24} { ;# make a PPM
 	    set ppmData [binary format a2aa*aa*aa3a \
 			     P6 { } $cols { } $rows { } 255 { }]
 	    append ppmData [GetBinaryModelValue $node linear \
-			 $useNodes($winId,min) $useNodes($winId,max)]
+			 $useNodes($winId,min) $useNodes($winId,max) $rpt]
 	    $tgt configure -format ppm -data $ppmData \
 		     -width $cols -height $rows
 	} else { ;# otherwise make a GIF
@@ -824,12 +824,12 @@ namespace eval grid005 {
 	    append gifData [binary format csssscc \
 				0x2c 0 0 $cols $rows 0 8]
 	    append gifData [GetBinaryModelValue $node gif \
-			 $useNodes($winId,min) $useNodes($winId,max)]
+			 $useNodes($winId,min) $useNodes($winId,max) $rpt]
 	    append gifData [binary format ca 0 \;]
 	    $tgt configure -format gif -data $gifData \
 		     -width $cols -height $rows
 	}
-	$tgt copy $tgt -subsample 1 -1 ;# flip image so row 1 at bottom
+#	$tgt copy $tgt -subsample 1 -1 ;# flip image so row 1 at bottom
     }
 	    
     proc DrawGrid6 {winId node} {
@@ -909,22 +909,25 @@ namespace eval grid005 {
         set visible [concat [$winId.c xview] [$winId.c yview]]
         set dataL [expr [lindex $visible 0]*$useNodes($winId,ncol)]
         set dataR [expr int(ceil([lindex $visible 1]*$useNodes($winId,ncol)))]
-        set dataT [expr [lindex $visible 2]*$useNodes($winId,nrow)]
-        set dataB [expr int(ceil([lindex $visible 3]*$useNodes($winId,nrow)))]
+        set dataT [expr (1-[lindex $visible 2])*$useNodes($winId,nrow)]
+        set dataB [expr int(ceil((1-[lindex $visible 3])*$useNodes($winId,nrow)))]
 	set miss [expr {$graph(origin)+2}] ;# 2 is border width
 	set atLeft [expr {-fmod($dataL,1)*$mult+$miss}]
 	set atTop [expr {-fmod($dataT,1)*$mult+$miss}]
         $winId.c coords 1 [$winId.c canvasx $atLeft] [$winId.c canvasy $atTop]
-	$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
-	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB \
-	    -to 0 0 -zoom $mult $sqz -shrink
 	if {$useNodes($winId,hex) && $mult>1} {
-	    set firstShifted [expr {$dataB-($useNodes($winId,nrow)-$dataB)%2-1}]
-	    for {set line $firstShifted} {$line>=$dataT} {incr line -2} {
+	    # set firstShifted [expr {$dataB-1-($useNodes($winId,nrow)-$dataB)%2}]
+	    for {set line $dataB} {$line<$dataT} {incr line} {
 		$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 		    -from [expr {int($dataL)}] $line $dataR [expr {$line+1}] \
-		    -to [expr {$mult/2}] [expr {int($sqz*($line-int($dataT)))}] -zoom $mult $sqz
+		    -to [expr {(($line+1)%2)*$mult/2}] \
+		    [expr {int($sqz*($dataT-$line))}] -zoom $mult $sqz \
+		    -subsample 1 -1
 	    }
+	} else {
+	    $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
+		-from [expr int($dataL)] [expr int($dataT)] $dataR $dataB \
+		-to 0 0 -zoom $mult $sqz -subsample 1 -1 -shrink
 	}
 	UpdateCaption useNodes $winId
 # Above was commented out till 5.5 -- messy? Buggy?
@@ -971,7 +974,7 @@ namespace eval grid005 {
         set ncol $useNodes($winId,ncol)
         set nrow $useNodes($winId,nrow)
         set col [expr int(1+([$winId.c canvasx $x])/$useNodes($winId,mult))]
-        set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
+        set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,sqz))]
         if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
 	    PostPopup $winId $X $Y
 	    set msg $::popper(cur).popup.message
@@ -1017,7 +1020,7 @@ namespace eval grid005 {
         set ncol $useNodes($winId,ncol)
         set nrow $useNodes($winId,nrow)
         set col [expr int(1+([$winId.c canvasx $x])/$useNodes($winId,mult))]
-        set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
+        set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,sqz))]
         if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
 	    if {[info exists useNodes($winId,values)]} {
 		set idx [lindex $useNodes($winId,values,$row,$col) 0]
