@@ -275,7 +275,7 @@ oo::class create iotool::$newHelperClass {
 		    pack [frame $winId.bottom.e] 
 		    foreach option [lrange [lindex $template $i] 2 end] {
 			pack [ttk::button $winId.bottom.e.b$option \
-				  -command [list [self] SetChoice $option] \
+				  -command [namespace code [list my SetChoice $option]] \
 			          -text $option] -side left
 		    }
 		}
@@ -309,7 +309,7 @@ oo::class create iotool::$newHelperClass {
         return $winId.c
     }
 
-    method Click {path} {
+    method click {path} {
 	$modelInst releaseClicks
 	destroy $winId.bottom.e
 	set nodeIdCache($path) [GetIdFromCaptionPath $path]
