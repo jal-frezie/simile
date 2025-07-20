@@ -120,7 +120,7 @@ oo::class create iotool::$newHelperClass {
         $modelInst grabClicks [self]
     }
     
-    method Click {path} {
+    method click {path} {
         switch [GetState $winId] {
             adding_inputs {
                 if {[lsearch {EVENT SQUIRT} \
@@ -151,8 +151,9 @@ method AddSoundFor {topNode path sound} {
 	GetModelValue $node ;# to add it to foci
     }
 
-    method PrepareSaveString {} {
-	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[[self] info class]\">\n"
+method prepareSaveString {} {
+    set useClass ::similescript::[namespace tail [self class]] ;# back compat
+	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"$useClass\">\n"
 	set shfPath [GetPathChoice .shf [my getNode]]
 	foreach {path file} $useNodes(sounds) {	    
 	    append State "<sound component=\"$path\" "
@@ -166,6 +167,7 @@ method AddSoundFor {topNode path sound} {
 	    }
 	}
 	append State </hsf>\n
+	SetState $winId $State
     }
 
     method SumVals {vals} {

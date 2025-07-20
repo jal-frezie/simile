@@ -26,7 +26,7 @@ oo::class create iotool::$newHelperClass {
 	    # new instance so request data from model
 	    pack [message $winId.message \
 		      -text "Click on model component for sound"]
-	    $modelInst grabClicks $this
+	    $modelInst grabClicks [self]
 	}
     }
 
@@ -38,7 +38,7 @@ oo::class create iotool::$newHelperClass {
 	next
     }
 
-    method Click {path} {
+    method click {path} {
 	set State [list $path [$modelInst getMinValue $path] \
 		       [$modelInst getMaxValue $path]]
 	SetState $winId $State
