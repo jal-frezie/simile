@@ -108,12 +108,11 @@ oo::class create iotool::$newHelperClass {
 	    [list namespace eval ::gen3d1 "Zoom $winId %D %x %y"]
 
 	menu $winId.m -tearoff 0
-	$winId.m add command -label "Sphere" -command "[self] AddItem spheres"
-	$winId.m add command -label "Line" -command "[self] AddItem lines"
-	$winId.m add command -label "Polygon" -command "[self] AddItem polygons"
-	$winId.m add command -label "Ellipse" -command "[self] AddItem ellipses"
-	$winId.m add command -label "Surface" -command "[self] AddItem surface"
-	# $winId.m add command -label "Old Ellipse" -command "[self] AddItem oldellipses"
+	foreach {type key} {"Sphere" spheres "Line" lines "Polygon" polygons
+	    "Ellipse" ellipses "Surface" surface} {
+	    $winId.m add command -label $type \
+		-command [namespace code "my AddItem $key"]
+	}
 	pack [::ttk::menubutton $winId.bottom.mb -text "Select new item type" \
 		  -menu $winId.m]
     }
@@ -246,6 +245,7 @@ oo::class create iotool::$newHelperClass {
 	    destroy $winId.bottom.ms
 	    if {![my AmLayer]} {
 		pack $winId.bottom.mb
+		my Display 0 0 0
 	    }
 	} else {
 	    set descrip [lindex $template $i 1]
@@ -258,6 +258,7 @@ oo::class create iotool::$newHelperClass {
 		    $winId.bottom.ms configure -text "Click on component with $descrip of [lindex $template 0], or enter fixed $descrip here:"
 		    pack [ttk::entry $winId.bottom.e] -side bottom
 		    bind $winId.bottom.e <Return> [namespace code [list my SetConst]]
+		    focus $winId.bottom.e
 		    $modelInst grabClicks [self]
 		} colour {
 		    if {[my AmLayer] && $descrip eq "BACK"} {
