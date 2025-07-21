@@ -4,7 +4,7 @@
 set newLayerClass InputPointer20210609
 oo::class create iotool::$newLayerClass {
     superclass iotool::Layer
-    variable useNodes transform temp winId
+    variable useNodes transform temp winId modelInst
 
     self {
 	method identify {} {
@@ -30,8 +30,8 @@ oo::class create iotool::$newLayerClass {
             set useNodes(yoff) 0
             set useNodes(xscale) 1
             set useNodes(yscale) 1
-	    set useNodes(title) [Identify]
-	    AddVariable
+	    set useNodes(title) [[self class] identify]
+	    my AddVariable
 	}
 	array set temp {count 0}
     }
@@ -55,7 +55,7 @@ oo::class create iotool::$newLayerClass {
 	# only a single ListToArray needed, as this appears to be bottleneck
     }
 
-    method Click {path} {
+    method click {path} {
         set node [GetIdFromCaptionPath $path]
         # This tests for the user having clicked on a suitable element
         # of the model diagram
