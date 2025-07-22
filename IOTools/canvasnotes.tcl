@@ -92,7 +92,7 @@ namespace eval canvasnotes20070919 {
 	global helperTable
 	variable whatNotes
 
-	set whatNotes(canvas) [$helperTable($c,whichInstance) GetCanvas]
+	set whatNotes(canvas) [$helperTable($c,whichInstance) getCanvas]
 	set whatNotes(clkx) 100
 	set whatNotes(clky) 100
 
