@@ -923,6 +923,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
       }
     } else
       rpt_seq = 0;
+
   } else {
     // listing distinct vals
     rpt_seq = 0;
@@ -975,9 +976,10 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL); // gets changed by c_f_e_v
 
     if ((uintptr_t)clientData == 3) {
-      for (count=size/3/(1+rpt_seq>0)-1;count>=0;count--) {
+      for (count=size/3/(1+(rpt_seq>0))-1;count>=0;count--) {
 	memcpy(tgt + 3*count, cMap + 3*tgt[count], 3);
       }
+      rpt_seq *= 3;
     }
 
     if (rpt_seq) {

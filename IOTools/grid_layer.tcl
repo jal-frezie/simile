@@ -282,7 +282,7 @@ oo::class create iotool::$newLayerClass {
 	    return
 	}
 
-        if {$useNodes($winId,hex)} {
+        if {0 && $useNodes($winId,hex)} {
 	    set w [expr 2*{[[self object].original cget -width]}]
 	    set h [[self object].original cget -height]
 	    [self object].original configure -width $w

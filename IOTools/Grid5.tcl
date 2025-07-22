@@ -801,20 +801,21 @@ namespace eval grid005 {
     proc ConcoctImage {winId node tgt} {
 	upvar 1 useNodes useNodes
 	set rows $useNodes($winId,nrow)
-	set cols $useNodes($winId,ncol)
+	set cols [expr {(1+$useNodes($winId,hex))*$useNodes($winId,ncol)}]
 	set bpp $useNodes($winId,bpp)
-	set rpt 0 ;# [expr {$bpp*$useNodes($winId,hex)/8}]
+	set rpt [expr {$bpp*$useNodes($winId,hex)/8}]
 	set ppmData [binary format a2aa*aa*aa3a \
 			 P6 { } $cols { } $rows { } 255 { }]
 	if {$bpp==24} { ;# make a PPM
-	    append ppmData [GetBinaryModelValue $node linear \
+	    set rawBinary [GetBinaryModelValue $node linear \
 			 $useNodes($winId,min) $useNodes($winId,max) $rpt]
 	} else { ;# otherwise make a PPM but map the colours
 #	    set gifData [binary format a6ssccc \
 #			     GIF89a $cols $rows 0xf7 0 0]
-	    append ppmData [GetBinaryModelValue $node mapped \
+	    set rawBinary [GetBinaryModelValue $node mapped \
 				$useNodes($winId,min) $useNodes($winId,max) \
-				$useNodes($winId,colourMap) $rpt]
+			       $useNodes($winId,colourMap) $rpt]
+	    set bpp 24 ;# always so after mapping
 #	    append gifData [binary format csssscc \
 #				0x2c 0 0 $cols $rows 0 8]
 #	    append gifData [GetBinaryModelValue $node gif \
@@ -822,6 +823,26 @@ namespace eval grid005 {
 #	    append gifData [binary format ca 0 \;]
 #	    $tgt configure -format gif -data $gifData \
 #		     -width $cols -height $rows
+	}
+	if {$useNodes($winId,hex)} {
+	    set colBytes [expr {$cols*$bpp/8}]
+	    append ppmData [string range $rawBinary 0 [expr $bpp/8-1]]
+	    for {set row 0} {$row<$rows} {incr row} {
+		if {$row%2} {
+		    append ppmData \
+			[string range $rawBinary [expr $row*$colBytes] \
+			     [expr ($row+1)*$colBytes+$bpp/8-1]]
+		    # inc 1st of next row
+		} else {
+		    append ppmData \
+			[string range $rawBinary [expr $row*$colBytes] \
+			     [expr ($row+1)*$colBytes-$bpp/8-1]]
+		    # dup 1st of this row & exc last
+		}
+	    }
+		    
+	} else {
+	    append ppmData $rawBinary
 	}
 	$tgt configure -format ppm -data $ppmData \
 	    -width $cols -height $rows
@@ -901,18 +922,19 @@ namespace eval grid005 {
 # removed 1/9/09 so grid not out-of-date when restored to view
 	array unset useNodes $winId,groJob
 	if {![winfo exists $winId.c]} return ;# destroyed since event
-	set mult $useNodes($winId,mult) ;# shorthand
+	set stretch [expr {1+($useNodes($winId,hex)>0)}]
+	set mult [expr {$useNodes($winId,mult)/$stretch}] ;# shorthand
 	set sqz $useNodes($winId,sqz) ;# shorthand
         set visible [concat [$winId.c xview] [$winId.c yview]]
-        set dataL [expr [lindex $visible 0]*$useNodes($winId,ncol)]
-        set dataR [expr int(ceil([lindex $visible 1]*$useNodes($winId,ncol)))]
+        set dataL [expr [lindex $visible 0]*$stretch*$useNodes($winId,ncol)]
+        set dataR [expr int(ceil([lindex $visible 1]*$stretch*$useNodes($winId,ncol)))]
         set dataT [expr (1-[lindex $visible 2])*$useNodes($winId,nrow)]
         set dataB [expr int(ceil((1-[lindex $visible 3])*$useNodes($winId,nrow)))]
 	set miss [expr {$graph(origin)+2}] ;# 2 is border width
 	set atLeft [expr {-fmod($dataL,1)*$mult+$miss}]
 	set atTop [expr {-fmod($dataT,1)*$mult+$miss}]
         $winId.c coords 1 [$winId.c canvasx $atLeft] [$winId.c canvasy $atTop]
-	if {$useNodes($winId,hex) && $mult>1} {
+	if {0 && $useNodes($winId,hex) && $mult>1} {
 	    # set firstShifted [expr {$dataB-1-($useNodes($winId,nrow)-$dataB)%2}]
 	    for {set line $dataB} {$line<$dataT} {incr line} {
 		$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
@@ -922,9 +944,14 @@ namespace eval grid005 {
 		    -subsample 1 -1
 	    }
 	} else {
+	    set div 1
+	    if {$mult==0} {
+		set mult 1
+		set div 2
+	    }
 	    $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 		-from [expr int($dataL)] [expr int($dataT)] $dataR $dataB \
-		-to 0 0 -zoom $mult $sqz -subsample 1 -1 -shrink
+		-to 0 0 -zoom $mult $sqz -subsample $div -1 -shrink
 	}
 	UpdateCaption useNodes $winId
 # Above was commented out till 5.5 -- messy? Buggy?
