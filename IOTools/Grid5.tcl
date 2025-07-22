@@ -141,7 +141,8 @@ namespace eval grid005 {
 	    for {set col 0} {$col<$useNodes($winId,nswatches)} {incr col} {
 		set useNodes($winId,c$col) [lindex $state [incr swatchBase]]
 	    }
-	    #set useNodes($winId,colourMapTweaked) 1
+	    set useNodes($winId,colourMapTweaked) 1 ;# to include in resave
+	    MakeHexColours useNodes $winId
 	} else {
 	    SetColours useNodes $winId
 	}
@@ -811,17 +812,9 @@ namespace eval grid005 {
 	} else { ;# otherwise make a PPM but map the colours
 #	    set gifData [binary format a6ssccc \
 #			     GIF89a $cols $rows 0xf7 0 0]
-	    for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
-		set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
-		set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
-		append colourMap [binary format H2H2H2 \
-				    [string range $colourStr 1 4] \
-				    [string range $colourStr 5 8] \
-				    [string range $colourStr 9 12]]
-	    }
 	    append ppmData [GetBinaryModelValue $node mapped \
 				$useNodes($winId,min) $useNodes($winId,max) \
-				$colourMap $rpt]
+				$useNodes($winId,colourMap) $rpt]
 #	    append gifData [binary format csssscc \
 #				0x2c 0 0 $cols $rows 0 8]
 #	    append gifData [GetBinaryModelValue $node gif \
@@ -843,6 +836,7 @@ namespace eval grid005 {
 # hah, just fixed it so we can anyway
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {ConcoctImage $winId $node $useNodes($winId,hiddenMap)}]} {
+	    puts $::errorInfo
 	    DrawGrid5 $winId $node
 	}
 #puts "Binary is of size [string bytelength $useNodes($winId,rawBinary)]"

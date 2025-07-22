@@ -465,5 +465,5 @@ namespace eval ::maptools2 {
         return [expr {[string is integer $str] || [string is double $str]}]
     }
     
-    namespace export SetColourMap SetColours recolour_scale reposn_scale UpdateCaption ChangeEditMode InsertLegend ColourScale GetQuadList Flatten PokeValue IsNumber
+    namespace export MakeHexColours SetColourMap SetColours recolour_scale reposn_scale UpdateCaption ChangeEditMode InsertLegend ColourScale GetQuadList Flatten PokeValue IsNumber
 }
