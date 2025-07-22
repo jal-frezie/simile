@@ -11,6 +11,18 @@
 
 
 namespace eval ::maptools2 {
+    proc MakeHexColours {winData winId} {
+        upvar 1 $winData useNodes
+	set useNodes($winId,colourMap) {}
+	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
+	    set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
+	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
+	    append useNodes($winId,colourMap) [binary format H2H2H2 \
+				    [string range $colourStr 1 4] \
+				    [string range $colourStr 5 8] \
+				    [string range $colourStr 9 12]]
+	    }
+    }
     
     proc SetColourMap {winData winId node} {
         upvar 1 $winData useNodes
@@ -103,6 +115,7 @@ namespace eval ::maptools2 {
 		set useNodes($winId,c$icolour) [format \#%04x%04x%04x $red $green $blue]
 	    }
 	}
+	MakeHexColours useNodes $winId
 	set useNodes($winId,colourMapTweaked) 0
     }
     
@@ -215,6 +228,7 @@ namespace eval ::maptools2 {
 	    set useNodes($winId,c$icolour) $newCol
 	}
 	recolour_scale $parentSpc $winId
+	MakeHexColours useNodes $winId
 	set useNodes($winId,colourMapTweaked) 1
 	#	    ${parentSpc}::UpdateState $winId
 	$parentSpc display 0 0 0

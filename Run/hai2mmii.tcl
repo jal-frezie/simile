@@ -330,6 +330,9 @@ proc GetBinaryModelValue { node flavor args } {
 		} gif {
 		    return [eval extract_gif_tail \
 				[DefFrom [lindex $subbedPlots($node) 2]] $args]
+		} mapped {
+		    return [eval extract_mapped \
+				[DefFrom [lindex $subbedPlots($node) 2]] $args]
 		}
 	    }
 	} else { # from tcl model or measured value from pest interface
@@ -338,7 +341,7 @@ proc GetBinaryModelValue { node flavor args } {
     }
     AddToWatched $node
     return [eval GetCompExecData $myNode \
-		[string map {linear Binary gif GIF} $flavor] $node $args]
+		[string map {linear Binary gif GIF mapped Mapped} $flavor] $node $args]
 }
 
 proc ListDistinctModelValues { node } {
@@ -496,6 +499,9 @@ proc GetCompExecData {topNode prop args} {
 				[lrange $args 1 end]]
 	    } Binary {
 		set result [eval extract_binary [DefFrom $hdl] \
+				[lrange $args 1 end]]
+	    } Mapped {
+		set result [eval extract_mapped [DefFrom $hdl] \
 				[lrange $args 1 end]]
 	    } GIF {
 		set result [eval extract_gif_tail [DefFrom $hdl] \

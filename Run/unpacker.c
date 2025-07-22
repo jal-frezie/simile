@@ -872,7 +872,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   int rpt_seq, error;
   double valfor0, valfor255, valspan, dval;
   nodeValues* accessTool;
-  unsigned char* tgt;
+  unsigned char *tgt, *cMap;
   int* progress;
   int baseType, count, size;
   Tcl_Obj *resultPtr, *spareObjPtr;
@@ -887,9 +887,16 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   lzwParms *encState;
     
   if (clientData) {
-    if (argc < 4 || argc > 5) {
-      Tcl_WrongNumArgs(interp, 1, argv, "data_handle lower_limit upper_limit ?repeat_period?");
-      return TCL_ERROR;
+    if ((uintptr_t)clientData == 3) {
+      if (argc < 5 || argc > 6) {
+	Tcl_WrongNumArgs(interp, 1, argv, "data_handle lower_limit upper_limit colour_map ?repeat_period?");
+	return TCL_ERROR;
+      }
+    } else {
+      if (argc < 4 || argc > 5) {
+	Tcl_WrongNumArgs(interp, 1, argv, "data_handle lower_limit upper_limit ?repeat_period?");
+	return TCL_ERROR;
+      }
     }
 
     error = Tcl_GetDoubleFromObj(interp, argv[2], &valfor0);
@@ -902,14 +909,20 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
       return error;
     }
 
+    if ((uintptr_t)clientData == 3) {
+      cMap = Tcl_GetByteArrayFromObj(argv[4], NULL);
+      spareObjPtr = argv[5];
+      argc--;
+    } else
+      spareObjPtr = argv[4];
+    
     if (argc==5) {
-      error = Tcl_GetIntFromObj(interp, argv[4], &rpt_seq);
+      error = Tcl_GetIntFromObj(interp, spareObjPtr, &rpt_seq);
       if (error != TCL_OK) {
 	return error;
       }
     } else
       rpt_seq = 0;
-    
   } else {
     // listing distinct vals
     rpt_seq = 0;
@@ -931,12 +944,15 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
 		    add_to_size, (void*)&size);
   // this increments size once for each value
+  if ((uintptr_t)clientData == 3)
+    size = 3*size;
   if (rpt_seq)
     size = 2*size;
   
   resultPtr = Tcl_NewObj();
   switch ((uintptr_t)clientData) {
   case 1:
+  case 3:
     if (valspan) {
       Tcl_SetByteArrayLength(resultPtr, size);
     } else { // no span: get values as floats
@@ -956,9 +972,16 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
 			  (valCallback*)move_to_double, &tgt);
     }
+    tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL); // gets changed by c_f_e_v
+
+    if ((uintptr_t)clientData == 3) {
+      for (count=size/3/(1+rpt_seq>0)-1;count>=0;count--) {
+	memcpy(tgt + 3*count, cMap + 3*tgt[count], 3);
+      }
+    }
 
     if (rpt_seq) {
-      tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
+      // tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
       for (count=size/2-rpt_seq;count>=0;count-=rpt_seq) {
 	memcpy(tgt + (2*count+rpt_seq), tgt + count, rpt_seq); 
 	memcpy(tgt + 2*count, tgt + count, rpt_seq);
@@ -1140,6 +1163,9 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   
   Tcl_CreateObjCommand(interp, "extract_gif_tail", extractBinCmd, 
 		       (ClientData)2, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "extract_mapped", extractBinCmd, 
+		       (ClientData)3, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "count_values", getValueCountCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);

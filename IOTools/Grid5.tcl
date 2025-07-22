@@ -803,32 +803,35 @@ namespace eval grid005 {
 	set cols $useNodes($winId,ncol)
 	set bpp $useNodes($winId,bpp)
 	set rpt 0 ;# [expr {$bpp*$useNodes($winId,hex)/8}]
+	set ppmData [binary format a2aa*aa*aa3a \
+			 P6 { } $cols { } $rows { } 255 { }]
 	if {$bpp==24} { ;# make a PPM
-	    set ppmData [binary format a2aa*aa*aa3a \
-			     P6 { } $cols { } $rows { } 255 { }]
 	    append ppmData [GetBinaryModelValue $node linear \
 			 $useNodes($winId,min) $useNodes($winId,max) $rpt]
-	    $tgt configure -format ppm -data $ppmData \
-		     -width $cols -height $rows
-	} else { ;# otherwise make a GIF
-	    set gifData [binary format a6ssccc \
-			     GIF89a $cols $rows 0xf7 0 0]
+	} else { ;# otherwise make a PPM but map the colours
+#	    set gifData [binary format a6ssccc \
+#			     GIF89a $cols $rows 0xf7 0 0]
 	    for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
 		set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
 		set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
-		append gifData [binary format H2H2H2 \
+		append colourMap [binary format H2H2H2 \
 				    [string range $colourStr 1 4] \
 				    [string range $colourStr 5 8] \
 				    [string range $colourStr 9 12]]
 	    }
-	    append gifData [binary format csssscc \
-				0x2c 0 0 $cols $rows 0 8]
-	    append gifData [GetBinaryModelValue $node gif \
-			 $useNodes($winId,min) $useNodes($winId,max) $rpt]
-	    append gifData [binary format ca 0 \;]
-	    $tgt configure -format gif -data $gifData \
-		     -width $cols -height $rows
+	    append ppmData [GetBinaryModelValue $node mapped \
+				$useNodes($winId,min) $useNodes($winId,max) \
+				$colourMap $rpt]
+#	    append gifData [binary format csssscc \
+#				0x2c 0 0 $cols $rows 0 8]
+#	    append gifData [GetBinaryModelValue $node gif \
+#			 $useNodes($winId,min) $useNodes($winId,max) $rpt]
+#	    append gifData [binary format ca 0 \;]
+#	    $tgt configure -format gif -data $gifData \
+#		     -width $cols -height $rows
 	}
+	$tgt configure -format ppm -data $ppmData \
+	    -width $cols -height $rows
 #	$tgt copy $tgt -subsample 1 -1 ;# flip image so row 1 at bottom
     }
 	    
