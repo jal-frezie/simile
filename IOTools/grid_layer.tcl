@@ -28,6 +28,7 @@ oo::class create iotool::$newLayerClass {
 		}
 	    }
 	    incr useNodes($winId,nswatches)
+	    MakeHexColours useNodes $winId
 	    if {$useNodes($winId,state) eq "displaying"} {
 		my Display 0
 		return
@@ -146,9 +147,16 @@ oo::class create iotool::$newLayerClass {
     }
     
     method prepareSaveString {} {
+	if {[info exists useNodes($winId,colourMap)]} {
+	    set hide $useNodes($winId,colourMap)
+	    unset useNodes($winId,colourMap)
+	}
 	incr useNodes($winId,nswatches) -1
 	regsub -all $winId, [array get useNodes] {} State
 	incr useNodes($winId,nswatches)
+	if {[info exists hide]} {
+	    set useNodes($winId,colourMap) $hide
+	}
 	return $State
     }
 
