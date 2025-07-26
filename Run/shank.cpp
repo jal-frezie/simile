@@ -1895,7 +1895,7 @@ void ExecutingModel::signal_complete(xmList* args) {
     pthread_mutex_lock(&args->mtx);
     pthread_cond_signal(&args->cond);
     pthread_mutex_unlock(&args->mtx);
-    // set_completion(2);
+    set_completion(2);
 }
 
 excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
@@ -1926,7 +1926,7 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
       pthread_cancel(topList->thredd); // does not work on Mac
 #endif
       pthread_join(topList->thredd, NULL);
-      clientResult->completed = 1;
+      clientResult->completed = 2;
       clientResult->excpNo = -101; // terminated
     } else {
       // model still running, so no result but we still need to return time
