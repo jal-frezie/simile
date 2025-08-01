@@ -1425,7 +1425,7 @@ void* reset_grp_instance(void* clientData) {
   // If this is the top level we will be doing a timed wait so we need to send
   // a signal
   if (payload->parent)
-    payload->set_completion(1); // get data from vms
+    payload->set_completion(2); // get data from vms
   else 
     payload->signal_complete(args); // does the following
   return retVal;
@@ -1452,7 +1452,7 @@ void* execute_grp_instance(void* clientData) {
   // If this is the top level we will be doing a timed wait so we need to send
   // a signal
   if (payload->parent)
-    payload->set_completion(1); // get data from vms
+    payload->set_completion(2); // get data from vms
   else 
     payload->signal_complete(args); // does the following
   return retVal;
@@ -1891,11 +1891,11 @@ void ExecutingModel::start_in_thread(void *action(void *)) {
 }
 
 void ExecutingModel::signal_complete(xmList* args) {
-    set_completion(1);
+  set_completion(1); // get data from vms
     pthread_mutex_lock(&args->mtx);
     pthread_cond_signal(&args->cond);
+    set_completion(2); // complete handshake with gui
     pthread_mutex_unlock(&args->mtx);
-    set_completion(2);
 }
 
 excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
@@ -1906,15 +1906,18 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
 
   paused = (cancel>1);
   if (pthread_kill(topList->thredd, 0)) { // health check failed
-    ping = 0;
-  } else {
+     clientResult->completed = 2;
+     pthread_join(topList->thredd, (void**)&clientResult->excpNo);
+  }
+  if (clientResult->completed<2) { // cannot be as lock is on?
     clock_gettime(CLOCK_REALTIME, &ts);
     if (max_wait>=0)
       incr_time(&ts, max_wait);
     ping = pthread_cond_timedwait(&topList->cond, &topList->mtx, &ts);
     clientResult->timeOfCrime = lts[modelSpec->phases];
-  }
-  if (ping == ETIMEDOUT) { // still running
+  } else
+    printf("Thread was set complete despite lock\n");
+  if (clientResult->completed<2) { // still
     if (cancel>2) { // user has lost patience
       //ping = pthread_cancel(topList->thredd); does not work on Mac
       // kill(getpid(), SIGINFO);
