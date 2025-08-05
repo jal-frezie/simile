@@ -673,6 +673,7 @@ proc ChangeRegion {w l t r b} {
 				  [expr {$r+$hSpare}] [expr {$b+$vSpare}]]]
     $w configure -scrollregion $newReg
     eval {ResizeBackgnd $w} $newReg
+    SetSpace $w $vw $vh
     #ShowMess debug info "Just done [$w coords 1]" ok
     #    puts $comp
 #    if {$comp>1.01} {
