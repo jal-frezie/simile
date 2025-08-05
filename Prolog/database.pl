@@ -339,4 +339,4 @@ fetch_update(DP) :-
 % 	    is_hidden/1, find_prev/2, find_parent/2, get_child_list_pointer/2,
 % 	    get_in_list_pointer/2, get_out_list_pointer/2,
 % 	    get_next_list_pointer/2, get_node_and_next_ptr/3,
-% 	    get_arc_and_next_ptr/3]).
+% 	    get_arc_and_next_ptr/3, get_mdl_exec_vers/1]).

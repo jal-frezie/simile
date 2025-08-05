@@ -69,6 +69,6 @@ foreign(find_along, find_along(+string, -integer)).
 foreign(set_hidden, set_hidden(+string, +integer)).
 foreign(is_hidden, is_hidden(+string)).
 
-foreign(get_mdl_exec_vers, get_mdl_exec_vers(+float)).
+foreign(get_mdl_exec_vers, get_mdl_exec_vers(-float)).
     
 foreign(xml_file_to_term(term, term)).

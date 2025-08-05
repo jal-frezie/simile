@@ -2630,7 +2630,7 @@ get_base_ptrs([Level | AlsoExited], Names, Ptrs) :-
 
 /* No need for a phase test on the last group, it is always executed
 (except at the top level, in case this dll has been included in a larger
-model which includes a shorter time step -- but that is done separately) */
+model which includes a shorter time step -- but that is done separately)
 
 add_phase_conditions([Group | Groups], Phase, Ptrs, TestPhase, Insts) :-
     extract_action(FinishGroup, [finish_level]),
@@ -2645,7 +2645,7 @@ add_phase_conditions([Group | Groups], Phase, Ptrs, TestPhase, Insts) :-
 			      append(UsePtrs, [])]),
       extract_action(StartGroup, [check_phase(Phase, UsePtrs)]),
       append([StartGroup | Group], [FinishGroup | Rest], Insts))).
-
+ */
 relevant(Phase, new_context(Ptr, EnumPhase), UseContext) :-
 	Phase < EnumPhase, !,
 	    UseContext = [new_context(Ptr, EnumPhase)];

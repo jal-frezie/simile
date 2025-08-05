@@ -6,7 +6,7 @@
 		    sicstus_tab/2, sicstus_write_chars/1, sicstus_write_chars/2,
 		    sicstus_atom_chars/2, wind_up/0,
 		    read_term_from_codes/3, print_to_codes/2, number_atom/2,
-		    gnu_round/2, wrap_fixes/1]).
+		    gnu_round/2, wrap_fixes/1, get_mdl_exec_vers/1]).
 :- use_module([library(lists)]).
 :- set_prolog_flag(double_quotes, codes).
 
@@ -20,6 +20,8 @@ term_expansion(sicstus_meta_predicate(Pred), ( :- meta_predicate(Pred))).
 
 ><(Module,Pred) :-
 	call(Module:Pred).
+
+get_mdl_exec_vers(7.0091). % botch because c fn puzzlingly fails
 
 sicstus_use_module([library(charsio)]).
 
