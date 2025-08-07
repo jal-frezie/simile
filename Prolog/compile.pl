@@ -1424,8 +1424,7 @@ nodes.
 			  [created(Name), settled(Name)],
 			  Path, Step, []),
 		     % need culled and created to get in right step
-		    make(enumerate(Name), [culled(Name), can_enter(Name), bred(Name) | Losses
-					   ], LocalPath, Step, []),
+		    make(enumerate(Name), [culled(Name), can_enter(Name), bred(Name)], LocalPath, Step, []),
 		    make(startable(Name), [init_list(Name)], Path, Step, []),
 		    make(init_list(Name), [], Path, Step,
 			 [assign(arr(Ptr, Name, []), 0)])],
