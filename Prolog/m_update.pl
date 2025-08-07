@@ -800,7 +800,11 @@ default_units(Node, Base, Dims) :-
 	(Sort = transfer,
 	 units_from_context(Node, Base, Dims, Whinge),
 	 (Whinge = [] -> true; query(Whinge, warning, fill_equation, [ok], _));
-	member(Sort-Base, [rate-(1/day), transfer-1, level-1,
+	 Sort = rate,
+	 (implicit_function(Form, Fn),
+	  instance><generate_input_pair(Fn, discrete, _) -> Base = 1;
+	  Base = 1/day);
+	member(Sort-Base, [transfer-1, level-1,
 			   cond_value-cond_spec, boolean_value-boolean])),
 	Form is_of_sort Sort,
 	(\+ Form is_of_sort channel;
