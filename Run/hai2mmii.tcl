@@ -430,7 +430,7 @@ proc GetIdFromCaptionPath { caption } {
 	set lostType submodel
     }
     lappend helperTable($inst,lost) $lostBit
-    set helperType [[$inst info class]::Identify]
+    set helperType [[info object class $inst] identify]
 
     if {[string equal abort [Query [list missing_var_requested $helperType \
 					$lostType $lostBit $lostType] \
