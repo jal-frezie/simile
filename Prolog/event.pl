@@ -1100,7 +1100,9 @@ spread_dims(Node) :-
 		    UseArray = GivenArray;
 		  UseArray = FoundArray,
 		    SpecChanged = dims),
-		(Type = real -> Base = 1; Base = Type),
+		(Type = real -> Base = 1;
+		 inters><promote_unit(Type, Base),
+		   \+ member(Base, [const_int, const_ratio])),
 		((DoingUnits = 'No';
 		  IList = [], inters><promote_unit(Base,1)),
 		    CheckLevel = 1;
