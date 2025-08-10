@@ -695,7 +695,7 @@ make_intermediates(
 	    IncrAct = assign(FillRef, IncrExpr),
 	    TXUnits = Units,
 	    make_intermediates(Epsilon, SubId, [TotalName | Target], TotalPath,
-			       SubSwap, PrevInters, NowBuilding, SetTime, Used,
+			       SubSwap, PrevInters, NowBuilding, Step, Used,
 			       ArgUnits, OldInters,
 			       part_result(SubContext, OldSetups,
 					   OldArgs, IncrementRef));
@@ -872,6 +872,8 @@ make_intermediates(
                        WriteContext, SetTime, [IncrAct]),
                   make(WhatMade, [increment(WhatMade)],
                        ReadyContext, SetTime, [])])),
+	% Don't try this at home...
+	all(user, setarg, [unify(4), build(OldSetups), unify(SetTime)]),
 	append([OldSetups, Clearing, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
@@ -921,7 +923,7 @@ make_intermediates(
 	    NewInters = PrevInters;
 
 	(Source = table_const(1),
-	  (Step == dummy ->
+	  (Step = dummy ->
             GetSpec = (dialogue><table_data_is(TableData));
            GetSpec = (m_class><SubId has_class_refinement table_data 
                                   of TableData)),
@@ -953,7 +955,7 @@ make_intermediates(
 
 	((Source = channel_is(ChannelName), !,
 	    (ChannelName = param(arr(_, ChannelVar,_),_, ChanPath, Compat, _),
-	        (Step == dummy -> Compat == generator; true);
+	        (Step = dummy -> Compat == generator; true);
 	    throw(needs_channel_parameter(ChannelName))),
 	    nth(ChannelNum, Used, ChannelVar), !,
 	    suffix(ChanPath, DestPath),
@@ -978,7 +980,7 @@ make_intermediates(
 	    lower(OpStr, LopStr),
 	    name(TRef, LopStr),
 	    member(TRef, [time, dt, remote_time]), % ind_time removed
-	    (Step == dummy -> MaxStep = 7; MaxStep is max(1,Step)),
+	    (Step = dummy -> MaxStep = 7; MaxStep is max(1,Step)),
 	    ((N=0; N = ''), TArg = Step;
 		% now done in insert_paths so only needed here for parsing
 		integer(N), N>=0, N=<MaxStep, TArg = N;
@@ -1293,7 +1295,7 @@ Now one that uses a special conditional level */
 	    SourceRef = 1;
 
 	Source = trigger_magnitude(''),
-	Step == dummy, !, % is always explicit inter when building code
+	Step = dummy, !, % is always explicit inter when building code
 	    units_for_trigger_mag(SubId, Units-Dims),
 	    NewInters = [],
 	    make_inds_for(Dims, _, SourceContext, _),
@@ -1334,7 +1336,7 @@ Now one that uses a special conditional level */
 		ResultList = [RTest, RTrue, RFalse],
 		ValRef = (RTest?RTrue><RFalse); */
 	    Source = graph(Param), \+ Param = '',
-		(\+ Step == dummy;
+		(\+ Step = dummy;
 		dialogue><graph_data_is(_);
 		    throw(missing_graph_or_table_data(Source, 'sketch graph'))),
 		SourceList = [Param],
@@ -1378,7 +1380,7 @@ Now one that uses a special conditional level */
 			throw(wrong_no_of_args(Source, Categ, Op, Arity, FnArity))), !,
 				% (fragment-defined function:),
 		    m_update><make_blind_level(SubId, Step, FragFile, RefNode),
-		    (Step == dummy -> true;
+		    (Step = dummy -> true;
 		     query(new_frag_defn(Op), info,execution,[ok],_));
 		  true)),
 	    (\+ RefNode = SubId; RefNode = SubId), % = in other cases
@@ -1540,7 +1542,7 @@ decode_number(Source, SubId, Step, SourceRef, Units) :-
 	     GenUnits = real; GenUnits = SrcUnit),
 	% allow value of 0 to match any physical unit (still int if disabled)
 	remove_physical_units_if_disabled(SubId, GenUnits, Units),
-	(Step == dummy, !,
+	(Step = dummy, !,
 	    (Units = n(SourceRef), !; % enum type dims of makearray etc
 	    SourceRef = SrcType);
 	 %unmake_enum_units(OrigUnits, Units),
@@ -1557,7 +1559,7 @@ match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, I0, Array) :-
 	(NeedType = XpectType;
             % bodge: if building code, bounds have been made integer, so
 	    % accept boolean or ET as index
-	  \+ Step == dummy, member(NeedType, [boolean, a(_ET)]);
+	  \+ Step = dummy, member(NeedType, [boolean, a(_ET)]);
 	    % but if next disjunction fails in both these cases...
 	    throw(needs_index_of_type(element, Array, XpectType,
 				      IndxRef, Int))),
@@ -1607,7 +1609,7 @@ apply_scale_factor(Factor, Val, Factor*Val).
 derive_dim(Size, EG, Step, Type, Dim) :-
     EG = a(ETName),
       Dim = n(ETName),
-      (Step == dummy -> Type = ETName; Type = Size);
+      (Step = dummy -> Type = ETName; Type = Size);
     Dim = Size,
       Type = Size.
 
