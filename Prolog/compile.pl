@@ -710,11 +710,13 @@ mark_limit_checks(Act, Add) :-
 
 % anything that affects a compartment has to go in the sub-shortest time step
 % so R-K integration works. 
-update_antes_to_step(List) :-
-	List = [make(_, Conds-_, _, [_,_, Step | _], _) | Rest], !,
+update_antes_to_step(List, Step) :-
+	List = [Cond | Rest],
+	member(Cond, [Act, later(Act), this_step(Act)]), % all needed?
+	Act = make(_, Conds-_, _,_,_), !,
 	all(compile, mark_unstepped,
 	    [build(Conds), unify(Step), append(Marked, Rest), unify(others)]),
-	update_antes_to_step(Marked);
+	update_antes_to_step(Marked, Step);
 	true.
 
 mark_unstepped(Cond, Set, Add, Do) :-
@@ -726,8 +728,8 @@ mark_unstepped(Cond, Set, Add, Do) :-
 	\+ Step == Set, % recursive so make sure we are doing something new
 	\+ var(Set), % avoid blowback, should never happen
 	Step = Set, !,
-	update_antes_to_step([Cond]),
-	Add = [Act];
+	update_antes_to_step([Cond], Step),
+	Add = [Cond];
 	Add = [].
 	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -737,6 +739,12 @@ tag_warn(PotentialHitch) :-
     assertz(could_trip_on(PotentialHitch)),
     safe_tcl_eval([puts, br(write(PotentialHitch))], _).
 
+used_in_substep_pop_inits(Fns, SubSteps, N) :-
+    member(make(enumerate(_), _, Path, [eval, _, Done | _], _), Fns),
+    Done == SubSteps,
+    nth(N, Fns, make(_,_, DeepPath, [eval, 0 | _], _)),
+    suffix(Path, DeepPath).
+    
 check_functions(Functions, Steps, Updates) :-
 /*	tk_update_infobox("Checking for circularity in model assignment order"),
 	(\+ all(compile, reachable, [build(Functions), unify([])]),
@@ -751,10 +759,19 @@ as well to stop rand_vars being changed in the R-K subphase */
 	SubSteps is Steps+1,
 	all(compile, mark_unstepped, % compartments only
 	    [build(Updates), unify(SubSteps), append(_C, []), unify(others)]),
+
+	(findall(N, used_in_substep_pop_inits(Functions, SubSteps, N),
+	       Ns); Ns = []), % setof barfs here as does findall if not inds
+	all(user, nth, [build(Ns), unify(Functions), build(DoneAtReset)]),
+	update_antes_to_step(DoneAtReset, SubSteps),
+	% per-instance vals set at reset
+
 	all(compile, mark_unstepped, % states only
 	    [build(Updates), unify(Steps), append(_S, []), unify(states)]),
+
 	all(compile, mark_unstepped, % everyone else
 	    [build(Functions), unify(Steps), append(_O, []), unify(squirts)]),
+
 	/* Check all same-time-step circles can be done in one program loop */
 	tk_update_infobox(pl_loop, []),
 	(member(Start, Functions),
@@ -1386,13 +1403,13 @@ nodes.
 			      member(instance(immigration, InitName, X,
 					      elt(_, ImmigBox, _), U),
 				     ParentFns)), Immigrators), !,
-	    ImConds = [on_step, culled(Name)] ;
+	    ImConds = [time, culled(Name)] ;
 	     Immigrators = [], ImConds = []),
 	    (setof(init(ReproBox), S^X^U^member(instance(reproduction, S,X,
 						   elt(_, ReproBox, _), U),
 						Functions), ReproConds), !,
 	      all(user, arg, [unify(1), build(ReproConds), build(Reproducers)]),
-	      ReproInits = [on_step | ReproConds];
+	      ReproInits = [time | ReproConds];
 	     Reproducers = [], ReproInits = []),
 	    CreateRules = [make(culled(Name),
 				[init_list(Name), this_step(enumerate(Name))],
@@ -1424,7 +1441,7 @@ nodes.
 			  [created(Name), settled(Name)],
 			  Path, Step, []),
 		     % need culled and created to get in right step
-		     make(enumerate(Name), [culled(Name), can_enter(Name), bred(Name) | Losses
+		     make(enumerate(Name), [culled(Name), can_enter(Name), settled(Name), bred(Name) | Losses
 					   ], LocalPath, Step, []),
 		    make(startable(Name), [init_list(Name)], Path, Step, []),
 		    make(init_list(Name), [], Path, Step,
