@@ -1932,10 +1932,10 @@ proc ChooseByInspection {topNode oldObj type} {
     set ::myNode $topNode ;# for inspector helper
     set ::RunEnv::CurrentContainer $t
     set hlp [UniqueId helper]
-    set helperId $helperTable(VariableList)
+    set helperId iotool::$helperTable(VariableList)
     set runClass $classTable(run,$topNode)
     set ::RunEnv::CurrentContainer $t
-    similescript::$helperId $hlp $runClass $type {}
+    $helperId create $hlp $runClass $type {}
 
     LetItShow $t paramData(newPath,done)
     PackItUp $t
