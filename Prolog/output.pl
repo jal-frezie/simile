@@ -346,7 +346,7 @@ not documented in Welch; I inferred its existence by reading between
 the lines. */
 
 get_text(Wid, Comp, Text) :-
-	safe_tcl_eval(['GetText', Wid, Comp], TextString),
+	safe_tcl_eval([string, trim, sqb(['GetText', Wid, Comp])], TextString),
 	sicstus_atom_chars(Text, TextString).
 
 tk_grow_canvas(Wid, [L, T, R, B]) :-

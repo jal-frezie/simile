@@ -40,10 +40,10 @@ proc FileParamDialogue {topNode topWin mustShow} {
     # Insert an instance of the inspector helper
     set ::RunEnv::CurrentContainer $t
     set hlp [UniqueId helper]
-    set helperId $::helperTable(ParamEditor)
+    set helperId iotool::$::helperTable(ParamEditor)
     set runClass $::classTable(run,$topNode)
     array unset widgetNames /$topNode/*
-    do_for_node $topNode iotool::$helperId create $hlp $runClass parameters
+    do_for_node $topNode $helperId create $hlp $runClass parameters
     
     if {$mustShow || [llength $paramData(needed)]} {
         pack [set bfrm [frame .fpdialogue.buttons ]] -fill x

@@ -753,10 +753,9 @@ finish_old_edit(NextEdit) :-
 /*	Abandon update if selected comp was influence, cloud or same as new */
 	find_base(Prev_highlight, RenamedNode),
 	find_current(Window_id),
-	get_text(Window_id, RenamedNode, Text),
+	get_text(Window_id, RenamedNode, Name),
 		((Prev_highlight = NextEdit;
-			Text = '/no_caption/'), !;
-		(Text = '' -> Name = ' '; Name = Text),
+			Name = '/no_caption/'), !;
 		caption_for(RenamedNode, OldName),
 		/* If name has changed check new one is usable and update it if so */
 		find_all_comps(Parent, RenamedNode),
@@ -764,8 +763,7 @@ finish_old_edit(NextEdit) :-
 		    /* If name exists in submodel or contains dir chars,
 		    block the update show message and highlight the node again */
                 \+ RenamedNode is_of_sort common_caption,
-		 (output><safe_list(Name, SafeName),
-		  output><safe_tcl_eval([string, is, space, SafeName], "1"),
+		 (Name = '',
 		  	query(invisible_caption(OldName), warning, top,
 			      [ok], _);
 		     cannot_call_in(Parent, Name),
