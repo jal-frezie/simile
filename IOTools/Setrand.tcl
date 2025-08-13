@@ -9,18 +9,21 @@ set newHelperClass setrand92383
 oo::class create iotool::$newHelperClass {
     superclass iotool::Helper
 
+    variable winId
+    variable modelInst
+
     self {
 	method identify {} {
 	    return "Initialize pseudo-random"
 	}
     }
 
-    constructor {modelInst winTitle {state {}}} {
-	next $modelInst $winTitle
+    constructor {modelI winTitle {state {}}} {
+	next $modelI $winTitle
 
 	set ms [message $winId.intro -aspect 400 -text "Enter an integer value for the random number seed:"]
 	pack $ms -padx 4 -pady 4
-	set exit [list $this Done]
+	set exit [namespace code [list my Done]]
 	set en [entry $winId.entry]
 	bind $en <Return> $exit
 	pack $en -padx 4 -pady 4
