@@ -470,8 +470,8 @@ oo::class create iotool::$newHelperClass {
 	if {$type eq "plist"} {
 	    set remade [$filling.e get] ;# trim initial space
 	    $filling.e delete 0 end
-	    $filling.e insert 0 \
-		[PrettifyValList [string range $remade 1 end] {}]
+	    $filling.e insert 0 [string range $remade 1 end]
+	    # prettify later if appropriate
 	    $filling.tick invoke
 	    unset filling
 	}
