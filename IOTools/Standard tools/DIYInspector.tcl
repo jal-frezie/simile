@@ -220,7 +220,7 @@ oo::class create iotool::$newHelperClass {
     method Combinations {sets} {
         if {$sets eq {}} return
 	set result {}
-	set bases [Combinations [lrange $sets 1 end]]
+	set bases [my Combinations [lrange $sets 1 end]]
 	set additions [lindex $sets 0]
 	foreach extn $additions {
 	    foreach part $bases {
@@ -246,7 +246,7 @@ oo::class create iotool::$newHelperClass {
 		    lappend oldMembers $oldCases
 		}
 	    }
-	    foreach oldCombo [Combinations $oldMembers] { ;# only add new ones
+	    foreach oldCombo [my Combinations $oldMembers] { ;# only add new ones
 		set oldCase [join [lsort $oldCombo] +]
 		AddCase [my GetNode] [join [lsort [linsert $oldCombo end $case]] +] $oldCase
 	    }
@@ -278,7 +278,7 @@ oo::class create iotool::$newHelperClass {
 		    lappend oldMembers $oldCases
 		}
 	    }
-	    foreach oldCombo [Combinations $oldMembers] { ;# only add new ones
+	    foreach oldCombo [my Combinations $oldMembers] { ;# only add new ones
 		DeleteCase [my GetNode] [join [lsort [linsert $oldCombo end $case]] +]
 	    }
 	} else {
