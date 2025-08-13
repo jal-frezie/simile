@@ -492,7 +492,7 @@ proc GetCompExecData {topNode prop args} {
 	}
 	switch -regexp $prop {
 	    Value {
-		lappend result [eval ExtractCList $hdl 16777216 0 \
+		lappend result [eval ExtractCList [list $hdl] 16777216 0 \
 				[lrange $args 1 end]]
 	    } DefVal {
 		lappend result [eval ExtractCList [DefFrom $hdl] 16777216 0 \

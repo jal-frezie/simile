@@ -5,7 +5,13 @@ set newHelperClass DIYInspector20210125
 oo::class create iotool::$newHelperClass {
     superclass iotool::Helper
 
-    variable topFrame permMembers paramEdits winId
+    variable modelInst
+    variable topFrame 
+    variable permMembers 
+    variable paramEdits 
+    variable winId
+    variable cMenu
+    variable decor
     
     self {
 	method identify {} {
@@ -17,7 +23,7 @@ oo::class create iotool::$newHelperClass {
 	next $modelInst $winTitle
 
 	global iconImages
-	variable chop cMenu decor
+	variable chop
 
 	set chop [string length $state]
 	set doPops 0
@@ -52,6 +58,18 @@ oo::class create iotool::$newHelperClass {
 	set topFrame [DIYMakeFrames $winId]
 	# Attempt to add experiment node as peer of default top level
 	if {$incExpts} {
+	    namespace eval [self namespace] {
+		proc Empty {obj path} {
+		    $obj empty $path
+		}
+		proc Open {obj path} {
+		    $obj open $path
+		}
+		proc Save {obj path} {
+		    $obj save $path
+		}
+	    }
+
 	    set decor [list param [tr. "Parameter value"] file \
 			   plist [tr. "List for parameter"] list \
 			   compound [tr. "Multi-factor case"] compfact \
@@ -62,7 +80,8 @@ oo::class create iotool::$newHelperClass {
 		set iMenu [menu $cMenu.insert -tearoff 0]
 		foreach {key txt img} $decor {
 		    $iMenu add command -label $txt -compound left \
-			-image $iconImages($img) -command "[self object] InsertLevel $key"
+			-image $iconImages($img) \
+			-command [namespace code "my InsertLevel $key"]
 		}
 		$cMenu add cascade -label [tr. Insert] -menu $iMenu
 		$cMenu add command -label [tr. Delete] \
@@ -76,12 +95,12 @@ oo::class create iotool::$newHelperClass {
 	    pack $f.head.label -side left -expand 0
 
 	    set f [MakeSubFrames [self object] $topFrame [list ${::myNode}_expt {}] \
-		       [namespace current] 0]
+		       [self namespace] 0]
 	    $f.head.label configure -text [tr. {Experimental conditions}] \
 		-image $iconImages(flask) -compound left
 	    pack $f.head.label -side left -expand 0
 	    CrossPlatformBind $f \
-		[namespace code [list OnElementContext ${::myNode}_expt %X %Y]]
+		[namespace code [list my OnElementContext ${::myNode}_expt %X %Y]]
 	}
 	#set f [MakeSubFrames insp $topFrame [list $::myNode {}] \
 	#	   [namespace current] 0]
@@ -168,7 +187,7 @@ oo::class create iotool::$newHelperClass {
 	next
     }
 
-    proc ProdIfComp {widg winId component capEnd isDbl} {
+    method ProdIfComp {widg winId component capEnd isDbl} {
 	if {[winfo name $widg] ne "vis"} { ;# dropdown arrow
 	    if {$isDbl} {
 		foreach {elt val} [array get ::window_info *,top_node] {
@@ -184,8 +203,7 @@ oo::class create iotool::$newHelperClass {
 	}
     }
 
-    proc OnElementContext {path X Y} {
-	variable cMenu
+    method OnElementContext {path X Y} {
 	variable clickPath
 
 	$cMenu entryconfig Insert -state disabled
@@ -199,7 +217,7 @@ oo::class create iotool::$newHelperClass {
 	tk_popup $cMenu $X $Y
     }
 
-    proc Combinations {sets} {
+    method Combinations {sets} {
         if {$sets eq {}} return
 	set result {}
 	set bases [Combinations [lrange $sets 1 end]]
@@ -216,7 +234,7 @@ oo::class create iotool::$newHelperClass {
     method ExtendPerms {src case levels} {
 	if {$levels eq {}} return
 	set lvl [lindex $levels end]
-	if {[TypeFromLevel frame$lvl] eq "perm"} {
+	if {[my TypeFromLevel frame$lvl] eq "perm"} {
 	    set oldMembers {}
 	    set added 0
 	    foreach {locn oldCases} [array get permMembers $lvl,*] {
@@ -236,14 +254,14 @@ oo::class create iotool::$newHelperClass {
 		array set permMembers [list $lvl,$src [list $case]]
 	    }
 	} else {
-	    ExtendPerms $src $case [lrange $levels 0 end-1]
+	    my ExtendPerms $src $case [lrange $levels 0 end-1]
 	}
     }
 
     method ReducePerms {src case levels} {
 	if {$levels eq {}} return
 	set lvl [lindex $levels end]
-	if {[TypeFromLevel frame$lvl] eq "perm"} {
+	if {[my TypeFromLevel frame$lvl] eq "perm"} {
 	    set oldMembers {}
 	    set added 0
 	    foreach {locn oldCases} [array get permMembers $lvl,*] {
@@ -264,7 +282,7 @@ oo::class create iotool::$newHelperClass {
 		DeleteCase [my GetNode] [join [lsort [linsert $oldCombo end $case]] +]
 	    }
 	} else {
-	    ReducePerms $src $case [lrange $levels 0 end-1]
+	    my ReducePerms $src $case [lrange $levels 0 end-1]
 	}
     }
 
@@ -272,7 +290,6 @@ oo::class create iotool::$newHelperClass {
     method InsertLevel {type} {
 	global myNode compCases
 	variable clickPath
-	variable decor
 	
 	set anchor [lsearch $decor $type]
 	
@@ -282,13 +299,13 @@ oo::class create iotool::$newHelperClass {
 			   [namespace current] 0]
 		if {[CaseForExpt $myNode $clickPath] ne ""} {
 		} elseif {$type eq "param"} {
-		    set parmCase [GetCaseName {alternative value case}]
+		    set parmCase [my GetCaseName {alternative value case}]
 		    if {$parmCase eq {}} return
 		    AddCase $myNode $parmCase
 		    set newLevel [UniqueId $type]
 		    lappend clickPath $newLevel
 		    set compCases($myNode,$newLevel) $parmCase
-		    ExtendPerms $newLevel $parmCase $clickPath
+		    my ExtendPerms $newLevel $parmCase $clickPath
 		}
 		pack [label $f.label -wrap 250 -text [tr. "Select the parameter to vary in this case from the model diagram or explorer"] -fg red]
 		UpdateByOS
@@ -303,17 +320,17 @@ oo::class create iotool::$newHelperClass {
 		set lab $f.head.label
 		set leafName [lindex $decor $anchor+1]
 		if {$type eq "compound"} {
-		    set compCase [GetCaseName combination]
+		    set compCase [my GetCaseName combination]
 		    AddCase $myNode $compCase
 		    set compCases($myNode,$newLevel) $compCase
 		    set leafName "$compCase: $leafName"
-		    ExtendPerms $newLevel $compCase $clickPath
+		    my ExtendPerms $newLevel $compCase $clickPath
 		}
 		$lab configure -compound left -text $leafName \
 		    -image $::iconImages([lindex $decor $anchor+2])
 		pack $lab -side left
 		CrossPlatformBind $f \
-		    [namespace code [list OnElementContext $clickPath %X %Y]]
+		    [namespace code [list my OnElementContext $clickPath %X %Y]]
 	    }
 	}
     }
@@ -336,13 +353,13 @@ oo::class create iotool::$newHelperClass {
 		set case [string range $leaf $endNodes+2 end]
 		set byLevel [array get compCases $myNode,*]
 		set oldLevel [string range [lindex $byLevel [lsearch -exact $byLevel $case]-1] 10 end]
-		ReducePerms $oldLevel $case $clickPath
+		my ReducePerms $oldLevel $case $clickPath
 		DeleteCase $myNode $case
 		unset compCases($myNode,$oldLevel)
 	    }
 	} elseif {[info exists compCases($myNode,$leaf)]} {
 	    set lvl [string range [winfo name $f] 5 end]
-	    ReducePerms $lvl $compCases($myNode,$leaf) $clickPath
+	    my ReducePerms $lvl $compCases($myNode,$leaf) $clickPath
 	    DeleteCase $myNode $compCases($myNode,$leaf)
 	    unset compCases($myNode,$leaf)
 	} elseif {[winfo exists $f.e]} {
@@ -373,13 +390,13 @@ oo::class create iotool::$newHelperClass {
 	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt
     }
 
-    proc Empty {inst path} {
+    method empty {path} {
 	variable clickPath
-	variable cMenu
 
-	set topF [MakeSubFrames $inst [$inst cget -topFrame] \
-		      [split $path /] {} 0]
-	set safePath [lindex [CrossPlatformBind $topF] 0 3 1]
+	set topF [MakeSubFrames [self object] $topFrame \
+		      [split $path/ /] {} 0]
+	puts [CrossPlatformBind $topF]
+	set safePath [lindex [CrossPlatformBind $topF] 0 3 2]
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]
 	    if {[lsearch {head body tree caption tick cross} $lvl]>-1} \
@@ -409,10 +426,10 @@ oo::class create iotool::$newHelperClass {
 	    } value {
 		$filling.e insert end " [list $attrs(index) $attrs(value)]"
 	    } default {
-		InsertLevel $type
+		my InsertLevel $type
 		if {[info exists attrs(tgt)]} {
 		    # will be awaiting a click, so supply one
-		    if {![Click /$attrs(tgt)]} {
+		    if {![my click /$attrs(tgt)]} {
 			Query [list missing_expt_param $attrs(tgt)] warning \
 			    expt_setup {} ok
 			set skip_this 1
@@ -498,7 +515,7 @@ oo::class create iotool::$newHelperClass {
 	}
     }
 
-    proc TypeFromLevel {lvl} {
+    method TypeFromLevel {lvl} {
 	if {[regexp {frame([a-z]+)[0-9]+} $lvl spare type]} {
 	    return $type
 	} else {
@@ -510,7 +527,7 @@ oo::class create iotool::$newHelperClass {
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]
 	    if {[lsearch {head body tree caption label tick cross} $lvl]>-1} continue
-	    set type [TypeFromLevel $lvl]
+	    set type [my TypeFromLevel $lvl]
 	    if {[lsearch {compound perm} $type]>-1} {
 		if {$type eq "compound"} {
 		    set compCase [$subF.head.label cget -text]
@@ -606,7 +623,7 @@ oo::class create iotool::$newHelperClass {
 	
     }
 
-    method Click {path} {
+    method click {path} {
 	global myNode compCases
 	variable curFrame
 	variable clickPath
@@ -628,9 +645,9 @@ oo::class create iotool::$newHelperClass {
 	    set f [AddEntry $winId $myNode $node $clickPath 0 0 s]
 	    # just like a regular entry except...
 	    $f.caption configure -image $::iconImages(list) -compound left
-	    $f.tick configure -command [list [self object] DecodeListSpec \
-					    $f $path $clickPath]
-	    $f.cross configure -command [list [self object] RevertListSpec $f $path]
+	    $f.tick configure -command [namespace code [list my DecodeListSpec \
+							    $f $path $clickPath]]
+	    $f.cross configure -command [namespace code [list my RevertListSpec $f $path]]
 	} else {
 	    set caseName ""
 	    if {[string match param* [lindex $clickPath end]]} {
@@ -653,7 +670,7 @@ oo::class create iotool::$newHelperClass {
 	destroy [winfo parent $f].label
 	lappend clickPath [$f.caption cget -text]
 	CrossPlatformBind $f.caption \
-	    [namespace code [list OnElementContext  $clickPath %X %Y]]
+	    [namespace code [list my OnElementContext  $clickPath %X %Y]]
 	return 1
     }
 
@@ -723,7 +740,7 @@ oo::class create iotool::$newHelperClass {
 	set listExpr [$box.e get]
 	if {$listExpr eq $listStrings($path)} return
 	set name [string range $lvl 0 end-3]
-	if {[catch {InterpList $name $listExpr} newCases]} {
+	if {[catch {my InterpList $name $listExpr} newCases]} {
 	    Query [list param_list_parse_fail $name $newCases] \
 		warning expt_setup {} ok
 	    return
@@ -737,7 +754,7 @@ oo::class create iotool::$newHelperClass {
 		set oldCases [lreplace $oldCases $found $found]
 	    } else {
 		AddCase $myNode $name
-		ExtendPerms $lvl $name $hitPath
+		my ExtendPerms $lvl $name $hitPath
 	    }
 	    # set the actual parameter in the case!
 	    $box.e delete 0 end
@@ -753,7 +770,7 @@ oo::class create iotool::$newHelperClass {
 	$box.e delete 0 end
 	$box.e insert 0 $listExpr
 	foreach case $oldCases {
-	    ReducePerms $lvl $case $hitPath
+	    my ReducePerms $lvl $case $hitPath
 	    DeleteCase $myNode $case
 	}
 	
