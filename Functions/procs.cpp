@@ -5,8 +5,8 @@ double factorial(int n) {
     return 1;
 }
 
-double spare;
-BOOLEAN have_spare = 0;
+thread_local double spare;
+thread_local BOOLEAN have_spare = 0;
 double inst_gaussian(double mean, double sd) {
   double v1,v2,r,fac,norm;
   if (have_spare) {
