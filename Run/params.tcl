@@ -1159,7 +1159,7 @@ namespace eval fileparams {
 		} else {
 		    set raw [c_getparamall $topNode $nodeId]
 		}
-		puts $pStr [base64::encode $raw]
+		puts $pStr [binary encode base64 $raw]
 		puts $pStr "  $indent\]\]>"
 		puts $pStr "$indent</byte_array>"
 		set msgs(param_source_$compName) \
@@ -1560,7 +1560,7 @@ proc LoadBase64CharData {encoded} {
     set compName /$parseStatus(topNode)[lindex $nodeId 0]
 #    set nodeId [IdFromTail $parseStatus(topNode) $compName 0]
 #puts "got node $nodeId from $compName"
-    set decoded [base64::decode $encoded]
+    set decoded [binary decode base64 $encoded]
     set paramData($compName) \
 	[concat {scenario ,bytes} $parseStatus(translateExtras) \
 	 [list $parseStatus(interval) $parseStatus(wrapTime) \
