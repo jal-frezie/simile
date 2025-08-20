@@ -25,6 +25,25 @@ double inst_gaussian(double mean, double sd) {
   return(mean+sd*norm);
 }
 
+double snd_outside(double limit) {
+  double max_rand = exp(-limit*limit/2), norm, spare;
+  BOOLEAN have_spare = 0;
+  do {
+    if (have_spare) {
+      norm = spare;
+    } else {
+      double theta = ame_rand(0, 6.28318530718);
+      double r = sqrt(-2*log(-ame_rand(-max_rand, 0)));
+      // ame_rand result can equal lower limit but not upper
+      norm = r*cos(theta);
+      spare = r*sin(theta);
+    }
+    have_spare = !have_spare;
+  } while (fabs(norm) < limit);
+  return(norm);
+}
+
+
 double gammln(double xx) {
   double stp = 2.50662827465, x, tmp, ser;
 

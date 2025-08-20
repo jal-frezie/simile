@@ -7,6 +7,7 @@ function(factorial, real, [real]).
 ways_to_pick(chosen,all) -->
 	factorial(all)/(factorial(chosen)*factorial(all-chosen)).
 %sample/3 same syntax but declares func that gives different result each call
+sample(snd_outside, real, [real]).
 
 gaussian_const(mean, SD) --> at_init(inst_gaussian(mean, SD)).
 gaussian_var(mean, SD) --> at_phase(inst_gaussian(mean, SD)).
