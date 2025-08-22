@@ -358,8 +358,9 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	get_host(Fn, Cond),
 	find_type(Cond, condition),
 	Fn has_class_refinement value of Val,
-	instance><is_lookup_cond(Val, _), 
-	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | _Normal]),
+	is_lookup_cond(Val, Sought), 
+	list_index_meanings(Submodel, IndSpecs),
+	IndSpecs = [ind_spec(_,_,_, Link) | _Normal],
 	(\+ (Link = none;
 	    find_name_host(Link, HostLink),
 	    HostLink has_attribute can_lookup of 1),
@@ -379,7 +380,10 @@ check_level_for_reds(TopNode, Wrinkle) :-
 			 sub(InputPairs, [], _), top_down,
 			 Switched, _SubbedExpr),
 	 member(var_pair(LocalName, input(_,_, HostLink, _)), Switched),
-	 Wrinkle = tgt_component_used_for_lookup(OuterText, LocalName));
+	 Wrinkle = tgt_component_used_for_lookup(OuterText, LocalName);
+	 replace_subexps(Sought, compile, looked_up, IndSpecs, top_down,
+			 [var_pair(index(DodgyInd),_)|_], _),
+	Wrinkle = sought_index_used_for_lookup(OuterText, DodgyInd));
 	setof(Unitless, (find_all_comps(Submodel, Unitless),
 			 Unitless has_class_refinement units of any), BadBound),
 	all(ame_gen, caption_for, [build(BadBound), build(BadCapt)]),
@@ -396,6 +400,10 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	  Wrinkle = has_hanging_influence(OuterText, HasHanger, HangerRef);
 	fail).
 
+looked_up(_, index(N), IndexDefs, 0) :-
+    IndexDefs = [ind_spec(_,_,_, Link) | _],
+    nth(N, IndexDefs, IndSpec),
+    IndSpec = ind_spec(_,_,_, Link).
 /*
 remove_redundant_equivs(Submodel, Equivs) :-
 	Submodel has_link_equivalences OldEquivs,

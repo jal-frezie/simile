@@ -569,6 +569,10 @@ set msgs(tgt_component_used_for_lookup_title) [tr. {Problem with model}]
 set msgs(tgt_component_used_for_lookup_message) [tr. {Submodel "%1$s" has a membership condition that looks up its indices, but this condition refers to the parameter "%2$s", which comes from the base instance being looked up and therefore is not defined until the indices are set.}]
 set msgs(own_component_used_for_lookup_detail) [tr. {Influences to the lookup must come from outside the submodel and outside the base instance being looked up.}] 
 
+set msgs(sought_index_used_for_lookup_title) [tr. {Problem with model}]
+set msgs(sought_index_used_for_lookup_message) [tr. {Submodel "%1$s" has a membership condition that looks up its indices, but this condition refers to index(%2$s), which is one of the indices of the base instance being looked up and therefore is not defined until the indices are set.}]
+set msgs(sought_index_used_for_lookup_detail) [tr. {Indices referred to in the membership condition must not be those referring to the base instance in the role being looked up.}] 
+
 set msgs(missing_boundary_cond_title) [tr. {Problem with model}]
 set msgs(missing_boundary_cond_message) [tr. {Submodel "%1$s" contains the following components which do not have a defined data type: %2$s}]
 set msgs(missing_boundary_cond_detail) [tr. {This means that they form a loop of influences and all take their data type from the previous one. Such a loop must have a boundary condition, e.g., a value that is used initially, and which sets the data type of the other values.}]
