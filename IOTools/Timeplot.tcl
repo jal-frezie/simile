@@ -28,7 +28,7 @@ namespace eval ::origplot72514 {
         SetState $windowId plotThis
     }
 
-    proc reset {winId} {
+    proc reset {winId depth} {
 	variable timeplotvars
 	AdvanceColour timeplotvars($winId,colour)
 	    #		ShowMess debug info "colour now $timeplotvars($winName,colour)" ok

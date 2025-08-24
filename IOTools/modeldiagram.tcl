@@ -23,9 +23,6 @@ namespace eval ::ModelDiagram20060804 {
     proc clear {winId} {
     }
     
-    proc reset {winId} {
-    }
-
     proc initialize {winId} {
 	global window_info
 	

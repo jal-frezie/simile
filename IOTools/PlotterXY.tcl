@@ -270,7 +270,7 @@ namespace eval ::$keyValue {
         
     }
     
-    proc reset {winId} {
+    proc reset {winId depth} {
         global ::graphtools::YYold
         global ::graphtools::YYnew
         global ::graphtools::Told

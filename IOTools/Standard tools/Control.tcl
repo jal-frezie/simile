@@ -520,7 +520,7 @@ namespace eval runcontrol33857 {
 		}
                 if {$redoPhase($node) < 1} {
 		    if {$display} {
-			TellAllHelpers $node {} 1 reset
+			TellAllHelpers $node {} 1 reset $redoPhase($node)
 		    }
 		    set runState($node,currentMode) stop
                 }
@@ -640,9 +640,7 @@ namespace eval runcontrol33857 {
     }
     
     # No need to do anything for update, because it updates itself
-    proc reset {winId} {
-    }
-    
+
     proc display {args} {
     }
     

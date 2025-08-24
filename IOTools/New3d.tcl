@@ -275,9 +275,6 @@ proc initialize {winId} {
 # proc initialize {winId}
 ##################################################
 
-proc reset {winId} {
-}
-
 proc Restore {winId} {
     set state [GetState $winId]
     initialize $winId

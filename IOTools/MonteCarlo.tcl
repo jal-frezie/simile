@@ -793,7 +793,7 @@ namespace eval $keyValue {
         }
     }
     
-    proc reset {winId} {
+    proc reset {winId depth} {
         variable useNodes
         
         if {$useNodes($winId,scrogging)} {

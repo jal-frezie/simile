@@ -31,9 +31,6 @@ proc ShowHelper {w} {
 	#ConstructPosterPanel $w
 }
 
-    proc reset {winId} {
-    }
-
 # Invoked at every time interval.
 proc display {w time step remainder} {
 }

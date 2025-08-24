@@ -89,9 +89,6 @@ proc detach {winId} {
     ShowKey $winId
 }
 
-proc reset {winId} {
-}
-
 proc AddVariable {winId} {
     $winId.intro configure -text "Click on the array value representing the X coordinates of the treelike objects to be displayed."
     GrabClicks $winId

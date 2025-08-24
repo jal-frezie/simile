@@ -796,7 +796,7 @@ namespace eval $keyValue {
         }
     }
     
-    proc reset {winId} {
+    proc reset {winId depth} {
         variable useNodes
         
         set useNodes($winId,modelY) {}

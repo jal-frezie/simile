@@ -276,7 +276,7 @@ namespace eval ::$keyValue {
         drawGraphpad $w;
     }
     
-    proc reset {winId} {
+    proc reset {winId depth} {
         variable runCount
         global ::graphtools::plot
         global ::graphtools::YYnew

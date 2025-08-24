@@ -51,9 +51,6 @@ namespace eval grid005 {
         AddVariable $winId
     }
 
-    proc reset {winId} {
-    }
-
     proc DefaultColours {winId} {
         variable useNodes
         set useNodes($winId,cbot) black

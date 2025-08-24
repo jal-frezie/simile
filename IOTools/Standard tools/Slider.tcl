@@ -656,7 +656,7 @@ namespace eval slide139 {
     # after reset, record the positions of compartment sliders so they can be put
     # back there while model is running (see below)
     
-    proc reset {winId} {
+    proc reset {winId depth} {
         #	global sliderVals
         #	variable compList
         #	foreach node [array names compList] {

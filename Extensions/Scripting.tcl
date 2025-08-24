@@ -664,7 +664,7 @@ oo::class create iotool::Helper {
 	set State $new
     }
 
-    method reset {} {
+    method reset {depth} {
     }
     
     method display {a1 a2 a3} {
@@ -728,11 +728,6 @@ oo::class create iotool::OldStyleHelper {
 	set helperTable(beingCalled) {}
     }
 
-# optional (but all old-style helpers have it)
-    method reset {} {
-	return [${oldSpace}::reset $winId]
-    }
-    
 # optional (but all old-style helpers have it)
     method display {current display update} {
 	return [${oldSpace}::display $winId $current $display $update]

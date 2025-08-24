@@ -451,10 +451,10 @@ proc listboxselect {winId x} {
 }
 
 
-    proc reset {winId} {
+proc reset {winId depth} {
     variable col
-	incr col
-    }
+    incr col
+}
 
 
 proc DoEachTimeStep {win time} {

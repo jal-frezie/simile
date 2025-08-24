@@ -116,9 +116,6 @@ namespace eval $keyValue {
         set useNodes($winId,state) 1 ;# stopped, no data
     }
     
-    proc reset {winId} {
-    }
-    
     proc display {args} {
     }
     

@@ -22,9 +22,6 @@ namespace eval ::$keyValue {
     proc clear {winId} {
     }
     
-    proc reset {winId} {
-    }
-
     proc initialize {winId} {
         global tcl_platform iconImages
 	variable chop

@@ -416,7 +416,7 @@ namespace eval $keyValue {
         }
     }
     
-    proc reset {winId} {
+    proc reset {winId depth} {
     }
     
     proc display {winId tCur tStep tRem} {

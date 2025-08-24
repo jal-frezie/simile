@@ -161,9 +161,6 @@ proc GetCanvas {winId} {
     return $winId.canvas
 }
 
-proc reset {winId} {
-}
-
 proc click {w node caption} {
     #tk_messageBox -message "Click node $node" -type ok
     global ::graphtools::plot

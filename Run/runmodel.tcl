@@ -169,6 +169,13 @@ proc AddHelperSublist {fm lm title ct} {
 			${oldSpace}::clear $winId
 		    }
 		}
+
+		if {[llength [namespace which ${::gKeyValue}::reset]]} {
+		    # override do-nothing reset in base class defn
+		    method reset {depth} {
+			${oldSpace}::reset $winId $depth
+		    }
+		}
 		if {[llength [namespace which ${::gKeyValue}::GetCanvas]]} {
 		    method getCanvas {} {
 			${oldSpace}::GetCanvas $winId

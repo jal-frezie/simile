@@ -253,9 +253,6 @@ namespace eval ::polygon375 {
 	}
     }
 
-    proc reset {winId} {
-    }
-
     proc display {winId time step remainder} {
         variable useNodes
 	variable displayUpdate
