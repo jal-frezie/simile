@@ -417,6 +417,18 @@ namespace eval $keyValue {
     }
     
     proc reset {winId depth} {
+	variable displayList
+	if {$depth == -2} { # new exec or expt setup, redo setup
+	    set displayList($winId,paths) {}
+	    set displayList($winId,transes) {}
+	    foreach id $displayList($winId,ids) {
+		set varCapt [GetCaptionPathFromId $id]
+		if {![llength $varCapt]} continue ;# check not legacy deleted
+		
+		lappend displayList($winId,paths) $varCapt
+		lappend displayList($winId,transes) [GetTransTable $id]
+	    }
+	}
     }
     
     proc display {winId tCur tStep tRem} {
