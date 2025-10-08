@@ -4,7 +4,7 @@ IF YOU OPT TO HAVE THE SOFTWARE DELIVERED TO YOU ON A CD PLEASE NOTE THAT THESE 
 
 1.	Conditions of Use
 
-When you "click" the "Accept" button, you hereby acknowledge that the software package called Simile , the software media, the user manual and any other associated documentation as well as any and all derivatives thereof (the "Software") is supplied under licence from Simulistics Limited of 11 Tantallon Place, Edinburgh, EH9 1NZ, United Kingdom,  ("Simulistics") upon the following terms which you will be deemed to have accepted upon clicking the "Accept" button.
+When you "click" the "Accept" button, you hereby acknowledge that the software package called Simile , the software media, the user manual and any other associated documentation as well as any and all derivatives thereof (the "Software") is supplied under licence from Simulistics Limited of 39 Leamington Terrace, Edinburgh, EH10 4JS, United Kingdom,  ("Simulistics") upon the following terms which you will be deemed to have accepted upon clicking the "Accept" button.
 
 All rights, title and interest, including copyrights and other intellectual property rights of any nature created, developed, subsisting or used in or in connection with  the Software are owned absolutely and exclusively by Simulistics or its licensors and you acquire no title or interest in the Software other than the right to use it as detailed in this Licence.  To avoid any doubt you may not load the Software onto a computer or use the Software in any manner without a licence from Simulistics.
 

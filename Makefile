@@ -232,7 +232,7 @@ $(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
 		-ld-options,$(MAKESL); cd ..
 	patchelf --set-rpath '$$ORIGIN/../lib' $(PROLOG_DB)
 # note that libxml2 includes and libs are not needed
-clean_prolog:
+clean-prolog:
 	rm -f $(PROLOGSTATE) $(PROLOG_DB)
 endif
 ifeq ($(PROLOG),GNU)
@@ -265,7 +265,7 @@ $(PROLOG_DB_X): Prolog/struct_db.c Run/dllcalls.h
 $(PROLOG_DB_A): Prolog/struct_db.c Run/dllcalls.h
 	$(AGNU_PATH);cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB_A) struct_db.c; cd ..
-clean_prolog:
+clean-prolog:
 	rm -f $(PROLOGSTATE) $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A) $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
 else # not on mac
 PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).o
@@ -293,7 +293,7 @@ $(PROLOG_MA): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 $(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
 	$(PL_PATH)/bin/gplc --c-compiler $(GCCCMD) -c -C '-D_GNU_PROLOG -fPIE' \
 		-o $(PROLOG_DB) Prolog/struct_db.c
-clean_prolog:
+clean-prolog:
 	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(PROLOG_AS) $(PROLOG_MA)
 endif # on Mac
 endif # GNU prolog
@@ -731,6 +731,6 @@ endif
 endif
 
 # call clean after changing license info in this file
-clean: clean_prolog
+clean: clean-prolog
 	rm -f $(RELAY) Run/$(CRYPTOBJ) $(SUPP) \
 		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
