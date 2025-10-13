@@ -22,7 +22,9 @@ set goScript [file join [file dirname [file dirname [file dirname $invoc]]] \
 		  Run simile.tcl]
 if {[catch {source $goScript} gotErr]} {
     lappend allFails {} $errorInfo
-    wm withdraw .splash
+    if {[winfo exists .splash]} {
+	wm withdraw .splash
+    }
 foreach versSuffix {8.6} {
     if {[catch {exec tclsh$versSuffix $goScript {*}$argv} gotErr]} {
 	lappend allFails $versSuffix $errorInfo

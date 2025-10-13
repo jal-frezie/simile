@@ -48,7 +48,7 @@ CFLAGS += $(OPT)
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
-VERS = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
+VERS = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh8.6)
 # 8.5 stubs work in 8.6 better than vice versa
 PT = .
 
@@ -362,7 +362,7 @@ $(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 
 $(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
 	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
-		-o ../${SUPP} support.cpp; cd ..
+		-o ../$(SUPP) support.cpp; cd ..
 
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
