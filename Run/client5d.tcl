@@ -13,7 +13,6 @@ randseed [clock seconds]
 cd $oldWD
 
 package require Unpacker
-package require base64
 c_testlicense ;# sets edition 
 loadcommands ;# for unpacker -- edition checked here
 
@@ -104,7 +103,8 @@ proc SetParameter {path value} {
     if {$times} {
         set dims [linsert $dims 0 TIME]
     }
-    return [ListToArray DUMMY dummy {} {} $trans $dims $value $times 1]
+    catch {ListToArray DUMMY dummy {} {} $trans $dims $value $times 1} result
+    return $result
 }
 
 proc GetModelProperty {modelId path prop} {
@@ -205,7 +205,7 @@ proc GetBinaryValuesById  {iHandle outputNode minVal maxVal nswat isHex} {
     ReleaseHandle dummy $raw
 
     append stac [binary format cc 0 0x3b]
-    return [base64::encode $stac]    
+    return [binary encode base64 $stac]    
 }
 # 
 # lifted from hai2mmii.tcl v5.9

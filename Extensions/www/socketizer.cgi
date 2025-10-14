@@ -1,4 +1,4 @@
-#!/usr/bin/tclsh
+#!/usr/bin/tclsh8.6
 encoding system utf-8
 foreach local {sPath sHome mdl} val $argv {
     set $local $val
@@ -6,7 +6,7 @@ foreach local {sPath sHome mdl} val $argv {
 
 set env(HOME) $sHome
 lappend auto_path [file join $sPath System lib] ;# ce qui compte...
-lappend auto_path [file join $sPath System lib Stubs] ;# ce qui compte...
+lappend auto_path [file join $sPath System lib Stubs] /usr/share/tcl9.0 /usr/lib64/tcl9.0 ;# ce qui compte...
 source [file join $sPath Run client5d.tcl]
 source [file join $sPath Extensions www web_embed.tcl]
 # we also want to convert tk canvas graphics to svg for the layer helper

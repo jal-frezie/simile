@@ -1,11 +1,12 @@
-#!/usr/bin/tclsh
+#!/usr/bin/tclsh8.6
+
 encoding system utf-8
 foreach local {sPath sHome mdl} val $argv {
     set $local $val
 }
 puts "Here [pwd] args $argv<br>"
 exec echo {} > /tmp/error-output.txt
-lappend auto_path [file join $sPath System lib]
+lappend auto_path [file join $sPath System lib] /usr/share/tcl9.0 /usr/lib64/tcl9.0
 if {![file exists [file join $sHome .simile userinfo.txt]]} {
     file delete -force $sHome
     file mkdir $sHome
@@ -19,12 +20,14 @@ catch {file delete [file join $sHome .simile Desktop1.smx]}
 if {[catch {
     package require SimileAutoObj
 
-    similescript::ModelWindow modelWin
-    modelWin Open $mdl.sml
-    modelWin BuildShareLib $mdl.so ;# was [file join $sHome $shLib]
+    similescript::ModelWindow create modelWin
+    modelWin open $mdl.sml
+    file delete {*}[glob -nocomplain [file join $mimedir *.so]]
+    # do not run bundled sharelib, obvs
+    modelWin buildShareLib $mdl.so ;# was [file join $sHome $shLib]
 # now export the svg not over the original model
     puts "svg to $mdl.svg"
-    modelWin BuildSVGDiagram $mdl.svg
+    modelWin buildSVGDiagram $mdl.svg
     foreach bundled {.spf .shf} {
 	set dest $mdl$bundled
 	set src [file join $mimedir model$bundled]
@@ -38,7 +41,7 @@ if {[catch {
     array set runParams {execTime 100.0 timeUnit unit displayInt 1 errLimit 0 \
 			     intMethod Euler phaseList 0.1 resetTo 0}
     # defaults
-    set node [modelWin cget -modelNode]
+    set node [modelWin getNode]
     if {[info exists runState($node,runParams)] && \
 	     [lindex $runState($node,runParams) 0] eq "execTime"} {
 	array set runParams $runState($node,runParams) ;# overwrite

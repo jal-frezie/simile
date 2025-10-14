@@ -67,13 +67,13 @@ oo::class create similescript::ModelWindow {
 #        #set model $modelFile
 #    }
 #    
-#    method Open {modelFile} {
-#        if {[info exists model]} {
-#            [self object] New
-#        }
-#        Reopen $modelCanvas $modelFile reopen
-#        set model $modelFile
-#    }
+    method open {modelFile} {
+        if {[info exists model]} {
+            New
+        }
+        Reopen $modelCanvas $modelFile reopen
+        set model $modelFile
+    }
 ## disable -- there is little point printing from script as you cannot alter 
 ## diagram
 ##    method Print {} {
@@ -114,18 +114,18 @@ oo::class create similescript::ModelWindow {
 #	}
 #    }
 #
-#    # added for building models on web server -- do not document
-#    method BuildShareLib {shlibFile} {
-#	set ::preSelect $shlibFile
-#        MenuSelect $modelCanvas code compile_c
-#    }
-#
-#    # added for diaplaying models on web server -- do not document
-#    method BuildSVGDiagram {shlibFile} {
-#	set ::preSelect $shlibFile
-#	ExportSVGDirect $modelNode
-#    }
-#
+    # added for building models on web server -- do not document
+    method buildShareLib {shlibFile} {
+	set ::preSelect $shlibFile
+        MenuSelect $modelCanvas code compile_c
+    }
+
+    # added for diaplaying models on web server -- do not document
+    method buildSVGDiagram {shlibFile} {
+	set ::preSelect $shlibFile
+	ExportSVGDirect $modelNode
+    }
+
 #    # Model Menu
 #    method Run {} {
 #	global botches
