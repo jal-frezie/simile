@@ -1,0 +1,83 @@
+package provide SimileAutoObj 1.1
+# 1.0 for Simile 4.0
+# 1.1 for Simile 4.1
+
+# Notes
+# must be pipe interface
+
+# package require Itcl
+
+# Attempting to make it work without Tk -- next line failed to load it anyway
+# package require Tk
+
+if {[string match windows $tcl_platform(platform)]} {
+# removed until I can get hold of a 64-bit version
+#     package require tcom
+#     ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
+}
+set ::SimileAutoObjLoaded true; # used so .register (welcome) dialog not produced
+set env(LD_LIBRARY_PATH) "[file dirname [info script]]/../../../System/lib"
+if {![info exists window_info]} {
+    set argc 1; # simile.tcl expects to be called from the command line -- 
+# the '-stealth' arg allows other instances of Simile to run independently
+    set argv {-stealth}
+    source "[file dirname [info script]]/../../../Run/simile.tcl"
+    
+# The following was done to allow Simile's normal quit procedure to be
+# followed when the script executed the 'exit' command. It is now
+# unnecessary, since model execution runs in a separate thread rather
+# than a separate application and therefore exits automatically as
+# soon as the parent thread does. It is also useless since dialogues
+# are short-circuited during scripting so there is no opportunity to
+# save an altered model (not that scripts can alter them) anyway.
+
+# reinstated 2015 because the exit procedure tidies up temporary files
+# (important on a SimiLive website)
+
+     rename exit ::renamed::exit
+     proc exit {} {
+	 catch {prolog tk_kill_everything(_)}
+	 # puts $::errorInfo
+	 ::renamed::exit ;# just to make sure
+     }
+    
+# This section no longer required, because:
+# (a) ShowMessage is now used only for debugging, not for user interaction -- 
+# that is all done through Query which has built-in scripted execution mode
+# (b) It is now called ShowMess for consistency with the c extensions.
+#    rename ShowMessage ::renamed::ShowMessage
+#    proc ShowMessage { title icon string resps {parent {}}} {
+#        puts "$icon $title: $string"
+#        switch -- $resps {
+#            abortretryignore {
+#                return abort
+#            }
+#            ok {
+#                return ok
+#            }
+#            okcancel{
+#                return ok
+#            }
+#            retrycancel {
+#                return cancel
+#            }
+#            yesno {
+#                return yes
+#            }
+#            yesnocancel {
+#                return yes
+#            }
+#        }
+#        
+#    }
+#}
+#
+if {[string match windows $tcl_platform(platform)]} {
+    #tk_messageBox -message "ModelWin before registerfactory"
+    #::tcom::object registerfactory ::SimileAutoObj::ModelWindow {similescript::ModelWindow #auto} {delete object}
+    #::tcom::object registerfactory ::SimileAutoObj::RunControl {similescript::RunControl  #auto} {delete object}
+    #::tcom::object registerfactory ::SimileAutoObj::TableHelper {similescript::TableHelper  #auto} {delete object}
+    #tk_messageBox -message "ModelWin after registerfactory"
+}
+
+
