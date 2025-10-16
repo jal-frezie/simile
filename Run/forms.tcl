@@ -533,7 +533,7 @@ proc AbleSetup {mathf} {
 }
 
 proc AddIncBrowse {incFileTxt prev isPipe mdl modelLocn} {
-    if {$modelLocn ne "unsaved"} {
+    if {$modelLocn ne "unsaved" && [file pathtype $prev] ne "relative"} {
 	set prev [Relativize $modelLocn $prev]
     }
     $incFileTxt insert 1.0 $prev

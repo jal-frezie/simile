@@ -385,10 +385,13 @@ oo::class create iotool::$newLayerClass {
 	set row [expr {min(max($row, 1), $useNodes($winId,nrow))}]
 	if {[info exists curValues]} {
 	    if {$useNodes($winId,colvals) eq "USE_INDICES"} {
+		set value none
 		array set curArr $curValues
-		array set rowArr $curArr($row)
-		if {[catch {set value $rowArr($col)}]} {
-		    set value none
+		if {[info exists curArr($row)]} {
+		    array set rowArr $curArr($row)
+		    if {[info exists rowArr($col)]} {
+			set value $rowArr($col)
+		    }
 		}
 	    } else {
 		set inds [expr {$useNodes($winId,ncol)*($row-1)+$col-1}]
