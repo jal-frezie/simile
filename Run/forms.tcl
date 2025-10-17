@@ -951,7 +951,7 @@ proc CheckForETDuplicates {new} {
     } elseif {[lsearch {boolean false true} $enumTypeMPEntry]>-1} {
 	set query [list reserved_et_member $new $enumTypeMPEntry]
     } else {
-	set def [GetFromProlog tk_get_info('$enumTypeMPEntry',is_unit)]
+	set def [GetFromProlog tk_get_info([string map [list \\ \\\\] '$enumTypeMPEntry'],is_unit)]
 	if {![string equal none $def]} {
 	    set query [list member_is_unit $new $enumTypeMPEntry $def]
 	} else {
