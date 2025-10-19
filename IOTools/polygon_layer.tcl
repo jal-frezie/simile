@@ -308,6 +308,7 @@ oo::class create iotool::$newLayerClass {
     }
 
     method prepareSaveString {} {
+	array unset useNodes $winId,colourMap ;# no use to this tool
 	incr useNodes($winId,nswatches) -1
 	regsub -all $winId [array get useNodes $winId,*] /WIN/ State
 	incr useNodes($winId,nswatches)

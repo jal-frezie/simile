@@ -274,9 +274,9 @@ if (isset($_POST['client_exec'])) {
   echo "<script src='run.js'></script>";
 }
 ?>
-<script src='slider.js'></script>
-<script src='layers2d.js'></script>
 <script type='module' src='shapes3d.js'></script>
+<script src='slider.js'></script>
+<script src='layers2d.js' defer></script>
 </head>
 <body onload="prepare()">
  <div id="dialog-1" title="Dialog Title goes here...">empty</div>
