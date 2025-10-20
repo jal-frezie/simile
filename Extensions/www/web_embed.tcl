@@ -222,6 +222,9 @@ proc ResponseTo {paramList} {
 		    set parmTimeStamps($id) $parmReqOrdinality
 		    set dims [linsert $dims 0 TIME]
 		}
+		if {![info exists ::aH($id)]} {
+		    set ::aH($id) [c_createparamarray $service($params(base)) $id]
+		}
 		set ::param_id(cur) $::aH($id)
 		set resp [ListToArray DUMMY {} cur {} {} $trans \
 			      [lrange $dims 0 end-1] $stack $times 1]
