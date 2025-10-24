@@ -219,6 +219,7 @@ namespace eval ::polygon375 {
     
     proc PrepareSaveString {winId} {
         variable useNodes
+	array unset useNodes $winId,colourMap ;# no use to this tool
         NodeIdsToCaptions $winId
 	incr useNodes($winId,nswatches) -1
         regsub -all $winId [array get useNodes $winId,*] /WIN/ saveString
@@ -722,7 +723,7 @@ namespace eval ::polygon375 {
 	variable useNodes
 
 	set file [ChooseFile polys.bgx [tr. "Save polygon boundaries as:"] 1 \
-		       [$::helperTable($winId,whichInstance) GetNode]]
+		       [$::helperTable($winId,whichInstance) getNode]]
 	if {![llength $file]} return
 	set strm [open $file w]
 	puts $strm [concat [GetModelValue $useNodes($winId,xcoord)] \
@@ -781,7 +782,7 @@ namespace eval ::polygon375 {
         switch $i {
             0 {set sourcefile \
 		   [ChooseFile polys.bgx [tr. "Load polygon boundaries from:"] \
-			0 [$::helperTable($winId,whichInstance) GetNode]]}
+			0 [$::helperTable($winId,whichInstance) getNode]]}
             1 {set sourcefile model}
         }
         return $sourcefile

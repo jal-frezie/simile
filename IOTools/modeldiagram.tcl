@@ -50,7 +50,7 @@ namespace eval ::ModelDiagram20060804 {
 	set window_info($winId.c,width) [winfo width $winId.c]
 	set window_info($winId.c,height) [winfo height $winId.c]
 	set window_info($winId.c,top_node) \
-	    [$::helperTable($winId,whichInstance) GetNode]
+	    [$::helperTable($winId,whichInstance) getNode]
 	DoZoom $winId.c $factor
 	array unset window_info $winId.c,top_node
     }
@@ -58,7 +58,7 @@ namespace eval ::ModelDiagram20060804 {
     proc click {winId node caption} {
 	global window_info
 
-	set topNode [$::helperTable($winId,whichInstance) GetNode]
+	set topNode [$::helperTable($winId,whichInstance) getNode]
 	if {$node eq "top"} {
 	    set node $topNode
 	    SetState $winId "top level"
@@ -84,7 +84,7 @@ namespace eval ::ModelDiagram20060804 {
     
     proc old_initialize {winId} {
         set diagFile [ChooseFile model.cnv [tr. "Display model diagram file:"] \
-			  0 [$::helperTable($winId,whichInstance) GetNode]]
+			  0 [$::helperTable($winId,whichInstance) getNode]]
 	if {[string length $diagFile]} {
 	    set quikStr [NetOpen $diagFile r]
 	    SetState $winId [read $quikStr] ;# transcribe file into contents
@@ -108,10 +108,10 @@ namespace eval ::ModelDiagram20060804 {
 	set window_info($c,topCapt) {} ;# must be top-level diagram!
 	eval $diagFile
 
-	bind $c <Button-1> [list [namespace code OnElementClick] %W %x %y]
+	bind $c <Button-1> [namespace code [list OnElementClick %W %x %y]]
 
 	$c bind has_info <Enter> \
-	    [list QueuePopup [namespace code DoInspPopup] %W %x %y %X %Y]
+	    "QueuePopup [namespace code [list DoInspPopup %W %x %y %X %Y]]"
 	$c bind has_info <B1-Enter> RemovePopup ;# make sure it does nothing
 	$c bind has_info <Leave> RemovePopup
 
@@ -149,7 +149,7 @@ namespace eval ::ModelDiagram20060804 {
 
 	set context [CaptPathFromPoint $winId $x $y]
 
-	set topNode [$helperTable([winfo parent $winId],whichInstance) GetNode]
+	set topNode [$helperTable([winfo parent $winId],whichInstance) getNode]
 	if {$runState($topNode,modelRunning)>2} {
 	    PostPopup $winId $X $Y
 #	    set trans [GetTransTable $plName]
@@ -163,9 +163,9 @@ namespace eval ::ModelDiagram20060804 {
 		#puts "trans $trans value $value"
 #	    }
 	    AddPopupMessage novalue \#ffffc0 GetShortVals $topNode $context
-	    AddPopupMessage [GetCompProperty Spec $context] \#c0ffc0
-	    set desc [GetCompProperty Desc $context]
-	    set comment [GetCompProperty Comment $context]
+	    AddPopupMessage [GetCompProperty $topNode Spec $context] \#c0ffc0
+	    set desc [GetCompProperty $topNode Desc $context]
+	    set comment [GetCompProperty $topNode Comment $context]
 	    if {[string length $comment]} {
 		append desc \n$comment
 	    }
