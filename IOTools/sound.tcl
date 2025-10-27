@@ -48,9 +48,9 @@ oo::class create iotool::$newHelperClass {
 	my display 0 0 0
     }
 
-    method Reset {} {
+    method reset {lvl} {
 	# node id may be out of date or lost due to rebuild --
-	if {[info exists State]} {
+	if {$lvl == -2 && [info exists State]} {
 	    set topNode [$modelInst getNode]
 	    set useNode [GetIdFromCaptionPath [lindex $State 0]]
 	    AddWaveCommand $topNode $useNode "/model/"

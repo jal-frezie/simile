@@ -183,10 +183,11 @@ method prepareSaveString {} {
 	}
     }
 
-    method Reset {} {
+    method reset {lvl} {
 	set useNodes(lastDisp) [GetModelTime]
 	# Sounds will have been cleared if model rebuilt, due to possible node
 	# id changes, so reinstate them
+	if {$lvl > -2} return
 	set topNode [my getNode]
 	foreach {path file} $useNodes(sounds) {	    
 	    set node [GetIdFromCaptionPath $path]
