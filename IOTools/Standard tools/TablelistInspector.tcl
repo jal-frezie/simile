@@ -58,7 +58,7 @@ oo::class create iotool::$newHelperClass {
         pack $tableframe -fill both -expand 1
 	if {[info exists showTopLevel]} {
 	    set new [$tbl insertchild root end [list "TOP LEVEL"]]
-	    $tbl rowconfig $new -name [GetNode]
+	    $tbl rowconfig $new -name $::myNode
 	    $tbl cellconfig $new,0 -image $iconImages(new)
 	}
 	set context $State ;# caption path of submodel to go at top

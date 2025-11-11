@@ -461,6 +461,7 @@ oo::class create iotool::$newLayerClass {
 	    for {set prog 0} {$prog<$useNodes($winId,nswatches)} {incr prog} {
 		set useNodes($winId,c$prog) [lindex $map $prog]
 	    }
+	    MakeHexColours useNodes $winId
 	    array unset useNodes $winId,c$prog ;# leave gap to stop loading
 	    my Display 0
 	}
