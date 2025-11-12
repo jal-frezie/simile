@@ -25,7 +25,15 @@ oo::class create iotool::ShapeLayer {
 
 ### Public methods ###
     method zoomTo {x y} {
+	variable host
+	variable engine
 	set useNodes(curZoom) [list $x $y]
+	set spec [lindex [$engine getState] 0]
+	if {[lindex $spec 0] eq "lines"} {
+	    set field [$host getCanvas]
+	    set newWidth [expr {0.3*$x*[lindex $spec 7]}]p
+	    $field itemconfig [namespace tail [self]].main -width $newWidth
+	}
 	my SetScaling
     }
 
