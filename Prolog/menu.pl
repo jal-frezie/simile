@@ -201,8 +201,9 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	        Mover is_of_sort box,
 		event><do_colours(Mover, seln),
 		fail;
-	     all(image, get_drawing_form,
-		 [build(Movers), build(_Styles), build([Box0 | Boxes])]),
+	     setof(Boxn, Mover^Style^(member(Mover, Movers),
+				get_drawing_form(Mover, Style, Boxn)),
+		   [Box0 | Boxes]),
 	       all(menu, =, [build(Boxes), unify_boxes(Box, Box0)])),
 	    
 	    (find_space_for(Box, Parent, Lighters, Pt, [Xoffset, Yoffset]),
