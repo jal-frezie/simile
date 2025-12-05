@@ -1917,6 +1917,7 @@ proc FinishExecThen {win act} {
     global window_info helperTable hideQuery
 
     set node $window_info($win,top_node)
+    set ::runState($node,currentMode) stop
     $helperTable(RunControl)::AbortFromMenu $node $act
 }
 
@@ -2045,7 +2046,7 @@ proc ViewUnsaved {node} {
 }
 
 proc SaveProjectFile {topNode path tgt} {
-    global runState projectInfo
+    global runState helperTable projectInfo
     #ShowMess debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
     # save any shf files names
@@ -2060,10 +2061,10 @@ proc SaveProjectFile {topNode path tgt} {
 #    \}
     # stateName referred to separate .shf -- bundle it instead
 #    if {[ViewUnsaved $topNode]} \{
-	set ::helperTable($topNode,stateName) [file join $path model.shf]
+	set helperTable($topNode,stateName) [file join $path model.shf]
 	RecordPathChoice .shf $tgt $topNode
 	set oldFocus [focus]
-	event generate $::helperTable($topNode,whichRunEnv) <FocusIn>
+	event generate $helperTable($topNode,whichRunEnv) <FocusIn>
 	::RunEnv::SaveView 0
 	event generate $oldFocus <FocusIn>
 	set SimileProject(nameOfHelperStateFile) model.shf

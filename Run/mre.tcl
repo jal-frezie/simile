@@ -696,7 +696,7 @@ namespace eval RunEnv {
 	global helperTable
         variable currentNode
 
-	set ::runState($currentNode,currentMode) stop
+	set ::runState($currentNode,currentMode) exit
 	$helperTable(RunControl)::AbortFromMenu $currentNode \
 	    [list ExDestroyHelpers $currentNode]
     }
