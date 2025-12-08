@@ -279,6 +279,7 @@ proc ClickObj { x y winId X Y action} {
     }
     set context [GetClickCapt $winId $canx $cany $node]
     if {[ProdObj $topNode $node $context]} {
+	set debounce(prodding) 1
 	return
     }
     # IO tool took the click, so do no more
@@ -535,6 +536,7 @@ proc DragObj {winId xco yco} {
     global window_info looks pushedbutton
     global debounce
 
+    if {[info exists debounce(prodding)]} return
     if {[string equal move $pushedbutton]} {
 	$winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
 	$winId yview scroll [expr ($window_info($winId,lasty)-$yco/$looks(scrollIncr))] units
@@ -608,6 +610,10 @@ proc DragObj {winId xco yco} {
 proc ReleaseObj {winId xco yco} {
     global tcl_platform debounce
 
+    if {[info exists debounce(prodding)]} {
+	unset debounce(prodding)
+	return
+    }
     if {$debounce(menu)} return ;# posted by ctrl-click on MacOS
 # this is here because Windows can sometimes generate a drag at a point 
 # after the unclick, so it makes it drag back to the actual unclick position
