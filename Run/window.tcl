@@ -278,7 +278,7 @@ proc ClickObj { x y winId X Y action} {
 	return
     }
     set context [GetClickCapt $winId $canx $cany $node]
-    if {[ProdObj $topNode $node $context]} {
+    if {!$RB && [ProdObj $topNode $node $context]} {
 	set debounce(prodding) 1
 	return
     }

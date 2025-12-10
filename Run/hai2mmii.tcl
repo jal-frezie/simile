@@ -79,6 +79,9 @@ proc IsPretty {bride} {
 
 proc ReconstructJSONArray {tclArray txtVals} {
     set origLen [llength $tclArray]
+    if {$origLen == 2} {
+	error "only one value"
+    }
     array set mono $tclArray
     if {[info exists mono(...)]} {
 	set origMems $mono(...)
