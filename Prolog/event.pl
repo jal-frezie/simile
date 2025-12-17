@@ -1092,14 +1092,15 @@ spread_dims(Node) :-
 		  (DoingUnits = 'No' ->
 		    DefCheckLevel = 1;
 		  DefCheckLevel = 2),
-		check_unit(Type, DefBase, DefCheckLevel, []); true),
+		  check_unit(Type, DefBase, DefCheckLevel, []),
+		  OnwardType = DefBase; OnwardType = Type),
 		(get_actual_sizes(Node, FoundArray, bare, _, Array, _),
 		    get_actual_sizes(Node, GivenArray, bare, _, Array, _) ->
 		    UseArray = GivenArray;
 		  UseArray = FoundArray,
 		    SpecChanged = dims),
-		(Type = real -> Base = 1;
-		 inters><promote_unit(Type, Base),
+		(OnwardType = real -> Base = 1;
+		 inters><promote_unit(OnwardType, Base),
 		   \+ member(Base, [const_int, const_ratio])),
 		((DoingUnits = 'No';
 		  IList = [], inters><promote_unit(Base,1)),
