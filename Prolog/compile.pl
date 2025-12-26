@@ -605,8 +605,10 @@ wot need them
 	assert(holding_over_fail(ExtDefns)),
 	fail;
 
+	send_to_dest(Stream, ['#ifndef ACTION_ONLY']),
 	insert_metadata(Language, FullModel, Used, Stream),
 	send_to_dest(Stream, ['#include <support2.cpp>']),
+	send_to_dest(Stream, ['#endif']),
 	retract(holding_over_fail(ExtDefns))
 
 	/* OK at this point we need to free all the memory we possibly can;

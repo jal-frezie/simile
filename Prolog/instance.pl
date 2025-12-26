@@ -529,7 +529,7 @@ sum_over_dims(IP, ResDims, Occ, Mag) :-
 	(append(SummableDims, ResDims, Dims), \+ member(var, ResDims);
 	 append(Dims, _RepDims, ResDims), SummableDims = [];
 	throw(trigger_vs_event_dims_mismatch)), !,
-	(Base = boolean -> Flag = IP; Flag = (IP '!=' 0)),
+	(Base = boolean -> Flag = IP; Flag = (IP '!=' '"NULL"')),
 	any_dims(Dims, Flag, Occ),
 	(Base = boolean -> Num = choose(IP,1,0); Num = IP),
 	sum_dims(SummableDims, Num, Mag).

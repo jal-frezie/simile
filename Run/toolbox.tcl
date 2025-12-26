@@ -558,6 +558,9 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 	    Query [list hack_break $workingDir] question top {} ok
 	}
     }
+    # shake out duplicates
+    set extSrcs [lsort -unique $extSrcs]
+    
     set shLibExt [info sharedlibextension]
     # Model executable v6.903: Do not faf about passing proc addresses via
     # get_count -- just dynamically link the shank and call them directly
@@ -569,8 +572,11 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 	    if {[string first $newLib $lDirs]==-1} {
 		append lDirs { } $newLib
 	    }
-	    lappend lFiles -l[string range [file rootname [file tail $lPath]] \
-				  3 end] ;# trim off "lib..."
+	    set newLFile -l[string range [file rootname [file tail $lPath]] \
+				3 end] ;# trim off "lib..."
+	    if {[lsearch -exact -- $lFiles $newLFile]==-1} {
+		lappend lFiles $newLFile ;# no duplicates
+	    }
 	}
     }
     set oldDir [pwd]
@@ -607,9 +613,8 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $env(SYSDIR) include MacOS]]\""
 		}
 		set objs \"[file join $TOOLDIR support.cpp]\"
-		foreach src [concat $extSrcs model.cpp] \
-		    tgt [concat $extTgts model] {
-		    set obj ${tgt}_$tcl_platform(machine)_mac.o
+		foreach src [concat $extSrcs model.cpp] {
+		    set obj [file rootname [file tail $src]]_$tcl_platform(machine)_mac.o
 		    if {![file exists $obj] || \
 			    [file exists $src] && [Newer $src $obj m]} {
 			puts $spout "g++ $gppFlags -fPIC -c -I\"$TOOLDIR\" -o $obj \"$src\"" 
@@ -640,9 +645,8 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    array set env {PATH /usr/bin}
 		}
 		set objs \"[file join $TOOLDIR support.cpp]\"
-		foreach src [concat $extSrcs model.cpp] \
-		    tgt [concat $extTgts model] {
-		    set obj ${tgt}_$tcl_platform(machine).o
+		foreach src [concat $extSrcs model.cpp] {
+		    set obj [file rootname [file tail $src]]_$tcl_platform(machine).o
 		    if {![file exists $obj] || \
 			    [file exists $src] && [Newer $src $obj m]} {
 			eval {exec g++} $gppFlags \
@@ -723,9 +727,8 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
                         $libOpt1 $libOpt2 objtmp.o $lDirs $lFiles -l5d_win"
 	    } else {
 		set objs \"[file join $env(SYSDIR) lib support_win.o]\"
-		foreach src [concat $extSrcs model.cpp] \
-		    tgt [concat $extTgts model] {
-		    set obj ${tgt}_$tcl_platform(machine)_win.o
+		foreach src [concat $extSrcs model.cpp] {
+		    set obj [file rootname [file tail $src]]_$tcl_platform(machine)_win.o
 		    if {![file exists $obj] || \
 			    [file exists $src] && [Newer $src $obj m]} {
 			puts $spout "g++ $gppFlags -c -o $obj \

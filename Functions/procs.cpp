@@ -225,8 +225,8 @@ binome(double p, int n)
   unsigned long i, a, b, k = 0;
   double x, x1, x2;
   /* check for parameters out of range */
-  if (p<0 || p>1) return stop(51);
-  if (n<0) return stop(52);
+  if (p<0 || p>1) return -1;
+  if (n<0) return -2;
 
   while (n > 20) {		/* tunable parameter; make member? */
     a = 1 + (n / 2);
