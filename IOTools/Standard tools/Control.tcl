@@ -560,7 +560,6 @@ namespace eval runcontrol33857 {
 	    } else {
 		set runState($node,modelRunning) 2
 	    }
-	    ScrubRun $node 1
 	} else {
 #	    if {abs($current-$finish)<max(abs($finish),1e-6)*5e-8} {...}
 		# allow for min freq overshoot
@@ -585,6 +584,7 @@ namespace eval runcontrol33857 {
 	UpdateBar $node $current [RestingColour $node]
 	set runState($node,busy) 0
 	if {[info exists hideQuery]} { ;# finish aborting execution
+	    set runState($node,modelRunning) 0
 	    set chainCmd $hideQuery
 	    unset hideQuery ;# Make sure only happens once even if recursion
 	    eval $chainCmd ;#ExDestroyHelpers $node
