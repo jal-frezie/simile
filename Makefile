@@ -59,7 +59,7 @@ SLDIR = $(RESDIR)
 # USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include/tcl$(VERS) -L$(TCLREF)/lib -ltclstub$(VERS)
 
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
-USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -ltclstub$(VERS)
+USETCL_BASE = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -ltclstub
 LOCALIZE_TCL_REFS = ls # placebo command
 ADJUST_LOCAL_LIBS = ls # placebo command
 CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
@@ -68,10 +68,14 @@ SHAREDLIBEXTN = .so
 ifeq ($(PLATFORM),Linux)
 	DISTRO = $(shell lsb_release -is)
 ifneq (,$(filter $(DISTRO),Debian Ubuntu))
+# Fedora does not include version number in tclstub for 9.0 on
+USETCL = $(USETCL_BASE)$(VERS)
 ifneq ($(DEB_HOST_GNU_TYPE),$(DEB_BUILD_GNU_TYPE))
 	CC = $(DEB_HOST_GNU_TYPE)-gcc
 	CXX = $(DEB_HOST_GNU_TYPE)-g++
 endif
+else
+USETCL = $(USETCL_BASE)
 endif
 endif
 HOST = $(shell gcc -dumpmachine)
