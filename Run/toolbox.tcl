@@ -5,6 +5,7 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
+source ../Run/utility.tcl
 
 package forget Trf ;# in case loaded eg by client5d in R package
 # now make sure it stays forgotten, or mime will try to use it
