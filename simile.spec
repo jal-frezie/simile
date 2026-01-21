@@ -12,7 +12,7 @@ License:	Proprietary
 URL:		http://simulistics.com
 source:		simile_7.3.6.tar.gz
 
-BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, redhat-lsb-core, tcl-devel >= 8.5, tk-devel >= 8.5, libXcursor-devel >= 1.0, portaudio-devel >= 19
+BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, redhat-lsb, tcl-devel >= 9.0, tk-devel >= 9.0, libXcursor-devel >= 1.0, portaudio-devel >= 19
 # tk needed for building tkdnd and tktable
 Requires:       tk >= 8.5, gcc-c++ >= 4.0, tcl-tclxml >= 3.2, tcllib >= 1.11, tklib >= 0.5, tkimg >= 1.3, portaudio >= 19
 
@@ -32,11 +32,12 @@ intuitive way.
 
 %build
 make -j8
-cd Extensions/tkdnd
-%configure
-make -j8
+# cd Extensions/tkdnd
+# Fedora has had good tktable since f24 so no longer needed
+# %configure
+# make -j8
 # this configures and makes the bundled tkdnd
-cd ../tktable
+cd Extensions/tktable
 ./configure --with-tcl=%{_libdir} --with-tk=%{_libdir}
 make -j8
 cd ../tcl-gdal
@@ -47,11 +48,11 @@ cd ../..
 %install
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT LIBDIR=%{_libdir} install
-cd Extensions/tkdnd
-make DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir}/%{name}-%{version}/System/lib/Stubs install
+# cd Extensions/tkdnd
+# make DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir}/%{name}-%{version}/System/lib/Stubs install
 # rm %{_mandir}/mann/tkDND.n.gz
 # untested -- remove docs after installing rather than adjusting makefile
-cd ../tktable
+cd Extensions/tktable
 make DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir}/%{name}-%{version}/System/lib/Stubs install
 # rm %{_mandir}/mann/tkTable.n.gz
 # path too long and 64 not xplat -- keep in Extensions?
@@ -67,7 +68,7 @@ cd -
 
 %doc
 %{_mandir}/man1/simile.1.gz
-# %{_mandir}/mann/tkDND.n.gz
+# %%{_mandir}/mann/tkDND.n.gz
 %{_mandir}/mann/tkTable.n.gz
 # last two should be removed to avoid conflict with real package
 
