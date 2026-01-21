@@ -13,6 +13,25 @@
 # scripted (R) cases
 
 # for script-only version
+# Include packages from other version in path, after dynamic additions
+if {[info tclversion] eq 8.6} {
+    set altVersion 9.0
+} else {
+    set altVersion 8.6
+}
+lappend auto_path \
+    {*}[exec echo "package require style;puts \$auto_path" | tclsh$altVersion]
+# now make sure to respond positively if checking we have v8
+proc newpackage {args} {
+    if {[lrange $args 0 1] eq {require Tcl}} {
+	oldpackage require Tcl
+    } else {
+	eval oldpackage $args
+    }
+}
+rename package oldpackage
+rename newpackage package
+
 package require xml::tcl
 package require xml::tclparser
 #package require xml

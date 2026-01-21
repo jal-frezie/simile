@@ -95,10 +95,6 @@ if {$tcl_platform(os) eq "Linux" || \
     set use_system_tcltk 1
 }
 
-if {[info exists env(ALT_PATH)]} {
-    lappend auto_path {*}$env(ALT_PATH)
-}
-set env(ALT_PATH) $auto_path
 if {$use_system_tcltk} {
     set auto_path [linsert $auto_path 0 [file join $libDir Stubs]]
 # special Simile things that cannot be found in standard TclTk

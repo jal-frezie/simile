@@ -17,22 +17,6 @@ if {![catch {file link $invoc} tgt]} { ;# it's a link
 } else {
     set invoc [file normalize $invoc] ;# must be abs in case try changes dir
 }
-
-set goScript [file join [file dirname [file dirname [file dirname $invoc]]] \
+package require Tk
+source [file join [file dirname [file dirname [file dirname $invoc]]] \
 		  Run simile.tcl]
-if {[catch {source $goScript} gotErr]} {
-    lappend allFails {} $errorInfo
-    if {[winfo exists .splash]} {
-	wm withdraw .splash
-    }
-foreach versSuffix {8.6} {
-    if {[catch {exec tclsh$versSuffix $goScript {*}$argv} gotErr]} {
-	lappend allFails $versSuffix $errorInfo
-    } else {
-	exit
-    }
-}
-foreach {versSuffix failMode} $allFails {
-    puts "Could not execute simile with tclsh$versSuffix and $goScript because: $failMode"
-}
-}
