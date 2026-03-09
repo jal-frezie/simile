@@ -1980,6 +1980,8 @@ operator(/, const_ratio, [const_int, const_int]).
 operator(/, 1, [1,1]).
 operator('&', int, [int, int]).
 operator('|', int, [int, int]).
+operator('>>', int, [int, int]).
+operator('<<', int, [int, int]).
 
 /* Comparison ops need int arg version to avoid unnecessarily constraining
 parameters to real (and because everything does) */

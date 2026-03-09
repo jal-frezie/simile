@@ -576,7 +576,9 @@ wot need them
 	all(utility, append_atoms,
 	    [build(PartIncs), unify('"'), build(FullIncs)]),
 	/* the " in the above line does not start a quoted string */
+	send_to_dest(Stream, ['#ifndef ACTION_ONLY']),
 	send_to_dest(Stream, FullIncs),
+	send_to_dest(Stream, ['#endif']),
 
 	excrete(Language, comment, 'EXTERNAL PROC DECLARATIONS', 0, Stream),
 	all(compile, excrete,

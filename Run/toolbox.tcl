@@ -650,8 +650,13 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    set obj [file rootname [file tail $src]]_$tcl_platform(machine).o
 		    if {![file exists $obj] || \
 			    [file exists $src] && [Newer $src $obj m]} {
-			eval {exec g++} $gppFlags \
-			    [list -c -fPIC -I$TOOLDIR -o $obj $src]
+			if {[file extension $src] eq ".o"} {
+			    # already an object, just copy over
+			    file copy $src $obj
+			} else {
+			    eval {exec g++} $gppFlags \
+				[list -c -fPIC -I$TOOLDIR -o $obj $src]
+			}
 		    }
 		    append objs " \"$obj\""
 		}
