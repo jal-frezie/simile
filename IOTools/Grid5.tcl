@@ -594,7 +594,7 @@ namespace eval grid005 {
 
 	set useNodes($winId,target) \
 	    [ChooseFile image.tif [tr. "File to save:"] 1 \
-		 [$helperTable($winId,whichInstance) GetNode]]
+		 [$helperTable($winId,whichInstance) getNode]]
     }
 
     proc SetImg {winId} {
@@ -603,7 +603,7 @@ namespace eval grid005 {
 
 	set useNodes($winId,template) \
 	    [ChooseFile image.tif [tr. "Copy metadata from:"] 0 \
-		 [$helperTable($winId,whichInstance) GetNode]]
+		 [$helperTable($winId,whichInstance) getNode]]
 	if {[string length $useNodes($winId,template)]} { ;# no cancel
 	    SetGDALTemplateHandle $winId
 	}
@@ -1087,7 +1087,7 @@ namespace eval grid005 {
 
         # should have dialog to set for options
         set filename [ChooseFile image.gif [tr. "Save image as:"] 1 \
-		 [$helperTable($winId,whichInstance) GetNode]]
+		 [$helperTable($winId,whichInstance) getNode]]
         if {[string length $filename]} {
 	    $useNodes($winId,visibleMap) write $filename \
 		-format [string range [file extension $filename] 1 end]

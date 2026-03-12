@@ -415,8 +415,7 @@ LIBDIR = /usr/lib
 EXEC_TGT = $(LIBDIR)/simile-$(MAJREL).$(MINREL)
 install:
 	mkdir -p "$(DESTDIR)"$(INSTALL_TGT); \
-	tar cf "$(DESTDIR)"$(INSTALL_TGT)/payload.tar \
-		eula.txt \
+	tar c eula.txt \
 		Examples/BallBerry4a.sml \
 		Examples/control.sml \
 		Examples/forest.sml \
@@ -675,34 +674,18 @@ install:
 		Run/utility.tcl \
 		Run/window.tcl \
 		Run/simdoc32.ico \
-		simile.desktop
-	cd Scripts; \
-	tar cf "$(DESTDIR)"$(INSTALL_TGT)/helpload.tar \
-		help/concepts \
-		help/data \
-		help/diagrams \
-		help/elements \
-		help/equations \
-		help/files \
-		help/index.htm \
-		help/new/index.htm \
-		help/run \
-		help/start \
-		help/submodels
-	cd "$(DESTDIR)"$(INSTALL_TGT); \
-	tar xf payload.tar; \
-	tar xf helpload.tar; \
-	rm helpload.tar; \
-	mv Run/$(UINFO_TPL) Run/mdlrinfo.tpl; \
-# target only used in Linux which ignores this file \
+		simile.desktop | tar x -C "$(DESTDIR)"$(INSTALL_TGT)
+	test -e Scripts/help && (mkdir -p "$(DESTDIR)"$(INSTALL_TGT)/help; \
+		tar c -C Scripts/help concepts data diagrams elements \
+		equations files index.htm new/index.htm run start submodels \
+		| tar x -C "$(DESTDIR)"$(INSTALL_TGT)/help)
+# target only used in Linux which ignores this file
 	mkdir -p "$(DESTDIR)"$(SHAREDIR)/applications; \
-	mv simile.desktop "$(DESTDIR)"$(SHAREDIR)/applications; \
-	rm payload.tar
+	cp simile.desktop "$(DESTDIR)"$(SHAREDIR)/applications; \
 	mkdir -p "$(DESTDIR)"$(SHAREDIR)/man/man1
 	cp simile.1 "$(DESTDIR)"$(SHAREDIR)/man/man1
 	mkdir -p "$(DESTDIR)"$(EXEC_TGT)
-	tar cf "$(DESTDIR)"$(EXEC_TGT)/payload.tar \
-		$(SYSDIR)/bin/relay \
+	tar c $(SYSDIR)/bin/relay \
 		$(SYSDIR)/bin/simile \
 		$(PROLOGSTATE) \
 		$(PROLOG_DB) \
@@ -714,7 +697,9 @@ install:
 		$(SHIM) \
 		$(UNPK) \
 		$(SLDIR)/$(SHANK) \
-		$(SLDIR)/$(INSTLIB)
+		$(SLDIR)/$(INSTLIB) | tar x -C "$(DESTDIR)"$(EXEC_TGT)
+	cd "$(DESTDIR)"$(INSTALL_TGT); \
+	mv Run/$(UINFO_TPL) Run/mdlrinfo.tpl;
 	cd "$(DESTDIR)"$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \
@@ -722,9 +707,7 @@ install:
 	ln -s ../../..$(INSTALL_TGT)/help; \
 	ln -s ../../..$(INSTALL_TGT)/Images; \
 	ln -s ../../..$(INSTALL_TGT)/IOTools; \
-	ln -s ../../..$(INSTALL_TGT)/Run; \
-	tar xf payload.tar; \
-	rm payload.tar
+	ln -s ../../..$(INSTALL_TGT)/Run
 ifeq ($(PROLOG),SWI)
 # this assumes patchelf already done to prolog state and lib copied in
 	cp -L $(SYSDIR)/lib/$(SWIPLSHARELIB) "$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/lib
@@ -733,6 +716,12 @@ endif
 	cd "$(DESTDIR)"/usr/bin; \
 	ln -s ../..$(EXEC_TGT)/$(SYSDIR)/bin/simile
 endif
+
+uninstall:
+	rm -Rf "$(DESTDIR)"$(EXEC_TGT) "$(DESTDIR)"$(INSTALL_TGT) \
+		"$(DESTDIR)"$(SHAREDIR)/man/man1/simile.1 \
+		"$(DESTDIR)"$(SHAREDIR)/applications/simile.desktop \
+		"$(DESTDIR)"/usr/bin/simile
 
 # call clean after changing license info in this file
 clean: clean-prolog
