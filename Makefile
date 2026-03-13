@@ -691,15 +691,15 @@ endif
 		$(SYSDIR)/bin/simile \
 		$(PROLOGSTATE) \
 		$(PROLOG_DB) \
-		$(SYSDIR)/lib/Stubs/can2svg1.2/can2svg.tcl \
-		$(SYSDIR)/lib/Stubs/can2svg1.2/pkgIndex.tcl \
-		$(SYSDIR)/lib/Stubs/can2svg1.2/uriencode.tcl \
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/Trf/pkgIndex.tcl \
 		$(SHIM) \
 		$(UNPK) \
 		$(SLDIR)/$(SHANK) \
 		$(SLDIR)/$(INSTLIB) | tar x -C "$(DESTDIR)"$(EXEC_TGT)
+	mkdir -p "$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/lib/Stubs/can2svg1.2
+	cd Extensions/can2svg; cp can2svg.tcl pkgIndex.tcl uriencode.tcl \
+		"$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/lib/Stubs/can2svg1.2
 	cd "$(DESTDIR)"$(INSTALL_TGT); \
 	mv Run/$(UINFO_TPL) Run/mdlrinfo.tpl;
 	cd "$(DESTDIR)"$(EXEC_TGT); \
