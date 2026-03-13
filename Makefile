@@ -675,13 +675,15 @@ install:
 		Run/window.tcl \
 		Run/simdoc32.ico \
 		simile.desktop | tar x -C "$(DESTDIR)"$(INSTALL_TGT)
-	test -e Scripts/help && (mkdir -p "$(DESTDIR)"$(INSTALL_TGT)/help; \
-		tar c -C Scripts/help concepts data diagrams elements \
-		equations files index.htm new/index.htm run start submodels \
-		| tar x -C "$(DESTDIR)"$(INSTALL_TGT)/help)
+ifneq (, $(wildcard Scripts/help))
+	mkdir -p "$(DESTDIR)"$(INSTALL_TGT)/help
+	tar c -C Scripts/help concepts data diagrams elements \
+	equations files index.htm new/index.htm run start submodels \
+	| tar x -C "$(DESTDIR)"$(INSTALL_TGT)/help
+endif
 # target only used in Linux which ignores this file
-	mkdir -p "$(DESTDIR)"$(SHAREDIR)/applications; \
-	cp simile.desktop "$(DESTDIR)"$(SHAREDIR)/applications; \
+	mkdir -p "$(DESTDIR)"$(SHAREDIR)/applications
+	cp simile.desktop "$(DESTDIR)"$(SHAREDIR)/applications
 	mkdir -p "$(DESTDIR)"$(SHAREDIR)/man/man1
 	cp simile.1 "$(DESTDIR)"$(SHAREDIR)/man/man1
 	mkdir -p "$(DESTDIR)"$(EXEC_TGT)
