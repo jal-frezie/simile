@@ -45,6 +45,7 @@ SYSDIR = System
 CFLAGS += $(OPT)
 #CPPFLAGS = -static-libstdc++ -static-libgcc
 
+DESTROOT = /usr
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
@@ -84,6 +85,7 @@ ifneq ($(TGT),$(HOST))
 	PL_PATH=/usr/local/$(TGT)-gprolog
 endif
 ifeq ($(PLATFORM),Darwin)
+	DESTROOT = /usr/local
 	SYSDIR = System$(BITEXTN)
 	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
@@ -405,12 +407,12 @@ $(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile$(BITEXTN).rc
 $(RELAY): Run/relay.c
 	cd Run; $(GCCCMD) $(CFLAGS) -o ../$(RELAY) relay.c; cd ..
 
-ifeq ($(PLATFORM),GNU/Linux)
 # install used for packaging for distributions
-SHAREDIR = /usr/share
+SHAREDIR = $(DESTROOT)/share
+SHARELEVEL = share/simile-$(MAJREL).$(MINREL)
 
-INSTALL_TGT = $(SHAREDIR)/simile-$(MAJREL).$(MINREL)
-LIBDIR = /usr/lib
+INSTALL_TGT = $(DESTROOT)/$(SHARELEVEL)
+LIBDIR = $(DESTROOT)/lib
 # overridden by rpm build on Fedora 64-bit
 EXEC_TGT = $(LIBDIR)/simile-$(MAJREL).$(MINREL)
 install:
@@ -703,27 +705,27 @@ endif
 	cd "$(DESTDIR)"$(INSTALL_TGT); \
 	mv Run/$(UINFO_TPL) Run/mdlrinfo.tpl;
 	cd "$(DESTDIR)"$(EXEC_TGT); \
-	ln -s ../../..$(INSTALL_TGT)/Examples; \
-	ln -s ../../..$(INSTALL_TGT)/Extensions; \
-	ln -s ../../..$(INSTALL_TGT)/Functions; \
-	ln -s ../../..$(INSTALL_TGT)/help; \
-	ln -s ../../..$(INSTALL_TGT)/Images; \
-	ln -s ../../..$(INSTALL_TGT)/IOTools; \
-	ln -s ../../..$(INSTALL_TGT)/Run
+	ln -s ../../$(SHARELEVEL)/Examples; \
+	ln -s ../../$(SHARELEVEL)/Extensions; \
+	ln -s ../../$(SHARELEVEL)/Functions; \
+	ln -s ../../$(SHARELEVEL)/help; \
+	ln -s ../../$(SHARELEVEL)/Images; \
+	ln -s ../../$(SHARELEVEL)/IOTools; \
+	ln -s ../../$(SHARELEVEL)/Run
 ifeq ($(PROLOG),SWI)
 # this assumes patchelf already done to prolog state and lib copied in
 	cp -L $(SYSDIR)/lib/$(SWIPLSHARELIB) "$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/lib
 endif
-	mkdir -p "$(DESTDIR)"/usr/bin
-	cd "$(DESTDIR)"/usr/bin; \
-	ln -s ../..$(EXEC_TGT)/$(SYSDIR)/bin/simile
-endif
+	mkdir -p "$(DESTDIR)"$(DESTROOT)/bin
+	cd "$(DESTDIR)"$(DESTROOT)/bin; \
+	ln -s "$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/bin/simile
+# endif
 
 uninstall:
 	rm -Rf "$(DESTDIR)"$(EXEC_TGT) "$(DESTDIR)"$(INSTALL_TGT) \
 		"$(DESTDIR)"$(SHAREDIR)/man/man1/simile.1 \
 		"$(DESTDIR)"$(SHAREDIR)/applications/simile.desktop \
-		"$(DESTDIR)"/usr/bin/simile
+		"$(DESTDIR)"$(DESTROOT)/bin/simile
 
 # call clean after changing license info in this file
 clean: clean-prolog
