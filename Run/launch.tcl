@@ -1,0 +1,21 @@
+set invoc [info script]
+
+if {[package vcompare [info tclversion] 8.5]==-1} { ;# too old, try newer
+   exec tclsh8.5 $invoc $argv &
+   exit
+}
+if {[string first / $invoc]==-1} { ;# it's a command
+    set invoc [exec which $invoc]
+}
+if {![catch {file link $invoc} tgt]} { ;# it's a link
+    if {[file pathtype $tgt] eq "relative"} {
+        set invoc [file normalize [file join [file dirname $invoc] $tgt]]
+    } else {
+      	set invoc $tgt
+    }
+} else {
+    set invoc [file normalize $invoc] ;# must be abs in case try changes dir
+}
+package require Tk
+source [file join [file dirname [file dirname [file dirname $invoc]]] \
+		  Run simile.tcl]
