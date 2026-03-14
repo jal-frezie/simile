@@ -38,7 +38,7 @@ BITEXTN = 64
 endif
 
 # Default case: Linux
-TCLDIR = /usr
+TCLDIR =  $(shell echo "puts [file dirname [file dirname [info nameofexecutable]]]" | tclsh)
 TCLREF = $(TCLDIR)
 
 SYSDIR = System
@@ -187,12 +187,18 @@ UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBE
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 INSTLIB = $(SHAREDLIBPREFX)install$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
+LAUNCHER = $(EXECDIR)/simile
 
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
-simile: $(PROLOGSTATE) $(RELAY) $(SUPP) \
+simile: $(LAUNCHER) $(PROLOGSTATE) $(RELAY) $(SUPP) \
 	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
+
+$(LAUNCHER):
+	echo "#!$(TCLDIR)/bin/tclsh" > $(LAUNCHER)
+	cat Run/launch.tcl >> $(LAUNCHER)
+	chmod a+x $(LAUNCHER)
 
 vpath %.pl Prolog
 
@@ -690,7 +696,7 @@ endif
 	cp simile.1 "$(DESTDIR)"$(SHAREDIR)/man/man1
 	mkdir -p "$(DESTDIR)"$(EXEC_TGT)
 	tar c $(SYSDIR)/bin/relay \
-		$(SYSDIR)/bin/simile \
+		$(LAUNCHER) \
 		$(PROLOGSTATE) \
 		$(PROLOG_DB) \
 		$(SYSDIR)/lib/Stubs/can2svg1.2/can2svg.tcl \
@@ -718,7 +724,7 @@ ifeq ($(PROLOG),SWI)
 endif
 	mkdir -p "$(DESTDIR)"$(DESTROOT)/bin
 	cd "$(DESTDIR)"$(DESTROOT)/bin; \
-	ln -s "$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/bin/simile
+	ln -s "$(DESTDIR)"$(EXEC_TGT)/$(LAUNCHER)
 # endif
 
 uninstall:
@@ -729,5 +735,5 @@ uninstall:
 
 # call clean after changing license info in this file
 clean: clean-prolog
-	rm -f $(RELAY) Run/$(CRYPTOBJ) $(SUPP) \
+	rm -f $(RELAY) Run/$(CRYPTOBJ) $(SUPP) $(LAUNCHER) \
 		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
