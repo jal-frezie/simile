@@ -20,7 +20,7 @@ if {[info tclversion] eq 8.6} {
 } else {
     set altVersion 8.6
 }
-if {[auto_execok tclsh$altVersion]} {
+if {[llength [auto_execok tclsh$altVersion]]} {
     lappend auto_path \
 	{*}[exec echo "package require style;puts \$auto_path" | tclsh$altVersion]
 }
