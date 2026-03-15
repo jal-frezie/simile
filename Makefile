@@ -113,7 +113,7 @@ endif
 	MAKEPIC = -fPIC
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
-	USETCL =  -DUSE_TCL_STUBS -L../$(TCLFW) -ltclstub$(VERS)
+	USETCL =  -DUSE_TCL_STUBS -L$(TCLREF)/lib -ltclstub$(VERS)
 	ADJUST_LOCAL_LIBS = install_name_tool -change $(1) @loader_path/$(2)
 # Above will work OK for developer but installation will fail due to
 # 'unsafe use of relative rpath' -- so need more long-winded method below
@@ -316,20 +316,20 @@ endif # GNU prolog
 ifeq ($(PLATFORM), none)
 $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/shank.cpp Run/dllcalls.h
 	cd Run; $(GPPCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
-		ame_cmx.c shank.cpp $(USETCL) -L../$(RESDIR); cd ..; \
+		ame_cmx.c shank.cpp $(USETCL) -L../$(RESDIR)
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 else
 $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c $(USETCL) -L../$(RESDIR) -l5d$(ARCHEXTN) \
-		$(CHECK_LOCAL_LIBS); cd ..; \
+		$(CHECK_LOCAL_LIBS)
 	$(call ADJUST_LOCAL_LIBS,../$(RESDIR)/$(SHANK),../$(SHANK)) $(SHIM)
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 endif
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h $(SLDIR)/$(INSTLIB)
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
-		-o ../$(UNPK) unpacker.c $(USETCL) -L../$(RESDIR) -linstall$(ARCHEXTN) $(CHECK_LOCAL_LIBS); cd ..; \
+		-o ../$(UNPK) unpacker.c $(USETCL) -L../$(RESDIR) -linstall$(ARCHEXTN) $(CHECK_LOCAL_LIBS)
 	$(call ADJUST_LOCAL_LIBS,../$(RESDIR)/$(INSTLIB),../$(INSTLIB)) $(UNPK)
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
