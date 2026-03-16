@@ -9,7 +9,7 @@ MY_CPU = $(firstword $(subst -, ,$(MACH)))
 REL_EXP = 0
 
 # What kind of system are we on
-PLATFORM = $(shell uname -s)
+PLATFORM = $(shell uname -o)
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
@@ -66,7 +66,7 @@ ADJUST_LOCAL_LIBS = ls # placebo command
 CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
 
-ifeq ($(PLATFORM),Linux)
+ifeq ($(PLATFORM),GNU/Linux)
 	DISTRO = $(shell lsb_release -is)
 ifneq (,$(filter $(DISTRO),Debian Ubuntu))
 # Fedora does not include version number in tclstub for 9.0 on
@@ -118,55 +118,53 @@ endif
 # Above will work OK for developer but installation will fail due to
 # 'unsafe use of relative rpath' -- so need more long-winded method below
 #	ADJUST_LOCAL_LIBS = install_name_tool -change ../$(1) @executable_path/../Resources/$(1)
-	CHECK_LOCAL_LIBS =
+#	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
-else
-	PLATFORM = $(shell uname -o)
 endif 
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SYSDIR = System$(BITEXTN)
-ifeq ($(MY_CPU),x86_64)
-	TCLDIR =  /usr/local
-	PL_PATH = /c/gnu-prolog-64
-	SWIPLDIR = "/c/Program files/swipl"
-	GCCCMD = x86_64-w64-mingw32-gcc
-	GPPCMD = x86_64-w64-mingw32-g++
-	RESCMD = x86_64-w64-mingw32-windres
-else
+#ifeq ($(MY_CPU),x86_64)
+#	TCLDIR =  /usr/local
+#	PL_PATH = /c/gnu-prolog-64
+#	SWIPLDIR = "/c/Program files/swipl"
+#	GCCCMD = x86_64-w64-mingw32-gcc
+#	GPPCMD = x86_64-w64-mingw32-g++
+#	RESCMD = x86_64-w64-mingw32-windres
+#else
 #	TCLDIR = "/c/Program files (x86)/Tcl"
 # Actually, use local TclTk as above dir not exist on 32bit machines --
 #	TCLDIR = "$(shell pwd)/$(SYSDIR)"
-	TCLDIR = /usr/local32
-	PL_PATH = /c/gnu-prolog
-	GCCCMD = gcc
-	GPPCMD = g++
+#	TCLDIR = /usr/local32
+#	PL_PATH = /c/gnu-prolog
+#	GCCCMD = gcc
+#	GPPCMD = g++
 	RESCMD = windres
 	# MSI = /c/MinGW-w64/v49j32/mingw32/opt
 # must be 32-bit because installer is
-endif
+#endif
 	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
 	PT =
 	VERS = $(subst .,,$(VERSION))
 
-	TCLREF = $(TCLDIR)
+#	TCLREF = $(TCLDIR)
 	TCLINC = $(TCLREF)/include
-	CFLAGS = $(OPT)
+#	CFLAGS = $(OPT)
 	SHAREDLIBPREFX = 
-	MAKEPIC = 
-	MAKESL = -shared
+#	MAKEPIC = 
+#	MAKESL = -shared
 # This really just tests that tcldir is right
 
 	SLDIR = $(EXECDIR)
 # to be used after CDing to Run -- assume all refs are from a subdirectory
 # for linking with stubs
 	USETCL = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib -ltclstub$(VERS)
-	USETK = -DUSE_TK_STUBS -ltkstub$(VERS)
+#	USETK = -DUSE_TK_STUBS -ltkstub$(VERS)
 # for direct linking
 #	USETCL = -I$(TCLINC) -L$(TCLREF)/lib -ltcl$(VERS)
 #	USETK = -ltk$(VERS)
-	CHECK_LOCAL_LIBS =
+#	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
 	EXECEXTN = .exe
@@ -196,6 +194,7 @@ simile: $(LAUNCHER) $(PROLOGSTATE) $(RELAY) $(SUPP) \
 	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
 
 $(LAUNCHER):
+	mkdir -p $(EXECDIR)
 	echo "#!$(TCLDIR)/bin/tclsh" > $(LAUNCHER)
 	cat Run/launch.tcl >> $(LAUNCHER)
 	chmod a+x $(LAUNCHER)
