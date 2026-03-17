@@ -1,6 +1,7 @@
 # Location of Simile configuration folder
 if {[string equal windows $tcl_platform(platform)]} {
 #    set homeDir [file attributes $env(HOME) -shortname] ;# is Ascii
+    package require registry
     set homeDir [string map [list %USERPROFILE% $env(USERPROFILE)] \
 		     [registry get {HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders} {Personal}]] ;# who cares if Ascii
 } else {
@@ -91,12 +92,13 @@ if {$tcl_platform(os) ne "Linux" && $tclBitness==64} {
 set libDir [file join $env(SYSDIR) lib]
 set use_system_tcltk 0 ;# use separately installed tcltk and tools
 if {$tcl_platform(os) eq "Linux" || \
-	$tcl_platform(os) eq "Darwin" && $tclBitness==64} {
+	$tcl_platform(os) eq "Darwin" && $tclBitness==64 || \
+    	$tcl_platform(platform) eq "windows" && [file extension [info script]] ne ".exe"} {
     set use_system_tcltk 1
 }
 
 if {$use_system_tcltk} {
-    set auto_path [linsert $auto_path 0 [file join $libDir Stubs]]
+    set auto_path [linsert $auto_path 0 [file join $libDir Stubs] [file join $libDir Extras]]
 # special Simile things that cannot be found in standard TclTk
 # (or can but they wouldn't be as much use as the bundled version)
 
