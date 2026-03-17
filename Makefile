@@ -193,7 +193,7 @@ LAUNCHER = $(EXECDIR)/simile
 simile: $(LAUNCHER) $(PROLOGSTATE) $(RELAY) $(SUPP) \
 	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
 
-$(LAUNCHER):
+$(LAUNCHER): Run/launch.tcl
 	mkdir -p $(EXECDIR)
 	echo "#!$(TCLDIR)/bin/tclsh" > $(LAUNCHER)
 	cat Run/launch.tcl >> $(LAUNCHER)
