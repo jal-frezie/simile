@@ -2441,7 +2441,9 @@ proc EquationListingPrint {winId} {
     global tcl_platform
     global printargs equationlist
     
-    if {[string match windows $tcl_platform(platform)]} {
+    if {[string match windows $tcl_platform(platform)] && \
+	![package vsatisfies 9.0 [info tclversion]]} {
+    } else {
         set oldDir [pwd] ;# apparently printing can change directory
         package require gdi
         package require printer

@@ -42,6 +42,7 @@ oo::class create iotool::$newHelperClass {
         set toolbarItems [list \
 			      [list save.gif "Save image" [namespace code [list my SaveAsFile]]] \
 			      [list reel.gif "Save video" [namespace code [list my SaveSequence]]] \
+			      [list print.gif "Print..." [namespace code [list my Print]]] \
 			      [list zoomin.gif "Zoom in" [namespace code [list my Zoom 2 2]]] \
 			      [list zoomout.gif "Zoom out" [namespace code [list my Zoom 0.5 0.5]]] \
 			      [list zoomfit.gif "Zoom to fit" [namespace code [list my Fit]]] \

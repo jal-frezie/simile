@@ -1,5 +1,5 @@
 MAJREL = 7
-MINREL = 3
+MINREL = 4
 # botch to make Windows work
 CC = gcc 
 MACH = $(shell $(CC) -dumpmachine)
@@ -61,8 +61,8 @@ SLDIR = $(RESDIR)
 
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
 USETCL_BASE = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -ltclstub
-LOCALIZE_TCL_REFS = $(info No tcl ref localization)
-ADJUST_LOCAL_LIBS = $(info No library path localization)
+LOCALIZE_TCL_REFS = file # placebo commend
+ADJUST_LOCAL_LIBS = file # placebo commend
 CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
 

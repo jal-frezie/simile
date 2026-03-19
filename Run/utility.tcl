@@ -277,7 +277,9 @@ proc AdjustCanvas {winId pt dir args} {
 proc CopyCanvasToWindowsClipboard {canvas seln_only} {
     global tcl_platform selnImages simtmpdir
     
-    if {[string match windows $tcl_platform(platform)]} {
+    if {[string match windows $tcl_platform(platform)] && \
+	    ![package vsatisfies 9.0 [info tclversion]]} {
+	# these packages dropped from 9.0 as not needed for printing
         package require gdi
         package require printer
         package require wmf
@@ -342,7 +344,9 @@ proc SpitURI {{offset 0} {blksize 100}} {
 
 proc PrintRandomCanvas {canvas} {
     global tcl_platform simtmpdir env
-    if {[string match windows $tcl_platform(platform)]} {
+    if {[package vsatisfies 9.0 [info tclversion]]} {
+	tk print $canvas
+    } elseif {[string match windows $tcl_platform(platform)]} {
 	package require gdi
         package require printer
         printer::print_widget $canvas 0
