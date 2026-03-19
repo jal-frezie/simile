@@ -1,5 +1,5 @@
 MAJREL = 7
-MINREL = 3
+MINREL = 4
 # botch to make Windows work
 CC = gcc 
 MACH = $(shell $(CC) -dumpmachine)
@@ -9,7 +9,7 @@ MY_CPU = $(firstword $(subst -, ,$(MACH)))
 REL_EXP = 0
 
 # What kind of system are we on
-PLATFORM = $(shell uname -s)
+PLATFORM = $(shell uname -o)
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
@@ -38,13 +38,14 @@ BITEXTN = 64
 endif
 
 # Default case: Linux
-TCLDIR = /usr
+TCLDIR =  $(shell echo "puts [file dirname [file dirname [info nameofexecutable]]]" | tclsh)
 TCLREF = $(TCLDIR)
 
 SYSDIR = System
 CFLAGS += $(OPT)
 #CPPFLAGS = -static-libstdc++ -static-libgcc
 
+DESTROOT = /usr
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
@@ -60,12 +61,12 @@ SLDIR = $(RESDIR)
 
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
 USETCL_BASE = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -ltclstub
-LOCALIZE_TCL_REFS = ls # placebo command
-ADJUST_LOCAL_LIBS = ls # placebo command
+LOCALIZE_TCL_REFS = file # placebo commend
+ADJUST_LOCAL_LIBS = file # placebo commend
 CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
 
-ifeq ($(PLATFORM),Linux)
+ifeq ($(PLATFORM),GNU/Linux)
 	DISTRO = $(shell lsb_release -is)
 ifneq (,$(filter $(DISTRO),Debian Ubuntu))
 # Fedora does not include version number in tclstub for 9.0 on
@@ -84,6 +85,7 @@ ifneq ($(TGT),$(HOST))
 	PL_PATH=/usr/local/$(TGT)-gprolog
 endif
 ifeq ($(PLATFORM),Darwin)
+	DESTROOT = /usr/local
 	SYSDIR = System$(BITEXTN)
 	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
@@ -111,60 +113,58 @@ endif
 	MAKEPIC = -fPIC
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
-	USETCL =  -DUSE_TCL_STUBS -L../$(TCLFW) -ltclstub$(VERS)
+	USETCL =  -DUSE_TCL_STUBS -L$(TCLREF)/lib -ltclstub$(VERS)
 	ADJUST_LOCAL_LIBS = install_name_tool -change $(1) @loader_path/$(2)
 # Above will work OK for developer but installation will fail due to
 # 'unsafe use of relative rpath' -- so need more long-winded method below
 #	ADJUST_LOCAL_LIBS = install_name_tool -change ../$(1) @executable_path/../Resources/$(1)
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
-else
-	PLATFORM = $(shell uname -o)
 endif 
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SYSDIR = System$(BITEXTN)
-ifeq ($(MY_CPU),x86_64)
-	TCLDIR =  /usr/local
-	PL_PATH = /c/gnu-prolog-64
-	SWIPLDIR = "/c/Program files/swipl"
-	GCCCMD = x86_64-w64-mingw32-gcc
-	GPPCMD = x86_64-w64-mingw32-g++
-	RESCMD = x86_64-w64-mingw32-windres
-else
+#ifeq ($(MY_CPU),x86_64)
+#	TCLDIR =  /usr/local
+#	PL_PATH = /c/gnu-prolog-64
+#	SWIPLDIR = "/c/Program files/swipl"
+#	GCCCMD = x86_64-w64-mingw32-gcc
+#	GPPCMD = x86_64-w64-mingw32-g++
+#	RESCMD = x86_64-w64-mingw32-windres
+#else
 #	TCLDIR = "/c/Program files (x86)/Tcl"
 # Actually, use local TclTk as above dir not exist on 32bit machines --
 #	TCLDIR = "$(shell pwd)/$(SYSDIR)"
-	TCLDIR = /usr/local32
-	PL_PATH = /c/gnu-prolog
-	GCCCMD = gcc
-	GPPCMD = g++
+#	TCLDIR = /usr/local32
+#	PL_PATH = /c/gnu-prolog
+#	GCCCMD = gcc
+#	GPPCMD = g++
 	RESCMD = windres
 	# MSI = /c/MinGW-w64/v49j32/mingw32/opt
 # must be 32-bit because installer is
-endif
+#endif
 	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
 	PT =
 	VERS = $(subst .,,$(VERSION))
 
-	TCLREF = $(TCLDIR)
+#	TCLREF = $(TCLDIR)
 	TCLINC = $(TCLREF)/include
-	CFLAGS = $(OPT)
+#	CFLAGS = $(OPT)
 	SHAREDLIBPREFX = 
-	MAKEPIC = 
-	MAKESL = -shared
+#	MAKEPIC = 
+#	MAKESL = -shared
 # This really just tests that tcldir is right
 
 	SLDIR = $(EXECDIR)
 # to be used after CDing to Run -- assume all refs are from a subdirectory
 # for linking with stubs
 	USETCL = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib -ltclstub$(VERS)
-	USETK = -DUSE_TK_STUBS -ltkstub$(VERS)
+#	USETK = -DUSE_TK_STUBS -ltkstub$(VERS)
 # for direct linking
 #	USETCL = -I$(TCLINC) -L$(TCLREF)/lib -ltcl$(VERS)
 #	USETK = -ltk$(VERS)
-	CHECK_LOCAL_LIBS =
+#	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
 	EXECEXTN = .exe
@@ -185,12 +185,19 @@ UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBE
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 INSTLIB = $(SHAREDLIBPREFX)install$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
+LAUNCHER = $(EXECDIR)/simile
 
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
-simile: $(PROLOGSTATE) $(RELAY) $(SUPP) \
+simile: $(LAUNCHER) $(PROLOGSTATE) $(RELAY) $(SUPP) \
 	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
+
+$(LAUNCHER): Run/launch.tcl
+	mkdir -p $(EXECDIR)
+	echo "#!$(TCLDIR)/bin/tclsh" > $(LAUNCHER)
+	cat Run/launch.tcl >> $(LAUNCHER)
+	chmod a+x $(LAUNCHER)
 
 vpath %.pl Prolog
 
@@ -242,32 +249,36 @@ endif
 ifeq ($(PROLOG),GNU)
 UINFO_TPL=userinfo.gnu
 ifeq ($(PLATFORM),Darwin)
-# all hell breaks loose as we try to build x64 and arm versions
+# all hell breaks loose as we try to build multiple versions
 PROLOGSTATE_X = $(PROLOGSTATE)_x
 PROLOGSTATE_A = $(PROLOGSTATE)_a
+ifdef XGNU_PATH
 $(PROLOGSTATE): $(PROLOGSTATE_X) $(PROLOGSTATE_A)
 	lipo $(PROLOGSTATE_X) $(PROLOGSTATE_A) -create -output $(PROLOGSTATE)
+else
+$(PROLOGSTATE): $(PROLOGSTATE_A)
+	$(info Builfing prolog for host arch only)
+	cp $(PROLOGSTATE_A) $(PROLOGSTATE)
+endif
 
-XGNU_PATH = PATH=/Users/jaspert/local/bin:$$PATH
 PROLOG_OBJ_X = $(EXECDIR)/gmain$(ARCHEXTN)_x.o
 PROLOG_DB_X = $(EXECDIR)/struct_db$(ARCHEXTN)_x.o
 $(PROLOGSTATE_X): $(PROLOG_OBJ_X) $(PROLOG_DB_X)
 	$(XGNU_PATH);gplc --no-top-level -o $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
 
-AGNU_PATH = cd /Users/jaspert/Build/gprolog/src;. ./SETVARS;cd -
 PROLOG_OBJ_A = $(EXECDIR)/gmain$(ARCHEXTN)_a.o
 PROLOG_DB_A = $(EXECDIR)/struct_db$(ARCHEXTN)_a.o
 $(PROLOGSTATE_A): $(PROLOG_OBJ_A) $(PROLOG_DB_A)
-	$(AGNU_PATH);gplc --no-top-level -o $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A)
+	gplc --no-top-level -o $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A)
 $(PROLOG_OBJ_X): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 	$(XGNU_PATH);cd Prolog; gplc -o ../$(PROLOG_OBJ_X) -c gmain.pl; cd ..
 $(PROLOG_OBJ_A): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
-	$(AGNU_PATH);cd Prolog; gplc -o ../$(PROLOG_OBJ_A) -c gmain.pl; cd ..
+	cd Prolog; gplc -o ../$(PROLOG_OBJ_A) -c gmain.pl; cd ..
 $(PROLOG_DB_X): Prolog/struct_db.c Run/dllcalls.h
 	$(XGNU_PATH);cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB_X) struct_db.c; cd ..
 $(PROLOG_DB_A): Prolog/struct_db.c Run/dllcalls.h
-	$(AGNU_PATH);cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
+	cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB_A) struct_db.c; cd ..
 clean-prolog:
 	rm -f $(PROLOGSTATE) $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A) $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
@@ -308,20 +319,20 @@ endif # GNU prolog
 ifeq ($(PLATFORM), none)
 $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/shank.cpp Run/dllcalls.h
 	cd Run; $(GPPCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
-		ame_cmx.c shank.cpp $(USETCL) -L../$(RESDIR); cd ..; \
+		ame_cmx.c shank.cpp $(USETCL) -L../$(RESDIR)
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 else
 $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c $(USETCL) -L../$(RESDIR) -l5d$(ARCHEXTN) \
-		$(CHECK_LOCAL_LIBS); cd ..; \
+		$(CHECK_LOCAL_LIBS)
 	$(call ADJUST_LOCAL_LIBS,../$(RESDIR)/$(SHANK),../$(SHANK)) $(SHIM)
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 endif
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h $(SLDIR)/$(INSTLIB)
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
-		-o ../$(UNPK) unpacker.c $(USETCL) -L../$(RESDIR) -linstall$(ARCHEXTN) $(CHECK_LOCAL_LIBS); cd ..; \
+		-o ../$(UNPK) unpacker.c $(USETCL) -L../$(RESDIR) -linstall$(ARCHEXTN) $(CHECK_LOCAL_LIBS)
 	$(call ADJUST_LOCAL_LIBS,../$(RESDIR)/$(INSTLIB),../$(INSTLIB)) $(UNPK)
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
@@ -357,7 +368,7 @@ $(EXECDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(CFLAGS) $(CPPFLAGS) -std=c++11 -I. $(MAKEPIC) \
 		$(MAKESL) -o ../$(SLDIR)/$(SHANK) shank.cpp -lportaudio; cd ..
-	$(call ADJUST_LOCAL_LIBS,/usr/local/lib/libportaudio.2.dylib,libportaudio.2.dylib) $(SLDIR)/$(SHANK)
+#	$(call ADJUST_LOCAL_LIBS,/usr/local/lib/libportaudio.2.dylib,libportaudio.2.dylib) $(SLDIR)/$(SHANK)
 
 $(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) \
@@ -405,12 +416,12 @@ $(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile$(BITEXTN).rc
 $(RELAY): Run/relay.c
 	cd Run; $(GCCCMD) $(CFLAGS) -o ../$(RELAY) relay.c; cd ..
 
-ifeq ($(PLATFORM),GNU/Linux)
 # install used for packaging for distributions
-SHAREDIR = /usr/share
+SHAREDIR = $(DESTROOT)/share
+SHARELEVEL = share/simile-$(MAJREL).$(MINREL)
 
-INSTALL_TGT = $(SHAREDIR)/simile-$(MAJREL).$(MINREL)
-LIBDIR = /usr/lib
+INSTALL_TGT = $(DESTROOT)/$(SHARELEVEL)
+LIBDIR = $(DESTROOT)/lib
 # overridden by rpm build on Fedora 64-bit
 EXEC_TGT = $(LIBDIR)/simile-$(MAJREL).$(MINREL)
 install:
@@ -688,7 +699,7 @@ endif
 	cp simile.1 "$(DESTDIR)"$(SHAREDIR)/man/man1
 	mkdir -p "$(DESTDIR)"$(EXEC_TGT)
 	tar c $(SYSDIR)/bin/relay \
-		$(SYSDIR)/bin/simile \
+		$(LAUNCHER) \
 		$(PROLOGSTATE) \
 		$(PROLOG_DB) \
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
@@ -703,29 +714,29 @@ endif
 	cd "$(DESTDIR)"$(INSTALL_TGT); \
 	mv Run/$(UINFO_TPL) Run/mdlrinfo.tpl;
 	cd "$(DESTDIR)"$(EXEC_TGT); \
-	ln -s ../../..$(INSTALL_TGT)/Examples; \
-	ln -s ../../..$(INSTALL_TGT)/Extensions; \
-	ln -s ../../..$(INSTALL_TGT)/Functions; \
-	ln -s ../../..$(INSTALL_TGT)/help; \
-	ln -s ../../..$(INSTALL_TGT)/Images; \
-	ln -s ../../..$(INSTALL_TGT)/IOTools; \
-	ln -s ../../..$(INSTALL_TGT)/Run
+	ln -s ../../$(SHARELEVEL)/Examples; \
+	ln -s ../../$(SHARELEVEL)/Extensions; \
+	ln -s ../../$(SHARELEVEL)/Functions; \
+	ln -s ../../$(SHARELEVEL)/help; \
+	ln -s ../../$(SHARELEVEL)/Images; \
+	ln -s ../../$(SHARELEVEL)/IOTools; \
+	ln -s ../../$(SHARELEVEL)/Run
 ifeq ($(PROLOG),SWI)
 # this assumes patchelf already done to prolog state and lib copied in
 	cp -L $(SYSDIR)/lib/$(SWIPLSHARELIB) "$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/lib
 endif
-	mkdir -p "$(DESTDIR)"/usr/bin
-	cd "$(DESTDIR)"/usr/bin; \
-	ln -s ../..$(EXEC_TGT)/$(SYSDIR)/bin/simile
-endif
+	mkdir -p "$(DESTDIR)"$(DESTROOT)/bin
+	cd "$(DESTDIR)"$(DESTROOT)/bin; \
+	ln -s "$(DESTDIR)"$(EXEC_TGT)/$(LAUNCHER)
+# endif
 
 uninstall:
 	rm -Rf "$(DESTDIR)"$(EXEC_TGT) "$(DESTDIR)"$(INSTALL_TGT) \
 		"$(DESTDIR)"$(SHAREDIR)/man/man1/simile.1 \
 		"$(DESTDIR)"$(SHAREDIR)/applications/simile.desktop \
-		"$(DESTDIR)"/usr/bin/simile
+		"$(DESTDIR)"$(DESTROOT)/bin/simile
 
 # call clean after changing license info in this file
 clean: clean-prolog
-	rm -f $(RELAY) Run/$(CRYPTOBJ) $(SUPP) \
+	rm -f $(RELAY) Run/$(CRYPTOBJ) $(SUPP) $(LAUNCHER) \
 		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
