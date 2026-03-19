@@ -61,8 +61,8 @@ SLDIR = $(RESDIR)
 
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
 USETCL_BASE = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -ltclstub
-LOCALIZE_TCL_REFS = ls # placebo command
-ADJUST_LOCAL_LIBS = ls # placebo command
+LOCALIZE_TCL_REFS = $(info No tcl ref localization)
+ADJUST_LOCAL_LIBS = $(info No library path localization)
 CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
 
@@ -249,32 +249,36 @@ endif
 ifeq ($(PROLOG),GNU)
 UINFO_TPL=userinfo.gnu
 ifeq ($(PLATFORM),Darwin)
-# all hell breaks loose as we try to build x64 and arm versions
+# all hell breaks loose as we try to build multiple versions
 PROLOGSTATE_X = $(PROLOGSTATE)_x
 PROLOGSTATE_A = $(PROLOGSTATE)_a
+ifdef XGNU_PATH
 $(PROLOGSTATE): $(PROLOGSTATE_X) $(PROLOGSTATE_A)
 	lipo $(PROLOGSTATE_X) $(PROLOGSTATE_A) -create -output $(PROLOGSTATE)
+else
+$(PROLOGSTATE): $(PROLOGSTATE_A)
+	$(info Builfing prolog for host arch only)
+	cp $(PROLOGSTATE_A) $(PROLOGSTATE)
+endif
 
-XGNU_PATH = PATH=/Users/jaspert/local/bin:$$PATH
 PROLOG_OBJ_X = $(EXECDIR)/gmain$(ARCHEXTN)_x.o
 PROLOG_DB_X = $(EXECDIR)/struct_db$(ARCHEXTN)_x.o
 $(PROLOGSTATE_X): $(PROLOG_OBJ_X) $(PROLOG_DB_X)
 	$(XGNU_PATH);gplc --no-top-level -o $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
 
-AGNU_PATH = cd /Users/jaspert/Build/gprolog/src;. ./SETVARS;cd -
 PROLOG_OBJ_A = $(EXECDIR)/gmain$(ARCHEXTN)_a.o
 PROLOG_DB_A = $(EXECDIR)/struct_db$(ARCHEXTN)_a.o
 $(PROLOGSTATE_A): $(PROLOG_OBJ_A) $(PROLOG_DB_A)
-	$(AGNU_PATH);gplc --no-top-level -o $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A)
+	gplc --no-top-level -o $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A)
 $(PROLOG_OBJ_X): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 	$(XGNU_PATH);cd Prolog; gplc -o ../$(PROLOG_OBJ_X) -c gmain.pl; cd ..
 $(PROLOG_OBJ_A): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
-	$(AGNU_PATH);cd Prolog; gplc -o ../$(PROLOG_OBJ_A) -c gmain.pl; cd ..
+	cd Prolog; gplc -o ../$(PROLOG_OBJ_A) -c gmain.pl; cd ..
 $(PROLOG_DB_X): Prolog/struct_db.c Run/dllcalls.h
 	$(XGNU_PATH);cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB_X) struct_db.c; cd ..
 $(PROLOG_DB_A): Prolog/struct_db.c Run/dllcalls.h
-	$(AGNU_PATH);cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
+	cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB_A) struct_db.c; cd ..
 clean-prolog:
 	rm -f $(PROLOGSTATE) $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A) $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
@@ -364,7 +368,7 @@ $(EXECDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(CFLAGS) $(CPPFLAGS) -std=c++11 -I. $(MAKEPIC) \
 		$(MAKESL) -o ../$(SLDIR)/$(SHANK) shank.cpp -lportaudio; cd ..
-	$(call ADJUST_LOCAL_LIBS,/usr/local/lib/libportaudio.2.dylib,libportaudio.2.dylib) $(SLDIR)/$(SHANK)
+#	$(call ADJUST_LOCAL_LIBS,/usr/local/lib/libportaudio.2.dylib,libportaudio.2.dylib) $(SLDIR)/$(SHANK)
 
 $(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) \
