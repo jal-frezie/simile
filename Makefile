@@ -711,6 +711,9 @@ endif
 		$(UNPK) \
 		$(SLDIR)/$(SHANK) \
 		$(SLDIR)/$(INSTLIB) | tar x -C "$(DESTDIR)"$(EXEC_TGT)
+	mkdir -p "$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/lib/Stubs/can2svg1.2
+	cd Extensions/can2svg; cp can2svg.tcl pkgIndex.tcl uriencode.tcl \
+		"$(DESTDIR)"$(EXEC_TGT)/$(SYSDIR)/lib/Stubs/can2svg1.2
 	cd "$(DESTDIR)"$(INSTALL_TGT); \
 	mv Run/$(UINFO_TPL) Run/mdlrinfo.tpl;
 	cd "$(DESTDIR)"$(EXEC_TGT); \
