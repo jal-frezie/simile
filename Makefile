@@ -702,9 +702,9 @@ endif
 		$(LAUNCHER) \
 		$(PROLOGSTATE) \
 		$(PROLOG_DB) \
-		$(SYSDIR)/lib/Stubs/can2svg1.2/can2svg.tcl \
-		$(SYSDIR)/lib/Stubs/can2svg1.2/pkgIndex.tcl \
-		$(SYSDIR)/lib/Stubs/can2svg1.2/uriencode.tcl \
+		$(SYSDIR)/lib/can2svg1.2/can2svg.tcl \
+		$(SYSDIR)/lib/can2svg1.2/pkgIndex.tcl \
+		$(SYSDIR)/lib/can2svg1.2/uriencode.tcl \
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/Trf/pkgIndex.tcl \
 		$(SHIM) \

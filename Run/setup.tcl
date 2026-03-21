@@ -98,7 +98,7 @@ if {$tcl_platform(os) eq "Linux" || \
 }
 
 if {$use_system_tcltk} {
-    set auto_path [linsert $auto_path 0 [file join $libDir Stubs] [file join $libDir Extras]]
+    set auto_path [linsert $auto_path 0 $libDir]
 # special Simile things that cannot be found in standard TclTk
 # (or can but they wouldn't be as much use as the bundled version)
 
