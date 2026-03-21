@@ -147,15 +147,15 @@ if {[string match windows $tcl_platform(platform)]} {
     #    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
     
     #   pkg_mkIndex ../System/lib/Extras
-    if {![packahe vsatisfies 9.0 [info tclversion]]} {
+    if {![package vsatisfies 9.0 [info tclversion]]} {
 	source $libDir/Extras/prntcanv.tcl
 	source $libDir/Extras/prntproc.tcl ;# needed for eqn listings
     }
     # Make Simile a DDE server under Windows. Jonathan autotesting
     # Must be after the sourcing or Simile fails
-    package require dde 1
+    # package require dde 1
 # after idle speeds startup with tcltk 8.5
-    after idle dde servername Simile
+    # after idle dde servername Simile
 } elseif {[string match Linux $tcl_platform(os)]} {
     # avoid loading buggy Trf if ActiveTcl present on system
     # package ifneeded Trf 2.1 {}

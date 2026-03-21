@@ -33,12 +33,16 @@ GCCCMD = $(CC)
 GPPCMD = $(CXX)
 PL_PATH=/usr
 
+ifndef TCLSH
+TCLSH = tclsh
+endif
+
 ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
 BITEXTN = 64
 endif
 
 # Default case: Linux
-TCLDIR =  $(shell echo "puts [file dirname [file dirname [info nameofexecutable]]]" | tclsh)
+TCLDIR =  $(shell echo "puts [file dirname [file dirname [info nameofexecutable]]]" | $(TCLSH))
 TCLREF = $(TCLDIR)
 
 SYSDIR = System
@@ -49,7 +53,8 @@ DESTROOT = /usr
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
-VERS = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
+VERSION = $(shell echo "puts [info tclversion]" | $(TCLSH))
+VERS = $(VERSION)
 # 8.5 stubs work in 8.6 better than vice versa
 PT = .
 
@@ -87,7 +92,6 @@ endif
 ifeq ($(PLATFORM),Darwin)
 	DESTROOT = /usr/local
 	SYSDIR = System$(BITEXTN)
-	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
 	TCLFW = ../Frameworks/Tcl.framework
 ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
@@ -144,7 +148,6 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	# MSI = /c/MinGW-w64/v49j32/mingw32/opt
 # must be 32-bit because installer is
 #endif
-	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
 	PT =
 	VERS = $(subst .,,$(VERSION))
 
@@ -159,7 +162,9 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	SLDIR = $(EXECDIR)
 # to be used after CDing to Run -- assume all refs are from a subdirectory
 # for linking with stubs
-	USETCL = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib -ltclstub$(VERS)
+	USETCL_BASE = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib -ltclstub
+# stub name includes version if less than 90
+	USETCL = $(USETCL_BASE)$(intcmp $(VERS),90,$(VERS))
 #	USETK = -DUSE_TK_STUBS -ltkstub$(VERS)
 # for direct linking
 #	USETCL = -I$(TCLINC) -L$(TCLREF)/lib -ltcl$(VERS)
@@ -195,7 +200,7 @@ simile: $(LAUNCHER) $(PROLOGSTATE) $(RELAY) $(SUPP) \
 
 $(LAUNCHER): Run/launch.tcl
 	mkdir -p $(EXECDIR)
-	echo "#!$(TCLDIR)/bin/tclsh" > $(LAUNCHER)
+	echo "#!$(TCLDIR)/bin/tclsh$(VERS)" > $(LAUNCHER)
 	cat Run/launch.tcl >> $(LAUNCHER)
 	chmod a+x $(LAUNCHER)
 

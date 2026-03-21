@@ -24,6 +24,7 @@ if {[llength [auto_execok tclsh$altVersion]]} {
     lappend auto_path \
 	{*}[exec echo "package require style;puts \$auto_path" | tclsh$altVersion]
 }
+}
 # now make sure to respond positively if checking we have v8
 proc newpackage {args} {
     if {[lrange $args 0 1] eq {require Tcl}} {
@@ -34,7 +35,7 @@ proc newpackage {args} {
 }
 rename package oldpackage
 rename newpackage package
-}
+
 package require xml::tcl
 package require xml::tclparser
 #package require xml

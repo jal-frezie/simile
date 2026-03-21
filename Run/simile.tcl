@@ -30,15 +30,15 @@ source [file join $SIMILE_PATH Run setup.tcl]
 
 set execDir [file join $env(SYSDIR) bin]
 
-if {[string match windows $tcl_platform(platform)]} {
-    package require dde 1.2
-    set runHow(sendOp) {dde eval}
-} else {
-    set runHow(sendOp) send
-}
-set oldProc Simile
-set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
-
+#if {[string match windows $tcl_platform(platform)]} {
+#    package require dde 1.2
+#    set runHow(sendOp) {dde eval}
+#} else {
+#    set runHow(sendOp) send
+#}
+#set oldProc Simile
+#set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
+#
 
 proc ChooseIntegerRatio {fraction accu} {
     set m 0
@@ -304,7 +304,7 @@ if {!$headless && [string match Darwin $tcl_platform(os)]} {
 switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
-	dde servername $oldProc
+#	dde servername $oldProc
 #	set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needed the tcltk binaries in the path
 # 	append env(PATH) ";[file nativename $execDir]"
