@@ -152,7 +152,9 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	VERS = $(subst .,,$(VERSION))
 
 #	TCLREF = $(TCLDIR)
+ifndef TCLINC
 	TCLINC = $(TCLREF)/include
+endif
 #	CFLAGS = $(OPT)
 	SHAREDLIBPREFX = 
 #	MAKEPIC = 
@@ -402,8 +404,9 @@ $(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
 $(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile$(BITEXTN).rc
 	cd Interp; $(RESCMD) -o rc$(BITEXTN).o Simile$(BITEXTN).rc; \
 	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
-		-o ../$(EXECDIR)/Simile.exe Simile.c rc$(BITEXTN).o -I$(TCLINC) \
-		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
+		-o ../$(EXECDIR)/Simile.exe Simile.c rc$(BITEXTN).o \
+		-I$(TCLINC) -I$(TKINC) \
+		-L$(TCLREF)/lib -ltcl$(VERS) -ltcl9tk$(VERS) -mwindows; cd ..
 #else
 
 # CYGWIN and non-Windows

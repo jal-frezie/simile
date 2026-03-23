@@ -1,8 +1,8 @@
-if {[string equal windows $::tcl_platform(platform)]} {
-    package require dde
-    dde servername Simile
-}
-
+#if {[string equal windows $::tcl_platform(platform)]} {
+#    package require dde
+#    dde servername Simile
+#}
+#
 oo::class create similescript::ModelWindow {
     variable modelNode modelCanvas model
 
