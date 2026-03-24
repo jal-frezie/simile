@@ -88,6 +88,7 @@ HOST = $(shell gcc -dumpmachine)
 TGT = $(shell $(CC) -dumpmachine)
 ifneq ($(TGT),$(HOST))
 	PL_PATH=/usr/local/$(TGT)-gprolog
+	GPLIB = $(PL_PATH)/gprolog-1.6.0/lib
 endif
 ifeq ($(PLATFORM),Darwin)
 	DESTROOT = /usr/local
@@ -292,15 +293,17 @@ PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).o
 PROLOG_AS = $(EXECDIR)/gmain$(ARCHEXTN).s
 PROLOG_DB = $(EXECDIR)/struct_db$(ARCHEXTN).o
 PROLOG_MA = $(EXECDIR)/gmain$(ARCHEXTN).ma
-GPLIB = $(PL_PATH)/gprolog-1.6.0/lib
 # All-in-one without database
 # $(PROLOGSTATE): $(PROLOG_FILES)
 # 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) gmain.pl \
 # 		-L '$(OPT)'; cd ..
 # In separate steps with database
 $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
+ifdef GPLIB
 	$(GCCCMD) -fno-strict-aliasing -fcommon -no-pie -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(GPLIB)/libbips_pl.a $(GPLIB)/libengine_pl.a $(GPLIB)/liblinedit.a -lm
-#	gplc --c-compiler $(GCCCMD) --min-bips -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
+else
+	gplc --c-compiler $(GCCCMD) --min-bips -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
+endif
 # gplc will not use as from specified gcc so do this step explicitly
 $(PROLOG_OBJ): $(PROLOG_AS)
 	$(GCCCMD) -c -o $(PROLOG_OBJ) $(PROLOG_AS)
