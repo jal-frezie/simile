@@ -21,7 +21,7 @@ override_dh_auto_clean:
 	dh_auto_clean --
 
 override_dh_auto_configure:
-	cd Extensions/tkdnd; dh_auto_configure; cd ..
+#	cd Extensions/tkdnd; dh_auto_configure; cd ..
 #	dh_auto_configure -- -C Extensions/tkdnd
 
 # Likewise when making
@@ -34,7 +34,7 @@ override_dh_auto_build:
 override_dh_auto_install:
 	dh_auto_install --
 	dh_auto_install -- -C Extensions/tcl-gdal \
-		libdir=/usr/lib/simile-7.3/System/lib/Stubs
+		libdir=/usr/lib/simile-7.4/System/lib/Stubs
 #	dh_auto_install -- -C Extensions/tkdnd \
 #		libdir=/usr/lib/simile-7.3/System/lib/Stubs
 # This is from Ubuntu tkdnd package to get man page in right place	
