@@ -88,6 +88,7 @@ HOST = $(shell gcc -dumpmachine)
 TGT = $(shell $(CC) -dumpmachine)
 ifneq ($(TGT),$(HOST))
 	PL_PATH=/usr/local/$(TGT)-gprolog
+	GPLIB = $(PL_PATH)/gprolog-1.6.0/lib
 endif
 ifeq ($(PLATFORM),Darwin)
 	DESTROOT = /usr/local
@@ -300,8 +301,11 @@ PROLOG_MA = $(EXECDIR)/gmain$(ARCHEXTN).ma
 # 		-L '$(OPT)'; cd ..
 # In separate steps with database
 $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
-#	$(CC) -fno-strict-aliasing -fcommon  -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(GPLIB)/libbips_pl.a  $(GPLIB)/libengine_pl.a $(GPLIB)/liblinedit.a -lm
-	$(PL_PATH)/bin/gplc --c-compiler $(GCCCMD) --min-bips -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
+ifdef GPLIB
+	$(GCCCMD) -fno-strict-aliasing -fcommon -no-pie -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(GPLIB)/libbips_pl.a $(GPLIB)/libengine_pl.a $(GPLIB)/liblinedit.a -lm
+else
+	gplc --c-compiler $(GCCCMD) --min-bips -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
+endif
 # gplc will not use as from specified gcc so do this step explicitly
 $(PROLOG_OBJ): $(PROLOG_AS)
 	$(GCCCMD) -c -o $(PROLOG_OBJ) $(PROLOG_AS)
@@ -309,11 +313,11 @@ $(PROLOG_AS): $(PROLOG_MA)
 	$(PL_PATH)/bin/ma2asm -o $(PROLOG_AS) $(PROLOG_MA)
 $(PROLOG_MA): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 #	cd Prolog; gplc -o ../$(PROLOG_MA) -M gmain.pl; cd ..
-	$(PL_PATH)/bin/pl2wam -o gmain.wam Prolog/gmain.pl
-	$(PL_PATH)/bin/wam2ma -o $(PROLOG_MA) gmain.wam
+	pl2wam -o gmain.wam Prolog/gmain.pl
+	wam2ma -o $(PROLOG_MA) gmain.wam
 	rm gmain.wam
 $(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
-	$(PL_PATH)/bin/gplc --c-compiler $(GCCCMD) -c -C '-D_GNU_PROLOG -fPIE' \
+	gplc --c-compiler $(GCCCMD) -c -C '-D_GNU_PROLOG -fPIE' \
 		-o $(PROLOG_DB) Prolog/struct_db.c
 clean-prolog:
 	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(PROLOG_AS) $(PROLOG_MA)
@@ -738,7 +742,7 @@ ifeq ($(PROLOG),SWI)
 endif
 	mkdir -p "$(DESTDIR)"$(DESTROOT)/bin
 	cd "$(DESTDIR)"$(DESTROOT)/bin; \
-	ln -s "$(DESTDIR)"$(EXEC_TGT)/$(LAUNCHER)
+	ln -s ../..$(EXEC_TGT)/$(LAUNCHER)
 # endif
 
 uninstall:
