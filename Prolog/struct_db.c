@@ -1048,57 +1048,57 @@ FORPROL xml_file_to_term(PlTerm fileNameTerm, PlTerm arising) {
 */
 #ifdef __SWI_PROLOG__
 install_t install() { 
-  PL_register_foreign("empty_tree", 2, empty_tree, 0);
+  PL_register_foreign("empty_tree", 2, (pl_function_t)empty_tree, 0);
 
-  PL_register_foreign("create_node", 1, create_node, 0);
-  PL_register_foreign("add_to_tree", 2, add_to_tree, 0);
-  PL_register_foreign("set_class", 2, set_class, 0);
-  PL_register_foreign("add_bbox", 5, add_bbox, 0);
-  PL_register_foreign("add_iext", 5, add_iext, 0);
-  PL_register_foreign("add_capt_off", 3, add_capt_off, 0);
-  PL_register_foreign("add_centre", 3, add_centre, 0);
-  PL_register_foreign("add_along", 2, add_along, 0);
-  PL_register_foreign("set_hidden", 2, set_hidden, 0);
-  PL_register_foreign("create_arc", 1, create_arc, 0);
-  PL_register_foreign("add_link", 3, add_link, 0);
-  PL_register_foreign("add_continuation", 2, add_continuation, 0);
-  PL_register_foreign("set_type", 2, set_type, 0);
-  PL_register_foreign("add_curve", 3, add_curve, 0);
+  PL_register_foreign("create_node", 1, (pl_function_t)create_node, 0);
+  PL_register_foreign("add_to_tree", 2, (pl_function_t)add_to_tree, 0);
+  PL_register_foreign("set_class", 2, (pl_function_t)set_class, 0);
+  PL_register_foreign("add_bbox", 5, (pl_function_t)add_bbox, 0);
+  PL_register_foreign("add_iext", 5, (pl_function_t)add_iext, 0);
+  PL_register_foreign("add_capt_off", 3, (pl_function_t)add_capt_off, 0);
+  PL_register_foreign("add_centre", 3, (pl_function_t)add_centre, 0);
+  PL_register_foreign("add_along", 2, (pl_function_t)add_along, 0);
+  PL_register_foreign("set_hidden", 2, (pl_function_t)set_hidden, 0);
+  PL_register_foreign("create_arc", 1, (pl_function_t)create_arc, 0);
+  PL_register_foreign("add_link", 3, (pl_function_t)add_link, 0);
+  PL_register_foreign("add_continuation", 2, (pl_function_t)add_continuation, 0);
+  PL_register_foreign("set_type", 2, (pl_function_t)set_type, 0);
+  PL_register_foreign("add_curve", 3, (pl_function_t)add_curve, 0);
 
-  PL_register_foreign("delete_node", 1, delete_node, 0);
-  PL_register_foreign("remove_from_tree", 2, remove_from_tree, 0);
-  PL_register_foreign("unset_class", 1, unset_class, 0);
-  PL_register_foreign("remove_bbox", 1, remove_bbox, 0);
-  PL_register_foreign("remove_iext", 1, remove_iext, 0);
-  PL_register_foreign("remove_centre", 1, remove_centre, 0);
-  PL_register_foreign("remove_along", 1, remove_along, 0);
-  PL_register_foreign("remove_capt_off", 1, remove_capt_off, 0);
-  PL_register_foreign("delete_arc", 1, delete_arc, 0);
-  PL_register_foreign("remove_link", 3, remove_link, 0);
-  PL_register_foreign("unset_type", 1, unset_type, 0);
-  PL_register_foreign("remove_continuation", 2, remove_continuation, 0);
-  PL_register_foreign("remove_curve", 1, remove_curve, 0);
+  PL_register_foreign("delete_node", 1, (pl_function_t)delete_node, 0);
+  PL_register_foreign("remove_from_tree", 2, (pl_function_t)remove_from_tree, 0);
+  PL_register_foreign("unset_class", 1, (pl_function_t)unset_class, 0);
+  PL_register_foreign("remove_bbox", 1, (pl_function_t)remove_bbox, 0);
+  PL_register_foreign("remove_iext", 1, (pl_function_t)remove_iext, 0);
+  PL_register_foreign("remove_centre", 1, (pl_function_t)remove_centre, 0);
+  PL_register_foreign("remove_along", 1, (pl_function_t)remove_along, 0);
+  PL_register_foreign("remove_capt_off", 1, (pl_function_t)remove_capt_off, 0);
+  PL_register_foreign("delete_arc", 1, (pl_function_t)delete_arc, 0);
+  PL_register_foreign("remove_link", 3, (pl_function_t)remove_link, 0);
+  PL_register_foreign("unset_type", 1, (pl_function_t)unset_type, 0);
+  PL_register_foreign("remove_continuation", 2, (pl_function_t)remove_continuation, 0);
+  PL_register_foreign("remove_curve", 1, (pl_function_t)remove_curve, 0);
 
-  PL_register_foreign("find_parent", 2, find_parent, 0);
-  PL_register_foreign("get_child_list_pointer", 2, get_child_list_pointer, 0);
-  PL_register_foreign("get_class", 2, get_class, 0);
-  PL_register_foreign("find_ends", 3, find_ends, 0);
-  PL_register_foreign("get_in_list_pointer", 2, get_in_list_pointer, 0);
-  PL_register_foreign("get_out_list_pointer", 2, get_out_list_pointer, 0);
-  PL_register_foreign("get_type", 2, get_type, 0);
-  PL_register_foreign("find_prev", 2, find_prev, 0);
-  PL_register_foreign("get_next_list_pointer", 2, get_next_list_pointer, 0);
-  PL_register_foreign("find_curve", 2, find_curve, 0);
-  PL_register_foreign("find_bbox", 2, find_bbox, 0);
-  PL_register_foreign("find_iext", 2, find_iext, 0);
-  PL_register_foreign("find_capt_off", 2, find_capt_off, 0);
-  PL_register_foreign("find_centre", 2, find_centre, 0);
-  PL_register_foreign("find_along", 2, find_along, 0);
-  PL_register_foreign("is_hidden", 1, is_hidden, 0);
-  PL_register_foreign("get_node_and_next_ptr", 3, get_node_and_next_ptr, 0);
-  PL_register_foreign("get_arc_and_next_ptr", 3, get_arc_and_next_ptr, 0);
+  PL_register_foreign("find_parent", 2, (pl_function_t)find_parent, 0);
+  PL_register_foreign("get_child_list_pointer", 2, (pl_function_t)get_child_list_pointer, 0);
+  PL_register_foreign("get_class", 2, (pl_function_t)get_class, 0);
+  PL_register_foreign("find_ends", 3, (pl_function_t)find_ends, 0);
+  PL_register_foreign("get_in_list_pointer", 2, (pl_function_t)get_in_list_pointer, 0);
+  PL_register_foreign("get_out_list_pointer", 2, (pl_function_t)get_out_list_pointer, 0);
+  PL_register_foreign("get_type", 2, (pl_function_t)get_type, 0);
+  PL_register_foreign("find_prev", 2, (pl_function_t)find_prev, 0);
+  PL_register_foreign("get_next_list_pointer", 2, (pl_function_t)get_next_list_pointer, 0);
+  PL_register_foreign("find_curve", 2, (pl_function_t)find_curve, 0);
+  PL_register_foreign("find_bbox", 2, (pl_function_t)find_bbox, 0);
+  PL_register_foreign("find_iext", 2, (pl_function_t)find_iext, 0);
+  PL_register_foreign("find_capt_off", 2, (pl_function_t)find_capt_off, 0);
+  PL_register_foreign("find_centre", 2, (pl_function_t)find_centre, 0);
+  PL_register_foreign("find_along", 2, (pl_function_t)find_along, 0);
+  PL_register_foreign("is_hidden", 1, (pl_function_t)is_hidden, 0);
+  PL_register_foreign("get_node_and_next_ptr", 3, (pl_function_t)get_node_and_next_ptr, 0);
+  PL_register_foreign("get_arc_and_next_ptr", 3, (pl_function_t)get_arc_and_next_ptr, 0);
 
-  PL_register_foreign("get_mdl_exec_vers", 1, get_mdl_exec_vers, 0);
+  PL_register_foreign("get_mdl_exec_vers", 1, (pl_function_t)get_mdl_exec_vers, 0);
   
   //  Next only used in GNU to replicate SWI's SGML library
   //  PL_register_foreign("xml_file_to_term", 2, xml_file_to_term, 0);

@@ -179,7 +179,7 @@ tk_copy_display_depths(From, To) :-
     fail; true.
 
 tcl_export_graphics(Tgt, Node) :-
-        draw><display(Tgt, Node, -1, _, 1),
+        draw><display(Tgt, Node, 0, [0,0,2.5,2.5], 1),
         (setof(Box, image><contains_box(Node, Box), Boxes), !;
             Boxes = [[image,contains,no,boxes]]),
         bound_all_boxes(Boxes, Frame),

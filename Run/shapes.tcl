@@ -533,15 +533,13 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     set stackOn /new_bg/
 
     if {![string equal none $fillImage]} {
-        set poly [$w create image $ml $mt -anchor nw \
-                -tags "$tagSet /background/ source($fillImage) posn($layout)"]
         set mw [expr int($mr-$ml)]
         set mh [expr int($mb-$mt)]
-        set smbg sm$poly$w
-        image create photo $smbg -width $mw -height $mh
-        $w itemconfig $poly -image $smbg
+        set smbg [image create photo -width $mw -height $mh]
         
         FillSmImage $w $fillImage $layout $smbg $mw $mh
+        set poly [$w create image $ml $mt -image $smbg -anchor nw \
+                -tags "$tagSet /background/ source($fillImage) posn($layout)"]
 	# Now to stick it behind anything that might be drawn inside
 	$w raise $poly $stackOn
 	set stackOn $poly
@@ -643,7 +641,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 #    }
 
 #    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
-    if {[string equal incomplete $colourScheme] || !$inFat || $w eq "ToSVG"} {
+    if {[string equal incomplete $colourScheme] || !$inFat} {
 #	set window_info($w,temporary) $i
     } else {
 	set plRad [expr $cornerRad/$window_info($w,scale)]

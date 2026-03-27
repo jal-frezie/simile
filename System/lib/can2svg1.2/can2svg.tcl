@@ -59,7 +59,7 @@
 
 # We need URN encoding for the file path in images. From my whiteboard code.
 
-package require uriencode
+#package require uriencode
 #package require tinyfileutils
 
 package provide can2svg 1.2
@@ -788,9 +788,9 @@ proc can2svg::MakeStyleList {type opts args} {
             }
             -width {
 		set widthValue $value
-		# if {$value > 1} {
+		if {$value > 0} { ;# width 0 still appears on canvas
 		    set styleArr(stroke-width) $value
-		# }
+		}
             }
         }
     }
@@ -1057,7 +1057,7 @@ proc can2svg::BreakChar {char} {
 proc can2svg::MakeImageAttr {coo opts args} {
     variable confopts
     
-    array set optA {-anchor nw}
+    array set optA {-anchor c}
     array set optA $opts
     array set argsA $args
     
@@ -1074,7 +1074,8 @@ proc can2svg::MakeImageAttr {coo opts args} {
         }
         lappend attrList "xlink:href" $uri
     } else {
-        # Unclear if we can use base64 data in svg.
+        # Unclear if we can use base64 data in svg. Like this...
+	lappend attrList "xlink:href" "data:image/png;base64,[base64::encode [$image data -format png]]"
     }    
     return $attrList
 }
@@ -1094,7 +1095,7 @@ proc can2svg::MakeImageAttr {coo opts args} {
 
 proc can2svg::ImageCoordsToAttr {coo opts} { 
     
-    array set optArr {-anchor nw}
+    array set optArr {-anchor c}
     array set optArr $opts
     
     if {![info exists optArr(-image)]} { 
