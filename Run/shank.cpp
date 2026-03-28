@@ -332,6 +332,7 @@ void play_at_vol(const char* file, double level) {
 #endif
 }
 */
+#define FRAMES_PER_BUFFER 1024
 int latestContext[32];
 
 typedef struct sound_t {
@@ -385,13 +386,14 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
     int num_read;
     int remaining;
     int result = paContinue;
+    uint8_t in[8*FRAMES_PER_BUFFER]; // max poss size
 
     (void) inputBuffer;
 
     // if (!(data->playlist)) printf("Trying to play empty list!\n");
     // initialize buffer to zero
 
-    uint8_t* in = new uint8_t[bufSize * what_to_read];
+    // uint8_t* in = new uint8_t[bufSize * what_to_read];
     //    printf("responding");
     memset(out, 0, bufSize * sizeof(float));
 
@@ -435,13 +437,14 @@ static int pasimCallback(const void *inputBuffer, void *outputBuffer,
     sound** playptr = &(data->playlist); 
     while (*playptr) {
       if (!(*playptr)->file) {
-	delete *playptr;
-	*playptr = (*playptr)->next; // hope it still there
+	playlist = *playptr;
+	*playptr = (*playptr)->next;
+	delete playlist;
       } else {
 	playptr = &((*playptr)->next);
       }
     }
-    delete [] in;
+    // delete [] in;
     return result;
 }
 
@@ -2077,7 +2080,6 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
 }
 
 */
-#define FRAMES_PER_BUFFER 1024
 
 void set_wav_cmd(ModelServer* mSpec, const char* nodeId, const char* toPlay) {
   PaStreamParameters outputParameters;
