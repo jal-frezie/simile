@@ -478,12 +478,13 @@ get_flash(Comp, Colour_scheme) :-
 
 display_in(Wid, Comp, Depth, Trans) :-
 	(appears(Comp),
-	Depth >= 0,
-	get_drawing_form(Comp, Style, BBox),
+	 nonvar(Trans),
+	 get_drawing_form(Comp, Style, BBox),
 	draws_at(Wid, Style, Depth), !,
 	    untranslate(BBox, Trans, Screen_list),
 	    find_fatness(Trans, WinFatness),
-	    get_flash(Comp, Colour_scheme),
+	    (Depth < 0 -> Colour_scheme = borderless;
+	     get_flash(Comp, Colour_scheme)),
 	    (Style = image -> caption_for(Comp, Num),
 			      get_shape(Comp, caption_offset, [ExFat, ExDens]),
 			      Fatness is WinFatness*ExFat/100,
@@ -525,7 +526,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 		m_update><oblitterfry(Comp)),
 	    (get_display_depth(Wid, caption, Caption_detail),
 	     ((Style is_class_of_sort captionless; \+ appears(Comp);
-	              Caption_detail =< Depth), !;
+	              Colour_scheme = borderless; Caption_detail =< Depth), !;
 		add_caption(Wid, Comp, Style, BBox, Trans, Fatness, [0], Colour_scheme)));
 	true).
 

@@ -437,7 +437,11 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     } else {
         set cornerDiam [expr $looks($window_info($w,top_node),submodel,objectsize)*$shortSide/200]
     }
-    set cornerRad [expr $cornerDiam/2]
+    if {$colourScheme eq "borderless"} {
+	set cornerRad 0
+    } else {
+	set cornerRad [expr $cornerDiam/2]
+    }
     set h6 [expr $ml+$cornerRad]
     set v6 [expr $mt+$cornerRad]
     set h7 [expr $mr-$cornerRad] 
@@ -544,7 +548,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	$w raise $poly $stackOn
 	set stackOn $poly
     }
-
+    if {$colourScheme ne "borderless"} {
     if {$wedge} {
 	$w create line $ml $v6 $ml $mt [expr $ml+$cornerRad/4] $mt \
 	    [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
@@ -624,7 +628,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
         }
         incr tabs
     }
-    
+    }
 #    if {$pile} {
 #        set stackDistance [expr -$stackSpacing]
 #        set upper [$w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
