@@ -11,12 +11,8 @@ REL_EXP = 0
 # What kind of system are we on
 PLATFORM = $(shell uname -o)
 
-# Prolog implementation to use -- GNU for Windows releases, GNU otherwise
-# (currently GNU for everything)
-ifneq (,$(filter $(MY_CPU),none))
-# result of filter is strings that match, test if not empty
-    PROLOG = SWI
-else
+# Prolog implementation to use -- GNU for everything, SWI also supported
+ifndef PROLOG
     PROLOG = GNU
 endif
 
