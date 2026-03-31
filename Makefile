@@ -187,7 +187,6 @@ STUBS_DIR = $(RESDIR)/Stubs
 SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBEXTN)
 UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(MAJREL)$(PT)$(MINREL)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
-INSTLIB = $(SHAREDLIBPREFX)install$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
 LAUNCHER = $(EXECDIR)/simile
 
@@ -195,7 +194,7 @@ LAUNCHER = $(EXECDIR)/simile
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
 simile: $(LAUNCHER) $(PROLOGSTATE) $(RELAY) $(SUPP) \
-	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
+	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(MAIN)
 
 $(LAUNCHER): Run/launch.tcl
 	mkdir -p $(EXECDIR)
@@ -337,10 +336,9 @@ $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 endif
 
-$(UNPK): Run/unpacker.c Run/dllcalls.h $(SLDIR)/$(INSTLIB)
+$(UNPK): Run/unpacker.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
-		-o ../$(UNPK) unpacker.c $(USETCL) -L../$(RESDIR) -linstall$(ARCHEXTN) $(CHECK_LOCAL_LIBS)
-	$(call ADJUST_LOCAL_LIBS,../$(RESDIR)/$(INSTLIB),../$(INSTLIB)) $(UNPK)
+		-o ../$(UNPK) unpacker.c $(USETCL) $(CHECK_LOCAL_LIBS)
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
@@ -359,28 +357,11 @@ CRYPTOBJ = sha-256_$(BITEXTN)$(ARCHEXTN).o
 Run/$(CRYPTOBJ): Run/sha-256.h Run/sha-256.c
 	cd Run; $(GCCCMD) -c $(CFLAGS) $(MAKEPIC) -o $(CRYPTOBJ) sha-256.c; cd ..
 
-# Version for Advanced Installer
-# -static-libgcc is neeeded because this also used for 64bit install (and 32bit
-# install on 64bit systems) where 32bit libraries maybe missing
-$(EXECDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
-	cd Run; $(GCCCMD) -static $(CFLAGS) $(DEFNS) \
-		-I$(MSI)/include $(MAKEPIC) $(MAKESL) \
-		-Wl,--out-implib,libinstall$(ARCHEXTN).a \
-		-o ../$(SLDIR)/$(INSTLIB) install_adv.c $(CRYPTOBJ) \
-		-L$(MSI)/lib -lmsi; \
-		mv libinstall$(ARCHEXTN).a ../$(RESDIR); cd ..
-
-
 # Unix: not needed for Linux as it can build at run time
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(CFLAGS) $(CPPFLAGS) -std=c++11 -I. $(MAKEPIC) \
 		$(MAKESL) -o ../$(SLDIR)/$(SHANK) shank.cpp -lportaudio; cd ..
 #	$(call ADJUST_LOCAL_LIBS,/usr/local/lib/libportaudio.2.dylib,libportaudio.2.dylib) $(SLDIR)/$(SHANK)
-
-$(RESDIR)/$(INSTLIB): Run/install_adv.c Run/$(CRYPTOBJ)
-	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) \
-		$(MAKEPIC) $(MAKESL) \
-		-o ../$(SLDIR)/$(INSTLIB) install_adv.c $(CRYPTOBJ); cd ..
 
 $(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
 	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
@@ -715,8 +696,7 @@ endif
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
 		$(SHIM) \
 		$(UNPK) \
-		$(SLDIR)/$(SHANK) \
-		$(SLDIR)/$(INSTLIB) | tar x -C "$(DESTDIR)"$(EXEC_TGT)
+		$(SLDIR)/$(SHANK) | tar x -C "$(DESTDIR)"$(EXEC_TGT)
 	cd "$(DESTDIR)"$(INSTALL_TGT); \
 	mv Run/$(UINFO_TPL) Run/mdlrinfo.tpl;
 	cd "$(DESTDIR)"$(EXEC_TGT); \
@@ -745,4 +725,4 @@ uninstall:
 # call clean after changing license info in this file
 clean: clean-prolog
 	rm -f $(RELAY) Run/$(CRYPTOBJ) $(SUPP) $(LAUNCHER) \
-		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(SLDIR)/$(INSTLIB) $(MAIN)
+		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(MAIN)

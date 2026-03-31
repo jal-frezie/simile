@@ -2350,11 +2350,6 @@ showMess(globMess); */
 #endif
     nodecount = getcount(NULL, &identStr, &phases, &nodedata);
     // Now check if this client is entitled to run it
-    if (entitled(clientEdn, identStr)<0) {
-      *complaint = new char[256];
-      snprintf(*complaint, 256, "%s edition cannot use this model", clientEdn);
-      return;
-    }
   }
 
 ModelServer::~ModelServer() {

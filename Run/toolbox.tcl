@@ -1072,50 +1072,15 @@ proc ControlDraw {prologVersion} {
     }
     cd $oldDir
 
-    if {[string match windows $tcl_platform(platform)]} {
-	c_testlicense
-    } else {
-# (include ff in Windows anyway in case some twerp runs it with userinfo.tpl)
-# Windows installers can ask the user for a license code and stick it in
-# userinfo.txt (formerly the registry). On other platforms we have to DIY.
-#	if {[string equal {<insert license code here>} $env(license_code)]}
-	if {! [Newer $::creds $::installedCreds m]} {
-	    if {![DoUserDialogue]} {
-		error "No license supplied"
-	    }
-	    set installTime [clock seconds]
-	    set userinfo(install_time) "$installTime :: [clock format $installTime -gmt true]"
-	    c_testlicense
-	    WriteCreds
-	} else {
-	    c_testlicense
-	}
-    }
-
     loadcommands
 
-    array set userinfo [list built $env(user,built) edn $env(user,edn)]
+    array set userinfo [list built $env(user,built) edn free]
     
     # eezi-hack implementation of time limit: to do this anything like
     # properly, have stub dll check unix time against clock time
     
     set baseTime [clock scan [clock format $userinfo(built) -format %Y-%m-01]]
     array set duration {evaluation "9 months" teaching "21 months"}
-    if {[info exists duration($userinfo(edn))]} {
-	set expTime [clock scan $duration($userinfo(edn)) -base $baseTime]
-        set userinfo(exp_time) $expTime
-        set toGo [expr $expTime-[clock seconds]]
-
-	if {$toGo<7*24*60*60} {
-            #       ShowMess "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
-            ShowExpiryImminent $expTime $toGo
-        }
-	if {$toGo<0} {
-	    send_pl_cmd {error:Product has expired} ;# arrange graceful exit
-	    after idle exit
-	    prolog wind_up
-	}
-    }
     
 # Try leaving this to the form
 #     set UserStream [NetOpen $custom(prefDir)/.version w]
@@ -1588,10 +1553,6 @@ proc LoadFile {topNode tree tgt} {
 			catch {set codes [mime::getheader $bit \
 					      Authentication-Code]} foo
 #puts "Code result $foo"
-			if {[info exists codes]} {
-			    check_auth_code $boddledy [string trim $codes]
-			    set CodeChecked yes
-                        }
 			SaveMimeBit $boddledy $tree$oldPath $Date
 		    } "Simile helper configuration file" {
 			RecordPathChoice .shf $tgt $topNode
@@ -1603,14 +1564,7 @@ proc LoadFile {topNode tree tgt} {
 			# If no auth code, do not keep executable, but
 			# dont crash either -- could be innocent
 			if {[IsRunnableModel [file tail $oldPath]]} {
-			    if {[catch {string trimright [mime::getheader \
-				    $bit Authentication-Code]} AuthCode]} {
-				continue
-			    } else {
-				check_auth_code $boddledy $AuthCode
-# now insert 1 in its name so we are not forced to save it next time
-				set oldPath [file rootname $oldPath]1[file extension $oldPath]
-			    }
+			    set oldPath [file rootname $oldPath]1[file extension $oldPath]
 			}
 			SaveMimeBit $boddledy $tree$oldPath $Date
 		    }
@@ -1627,7 +1581,7 @@ proc LoadFile {topNode tree tgt} {
         } Lossage]} {
         return $Lossage
     } else {
-        return $CodeChecked
+        return yes
     }
 }
 
@@ -1757,24 +1711,6 @@ proc GetParts {top tree noPkg} {
 		set headers [list "Content-Disposition" $Disposition \
 				 "Content-Description" $Description \
 				 "Date-Modified" $Date]
-                if {[string match "Simile model" $Description]} {
-                    set HmacCode [get_auth_code $boddledy]
-# this was for versions up to 4.6 that need separate code
-#                    set codeT [mime::initialize -canonical text/plain \
-#                            -header [list "Content-Description" \
-#                            "Authentication Code"] \
-#                            -string $HmacCode]
-#                    lappend mimes $codeT
-		    lappend headers "Authentication-Code" $HmacCode
-                }
-		if {[IsRunnableModel $ext]} {
-# Allowing save of source or exec of wrong edition will cause g_a_c to crash
-		    if {![OurEdition $boddledy]} {
-			continue
-		    }
-		    lappend headers "Authentication-Code" \
-			[get_auth_code $boddledy]
-		}
 		foreach {key val} $headers {
 		    ::mime::setheader $newM $key $val
 		}

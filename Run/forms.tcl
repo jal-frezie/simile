@@ -1520,7 +1520,8 @@ proc DoWelcomeDialog {dtId} {
 
     set newVers [GetLatestVers]
     if {$newVers == 0} {set newVers $userinfo(Version)}
-    if {$newVers==$userinfo(old_version) && $userinfo(done)} {
+    if {[package vcompare $newVers $userinfo(old_version)]<1 && \
+	    $userinfo(done)} {
 	return
     } else {
         file mkdir $custom(prefDir)/Examples
