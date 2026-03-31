@@ -1451,58 +1451,6 @@ proc LimitChars {field result} {
     return 1
 }
 
-proc DoUserDialogue {} {
-    global userinfo
-    set t [PutItThere .userdata .]
-    wm title $t [tr. "Enter your details (not required for evaluation edition)"]
-    pack [label $t.mess -text "Please enter your name, organization and license code if required."]
-    pack [frame $t.head]
-
-    grid [label $t.head.nmess -text Name:] [entry $t.head.nentry -width 40] -sticky w
-    grid [label $t.head.cmess -text Organization:] [entry $t.head.centry -width 40] -sticky w
-    grid [label $t.head.lmess -text "License code:"] [frame $t.head.lfield] -sticky w
-    # put in old details if we have them
-    pack [entry $t.head.lfield.entryl -width 5 -font TkFixedFont -validate key \
-	      -validatecommand [list LimitChars %W %P]] -side left
-    pack [label $t.head.lfield.hyphen -text {-}] -side left
-    pack [entry $t.head.lfield.entryr -width 5 -font TkFixedFont -validate key \
-	      -validatecommand [list LimitChars %W %P]] -side left
-    pack [label $t.head.lfield.free -text [tr. {(not required for evaluation edition)}]] -side left -fill x
-
-    if {$userinfo(license_code) ne {<insert license code here>}} {
-	$t.head.nentry insert 0 $userinfo(name)
-	$t.head.centry insert 0 $userinfo(corp)
-	$t.head.lfield.entryl insert 0 [string range $userinfo(license_code) 0 4]
-	$t.head.lfield.entryr insert 0 [string range $userinfo(license_code) 6 10]
-    }
-    pack [message $t.mess2 -aspect 1000 -text [tr. "Now carefully read the following End User License Agreement, and click 'ACCEPT' to indicate that you have read and understood it and that you agree to the terms set out in it."]]
-    pack [frame $t.agree -bd 4 -relief groove] -fill x
-    pack [scrollbar $t.agree.y -orient v -command "$t.agree.t yview"] \
-	-side right -fill y
-    pack [text $t.agree.t -wrap word -yscrollcommand "$t.agree.y set"] -fill x
-    set licStr [NetOpen ../eula.txt r]
-    $t.agree.t insert end [read $licStr]
-    close $licStr
-    $t.agree.t config -state disabled
-    pack [frame $t.buttons] -fill x
-    pack [button $t.buttons.ok -text ACCEPT \
-	      -command "set userinfo(entrydone) 1"] -side left
-    pack [button $t.buttons.ex -text "DO NOT ACCEPT" \
-	      -command "set userinfo(entrydone) 0"] -side right
-    wm withdraw .splash
-    LetItShow $t userinfo(entrydone)
-    wm deiconify .splash
-    UpdateByOS
-    focus $t.head.nentry
-    if {$userinfo(entrydone)} {
-	set userinfo(name) [$t.head.nentry get]
-	set userinfo(corp) [$t.head.centry get]
-	set userinfo(license_code) [format %5s-%5s [$t.head.lfield.entryl get] [$t.head.lfield.entryr get]]
-    }
-    PackItUp $t
-    return $userinfo(entrydone)
-}
-
 proc DoWelcomeDialog {dtId} {
     global userinfo custom welcomeDone tcl_platform SimileAutoObjLoaded
     
@@ -1994,20 +1942,10 @@ proc ShowAbout {winId} {
     if {$curVers} {
 	pack [ttk::label .about.fr.lab3 -text [format [tr. {Latest available version is %1$s}] $curVers]]
     }
-    pack [ttk::label .about.fr.lab4 -text "[tr. {This product is registered to}]\
-            $userinfo(name), $userinfo(corp)" \
-            -font "-family helvetica"]
     
     set gen [ttk::frame .about.fr.gen]
-    switch -regexp $userinfo(edn) {
-        evaluation {
-	    set service [tr. {For upgrade to Standard, please visit}]
-        } standard|teaching {
-	    set service [tr. {For support or to upgrade, please visit}]
-        } enterprise {
-            set service [tr. {For support, please visit}]
-        }
-    }
+    set service "Simile is Free Software. See "
+
     pack [ttk::label $gen.visit -text $service \
 	      -font "-family helvetica"] -side left
     pack [ttk::label $gen.www -text www.simulistics.com -relief flat \
