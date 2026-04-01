@@ -1,7 +1,9 @@
 MAJREL = 7
 MINREL = 4
 # botch to make Windows work
-CC = gcc 
+ifndef CC
+CC = gcc
+endif
 MACH = $(shell $(CC) -dumpmachine)
 MY_CPU = $(firstword $(subst -, ,$(MACH)))
 
@@ -83,7 +85,7 @@ endif
 HOST = $(shell gcc -dumpmachine)
 TGT = $(shell $(CC) -dumpmachine)
 ifneq ($(TGT),$(HOST))
-	PL_PATH=/usr/local/$(TGT)-gprolog
+	PL_PATH = /usr/local/$(TGT)-gprolog
 	GPLIB = $(PL_PATH)/gprolog-1.6.0/lib
 endif
 ifeq ($(PLATFORM),Darwin)
@@ -147,7 +149,8 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 #endif
 	PT =
 	VERS = $(subst .,,$(VERSION))
-
+	PL_PATH = /usr
+	GPLIB =
 #	TCLREF = $(TCLDIR)
 ifndef TCLINC
 	TCLINC = $(TCLREF)/include
