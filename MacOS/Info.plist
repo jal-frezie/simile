@@ -36,7 +36,7 @@
     <key>CFBundleSignature</key>
     <string>Ssme</string>
     <key>CFBundleGetInfoString</key>
-    <string>Simile v4.3</string>
+    <string>Simile v7.4</string>
     <key>CFBundleIconFile</key>
     <string>simile.icns</string>
     <key>CFBundleIdentifier</key>
@@ -48,14 +48,14 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>4.3</string>
+    <string>7.4</string>
     <key>CFBundleSignature</key>
     <string>SMTC</string>
     <key>CFBundleVersion</key>
-    <string>4.3</string>
+    <string>7.4</string>
     <key>LSRequiresCarbon</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>Simulistics Ltd. 2001-2005</string>
+    <string>Simulistics Ltd. 2001-2026</string>
 </dict>
 </plist>

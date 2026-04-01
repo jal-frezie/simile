@@ -90,12 +90,16 @@ if {$tcl_platform(os) ne "Linux" && $tclBitness==64} {
     append env(SYSDIR) 64
 }
 set libDir [file join $env(SYSDIR) lib]
+puts [info nameofexecutable]
+
 set use_system_tcltk 0 ;# use separately installed tcltk and tools
+# MacOS and Windows: tools are bundled iff running binary distro
 if {$tcl_platform(os) eq "Linux" || \
-	$tcl_platform(os) eq "Darwin" && $tclBitness==64 || \
+	$tcl_platform(os) eq "Darwin" && [info nameofexecutable] ne "Simile" || \
     	$tcl_platform(platform) eq "windows" && [file extension [info script]] ne ".exe"} {
     set use_system_tcltk 1
 }
+# Avoid system TclTk on MacOS, it's modtly broken and will be removed
 
 if {$use_system_tcltk} {
     set auto_path [linsert $auto_path 0 $libDir]
