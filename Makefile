@@ -619,6 +619,7 @@ install:
 		IOTools/edit_colour_key.tcl \
 		IOTools/inpoint.tcl \
 		IOTools/maps2.tcl \
+		IOTools/modeldiagram.tcl \
 		IOTools/sound.tcl \
 		IOTools/threedtools.tcl \
 		IOTools/textshow.tcl \

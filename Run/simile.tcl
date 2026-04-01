@@ -570,12 +570,8 @@ set graph(anality) "\ua9 [tr. {Copyright Simulistics Ltd.}] 2001-$year"
     -text [tr. "Simile"]
 .splash.c create text 250.0p 290.0p -font $graph(font) -fill #660066 -anchor s \
     -text "[format [tr. {Version %1$s}] $env(SIMILE_VERSION)$sendvars(simP)]"
-if {[catch {set regInfo $userinfo(name)}]} {
-    set regInfo [set userinfo(name) [tr. Anonymous]]
-}
-catch {append regInfo ", $userinfo(corp)"}
 .splash.c create text 250.0p 310.0p -font $graph(font) -fill #660066 -anchor s \
-    -text "[format [tr. {Registered to %1$s}] $regInfo]"
+    -text "Simile is Free Software"
 
 wm geometry .splash $startGeom
 
