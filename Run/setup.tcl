@@ -90,13 +90,12 @@ if {$tcl_platform(os) ne "Linux" && $tclBitness==64} {
     append env(SYSDIR) 64
 }
 set libDir [file join $env(SYSDIR) lib]
-puts [info nameofexecutable]
 
 set use_system_tcltk 0 ;# use separately installed tcltk and tools
 # MacOS and Windows: tools are bundled iff running binary distro
 if {$tcl_platform(os) eq "Linux" || \
 	$tcl_platform(os) eq "Darwin" && [info nameofexecutable] ne "Simile" || \
-    	$tcl_platform(platform) eq "windows" && [file extension [info script]] ne ".exe"} {
+    	$tcl_platform(platform) eq "windows" && [file tail [info nameofexecutable]] ne "simile.exe"} {
     set use_system_tcltk 1
 }
 # Avoid system TclTk on MacOS, it's modtly broken and will be removed
@@ -122,8 +121,7 @@ if {$use_system_tcltk} {
     if {[string equal Darwin $tcl_platform(os)]} {
 	lappend auto_path [file dirname $SIMILE_PATH]/Frameworks/Tcl.framework/Resources/Scripts [file dirname $SIMILE_PATH]/Frameworks/Tk.framework/Resources/Scripts
     } else {
-	lappend auto_path [file join $libDir tcl[info tclversion]] \
-	    [file join $libDir tk[info tclversion]]
+	lappend auto_path $tcl_library $tk_library ;# might work for Macos too
     }
 }
 
@@ -137,3 +135,4 @@ if {[file exists $custom(prefDir)/.layout]} {
 }
 
 set ::headless 1 ;# for R etc
+

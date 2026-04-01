@@ -15,7 +15,6 @@ proc load_c_stub_1 {node ap xd} {
 	cd $xd ;# prevents spurious error message finding 5d.dll on Win7/XP
     }
     set ::auto_path $ap
-    scan [info tclversion] {%d.%d} MAJ MIN
     package require -exact Ame_dll $::env(SIMILE_VERSION)
     # SeedRandoms $node [clock seconds]
     # no longer needed, it is done (better, in c) when initializing model
