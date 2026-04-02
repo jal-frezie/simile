@@ -94,7 +94,7 @@ set libDir [file join $env(SYSDIR) lib]
 set use_system_tcltk 0 ;# use separately installed tcltk and tools
 # MacOS and Windows: tools are bundled iff running binary distro
 if {$tcl_platform(os) eq "Linux" || \
-	$tcl_platform(os) eq "Darwin" && [info nameofexecutable] ne "Simile" || \
+	$tcl_platform(os) eq "Darwin" && [file tail [info nameofexecutable]] ne "Simile" || \
     	$tcl_platform(platform) eq "windows" && [file tail [info nameofexecutable]] ne "simile.exe"} {
     set use_system_tcltk 1
 }
@@ -118,11 +118,7 @@ if {$use_system_tcltk} {
 # location of executable
     set auto_path [list $libDir]
 # May need to reinstate this for non-system-tcl case to avoid msgcat err
-    if {[string equal Darwin $tcl_platform(os)]} {
-	lappend auto_path [file dirname $SIMILE_PATH]/Frameworks/Tcl.framework/Resources/Scripts [file dirname $SIMILE_PATH]/Frameworks/Tk.framework/Resources/Scripts
-    } else {
-	lappend auto_path $tcl_library $tk_library ;# might work for Macos too
-    }
+    lappend auto_path $tcl_library $tk_library
 }
 
 # read layout data now so scaling can be set before GUI started

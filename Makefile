@@ -409,16 +409,17 @@ $(RELAY): Run/relay.c
 	cd Run; $(GCCCMD) $(CFLAGS) -o ../$(RELAY) relay.c; cd ..
 
 # install used for packaging for distributions
+SIMILE_DIR = simile-$(MAJREL).$(MINREL)
 SHAREDIR = $(DESTROOT)/share
-SHARELEVEL = share/simile-$(MAJREL).$(MINREL)
+SHARELEVEL = share/$(SIMILE_DIR)
 
 INSTALL_TGT = $(DESTROOT)/$(SHARELEVEL)
 LIBDIR = $(DESTROOT)/lib
 # overridden by rpm build on Fedora 64-bit
-EXEC_TGT = $(LIBDIR)/simile-$(MAJREL).$(MINREL)
+EXEC_TGT = $(LIBDIR)/$(SIMILE_DIR)
 install:
 	mkdir -p "$(DESTDIR)"$(INSTALL_TGT); \
-	tar c eula.txt \
+	tar c \
 		Examples/BallBerry4a.sml \
 		Examples/control.sml \
 		Examples/forest.sml \
@@ -691,10 +692,9 @@ endif
 	mkdir -p "$(DESTDIR)"$(SHAREDIR)/man/man1
 	cp simile.1 "$(DESTDIR)"$(SHAREDIR)/man/man1
 	mkdir -p "$(DESTDIR)"$(EXEC_TGT)
-	tar c $(SYSDIR)/bin/relay \
+	tar c $(RELAY) \
 		$(LAUNCHER) \
 		$(PROLOGSTATE) \
-		$(PROLOG_DB) \
 		$(SYSDIR)/lib/can2svg1.2/can2svg.tcl \
 		$(SYSDIR)/lib/can2svg1.2/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
@@ -717,7 +717,7 @@ ifeq ($(PROLOG),SWI)
 endif
 	mkdir -p "$(DESTDIR)"$(DESTROOT)/bin
 	cd "$(DESTDIR)"$(DESTROOT)/bin; \
-	ln -s ../..$(EXEC_TGT)/$(LAUNCHER)
+	ln -s ../$(notdir $(LIBDIR))/$(SIMILE_DIR)/$(LAUNCHER)
 # endif
 
 uninstall:
