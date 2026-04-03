@@ -95,7 +95,7 @@ set use_system_tcltk 0 ;# use separately installed tcltk and tools
 # MacOS and Windows: tools are bundled iff running binary distro
 if {$tcl_platform(os) eq "Linux" || \
 	$tcl_platform(os) eq "Darwin" && [file tail [info nameofexecutable]] ne "Simile" || \
-    	$tcl_platform(platform) eq "windows" && [file tail [info nameofexecutable]] ne "simile.exe"} {
+    	$tcl_platform(platform) eq "windows" && [file tail [info nameofexecutable]] ne "Simile.exe"} {
     set use_system_tcltk 1
 }
 # Avoid system TclTk on MacOS, it's modtly broken and will be removed
