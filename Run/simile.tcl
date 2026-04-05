@@ -400,7 +400,7 @@ proc GrowImage {fCol mw mh {ysense {1}}} {
     # puts "Growing from $srcWidth $srcHeight to $mw $mh rats $xrat $yrat"
     image create photo spare3
     spare3 blank
-    if {$::tcl_platform(os) eq "Darwin"} {
+    if {!$::use_system_tcltk} {
 	# have added my own code to zoom/subsample properly
 	spare3 copy $fCol -zoom [lindex $xrat 0] [lindex $yrat 0] \
 	    -subsample [lindex $xrat 1] [expr {$ysense*[lindex $yrat 1]}]
