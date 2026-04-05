@@ -1493,7 +1493,9 @@ proc DoWelcomeDialog {dtId} {
     wopen read "../Images/Toolbar/open.gif"
     image create photo wnew
     wnew read "../Images/Toolbar/new.gif"
-    pack [ttk::label .register.welcome -image welcome] -anchor w
+    pack [ttk::label .register.welcome -image welcome -compound left \
+	      -text "Simile is free software.\nSee Help -> About for details"] \
+	-anchor w
     
     TitleFrame .register.create -text "Creating a model: "
     set create [GetFrame .register.create]
@@ -1944,13 +1946,31 @@ proc ShowAbout {winId} {
     }
     
     set gen [ttk::frame .about.fr.gen]
-    set service "Simile is Free Software. See "
+    set service "This program is free software: you can redistribute it and/or modify \
+it under the terms of the GNU General Public License as published by \
+the Free Software Foundation, either version 3 of the License, or \
+(at your option) any later version.
 
-    pack [ttk::label $gen.visit -text $service \
-	      -font "-family helvetica"] -side left
-    pack [ttk::label $gen.www -text www.simulistics.com -relief flat \
-            -font "-underline true -family helvetica" -foreground blue -cursor hand2] -pady 2 -side left
-    bind $gen.www <Button-1> "VisitUrl http://www.simulistics.com/"
+This program is distributed in the hope that it will be useful, \
+but WITHOUT ANY WARRANTY; without even the implied warranty of \
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the \
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License \
+along with this program.  If not, see"
+    set linkText " www.gnu.org/licenses"
+
+    pack [text $gen.visit -font "-family helvetica" -wrap word -height 11] \
+	-side left
+    $gen.visit insert end $service$linkText
+    $gen.visit tag add href "end - [string length $linkText] chars" end
+    $gen.visit tag configure href -foreground blue -underline 1
+    $gen.visit tag bind href <Enter> [list $gen.visit configure -cursor hand1]
+    $gen.visit tag bind href <Leave> \
+	[list $gen.visit configure -cursor \
+	     [lindex [$gen.visit configure -cursor] 3]]
+    $gen.visit tag bind href <Button-1> "VisitUrl https://www.gnu.org/licenses"
+    $gen.visit configure -state disabled
     pack $gen -padx 4 -pady 2
     
 #    label .about.lower -image dripl
@@ -1982,74 +2002,6 @@ proc GetLatestVers {} {
 }
 # images must be global because if building a c++ program we may be in a different directory
 #set bwVers [package require BWidget]
-
-proc ShowExpiryImminent {expTime left} {
-    toplevel .expiry
-    #    wm transient .expiry $winId
-    if {$left<0} {
-	wm title .expiry "Expiry passed"
-    } else {
-	wm title .expiry "Expiry imminent"
-    }
-    wm protocol .expiry WM_DELETE_WINDOW {set ack 1}
-
-    global tcl_platform
-    switch [tk windowingsystem] {
-        win32 {wm attributes .expiry -toolwindow true}
-    }
-    
-    set labf1 [frame .expiry.labf1]
-    pack [label $labf1.img -image $::iconImages(warning)] -side left
-    pack [label $labf1.lab1 -text "Warning:" \
-            -font {-weight bold -family helvetica -size 10}] -side left
-    if {$left<0} {
-	set predicament "has expired."
-    } else {
-	set predicament "will shortly expire."
-    }
-    pack [label $labf1.lab2 -text "This product $predicament" \
-            -font {-family helvetica -size 10}] -side left
-    pack $labf1 -padx 8 -pady 2
-    
-    set curVers [GetLatestVers]
-    if {$curVers} {
-	pack [label .expiry.lab2a -text [format [tr. {Latest available version is %1$s}] $curVers]]
-    }
-
-    set labf2 [frame .expiry.labf2]
-    pack [label $labf2.lab1 -text "Please visit" -font {-family helvetica -size 10}] -side left
-    pack [set www [label $labf2.lab2 -text "www.simulistics.com" \
-            -fg blue -cursor hand2 -font {-underline true -family helvetica -size 10}]] -side left
-    bind $www <Button-1> {VisitUrl "http://www.simulistics.com/"}
-    if {$left<0} {
-    } else {
-    pack [label $labf2.lab3 -text "before" -font {-family helvetica -size 10}] -side left
-    pack [label $labf2.lab4 -text [clock format $expTime -format {%d %h %Y}] \
-            -font {-family helvetica -size 10}] -side left
-    }
-    pack [label $labf2.lab5 -text "to upgrade." -font {-family helvetica -size 10}] -side left
-    pack $labf2 -padx 8 -pady 2
-    
-    set buttons [frame .expiry.buttons]
-    pack [button $buttons.ok -text [tr. OK] -width 10 \
-            -command {set ack 1}] \
-            -side left -padx 4 -pady 4
-    pack [button $buttons.help -text [tr. Help] -width 10 \
-            -command {ContextSensitiveHelp .expiry coviewexpiry.htm}] \
-            -side left -padx 4 -pady 8
-    pack $buttons
-    
-    set height [winfo reqheight .expiry]
-    set width [winfo reqwidth .expiry]
-    set sheight [winfo screenheight .expiry]
-    set swidth [winfo screenwidth .expiry]
-    wm geometry .expiry +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-    wm withdraw .splash
-    UpdateByOS
-    
-    tkwait variable ack
-    destroy .expiry
-}
 
 proc TrackSize {canvas item} {
     $canvas itemconfig $item -width [winfo width $canvas]
