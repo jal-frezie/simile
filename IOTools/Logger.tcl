@@ -5,7 +5,7 @@ set newHelperClass DataLogger20111205
 oo::class create iotool::$newHelperClass {
     superclass iotool::Helper
 
-    variable curFile useNodes
+    variable curFile useNodes winId modelInst
 
     self {
 	method identify {} {
@@ -20,11 +20,11 @@ oo::class create iotool::$newHelperClass {
         set useNodes(removeImg) \
 	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/remove.gif"]
 	set toolbarItems \
-                [list [list new.gif "Clear" [code $this Clear]] \
+	    [list [list new.gif "Clear" [namespace code [list my Clear]]] \
                 [list add.gif "Add variables" \
-                [code $this AddVariable]] \
+		     [namespace code [list my AddVariable]]] \
                 [list slider.gif "Add all variables" \
-                [code $this AddAllVariables /]]]
+		     [namespace code [list my AddAllVariables /]]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
 	set useNodes(logged) {}
         set frameZone [DIYMakeFrames $winId]
@@ -32,22 +32,22 @@ oo::class create iotool::$newHelperClass {
 	#	set f [join [lrange [split $f .] 0 end-1] .]
 	# remove last level not needed as null leaf no longer made
 	pack [::ttk::button $f.head.save -image $::iconImages(save) \
-		  -command [code $this SetSaveFile]] \
+		  -command [namespace code [list my SetSaveFile]]] \
 	    -before $f.head.label -side right
 	pack [message $winId.message -text {}]
-	BindPopup $f.head.label logs_$this
+	BindPopup $f.head.label logs_[self]
 	BindPopup $f.head.save [tr. {Select file or database for saving}]
 	
 	if {[string length $state]} { ;# we are restoring 
 	    #puts $state
 	    package require xml
 	    set hsfParser [::xml::parser -ignorewhitespace true \
-				-elementstartcommand [code $this StartElement] \
-				-characterdatacommand [code $this Stuff]]
+			       -elementstartcommand [namespace code [list my StartElement]] \
+			       -characterdatacommand [namespace code [list my Stuff]]]
 	    $hsfParser parse $state
 	} else {
 	    # new instance so request data from model
-	    SetSaveFile
+	    my SetSaveFile
 	    $winId.message configure \
 		-text "Use + button to add components for logging"
 	}
@@ -55,7 +55,7 @@ oo::class create iotool::$newHelperClass {
     }
 
     destructor {
-	CloseAllFiles
+	my CloseAllFiles
     }
 
     method Reset {} {
@@ -65,21 +65,21 @@ oo::class create iotool::$newHelperClass {
 		# if filename can be incremented do so, otherwise prompt for new
 		if {[regexp {(.*[^0-9])([0-9]*[0-8][0-9]*)(\.[^\.]*)$} \
 			 $curFile all base seq ext]} {
-		    SetSaveFileTo [append nextFile $base [incr seq] $ext]
+		    my SetSaveFileTo [append nextFile $base [incr seq] $ext]
 		} else {
-		    SetSaveFile
+		    my SetSaveFile
 		}
 	    }
 	}
     }
     
-    method Click {path} {
+    method click {path} {
         switch [GetState $winId] {
             adding_inputs {
                 if {[string equal SUBMODEL [$modelInst getModelClass $path]]} {
-                    set success [AddAllVariables $path]
+                    set success [my AddAllVariables $path]
                 } else {
-                    set success [InsertLogEntry $path 1]
+                    set success [my InsertLogEntry $path 1]
                 }
                 if {[llength $success]} {
                     $winId.message configure -text {}
@@ -89,15 +89,15 @@ oo::class create iotool::$newHelperClass {
 	}
     }
 
-    method Display {time dispInt step} {
+    method display {time dispInt step} {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
-	UpdateCombined $time
+	my UpdateCombined $time
     }
 
-    method PrepareSaveString {} {
-	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
+    method prepareSaveString {} {
+	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[self class]\">\n"
 	set shfPath [GetPathChoice .shf [$modelInst getNode]]
 	if {[catch {::fileutil::relative $shfPath $curFile} relFile]} {
 	    #puts $relFile
@@ -112,6 +112,7 @@ oo::class create iotool::$newHelperClass {
 	    append State <component>$item</component>\n
 	}
 	append State </components>\n</hsf>\n
+	SetState $winId $State
     }
 	
 # end of methods called by simile
@@ -119,7 +120,7 @@ oo::class create iotool::$newHelperClass {
     method AddVariable {} {
         $winId.message configure -text "Click on a variable to allow its values to be logged."
         SetState $winId adding_inputs
-        $modelInst grabClicks $this
+        $modelInst grabClicks [self]
     }
     
     method InsertLogEntry {title nest} {
@@ -141,9 +142,9 @@ oo::class create iotool::$newHelperClass {
 	pack [label $f.caption -text [lindex $levels end]: -bg $lbg] -side left
 	pack [::ttk::entry $f.value] -side left -fill x -expand 1
 	set useNodes(ticker,$title) $f
-	FillTicker $title [$modelInst getValue $title]
+	my FillTicker $title [$modelInst getValue $title]
 	pack [::ttk::button $f.remove -image $useNodes(removeImg) \
-		  -command [code $this Remove $title]] -side right
+		  -command [namespace code [list my Remove $title]]] -side right
 	return yes
     }
 
@@ -151,7 +152,9 @@ oo::class create iotool::$newHelperClass {
         foreach node [GetObjectList] {
             set title [GetCaptionPathFromId $node]
             if {[string first $prefix $title]==0} {
-		InsertLogEntry $title 1
+		if {[$modelInst getModelClass $title] ne "SUBMODEL"} {
+		    my InsertLogEntry $title 1
+		}
             }
 	}
     }
@@ -166,7 +169,7 @@ oo::class create iotool::$newHelperClass {
     
     method Clear {} {
 	foreach title $useNodes(logged) {
-	    Remove $title
+	    my Remove $title
 	}
     }
 
@@ -182,13 +185,13 @@ oo::class create iotool::$newHelperClass {
 	}
 	if {[info exists curFile] && [string equal $curFile $newFile] || \
 		![string length $newFile]} return
-	SetSaveFileTo $newFile
+	my SetSaveFileTo $newFile
     }
 
     method SetSaveFileTo {newFile} {
-	CloseAllFiles
+	my CloseAllFiles
 	set curFile $newFile
-	set ::msgs(logs_$this) [format [tr. {Current data sink: %1$s}] $curFile]
+	set ::msgs(logs_[self]) [format [tr. {Current data sink: %1$s}] $curFile]
 # don't write current values, reset does this anyway
 #	if {[llength $useNodes(logged)]} {
 #	    Display [$modelInst GetCurrentTime] 1 1 ;# write current vals
@@ -212,7 +215,7 @@ oo::class create iotool::$newHelperClass {
 		set useNodes(common_stm) [open $curFile w]
 		set hdrs Time
 		foreach path $useNodes(logged) {
-		    PutIndexCombos hdrs [$modelInst getValue $path] "" \
+		    my PutIndexCombos hdrs [$modelInst getValue $path] "" \
 			[file tail $path]
 		}
 		puts $useNodes(common_stm) [::csv::join $hdrs $brkr]
@@ -224,7 +227,7 @@ oo::class create iotool::$newHelperClass {
 	    set vals $time
 	    foreach path $useNodes(logged) {
 		set toLog [$modelInst getValue $path]
-		FillTicker $path $toLog
+		my FillTicker $path $toLog
 		PutValsOnly vals $toLog
 	    }
 	    puts $useNodes(common_stm) [::csv::join $vals $brkr]
@@ -234,7 +237,7 @@ oo::class create iotool::$newHelperClass {
 	    if {[lsearch $tList $curTab] == -1} {
 		set sqlStr "CREATE TABLE `$curTab` (`Time"
 		foreach path $useNodes(logged) {
-		    PutIndexCombos sqlStr [$modelInst getValue $path] \
+		    my PutIndexCombos sqlStr [$modelInst getValue $path] \
 			"` text, `" [file tail $path]
 		}
 		append sqlStr "` text)"
@@ -243,14 +246,14 @@ oo::class create iotool::$newHelperClass {
 	    # now add a row of values
 	    set sqlStr "INSERT INTO `$curTab` (`Time"
 	    foreach path $useNodes(logged) {
-		PutIndexCombos sqlStr [$modelInst getValue $path] \
+		my PutIndexCombos sqlStr [$modelInst getValue $path] \
 		    "`, `" [file tail $path]
 	    }
 	    append sqlStr "`) VALUES ("
 	    set sqlSubStr $time
 	    foreach path $useNodes(logged) {
 		set toLog [$modelInst getValue $path]
-		FillTicker $path $toLog
+		my FillTicker $path $toLog
 		PutValsOnly sqlSubStr $toLog
 	    }
 	    append sqlStr [::csv::join $sqlSubStr $brkr] 
@@ -263,7 +266,7 @@ oo::class create iotool::$newHelperClass {
 	upvar 1 $pstr str
 	if {[string is list $val] && [llength $val]>1} {
 	    foreach {idx elt} $val {
-		PutIndexCombos str $elt $sep \
+		my PutIndexCombos str $elt $sep \
 		    [join [concat [split $gone /] [list $idx]] /]
 	    }
 	} elseif {$sep ne ""} {
@@ -302,22 +305,23 @@ oo::class create iotool::$newHelperClass {
     }
 
     method Stuff {contents} {
+	if {[string trim $contents]==""} return ;# failure to ignore whitespace
 	set node [$modelInst getNode]
 	switch $useNodes(inElt) {
 	    target_file {
 		if {$useNodes(fileMode) eq "relative"} {
 		    set shfPath [GetPathChoice .shf $node]
-		    SetSaveFileTo [file normalize \
+		    my SetSaveFileTo [file normalize \
 				       [file join $shfPath $contents]]
 		    #puts "joined $shfPath and $contents to get $curFolder"
 		} else {
-		    SetSaveFileTo $contents
+		    my SetSaveFileTo $contents
 		}
 	    } component {
 		set updated [::gen3d1::VerifyVariables $node \
-				 [Identify] [list $contents]]
+				 [[self class] identify] [list $contents]]
 		if {[llength $updated]} {
-		    InsertLogEntry [lindex $updated 0] 1
+		    my InsertLogEntry [lindex $updated 0] 1
 		}
 	    }
 	}
