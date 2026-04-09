@@ -90,7 +90,7 @@ ifneq ($(TGT),$(HOST))
 endif
 ifeq ($(PLATFORM),Darwin)
 	DESTROOT = /usr/local
-	SYSDIR = System$(BITEXTN)
+#	SYSDIR = System$(BITEXTN)
 	OSNUMBER = $(shell uname -r)
 	TCLFW = ../Frameworks/Tcl.framework
 ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
@@ -127,7 +127,7 @@ endif
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
-	SYSDIR = System$(BITEXTN)
+#	SYSDIR = System$(BITEXTN)
 #ifeq ($(MY_CPU),x86_64)
 #	TCLDIR =  /usr/local
 #	PL_PATH = /c/gnu-prolog-64

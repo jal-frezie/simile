@@ -86,9 +86,9 @@ if {[info exists tcl_platform(pointerSize)]} {
 
 # Set location of Tcl extension packages
 set env(SYSDIR) [file join $SIMILE_PATH System]
-if {$tcl_platform(os) ne "Linux" && $tclBitness==64} {
-    append env(SYSDIR) 64
-}
+#if {$tcl_platform(os) ne "Linux" && $tclBitness==64} {
+#    append env(SYSDIR) 64
+#}
 set libDir [file join $env(SYSDIR) lib]
 
 set use_system_tcltk 0 ;# use separately installed tcltk and tools
