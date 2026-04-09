@@ -374,6 +374,8 @@ set msgs(web_fail_message) [tr. {Communication with a web service is required bu
 set msgs(web_fail_full) [tr. {The web access command returned the following exception: "%1$s"}]
 set msgs(xml_trade_fail_title) [tr. {Bad XML model description}]
 set msgs(xml_trade_fail_message) [tr. {The Webflow service failed to convert this file between an XML model description and a set of Prolog-format model declarations. Please try using the service via your browser to see a full error diagnosis.}]
+set msgs(windowsPrintFail_title) [tr. {Print command result}]
+set msgs(windowsPrintFail_message) [tr. {Printing requires TclTk at least version 9.0}]
 set msgs(linuxPrintFail_title) [tr. {Print command result}]
 set msgs(linuxPrintFail_message) [tr. {Printing seems to have failed.}]
 set msgs(linuxPrintFail_detail) [tr. {The result returned by the print command was:

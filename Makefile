@@ -197,7 +197,7 @@ LAUNCHER = $(EXECDIR)/simile
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
 simile: $(LAUNCHER) $(PROLOGSTATE) $(RELAY) $(SUPP) \
-	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(MAIN)
+	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK)
 
 $(LAUNCHER): Run/launch.tcl
 	mkdir -p $(EXECDIR)

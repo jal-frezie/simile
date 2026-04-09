@@ -147,10 +147,10 @@ if {[string match windows $tcl_platform(platform)]} {
     #    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
     
     #   pkg_mkIndex ../System/lib/Extras
-    if {![package vsatisfies 9.0 [info tclversion]]} {
-	source $libDir/Extras/prntcanv.tcl
-	source $libDir/Extras/prntproc.tcl ;# needed for eqn listings
-    }
+    #if {![package vsatisfies 9.0 [info tclversion]]} {
+#	source $libDir/Extras/prntcanv.tcl
+#	source $libDir/Extras/prntproc.tcl ;# needed for eqn listings
+    #}
     # Make Simile a DDE server under Windows. Jonathan autotesting
     # Must be after the sourcing or Simile fails
     # package require dde 1
@@ -2173,6 +2173,10 @@ proc PrintNow {winId} {
     if {[package vsatisfies 9.0 [info tclversion]]} {
 	tk print $winId
     } elseif {[string match windows $tcl_platform(platform)]} {
+	Query windowsPrintFail warning top $winId {ok}
+	return
+
+	# previous method using printer package
         set oldDir [pwd] ;# apparently printing can change directory
         package require gdi
         package require printer
