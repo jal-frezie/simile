@@ -745,44 +745,6 @@ proc TellAllHelpers {node payload doAll fun args} {
     return $failure
 }
 
-# Other stuff related to reorganization. This only used if in a separate process
-#proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
-#    global myNode ;# a stopgap, we shouldn't need it
-#    global custom runState simtmpdir sender tcl_platform runHow
-#
-#    set myNode $nMyNode
-#    set simtmpdir $nSimtmpdir
-#    set sender $nSender
-#    set runHow(return) $nRunHow
-#
-#    if {[string equal windows $tcl_platform(platform)]} {
-#	source ../System/lib/Extras/prntcanv.tcl
-#	# needed to copy helper canvasses
-#	package require dde
-#	dde servername exec_for_$myNode
-#	wm iconbitmap . -default ../Run/simile16.ico
-#    } else {
-#	tk appname exec_for_$myNode
-#    }
-#    set custom(prefDir) [file dirname $nSimtmpdir]
-##    set env(LD_LIBRARY_PATH) [file dirname [info library]]
-##    ShowMess debug info $env(LD_LIBRARY_PATH) ok
-#    load_c_stub_1
-#    load_c_stub_2
-#
-#    set runState($nMyNode,modelRunning) 0
-#    LoadIconImages
-#    if {![info exists runHow(where)]} {
-#	MakeHelperMenu
-#    }
-#    wm withdraw .
-#
-#    if {[string equal get_data $readPipe]} {
-#	fileevent stdin readable EatInput
-#    }
-#    do_in_editor set runState($myNode,modelReady) 1
-#}
-#
 proc EatInput {} {
     gets stdin blether
     eval [join $blether \n]
@@ -1627,79 +1589,6 @@ proc EnableTools {group} {
 	}
     }
 }
-
-# this gets rid of a c program that has been loaded into
-# the interpreter, to allow a new one to replace it --
-# loadmodel with no args unloads model (this crashes Windows)
-
-proc remove_c_model {} {
-    # The following is not done cos it removes the stub as well
-    #    package forget ame_dll
-    #
-    #    foreach c_command {c_resetmodel c_evalmodel c_updatemodel c_exitmodel \
-    #	    getvalue getnodeid listobjects} {
-    #	rename $c_command {}
-    #    }
-}
-
-# FindPhase tells us when a node in a separate submodel will be
-# available. The submodel indicates this by its eval phase. If DERIVED, INPUT
-# or TABLE it can be used any time; if EXOGENOUS we must wait till that
-# submodel has been called. If it is in a nested submodel, then it is
-# usable after the phase in which the submodel is executed, or after
-# its own phase if that is SPLIT. -1 means node not found.
-
-# Note that because the top level model dll may not yet be loaded, we have
-# to set model_id to the model we are searching in (model_ids keeps track of
-# dlls loaded so far)
-
-# Out of use because v5 does not need separate submodels
-# proc FindPhase {node submodel} {
-#     global model_id myNode model_ids
-# 
-#     set model_id($myNode) $model_ids($submodel)
-#     foreach subnode [listobjects $model_id($myNode)] {
-# 	if {[string equal $subnode $submodel]} continue
-#         set subtype [lindex {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST} \
-# 			 [getvalue $model_id($myNode) $subnode 2]]
-#         if {[string match $node $subnode]} {
-#             if {[string match EXOGENOUS $subtype]} {
-#                 return 1
-#             } else {
-#                 return 0
-#             }
-#         }
-#         if {[getvalue $model_id($myNode) $subnode 1]==4} { ;# EXTERNAL
-#             lappend subs [list $subnode $subtype]
-#         }
-#     }
-#     foreach nodeTypePair $subs {
-#         set subFind [FindPhase $node [lindex $subs 0]]
-# 
-#         if {$subFind != -1} {
-#             switch [lindex $subs 1] {
-#                 EXOGENOUS {
-#                     return 1
-#                 } DERIVED {
-#                     return 0
-#                 } SPLIT {
-#                     return $subFind
-#                 }
-#             }
-#         }
-#     }
-#     return -1
-# }
-# 
-# procedures to handle graph data
-
-#proc insert_graph_data {graph_data_pointer xlow xhigh xspan ylow yhigh yspan \
-\#            xsize array_data} {
- #   variable graphdata
- #   set $graph_data_pointer [format "%f %f %d %f %f %d %d %s" \
- \#           $xlow $xhigh $xspan $ylow $yhigh $yspan $xsize $array_data]
-#}
-
 
 proc SampleFrom {a} {
     if {[llength $a] == 1} {

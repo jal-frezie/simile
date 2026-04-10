@@ -663,5 +663,5 @@ uninstall:
 
 # call clean after changing license info in this file
 clean: clean-prolog
-	rm -f $(RELAY) Run/$(CRYPTOBJ) $(SUPP) $(LAUNCHER) \
+	rm -f $(RELAY) $(SUPP) $(LAUNCHER) \
 		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(MAIN)

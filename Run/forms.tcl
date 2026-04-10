@@ -852,26 +852,6 @@ proc ClearBG {posRBs} {
     }
 }
 
-#proc OldAddEnumType {fr} {
-#    global addenumtype tcl_platform
-#    PutItThere .typeadder $fr
-#    pack [frame .typeadder.what]
-#    pack [label .typeadder.what.l -text Name:] -side left
-#    pack [entry .typeadder.what.e -textvariable addenumtype(name)] -side left
-#    pack [frame .typeadder.btns]
-#    pack [button .typeadder.btns.ok -text OK \
-#            -command "set addenumtype(done) 1"] -side left
-#    pack [button .typeadder.btns.cancel -text Cancel \
-#            -command "set addenumtype(done) 0"] -side left
-#    grab .typeadder
-#    tkwait variable addenumtype(done)
-#    grab release .typeadder
-#    if {$addenumtype(done)} {
-#        $fr.scrf insert end $addenumtype(name)
-#    }
-#    PackItUp .typeadder
-#}
-#
 proc AddEnumTypeMems {fr} {
     global disaggregate
     set togo [$fr.listpair.typef.scrf curselection]
@@ -2748,21 +2728,6 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     set ProbWin .bprob[clock clicks]
     PutItThere $ProbWin [ChooseParent $parent [set oldFocus [focus]]]
 
-#    switch $fault {
-#        user {
-#            set Title "Problem with model"
-#            set errLevel warning
-#            set buttonCmd {ContextSensitiveHelp $ProbWin run/index.htm}
-#        } system {
-#            set Title "Build failure"
-#            set errLevel error
-#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
-#        } tcl {
-#            set Title "User interface problem"
-#            set errLevel error
-#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
-#        }
-#    }
     wm title $ProbWin $Title
     switch [tk windowingsystem] {
         win32 {wm attributes $ProbWin -toolwindow true}

@@ -1079,42 +1079,6 @@ proc equationCancel {} {
     set equation(done) 0
 }
 
-#proc equationClick { lb y } {
-#    global equation
-#    
-#    if {$equation(selected,$lb)==$y} {
-#        equationRight $lb $y
-#    } else {
-#        ListEditDone
-#        set equation(selected,$lb) -1
-#        after 500 [list set equation(selected,$lb) $y]
-#    }
-#}
-#
-#proc equationRight { lb y } {
-#    global equation
-#    ListEditDone
-#    if {$equation(done) == 2} {
-#        # If an entry has already been edited, dont try to start editing another one
-#        # because Prolog has to use the value entered for the old one first
-#        return
-#    }
-#    set widget [GetFrame $equation(main).bottom.influences]
-#    set ebox $widget.lists.e
-#    set equation(lbid) $lb
-#    set equation(ckLine) [$lb nearest $y]
-#    entry $ebox -textvariable equation(listedit)
-#    set equation(listedit) [$lb get $equation(ckLine)]
-#    place $ebox -in $lb \
-#            -rely [expr 1.0*$equation(ckLine)/$equation(listlength)] \
-#            -relwidth 1
-#    $ebox configure -font [$lb cget -font]
-#    $ebox select from 0
-#    $ebox select to end
-#    focus $ebox
-#    bind $ebox <Return> ListEditDone
-#}
-#
 proc ListEditDone {w line type} {
     global equation
 

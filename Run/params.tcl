@@ -1045,40 +1045,7 @@ namespace eval fileparams {
 		$pStr /$smPath {}
 	    puts $pStr {</submodel>}
 	    puts $pStr {</spf>}
-#            foreach compName [array names outNames $smPath*] {
-#		set compTail [string range $compName [string length $smPath] end]
-#                set SubbedComp [StripCrs $compTail]
-#                set newPopup  "Specified by $metaFile"
-#                if {[ReferenceWorks $compName]} {
-#                    set relName [Relativize $metaFile \
-#                            [lindex $paramState($compName) 0]]
-#                    puts $pStr "$SubbedComp=reference=[lreplace \
-#                            $paramState($compName) 0 0 $relName]"
-#                    set msgs(param_source_$compName) [concat $newPopup \
-#                            (reference to $relName)]
-#                } else {
-#                    puts $pStr "$SubbedComp=literal=$suppliedData($compName)"
-#                    set msgs(param_source_$compName) "$newPopup (literal)"
-#                }
-#            }
-#            close $part
             close $pStr
-#            set PartType "application/x-simile"
-#            set Description "Simile parameter file"
-#            set style attachment
-#            set newMime [mime::initialize -canonical $PartType \
-#                    -header [list "Content-Disposition" $style] \
-#                    -header [list "Content-Description" $Description] \
-#                    -header [list "Simile-Version" $env(SIMILE_VERSION)] \
-#                    -header [list "Simile-Origin" file-param-dialogue] \
-#                    -file $part]
-#            set stream [NetOpen $metaFile w]
-#            fconfigure $stream -translation binary
-#            mime::copymessage $newMime $stream
-            # clean everything up
-#            close $stream
-#            mime::finalize $newMime
-#            file delete $part
         }
     }
     

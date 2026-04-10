@@ -1380,18 +1380,6 @@ foreach oldCProc {setparamelement settimepointelement settimepointarray \
     }
 }
 
-#proc c_setparamelement {tgtNode args} {
-#    global param_id
-#
-#    return [eval [list newc_setparamelement $param_id($tgtNode)] $args]
-#}
-#
-#proc c_settimepointelement {tgtNode args} {
-#    global param_id
-#
-#    return [eval [list newc_settimepointelement $param_id($tgtNode)] $args]
-#}
-#
 proc ParamsFromGUI {inst} {
     # not used as it causes a deadly embrace
     global masterId instance_id

@@ -30,16 +30,6 @@ source [file join $SIMILE_PATH Run setup.tcl]
 
 set execDir [file join $env(SYSDIR) bin]
 
-#if {[string match windows $tcl_platform(platform)]} {
-#    package require dde 1.2
-#    set runHow(sendOp) {dde eval}
-#} else {
-#    set runHow(sendOp) send
-#}
-#set oldProc Simile
-#set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
-#
-
 proc ChooseIntegerRatio {fraction accu} {
     set m 0
     while {1} {
@@ -56,24 +46,7 @@ proc ChooseIntegerRatio {fraction accu} {
         incr m
     }
 }
-
-#proc ChooseIntegerRatio {fraction accu} {
-#    set m 1
-#    while {1} {
-#	if {$m<$fraction} {
-#	    set d 1
-#	} else {
-#	    set d [expr {round($m/$fraction)}]
-#	}
-#	# set d [max round($m/$fraction) 1]
-#	set close [expr $m/($fraction*$d)]
-#	if {$close >= $accu && $close <= 1/$accu} {
-#	    return [list $m $d]
-#	}
-#	incr m
-#    }
-#}
-#	
+	
 set headless [catch {package require Tk}]
 # set env(prologId) gnu ;# goodbye forever Sicstus
 if {[info exists prolog_in_console]} {

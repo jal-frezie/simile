@@ -195,24 +195,6 @@ proc Relativize  {current remote} {
     return $alt
 }
 
-#proc Relativize {current remote} {
-#    #	ShowMess debug info "relativizing $current $remote" ok
-#    set currentList [file split $current]
-#    set remoteList [file split $remote]
-#    set parted 0
-#    set base {}
-#    for {set sameCount 0} {$sameCount < [llength $currentList]} {incr sameCount} {
-#        if {$parted} {
-#            lappend base ..
-#        } elseif {[string compare [lindex $currentList $sameCount] \
-#                    [lindex $remoteList $sameCount]]} {
-#            set tail [lrange $remoteList $sameCount end]
-#            set parted 1
-#        }
-#    }
-#    return [eval {file join} $base $tail]
-#}
-
 # reverses the above
 proc Relate {startPt offset} {
     if {[file pathtype $offset] eq "relative"} {

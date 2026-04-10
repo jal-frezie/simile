@@ -17,12 +17,6 @@ set cornerPts 12
 #set faceAngle [expr $pi/2/$cornerPts]
 set splinePts [expr {2*$cornerPts+1}]
 
-#set expansion [expr (1 - cos($faceAngle/2))/2]
-#for {set pt 1} {$pt < $cornerPts} {incr pt} {
-#    lappend arcPts [expr 1-(1+$expansion)*cos($faceAngle*$pt)]
-#}
-#lappend arcPts [expr 1-$expansion*(1-[lindex $arcPts end])/[lindex $arcPts 0]]
-
 if {!$headless} {
 #    set preloadFont [expr {$niceSize/12.0}]
     switch [tk windowingsystem] {
@@ -36,14 +30,6 @@ if {!$headless} {
     }
 }
 
-#proc GetPoints {lo rad} {
-#    global arcPts
-#    foreach pt $arcPts {
-#        lappend result [expr $lo+$pt*$rad]
-#    }
-#    return $result
-#}
-#
 proc GetObjectSize {w type fatness} {
     global looks window_info
     return [expr [Scale $w $looks($window_info($w,top_node),$type,objectsize)]*$fatness/100.0]
@@ -94,8 +80,6 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     set fCol $::looks($::window_info($w,top_node),compartment,fill)
     set width [GetLineSize $w compartment $fatness]
     
-#    $w create rectangle $ml $mt $mr $mb -outline {} -fill $fCol \
-#	-tags "$tagSet has_info"
     set mid [expr {($mt+$mb)/2.0}]
     set breadth [expr {$mb-$mt}]
     eval {$w create line $ml $mid $mr $mid -fill $fCol -width $breadth} \
@@ -381,7 +365,6 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     $w create arc [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
             [expr (2*$mb + $mt)/3] -width $width \
             -style arc -start -10 -extent 225 -outline $oCol -tags $tagSet
-#    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutImage { w l t r b stack fatness density colourScheme tagSet} {
@@ -415,7 +398,6 @@ proc PutImage { w l t r b stack fatness density colourScheme tagSet} {
 	$w create line $ax $ay $ax [expr {$ay+1}] -width 6 \
 	    -capstyle projecting -tags [concat $tagSet /handle/ /$anchor/]
     }
-#    ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
 }
 
 proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
@@ -1051,14 +1033,6 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     }
     set fontData [ExtractFontData $looks($n,$type,font)]
     set realFont [Scale $w [lindex $fontData 3]*$fatness/100]
-#    if {$::tcl_platform(platform) eq "windows"} {
-#	set realFont [expr {$realFont/$::defScaling}] ;# cos windows applies it
-#    }
-#    if {$realFont<10} {
-#        set closeFont 10
-#    } else {
-#        set closeFont [expr round($realFont)]
-#    }
     set useFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
 		     [lindex $fontData 2] [expr {round($::preloadFont*$realFont)}]]
     set textX [Scale $w [expr [lindex $ptz 0] + $looks($n,$type,xoffset)*$fatness/100]]
@@ -1249,34 +1223,10 @@ proc FlashSymbol {w name outlineColor textColor selected} {
     }
 }
 
-#proc FillSymbol { w name color } {
-#    foreach object [$w find withtag $name] {
-#	set tags [$w gettags $object]
-#	if {[lsearch "rectangle oval polygon" [$w type $object]]!=-1 && \
-#		![string match *_text/* $tags] && \
-#		![string match */background/* $tags]} {
-#	    $w itemconfigure $object -outline $color -fill $color
-#        }
-#    }
-#}
-
 # In order for the SVG generation to work properly, we have to do draw
 # things the right colour first time, rather than itemconfig them
 # afterwards. So just get the switches...
 
-proc LooksSwitchesFor {type scheme} {
-}
-#proc ResetColours { w type density colourScheme name } {
-#    global looks window_info
-#    
-##    set n $window_info($w,top_node)
-#    if {!$::headless} {
-#	ColorSymbol $w $name $type $density $colourScheme
-#    }
-##    set fillColor $looks($n,$type,fill)
-##    FillSymbol $w $name $fillColor
-#}
-#
 proc ColourExists {col} {
     if {!$::headless && [catch {winfo rgb . $col}]} {
 	return 0
@@ -1395,12 +1345,6 @@ proc MakeImage {c base inst w h args} {
     global looks window_info
     
     set n $window_info($c,top_node)
-    #    if {![info exists imageSources($base)]} {
-    #	image create photo $base
-    #	$base read $file -shrink
-    #	PutSize $base
-    #	set imageSources($base) $file
-    #    }
     image create photo $inst -width $w -height $h
     if {![llength $args]} {
 	set args Tiled
@@ -1912,6 +1856,7 @@ proc FindCaption {canvas} {
     } elseif {[string compare $findable {}]} {
 	set find(List,$canvas) \
 	    [GetFromProlog tk_context_find('$canvas','$findable',$find(where))]
+# Old method -- get caption strings from canvas and search them
 #        foreach caption [$canvas find withtag is_caption] {
 #	    set toLookIn [BlankCrs [ForSearchType $canvas $caption]]
 #            if {[string match -nocase *$findable* $toLookIn]} {
@@ -2122,12 +2067,6 @@ proc Customize {winId mode} {
     }
     
     ttk::frame $t.actions
-#    button $t.actions.load -text "Load" \
-#	-command "ReadLooks $t $n $object"
-#    pack $t.actions.load -side left
-#    button $t.actions.save -text "Save" \
-#	-command "SaveLooks $t $object"
-#    pack $t.actions.save -side left
     button $t.actions.normal -text "Normalize" \
 	-command "ResetLooks $n $object; LoadLooks $t $n $object"
     pack $t.actions.normal -side left
@@ -2477,10 +2416,6 @@ proc ResetFont { top } {
             #[string index [$tf.style cget -text] 0]
 }
 
-# proc AssembleFont {family weight style textsize} {
-#     return [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
-#             $family $weight $style $textsize]
-# }
 ################################################################################
 
 # use -ve (pixel) numbers for font sizes because the tk scaling is already
@@ -2590,7 +2525,6 @@ proc ResetLooks {c type} {
     set looks($c,$type,select) \#0000cd
     set looks($c,$type,highlight) \#008b00
     set looks($c,$type,target) \#00ee00
-#    set looks($type,affect) green2
     set looks($c,$type,incomplete) \#cd0000
     
     set looks($c,$type,objectsize) 50
@@ -2599,16 +2533,7 @@ proc ResetLooks {c type} {
     set looks($c,$type,yoffset) 0
     set looks($c,$type,textanchor) n
     set looks($c,$type,captanchor) s
-#
-#
-#proc CustomizeLooks {c type} 
-#    global looks
-#    
-    #    prolog tk_set_new_size(compartment,30,0,0)
-    #    prolog tk_set_new_size(variable,15,0,0)
-    #    prolog tk_set_new_size(function,15,0,0)
-    #    prolog tk_set_new_size(cloud,25,0,0)
-    #    prolog tk_set_new_size(channel,30,0,0)
+
     switch $type {
 	flow { ;# default is vertical, so...
 	    set looks($c,flow,xoffset) 2
@@ -2661,45 +2586,6 @@ proc ExportLooks {t topNode type} {
 	}
     }
 }
-
-#proc ReadLooks {t n topNode type} {
-#    global looks
-#    
-#    set customFile [ChooseFile looks.cus "Choose a customization file" 0]
-#    set stream [NetOpen $customFile r]
-#    
-#    while {[gets $stream elementName] >= 0} {
-#        gets $stream elementValue
-#        if {[string match "$type,*" $elementName] || \
-#                    [string compare $type generic] == 0} {
-#            set looks($elementName) $elementValue
-#        }
-#    }
-#    
-#    close $stream
-#    LoadLooks $t $n $type $type
-#    if {[string match generic $type]} {
-#        foreach object {generic compartment channel function variable text \
-#                    submodel flow influence} {
-#            ExportLooks $t $topNode $object
-#        }
-#        destroy $t
-#    }
-#}
-
-# next needs fix to translate node ids
-#proc SaveLooks {t type} {
-#    global looks
-#    
-#    set customFile [ChooseFile looks.cus "Name for customization file" 1]
-#    set stream [NetOpen $customFile w]
-#    
-#    foreach element [array names looks] {
-#        puts $stream $element
-#        puts $stream $looks($element)
-#    }
-#    close $stream
-#}
 
 proc MakeLooksSaver {n} {
     global looks

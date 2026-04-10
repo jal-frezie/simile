@@ -59,28 +59,6 @@ proc FindObj { winId x y } {
     # error allowance of 15 should be 1 default grid cell
 }
 
-# New to 4.8: get nodular component overlaps from GUI, in a list
-# This would be worth fixing with tag logic if still used)
-# proc FindAllObjs {winId l t r b} {
-#     set box [ScaleRect $winId $l $t $r $b]
-#     $winId addtag /no_collide/ all
-#     eval {$winId addtag /on_target/ overlapping} $box
-#     $winId dtag size_on_this /no_collide/
-#     $winId dtag /no_collide/ /on_target/
-#     set bitz [$winId find withtag /on_target/]
-#     $winId dtag /no_collide/
-#     $winId dtag /on_target/
-
-#     set proggles {}
-#     foreach bit $bitz {
-# 	set plName [ExtractPrologName $winId $bit]
-# 	if {[lsearch $proggles $plName]==-1} {
-# 	    lappend $proggles $plName
-# 	}
-#     }    
-#     return $proggles
-# }
-
 # canvasTLDistance returns the offset of a canvas coordinate from its top
 # left corner. If you are going to use @x,y to refer to a point in a canvas
 # text item, these are the values you need (this is a bug in TclTk)
@@ -1208,22 +1186,7 @@ proc AddEqnPopup {node winId plName X Y} {
                 !$doDesc && !$doVal && !$doCmt} {
         return
     }
-    #set canx [$winId canvasx $x]
-    #set cany [$winId canvasy $y]
-    #set target [$winId find withtag current]
-    # set target [GetClickedObj $winId $canx $cany 2]
-    #puts "Adding for $target"
-    #    set target [$winId find closest $canx $cany 1]
-    #puts "targeting $target"
-#    if {$target ne ""} {
-#        set plName [ExtractPrologName $winId $target]
-	if {$plName eq ""} return
- #       if {$doVal} {
- #           if {[catch {GetCompProperty $node Value $plName} value]} {
- #               set missing [lindex [split $value \"] 1]
- #               set value "Missing value: $missing"
- #           }
- #       }
+    if {$plName eq ""} return
         PostPopup $winId $X $Y
         if {$doDesc} {
             set desc [GetFromProlog tk_get_info($plName,context)]
@@ -1257,45 +1220,7 @@ proc AddEqnPopup {node winId plName X Y} {
             AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName
 	    
 	}
-#    }
 }
-
-# BWidget::bindMouseWheel --
-#
-#	Bind mouse wheel actions to a given widget.
-#
-# Arguments:
-#	widget - The widget to bind.
-#
-# Results:
-#	None.
-#
-# Simile-specific version, with fewer bugs
-# Now replaced with style::as from the tklib
-#
-#proc BindMouseWheel { widget } {
-#    if {[string equal aqua [tk windowingsystem]]} {
-#	bind $widget <MouseWheel> {%W yview scroll [expr %D/-1] units}
-#	bind $widget <Shift-MouseWheel> {%W xview scroll [expr %D/-1] units}
-#    } else {
-#	bind $widget <MouseWheel> {%W yview scroll [expr %D/-24] units}
-#	bind $widget <Shift-MouseWheel> {%W xview scroll [expr %D/-24] units}
-#    }
-#
-##    bind $widget <Button-4> {event generate %W <MouseWheel> -delta  120}
-##    bind $widget <Button-5> {event generate %W <MouseWheel> -delta -120}
-##    bind $widget <Shift-Button-4> {event generate %W <Shift-MouseWheel> -delta  120}
-##    bind $widget <Shift-Button-5> {event generate %W <Shift-MouseWheel> -delta -120}
-## event generate mw seems to have stopped working on Linux so go directly to...
-#    bind $widget <Button-4> {%W yview scroll -5 units}
-#    bind $widget <Button-5> {%W yview scroll 5 units}
-#    bind $widget <Shift-Button-4> {%W xview scroll -5 units}
-#    bind $widget <Shift-Button-5> {%W xview scroll 5 units}
-#
-#    bind $widget <Control-Button-4> {event generate %W <Control-MouseWheel> -delta  120}
-#    bind $widget <Control-Button-5> {event generate %W <Control-MouseWheel> -delta -120}
-#}
-#
 
 # Canvas chapter (of Welch)
 # Bindings for canvas Text items
@@ -1490,21 +1415,7 @@ proc CanvasTextCopy {c} {
 # Prolog does the same thing itself to avoid many redraws (aargh!)
 
 proc WindowDetail {window category level redraw} {
-    #    global rads
     MenuSelect $window window detail($category,$level,$redraw)
-    #    set cats {ghost_link influence variable flow compartment submodel}
-    #    if {[lsearch $cats $category]>-1} {
-    #   set hiding 1
-    #   foreach cat $cats {
-    #       if {[string match $category $cat]} {
-    #       set hiding 0
-    #       } elseif {$hiding && $rads($cat)>$level || \
-    #           !$hiding && $rads($cat)<$level} {
-    #       set rads($cat) $level
-    #       MenuSelect $window window \[detail,$cat,$level\]
-    #       }
-    #   }
-    #    }
 }
 
 # This patches a bug with error reporting in Tk 8.0. Also puts up a
@@ -2538,29 +2449,6 @@ proc RaiseAny {node win} {
 	after idle MyRaise $win
     }
 }
-
-#proc PostRealHelperMenu {winId} {
-#    global window_info runState
-#    
-#    set dotlessWinName [string range $winId 1 end]
-#    set bloodyClone $winId.\#${dotlessWinName}top.\#$dotlessWinName\#helpers
-#    set tgtx [winfo rootx $bloodyClone]
-#    set tgty [winfo rooty $bloodyClone]
-#    event generate $bloodyClone <ButtonRelease-1>
-#    
-#    set node $window_info($winId.canvas,top_node)
-#    do_for_node $node .helpers post $tgtx $tgty
-#    do_for_node $node focus .helpers
-#}
-
-# below used to find out what the bloody clone is called when writing above
-#proc allwins {win} {
-#    puts $win
-#    puts [winfo geometry $win]
-#    foreach n [winfo children $win] {
-#        allwins $n
-#    }
-#}
 
 # # character in colour spec is escaped purely for the benefit of the Emacs
 # tcl mode parser
