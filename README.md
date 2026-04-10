@@ -23,5 +23,5 @@ the tool. 'make install' will install to standard places. Note this is
 not the same as the pre-built binary packages, which are bundled with
 some of the required components.
 
-All components very welcome!
+All comments very welcome!
 
