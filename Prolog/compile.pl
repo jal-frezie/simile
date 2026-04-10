@@ -893,49 +893,6 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	(Finish = EndClass, !; % top-level call, include later stuff in class
 	 send_to_dest(Stream, EndClass), fail).
 
-/* All events are procedures, which call those of downstream events if
-the value is non-null. Additionally, some events (e.g., limits) may
-insert conditions for calling themselves, others (e.g., squirts) may
-adjust compartment values.
-make_event_proc(instance(_Type, _, Motion, elt(Home, Name, _), Unit-Dim),
-		[L, Sm, Stm]) :-
-	(Motion = squirt(Sqt, InType, (Src->Dest), Conseqs),
-	    (Src = 0, Twk1 = [];
-	      Src = elt(_, BSrc, _), CSrc = arr('', BSrc, []),
-		Twk1 = [assign(CSrc, CSrc-magnitude)]),
-	    (Dest = 0, Twk2 = Twk1;
-	      Dest = elt(_, BDest, _), CDest = arr('', BDest, []),
-		Twk2 = [assign(CDest, CDest+magnitude) | Twk1]), !;
-	  Motion = event(Sqt, InType, Conseqs),
-	    Twk2 = []),
-	(InType = void, !,
-	    ProcSpec = call('void', Name);
-	    ProcSpec = call('void', Name, [InType, cause])),
-	excrete(L, procedure_start, ProcSpec, 0, Stm),
-	excrete(L, variable_declaration, [Unit, magnitude, Dim], 4, Stm),
-	final_assignment(Sqt, Sm, elt(Home, magnitude, _-Dim), [], 1, Used,
-			 Formula, Setups, _Path, Deps, AllInters),
-	connect_params([make(magnitude, Deps, [], 1, Formula) | Setups],
-		       AllInters, Actions, Inters),
-	all(compile, excrete, 
-	    [unify(L), unify(data_declaration), build(Inters),
-	     unify(4), unify(Stm)]),
-% next get actions from instructions and run through language
-	all(compile, old_extract_action,
-	    [build(Actions), append(ActionForm, Twk2)]),
-	do_assign_list( L, ActionForm, 4, Used, Stm),
-
-	% Now call consequent events if our magnitude is non-NULL
-	(Conseqs = [], !;
-	  copy_term(Conseqs, SafeCons),
-% avoid going through whole ordering system to make sure event proc pointers
-% have a context
-	    excrete(L, cond_events, [magnitude, SafeCons, [magnitude]], 4, Stm)),
-	excrete(L, end(procedure), Name, 0, Stm),
-	nl(Stm).
-
-old_extract_action(make(_E,_C,_P,_S,A),A).
- */
 %generate_metadata(_, [], _,_,_, [], _).
 generate_metadata(L, Instance, Tree, Level, Used, Stream) :-
 	Instance = instance(Type, Node, Loc, _, _-CSizes),
@@ -991,39 +948,6 @@ pick_types(All, Types, Picked) :-
 	pick_types(More, Types, Rest).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% go through lists of things and extract assignments
-
-/* DeltaForm is used to indicate that nodes that depend on compartments cannot be set at initialization time. For the same reason we include NotionalInputUpdates -- update instructions for the input parameters, which are never actually executed but which are used to make sure nodes that depend on them are evaluated every time step.
-
-update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
-	tk_update_infobox("Generating compartment update expressions"),
-	render(Language, procedure_start,
-	       call(void, do_updatemodel, [real, start_time], 
-			[int, phase]), 0,
-	       UpdateProcDeclText),
-	order_submodel_assignments(Phases, [], DeltaForm,
-				   UpdatePasses, [], _),
-	add_phase_conditions(UpdatePasses, -1, [], UpdateInstructions),
-	all(compile, extract_action, [build(UpdateInstructions),
-	    append(UpdateForm, [])]),
-	do_assign_list( Language, UpdateForm, _, [],
-			[[]], Used, [], Temp, Updates),
-	render(Language, end(procedure), updatemodel, 0, Proc_ending),
-
-	render_all(Language, variable_declaration, Temp, 4, TempDeclText),
-
-	render( Language, comment, 'UPDATE PROCEDURE DECLARATION', 0,
-							UpdateProcDeclComment),
-	render( Language, comment, 'UPDATE COMPARTMENT VALUES', 4,
-							CompComment),
-	render(Language, comment, 'TEMPORARY VARIABLES FOR COMPARTMENT UPDATES',
-				4, TempDeclComment),
-	Blank = [''],
-	append([UpdateProcDeclComment,Blank,UpdateProcDeclText,Blank,
-		 TempDeclComment, Blank, TempDeclText, Blank,
-		 CompComment,Blank,Updates,Blank,
-		 Proc_ending,Blank], Decls).
-*/
 
 build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 		AllGraphs, Stream) :-
@@ -1117,15 +1041,6 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	     build([[], OrdUpdates, Ordered]),
 	     unify(Used), unify(AllGraphs), unify(Stream)]).
 
-/* find_circle([Head | Chain], Loop) :-
-	order(NewHead, Head),
-	not_yet_ordered(NewHead),
-	(append(Circle, [NewHead | _], [Head | Chain]),
-	    Loop = [NewHead | Circle];
-	 find_circle([NewHead, Head | Chain], Loop)).
-This looks combinatorial but I have tested it with some pretty extreme
-examples, and it's fast enough. Still, if a thing's worth doing... */
-
 find_circle([Head | Chain], Proc, Loop, Longest) :-
 	(NewHead = make(enumerate(_), _,_,_,_); true), % prioritize
 	order(NewHead, Head),
@@ -1151,31 +1066,7 @@ match_levels([make(_,_, Path, _,_) | Insts], Levels) :-
 	    Levels = MoreLevels;
 	Levels = [Path | MoreLevels]).
 
-/* dummy_order/2: a miniature version of the ordering process. Removes steps
-that have no antecedent from the list; if any are left when it can no longer
-do this, these must contain a dependency loop.
-
-dummy_order(Steps, Core) :-
-	select(Step, Steps, Rest),
-	\+ (order(Prev, Step),
-	       member(Prev, Rest)), !,
-	    dummy_order(Rest, Core);
-	Core = Steps.
-
-get_circle_from/3: Takes a lot of instructions that contain a circularity,
-and a bunch of same that have already been linked up, and returns a set
-taken from both lists that constitute a circle. Should be obvious how it
-works. Clue: since we have already removed any instruction without
-antecedents in the list, chaining bacwards will always find a circle.
-
-get_circle_from(Steps, [First | Linked], Circle) :-
-	order(Last, First),
-	(append(InLoop, [Last | _], Linked), !,
-	    Circle = [Last, First | InLoop];
-	select(Last, Steps, OtherSteps), !,
-	    get_circle_from(OtherSteps, [Last, First | Linked], Circle)).
-
-Procedure to clear memory at end of run */
+/* Procedure to clear memory at end of run */
 
 make_exit_proc(Language, Instance, Dest) :-
 	Blank = [''],
@@ -1435,19 +1326,6 @@ nodes.
 				LocalPath, Step,
 				[reproduce(Ptr, NewPtr, Name, Reproducers)])],
 	    % relegate to 0 as membership may have changed during run
-%	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
-%					Ptr, reproduction, ReproRule),
-%		   ReproRules), !; 
-%		ReproRules = []),	    
-%	    (setof(ImRule, maker_for(SmName, ParentFns, Name, Path, Step,
-%				     Ptr, immigration, ImRule),
-%		   ImmigRules), !; 
-%		ImmigRules = []),
-%	    all(compile, unfinished_in,
-%		[build(ReproRules), build(ReproConds)]),
-%	    all(compile, unfinished_in,
-%	        [build(ImmigRules), build(ImmigConds)]),
-%	    append(ReproConds, ImmigConds, NewMemConds),
 	    /* Something that will be done in the initialization procedure, to make sure we don't try to create any before we can run this procedure */
 	    append([[make(can_enter(Name),
 			  [created(Name), settled(Name)],
@@ -2126,88 +2004,8 @@ get_common_path(Path, OrigPath, CommonPath) :-
 	MatchPath == CommonPath, !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-/*
-get_updates([], _, []).
 
-get_updates([instance(Type,_, incr(dt(Step), Expr), DestRef, _)
-	    | Compartments], Step, Updates) :-
-	member(Type, [compartment, immigration, reproduction]), !,
-	DestRef = elt(_, Dest, _),
-	final_assignment(Expr, DestRef, [], Step, _, NewAssign, _, Path, _,_),
-	Updates = [make(Dest, [], Path, Step, NewAssign) | Rest],
-	get_updates( Compartments, Step, Rest).
-
-get_updates([instance(Type, Node, _, DestRef, _)
-	    | Compartments], Step, Updates) :-
-	Type = external, !,
-	    DestRef = elt(Path, Dest, _),
-	    pointer_from(Path, Ptr),
-	    Updates = [make(none, [], Path, _,
-			       [update_submodel(Node, arr(Ptr, Dest, []), [])])
-		      | Rest],
-	get_updates( Compartments, Step, Rest).
-
-get_updates([_ | Comps], Step, Done) :-
-	get_updates(Comps, Step, Done).
-
-extract_updates(Instance, Path, Step, BaseStep, Updates) :-
-	Instance = instance(submodel, _, xrefs(model(Functions, Submodels),
-					       _,_,_), _,_),
-	get_updates(Functions, Step, Updates0),
-	extract_submodel_updates(Submodels, Path, Step, SubStep, Updates1),
-	BaseStep is max(Step, SubStep),
-	append(Updates1, Updates0, Updates).
-
-extract_submodel_updates([Instance | Submodels], Path, TopStep,
-			 BaseStep, Updates) :-
-	Instance = instance(submodel, SmName, _, Name, _-Dims),
-	time_step_for(SmName, TopStep, Step),
-	pointer_from(Path, Ptr),
-	(variable_size(SmName), !,
-	    NextPath = [sm(Name, Ptr, _, vm_loop(0, _,_,_)) | Path];
-	make_inds_for(Dims, Loops, Inds),
-	    append([sm(Name, Ptr, _, fm_loop(Inds)) | Loops], Path,
-		   NextPath)),
-
-	extract_updates(Instance, NextPath, Step, NextStep, Updates0),
-	extract_submodel_updates(Submodels, Path, TopStep,LaterStep, Updates1),
-	append(Updates0, Updates1, Updates),
-	BaseStep is max(NextStep, LaterStep).
-
-extract_submodel_updates([], _,_, 0, []).
-*/
-/* input_params_in: This previously just made dummy assignments to input
-parameters so things using them could be put in the right timestep. However
-with version 2.34 it also makes the 'collect' functions whereby parameters ask
-for values from the execution environment.
-
-input_params_in(Vars, SmPath, SmStep,
-		make(Tgt, Wait, Path, Step, [CollectFn])) :-
-	member(instance(Type, Param, _, elt(_, Val, _), _-DimTypes), Vars),
-	member(Type, [function, init_function]),
-	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Param),
-				     build(Dims), build(_), build(_)]),
-	is_parameter(Param, ParamType),
-	ParamType > 0,
-	pointer_from(SmPath, DestPtr),
-	get_dims_from_loops(SmPath, _, SmInds),
-	make_inds_for(Dims, LocalPath, LocalInds),
-	append(LocalPath, SmPath, Path),
-	append(SmInds, LocalInds, Inds),
-	vars_only(Inds, VarInds, ParamType),
-	(ParamType = 2,
-	    Tgt = Val,
-	    (Type = function, Step = -1, Wait = [on_reload];
-	    Type = init_function, Step = 0, Wait = [on_reset]);
-	ParamType = 1,
-	    Tgt = update(Val),
-	    (Type = function, Step = SmStep, Wait = [init(Val), time];
-	    Type = init_function, Step = 0, Wait = [on_reset])),
-	length(VarInds, Count),
-	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), Param, Count
-		      | VarInds].
-
-vars_only: remove indices of vm models from those passed by 'collect'. Per-
+/* vars_only: remove indices of vm models from those passed by 'collect'. Per-
 record models were treated as vm if the parameter is variable, but are no longer as of v5.3. */
 
 vars_only(List, AllVar) :-
@@ -2255,116 +2053,6 @@ cond_goes(Cond, [Step, Fix]) :-
 	member(Cond, [Act, later(Act), this_step(Act)]),
 	goes_this_step(Act, Step, Fix)), !.
 
-/* 21st century, fully double-link-aware version: lacks AOT's ability to
-promote entire same-step loops
-
-sort_assignments(Instructions, Phase) :-
-	(Phase = -2, !;
-	 LongerPhase is Phase-1,
-	    sort_assignments(Instructions, LongerPhase)),
-	go_this_step(Instructions, Phase).
-
-go_this_step([], _).
-go_this_step([make(_, Conds-Afx, _, [_, DefP, NewP | _],_) | More], Phase) :-
-	((\+ var(NewP); % gone already
-	 DefP > Phase,	% need not go now
-	    member(Cond, Conds),
-	    (Cond = on_reload, Phase < -1;
-		Cond = on_reset, Phase < 0;
-		Cond = time, Phase < DefP;
-		member(Cond, [Act, later(Act), this_step(Act)]),
-		Act = make(_,_,_,[_,_,Done,_], _),
-		var(Done))), !,
-	    ToTry = More;
-	NewP = Phase,
-	    append(Afx, More, ToTry)),
-	go_this_step(ToTry, Phase).
-
-Tried and tested arse over tit version 
-
-sort_assignments(Instructions, Phase, VMSpecPairs) :-
-	member(NextInst, Instructions),
-	goes_this_step(NextInst, Phase, VMSP),
-	sort_assignments(Instructions, Phase, MorePs),
-	append(VMSP, MorePs, VMSpecPairs);
-
-	(Phase = -2, !,
-	    VMSpecPairs = [];
-	LongerPhase is Phase-1,
-	    sort_assignments(Instructions, LongerPhase, VMSpecPairs)).
-
-goes_this_step(NextInst, Phase, VMSpecPairs) :-
-	NextInst = make(Efx, Conds-_, _, [_, DefP, NewP | _], _),
-	var(NewP),
-	DefP >= Phase,
-	(Phase = -2;
-	Phase = -1,
-	    member(on_reload, Conds);
-	Phase = 0,
-	    member(on_reset, Conds);
-	member(time, Conds);
-	member(SameStep, Conds),
-	    member(SameStep, [Cond, later(Cond), this_step(Cond)]),
-	    Cond = make(_,_,_, [_,_, SPhase | _], _),
-	    nonvar(SPhase),
-	    SPhase >= Phase),
-	NewP = Phase,
-	(Efx = enumerate(Name),
-	    VMSpecPairs = [vm_spec_pair(Name, Phase)];
-	VMSpecPairs = []), !.	
-			 
-older forward-pointing version
-
-sort_assignments(Instructions, MustDo, Compartments, Phase, SortedForm) :-
-	Instructions = [], !,
-	    SortedForm = Instructions;
-	    
-	NextInst = make(Efx, Conds, Path, DefP, Acts),
-	(member(TryNow, MustDo),
-	TryInst = make(TryNow, _,_,_,_),
-	member_either(TryInst, Instructions, Compartments), !,
-	    select_for([], TryInst, NextInst, Instructions, []);
-	true),
-	(DefP = Phase,
-	    select(NextInst, Instructions, Others);
-	get_next_evaluation(Instructions, Compartments, _,_, Others, NextInst),
-	    \+ (Phase < DefP, member(time, Conds))), !,
-	(setof(WaitCond, DefCond^(member(DefCond, Conds),
-		member(DefCond, [later(WaitCond), this_step(WaitCond)])),
-	      AlsoMustDo),
-	    (append(AlsoMustDo, MustDo, NowDo),
-		ToDo = Others;
-	    NowDo = [not(NextInst) | MustDo],
-		ToDo = Instructions);
-	NowDo = MustDo,
-	    ToDo = Others, !),
-		sort_assignments(Others, NowDo, Compartments, Phase,
-				 MoreSorted);
-	    sort_assignments(Instructions
-	SortedForm = [make(Efx, Conds, Path, Phase, Acts) | MoreSorted];
-	
-	ShorterPhase is Phase+1,
-	    purge(Compartments, [make(_,_,_, ShorterPhase, _)], Fluctuators),
-	    sort_assignments(Instructions, [], Fluctuators, ShorterPhase,
-			     SortedForm).
-
-delay_clearing: what this one does is, when you have a running total it
-makes sure that the value is zeroed in the same phase as the total is
-incremented, otherwise we may add the values to it several times. Note that
-thanks to the radical implementation of subtotal, one total may have more than
-one clearing instruction. 
-
-delay_clearing(Mess, [make(clearing(Total), CConds, CPath, IPhase, CAct), 
-		      make(cleared(Total), DConds, DPath, IPhase, DAct)
-		     | Better]) :-
-	select(make(clearing(Total), CConds, CPath, CPhase, CAct), Mess,
-	       Mess1),
-	member(make(Total, _,_, IPhase, _), Mess1),
-	IPhase > CPhase, !,
-	    select(make(cleared(Total), DConds, DPath, CPhase, DAct), Mess1,
-		   Mess2),
-	    delay_clearing(Mess2, Better).
-*/
 try_longer_steps_in(Level, Sm, MinStep) :-
     Level = sm(Sm, _,_, Loop),
     (Loop = vm_loop(_,_,_,MinStep);
@@ -2922,69 +2610,6 @@ fwd_submodel_assignments(Phase, Path, RawAssign, All, OrderedPasses,
        FoundTest = test_at(TP, NewGo, Len)),
      append(OncePasses, RecursePasses, OrderedPasses))).
 
-/*    
-order_submodel_assignments(Phase, Path, RawAssign, All,
-			   OrderedPasses, FoundTest) :-
-    order_assignments(Phase, Path, RawAssign, All, FirstPass),
-    ((Path = [TestModel | _],
-         made_in(existence_tested, TestModel, FirstPass),
-	 length(FirstPass, Len),
-	 FoundTest = test_at(Phase, 0, Len); % bang out if test found
-     Phase == -2) -> OrderedPasses = FirstPass;
-     NextPhase is Phase-1,
-        order_submodel_assignments(NextPhase, Path, RawAssign, All,
-				   SlowPasses, SlowTest),
-	(SlowPasses = [] -> OrderedPasses = FirstPass;
-	 (append([InnerOpen | _], [InnerClose], SlowPasses),
-	  extract_action(InnerOpen, [check_phase(InnerPhase, _)]),
-	  InnerClose = make(none,[]-_,_, Doing, [finish_level]),
-	  Doing == InnerPhase,
- 	  extract_action(InnerClose, [finish_level]) ->
-	      % recursion result in deeper condition, no need to add one
-	      append(FirstPass, SlowPasses, OncePasses);
-	  ptr_to_last_vm(Path, -2, NewCons),
-	      all(compile, relevant, [unify(NextPhase), build(NewCons),
-				      append(Cons, [])]),
-	      extract_action(Start, [check_phase(NextPhase, Cons)]),
-	      Finish = make(none,[]-_,_, NextPhase, [finish_level]),
-	      append([FirstPass, [Start | SlowPasses], [Finish]], OncePasses)),
-	 
-	 (var(SlowTest) ->
-	      order_submodel_assignments(Phase, Path, RawAssign, All,
-					 RecursePasses, LateTest),
-	      append(OncePasses, RecursePasses, OrderedPasses);
-	  OrderedPasses = OncePasses), % bang out if test done 
-	 ((nonvar(SlowTest), SlowTest = test_at(TP, Go, Len),
-	   length(FirstPass, Lead);
-	   nonvar(LateTest), LateTest = test_at(TP, Go, Len),
-	   length(OncePasses, Lead)) ->
-	      NewGo is Go+Lead,
-	      FoundTest = test_at(TP, NewGo, Len); true))).
-    
-old_order_submodel_assignments(Phase, Path, RawAssign, All,
-			   OrderedPasses, FoundTest) :-
-	Phase < -2, !,
-	    OrderedPasses = [];
-	NextPhase is Phase-1,
-	    order_submodel_assignments(NextPhase, Path, RawAssign, All,
-				       HighPasses, FoundTest),
-	    (number(DoneTest), false, !,
-		OrderedPasses = HighPasses,
-		FoundTest = DoneTest;
-	    order_assignments(Phase, Path, RawAssign, All, LastPass),
-		(Path = [TestModel | _], !,
-		    (made_in(existence_tested, TestModel, LastPass), !,
-			FoundTest = Phase;
-		    true);
-		true),
-		% might not need a start/finish pair for these non-loopers
-		get_non_looping_levels(Path, LastPass, Levels),
-		all(compile, get_pass_ends,
-		    [build(Levels), build(RStarts), build(Finishes)]),
-		reverse(RStarts, Starts),
-		append([Starts, LastPass, Finishes], Pass),
-		append(HighPasses, [LastPass], OrderedPasses)).
-*/
 get_non_looping_levels(_Path, [], []).
 get_non_looping_levels(Path, [make(_,_, IPath, _,_) | More], Levels) :-
 	get_non_looping_levels(Path, More, MoreLevels),

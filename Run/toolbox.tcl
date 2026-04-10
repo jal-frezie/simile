@@ -2017,44 +2017,7 @@ proc SaveProjectFile {topNode path tgt} {
 	::RunEnv::SaveView 0
 	event generate $oldFocus <FocusIn>
 	set SimileProject(nameOfHelperStateFile) model.shf
-	# this should make v6x find it OK
-
-# 	set choices {lose_shf update_shf}
-# 	if {[info exists helperTable($topNode,stateName)]} {
-# 	    set choices [linsert $choices 0 keep_shf]
-# 	}
-# 	set helperAction [Query save_helper_setup question top {} $choices]
-# 	switch $helperAction {
-# 	    update_shf {
-# 		::RunEnv::SaveView 0
-# 	    } lose_shf {
-# 		array unset helperTable $topNode,stateName
-# 	    }
-# 	}
     }
-#     if {[info exists helperTable($topNode,stateName)]} {
-# old method: include helper state in saved model, just because we could...
-#	if {![string equal $path \
-#		  [file dirname $helperTable($topNode,stateName)]]} {
-#	    file copy -force $helperTable($topNode,stateName) $path
-#	}
-#         set SimileProject(nameOfHelperStateFile) \
-# 	    [Relativize $tgt $helperTable($topNode,stateName)]
-#     }
-    
-# v6 included links to all saved spfs and attempted to reload. v7 abandons
-# such fripperies and just creates a top-level .spf which gets put in the mime.
-#    set spfList [array get ::SimileProject fileparam,/${topNode}/*]
-#    foreach {varName spfPath} $spfList {
-#	set smPart [Submodelize $varName]
-#	set relPath [Relativize $tgt $spfPath]
-#	set pmData "Reference to parameter metafile $relPath"
-#	if {[llength $smPart]} {
-#	    append pmData " for [string range $smPart 1 end]"
-#	}
-#	lappend projectInfo $pmData
-#	lappend SimileProject(spfList) $smPart $relPath
-#    }
 
 # start by always writing it, later add check if version in tmp has been updated
     if {[HaveValues $topNode]>1 && [[winfo parent $RunEnv::paramFrame($topNode)] tab $RunEnv::paramFrame($topNode) -state] eq "normal"} { ;# will be hidden if no params
