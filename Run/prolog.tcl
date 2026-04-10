@@ -134,14 +134,8 @@ set vm_usage [expr $::tclBitness*$::tclBitness] ;# in megs
 set spraf {}
 while {![string match ready $spraf]} {
     if {$vm_usage<16} {
-	if {[file tail $PROLOG_CMD] eq "xgsimile.exe"} {
-	    # Windows -- maybe we are on ARM so need other exec?
-	    set PROLOG_CMD [file join [file dir $PROLOG_CMD] xgsimile_arm.exe]
-	    set vm_usage 1024 ;# currently it is 32-bit x86
-	} else {
-	    puts $PROLOG_CMD
-	    error $loss
-	}
+	puts $PROLOG_CMD
+	error $loss
     }
 
     set env(GLOBALSZ) [expr 512*$vm_usage]

@@ -175,15 +175,20 @@ endif
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
 	EXECEXTN = .exe
+ifeq ($(firstword $(PROCESSOR_IDENTIFIER)),ARMv8)
+	PROLOG_EXEC_DIFFERENTIATOR = _arm
+# only used for GNU on Windows where rest of code can build/run under emulation
+endif
 	SUPP = $(RESDIR)/support$(ARCHEXTN).o
 	MAIN = $(EXECDIR)/Simile.exe
 endif
 
 PROLOGSTATE = $(EXECDIR)/xssimile$(EXECEXTN)
+PROLOG_ID = Run/mdlrinfo.tpl
 PROLOG_DB = $(RESDIR)/struct_db
 # $(SHAREDLIBEXTN) not needed
 ifeq ($(PROLOG),GNU)
-	PROLOGSTATE = $(EXECDIR)/xgsimile$(EXECEXTN)
+	PROLOGSTATE = $(EXECDIR)/xgsimile$(PROLOG_EXEC_DIFFERENTIATOR)$(EXECEXTN)
 endif
 
 STUBS_DIR = $(RESDIR)/Stubs
@@ -196,7 +201,7 @@ LAUNCHER = $(EXECDIR)/simile
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
-simile: $(LAUNCHER) $(PROLOGSTATE) $(RELAY) $(SUPP) \
+simile: $(LAUNCHER) $(PROLOG_ID) $(PROLOGSTATE) $(RELAY) $(SUPP) \
 	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK)
 
 $(LAUNCHER): Run/launch.tcl
@@ -221,7 +226,8 @@ ifeq ($(PROLOG),SWI)
 #SWIPLSHARELIB = $(shell ldd `which swipl` | grep libswipl | { read name at loc tail; echo $$name; })
 #SWIPLSLPATH = $(shell ldd `which swipl` | grep libswipl | { read name at loc tail; echo $$loc; })
 # above should painlessly extract the name of the relevant shared library
-UINFO_TPL = mdlrinfo.swi
+$(PROLOG_ID):
+	cp Run/mdlrinfo.swi $(PROLOG_ID)
 $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
 	cd Prolog; swipl --goal=main --stand_alone=true -o ../$(PROLOGSTATE) -c smain.pl; cd ..
 # Copy the swi-prolog shared library to the directory containing the
@@ -250,10 +256,11 @@ $(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
 	patchelf --set-rpath '$$ORIGIN/../lib' $(PROLOG_DB)
 # note that libxml2 includes and libs are not needed
 clean-prolog:
-	rm -f $(PROLOGSTATE) $(PROLOG_DB)
+	rm -f $(PROLOGSTATE) $(PROLOG_DB) $(PROLOG_ID)
 endif
 ifeq ($(PROLOG),GNU)
-UINFO_TPL=userinfo.gnu
+$(PROLOG_ID):
+	cp Run/mdlrinfo.gnu $(PROLOG_ID)
 ifeq ($(PLATFORM),Darwin)
 # all hell breaks loose as we try to build multiple versions
 PROLOGSTATE_X = $(PROLOGSTATE)_x
@@ -287,7 +294,7 @@ $(PROLOG_DB_A): Prolog/struct_db.c Run/dllcalls.h
 	cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB_A) struct_db.c; cd ..
 clean-prolog:
-	rm -f $(PROLOGSTATE) $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A) $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
+	rm -f $(PROLOGSTATE) $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A) $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X) $(PROLOG_ID)
 else # not on mac
 PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).o
 PROLOG_AS = $(EXECDIR)/gmain$(ARCHEXTN).s
@@ -318,7 +325,7 @@ $(PROLOG_DB): Prolog/struct_db.c Run/dllcalls.h
 	gplc --c-compiler $(GCCCMD) -c -C '-D_GNU_PROLOG -fPIE' \
 		-o $(PROLOG_DB) Prolog/struct_db.c
 clean-prolog:
-	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(PROLOG_AS) $(PROLOG_MA)
+	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(PROLOG_AS) $(PROLOG_MA) $(PROLOG_ID)
 endif # on Mac
 endif # GNU prolog
 
@@ -657,7 +664,7 @@ install:
 		Run/jsonplus.tcl \
 		Run/language.tcl \
 		Run/toolbox.tcl \
-		Run/$(UINFO_TPL) \
+		$(PROLOG_ID) \
 		Run/messages.tcl \
 		Run/mre.tcl \
 		Run/params.tcl \
@@ -702,7 +709,6 @@ endif
 		$(UNPK) \
 		$(SLDIR)/$(SHANK) | tar x -C "$(DESTDIR)"$(EXEC_TGT)
 	cd "$(DESTDIR)"$(INSTALL_TGT); \
-	mv Run/$(UINFO_TPL) Run/mdlrinfo.tpl;
 	cd "$(DESTDIR)"$(EXEC_TGT); \
 	ln -s ../../$(SHARELEVEL)/Examples; \
 	ln -s ../../$(SHARELEVEL)/Extensions; \

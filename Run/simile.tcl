@@ -601,6 +601,10 @@ set swiplLocn swipl
 switch $tcl_platform(platform) {
     windows {
 	set archExtn {}
+	if {$userinfo(prologId) eq "gnu" && \
+		[lindex $env(PROCESSOR_IDENTIFIER) 0] eq "ARMv8"} {
+	    set archExtn _arm
+	}
 	set execExtn .exe
     } unix {
 	if {[string equal Darwin $tcl_platform(os)]} {

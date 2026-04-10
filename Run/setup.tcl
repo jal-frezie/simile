@@ -60,13 +60,9 @@ proc Newer {is than t} {
 }
 
 set creds [file join $custom(prefDir) mdlrinfo.txt]
-if {$tcl_platform(platform) eq "windows"} {
-    set installedCreds [file join $SIMILE_PATH Run mdlrinfo.txt]
-    set refreshCreds {[Newer $installedCreds $creds m]}
-} else {
-    set installedCreds [file join $SIMILE_PATH Run mdlrinfo.tpl]
-    set refreshCreds {![file exists $creds]}
-}
+set installedCreds [file join $SIMILE_PATH Run mdlrinfo.tpl]
+set refreshCreds {[Newer $installedCreds $creds m]}
+
 if $refreshCreds {
     file copy -force $installedCreds $creds
 }

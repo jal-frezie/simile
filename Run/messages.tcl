@@ -1028,6 +1028,7 @@ set msgs(extn_bug_full) [tr. {The error message was:
 %2$s}]
 set msgs(no_compiler_title) [tr. {Problem with c++ compiler setup}]
 set msgs(no_compiler_message) [tr. {c++ compiler preference set to %1$s but no executable %2$s found.}]
+set msgs(no_compiler_detail) [tr. {Set the compiler preference in the 'Build' tab to Default to use the bundled compiler, or GNU to use an installed compiler accessible in the command search path.}]
 set msgs(no_compiler_full) [tr. {The following directories were checked:
     %3$s}]
 set msgs(compiler_install_needed_title) [tr. {Compiler install needed}]
