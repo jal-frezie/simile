@@ -3,7 +3,7 @@ MINREL = 4
 # botch to make Windows work
 ifndef CC
 CC = gcc
-endif
+endif #ndef CC
 MACH = $(shell $(CC) -dumpmachine)
 MY_CPU = $(firstword $(subst -, ,$(MACH)))
 
@@ -16,7 +16,7 @@ PLATFORM = $(shell uname -o)
 # Prolog implementation to use -- GNU for everything, SWI also supported
 ifndef PROLOG
     PROLOG = GNU
-endif
+endif #ndef PROLOG
 
 DEFNS=-DSIM_BUILT=$(shell date $(DATESPEC) +%s)
 
@@ -33,11 +33,7 @@ PL_PATH=/usr
 
 ifndef TCLSH
 TCLSH = tclsh
-endif
-
-ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
-BITEXTN = 64
-endif
+endif #ndef TCLSH
 
 # Default case: Linux
 TCLDIR =  $(shell echo "puts [file dirname [file dirname [info nameofexecutable]]]" | $(TCLSH))
@@ -90,7 +86,6 @@ ifneq ($(TGT),$(HOST))
 endif
 ifeq ($(PLATFORM),Darwin)
 	DESTROOT = /usr/local
-#	SYSDIR = System$(BITEXTN)
 	OSNUMBER = $(shell uname -r)
 	TCLFW = ../Frameworks/Tcl.framework
 ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
@@ -100,11 +95,6 @@ else
 	CFLAGS = $(OPT) -arch i386
 	export MACOSX_DEPLOYMENT_TARGET=10.4
 endif
-# building locally so refs should already be local
-#	LOCALIZE_TCL_REFS = install_name_tool -change \
-#		$(TCLFW)/Versions/$(VERS)/Tcl \
-#		@executable_path/../Frameworks/Tcl.framework/Tcl
-# install_name_tool with fail silently if the new path is longer than the path it's replacing. Always verify with 'otool -L' that the path was changed as expected.
 	ARCHEXTN = _mac
 # build for everything unless I am on Barbie
 	ifeq ($(OSNUMBER),8.11.0)
@@ -121,57 +111,26 @@ endif
 # Above will work OK for developer but installation will fail due to
 # 'unsafe use of relative rpath' -- so need more long-winded method below
 #	ADJUST_LOCAL_LIBS = install_name_tool -change ../$(1) @executable_path/../Resources/$(1)
+# install_name_tool with fail silently if the new path is longer than the path it's replacing. Always verify with 'otool -L' that the path was changed as expected.
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 endif 
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
-	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
-#	SYSDIR = System$(BITEXTN)
-#ifeq ($(MY_CPU),x86_64)
-#	TCLDIR =  /usr/local
-#	PL_PATH = /c/gnu-prolog-64
-#	SWIPLDIR = "/c/Program files/swipl"
-#	GCCCMD = x86_64-w64-mingw32-gcc
-#	GPPCMD = x86_64-w64-mingw32-g++
-#	RESCMD = x86_64-w64-mingw32-windres
-#else
-#	TCLDIR = "/c/Program files (x86)/Tcl"
-# Actually, use local TclTk as above dir not exist on 32bit machines --
-#	TCLDIR = "$(shell pwd)/$(SYSDIR)"
-#	TCLDIR = /usr/local32
-#	PL_PATH = /c/gnu-prolog
-#	GCCCMD = gcc
-#	GPPCMD = g++
-	RESCMD = windres
-	# MSI = /c/MinGW-w64/v49j32/mingw32/opt
-# must be 32-bit because installer is
-#endif
 	PT =
 	VERS = $(subst .,,$(VERSION))
 	PL_PATH = /usr
 	GPLIB =
-#	TCLREF = $(TCLDIR)
 ifndef TCLINC
 	TCLINC = $(TCLREF)/include
 endif
-#	CFLAGS = $(OPT)
 	SHAREDLIBPREFX = 
-#	MAKEPIC = 
-#	MAKESL = -shared
-# This really just tests that tcldir is right
-
 	SLDIR = $(EXECDIR)
 # to be used after CDing to Run -- assume all refs are from a subdirectory
 # for linking with stubs
 	USETCL_BASE = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib -ltclstub
 # stub name includes version if less than 90
 	USETCL = $(USETCL_BASE)$(intcmp $(VERS),90,$(VERS))
-#	USETK = -DUSE_TK_STUBS -ltkstub$(VERS)
-# for direct linking
-#	USETCL = -I$(TCLINC) -L$(TCLREF)/lib -ltcl$(VERS)
-#	USETK = -ltk$(VERS)
-#	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
 	EXECEXTN = .exe
@@ -363,10 +322,6 @@ $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	mv $(SHANK) ../$(SLDIR); \
 	mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
 
-CRYPTOBJ = sha-256_$(BITEXTN)$(ARCHEXTN).o
-Run/$(CRYPTOBJ): Run/sha-256.h Run/sha-256.c
-	cd Run; $(GCCCMD) -c $(CFLAGS) $(MAKEPIC) -o $(CRYPTOBJ) sha-256.c; cd ..
-
 # Unix: not needed for Linux as it can build at run time
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(CFLAGS) $(CPPFLAGS) -std=c++11 -I. $(MAKEPIC) \
@@ -377,40 +332,14 @@ $(SUPP): Run/support.cpp Run/dllcalls.h Run/backend.h
 	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
 		-o ../$(SUPP) support.cpp; cd ..
 
-# Build a .dll to check licence code during Windows installation
-# Version for GPInstall by QSC
-#Run/install.dll: Run/install.c Makefile
-#	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
-#		-o install.dll install.c -L../System/lib -lssl -lcrypto; \
-#		cd ..
-# Version for MakeMSI
-#Run/install.dll: Run/install_msi.cpp Run/install_msi.rc Makefile
-#	cd Run; windres -i install_msi.rc -o resource_msi.o; \
-#		$(GPPCMD) $(CFLAGS) $(DEFNS) -I../System/include \
-#		-I/c/MsiIntel.SDK/include $(MAKESL) -o install.dll \
-#		install_msi.c resource_msi.o /c/MsiIntel.SDK/lib/msi.lib \
-#		-L../System/lib -lcrypto -lssl; cd ..
 # the rc objects from windres are ommitted from linking below becaise they
 # do strange things to dll dependencies causing c000007b errors
-$(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile$(BITEXTN).rc
-	cd Interp; $(RESCMD) -o rc$(BITEXTN).o Simile$(BITEXTN).rc; \
+$(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile.rc
+	cd Interp; windres -o rc.o Simile.rc; \
 	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
-		-o ../$(EXECDIR)/Simile.exe Simile.c rc$(BITEXTN).o \
+		-o ../$(EXECDIR)/Simile.exe Simile.c rc.o \
 		-I$(TCLINC) -I$(TKINC) \
 		-L$(TCLREF)/lib -ltcl$(VERS) -ltcl9tk$(VERS) -mwindows; cd ..
-#else
-
-# CYGWIN and non-Windows
-#$(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN): \
-#	ame_cmx.cpp dllcalls.h shank.cpp makedlls.tcl
-#	cd Run; $(WISHCMD) makedlls.tcl; cd ..
-
-# Is there a rule for System/lib/lib5d$(SHAREDLIBEXTN)
-# I guess that would be System/bin/5d.dll for Windows 
-#System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
-#		shank.cpp makedlls.tcl
-#	cd Run; $(WISHCMD) makedlls.tcl; cd ..
-#endif
 
 $(RELAY): Run/relay.c
 	cd Run; $(GCCCMD) $(CFLAGS) -o ../$(RELAY) relay.c; cd ..
