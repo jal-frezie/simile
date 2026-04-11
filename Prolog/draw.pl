@@ -481,9 +481,10 @@ display_in(Wid, Comp, Depth, Trans) :-
 	 nonvar(Trans),
 	 get_drawing_form(Comp, Style, BBox),
 	draws_at(Wid, Style, Depth), !,
-	    untranslate(BBox, Trans, Screen_list),
 	    find_fatness(Trans, WinFatness),
-	    (Depth < 0 -> Colour_scheme = borderless;
+	    (Depth < 0 -> get_shape(Comp, internal_extent, Screen_list),
+			  Colour_scheme = borderless;
+	     untranslate(BBox, Trans, Screen_list),
 	     get_flash(Comp, Colour_scheme)),
 	    (Style = image -> caption_for(Comp, Num),
 			      get_shape(Comp, caption_offset, [ExFat, ExDens]),
