@@ -40,6 +40,10 @@ foreach comp {ame_dll unpacker} {
     }
 }
 
+# allow legacy stuff in R package to work
+proc c_testlicense {args} {}
+package ifneeded Trf 2.2 [list package provide Trf 2.2]
+
 # Other non-auto-installable cross-platform TclTk extensions do not go
 # here because this file is included in Linux distributions but such
 # packages are built and installed in separate subdirectories, so
