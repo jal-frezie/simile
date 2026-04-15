@@ -1,0 +1,9 @@
+$c create arc 100 100 200 200 -start 45 -extent 90 -style chord -fill orange -outline {}
+$c create arc 100 100 200 200 -start 45 -extent 90 -style arc -outline black -width 2
+$c create arc 100 28 200 128 -start 225 -extent 90 -style chord -fill orange -outline {}
+$c create arc 100 28 200 128 -start 225 -extent 90 -style arc -outline black -width 2
+$c create poly 100 104 120 114 100 124 -outline black -fill orange  -width 2
+$c create oval 170 112 174 116 -width 2
+set hotspot {152 114}
+set scale 10
+set axis e
