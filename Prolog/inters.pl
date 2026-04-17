@@ -150,7 +150,16 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		    BackSwap = path_substitution([sm(Name, A, B, C)],
 		      [sm(Name, D, B, progen), sm(Name, A, D, C)], 
 		      pop),
-	            pointer_from(RealPath, SmPtr)), !;
+	            pointer_from(RealPath, SmPtr);
+		  Location = by_shared_sizes,
+		    Link = MatchDest-MatchSrc-SubbedSrc,
+		    Wait = [],
+		    append(MatchSrc, Tail),
+		    append(MatchDest, Head), 
+		    append(SubbedSrc, NewTail),
+		    append(NewTail, Common, Path),
+		    BackSwap = with_dest_path(Head),
+		    pointer_from(Path, SmPtr)), !;
 	     % the last bit will stop these roles being used in same eqn as
 	     % assoc roles, which may be sensible
 	     member(Link, [none, outside]),
@@ -586,7 +595,9 @@ make_intermediates(
 	    parameter info (in case it is a ref to final result) but not
 	    indices (because they may differ between references) or var names
 	    (so they get instantiated and declared in each procedure) */
-	((TermSwap = BackSwap;
+	((TermSwap = with_dest_path(OrigMatch),
+	  append(OrigMatch, _, DestPath);
+	  TermSwap = BackSwap;
 	  TermSwap = values_from_base(Tx), BackSwap = values_from_base(Bx),
 	  longest_path([Tx, Bx], _One)), !,
 		SourceRef = UseRef,

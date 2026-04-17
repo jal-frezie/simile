@@ -216,6 +216,9 @@ rel_path_name(RemoteNode, DestBox, Relation, Dir,
 	(Relation = none, !,
 	    RelCaption = '/none/',
 	    BaseBoxCaption = '/none/';
+	 Relation = _-_-_, !,
+	    RelCaption = '/paired/',
+	    BaseBoxCaption = '/paired/';
 	Relation has_type relation, !,
 	    caption_for(Relation, RelCaption),
 	    initiates(Relation, BaseBox),
@@ -338,6 +341,36 @@ uses_as_event(VisSource, RealVar) :-
 	    (RealVar is_of_sort discrete; find_type(RealVar, state));
 	VisSource is_of_sort discrete. % event values to be used
 
+size_cross_reffed(Base, Share) :-
+    get_av_pair(Share, 0, multiplication_spec, MultSpec),
+    member(count=[size(BaseCapt)], MultSpec),
+    caption_for(Base, BaseCapt).
+
+path_bit_for(Sm, Bit) :-
+    get_node_size(Sm, Dims),
+    instance><path_section_for(Sm, _, Dims, Bit, _Hi, _Lo).
+
+purge_size_cross_refs([], Entered, [], Entered, DestTemplate, [], []) :-
+    all(m_update, path_bit_for, [build(Entered), build(DestTemplate)]).
+
+purge_size_cross_refs([Biggest | Exited], Entered, StillExited, StillEntered,
+		     DestTemplate, [SrcBit | MoreSrcTplt], NewSrcPath) :-
+    purge_size_cross_refs(Exited, Entered, LessExited, LessEntered,
+			  DestTemplate, MoreSrcTplt, MoreNewSrc),
+    path_bit_for(Biggest, SrcBit),
+    (nth(Posn, LessEntered, Sharer),
+        permutation([Biggest, Sharer], [Base, Share]),
+	size_cross_reffed(Base, Share), !,
+	select(Sharer, LessEntered, StillEntered),
+	nth(Posn, DestTemplate, [sm(_,_,_, fm_loop(I, _,_,_)) | _Loops]),
+	SrcBit = [sm(S1, S2, S3, fm_loop(_, S4, S5, S6)) | _SLoops],
+	NewSrcBit = [sm(S1, S2, S3, fm_loop(I, S4, S5, S6))],
+	StillExited = LessExited;
+     StillExited = [Biggest | LessExited],
+        StillEntered = LessEntered,
+	NewSrcBit = SrcBit),
+    NewSrcPath = [NewSrcBit | MoreNewSrc].
+
 /* This generates the extra array nestings due to submodels that are exited between a
 link's source and its destination. Note that if the destination is a creation or
 immigration node, it gets input arrays as if it were in its parent's environment rather
@@ -402,6 +435,15 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = up_hierarchy,
 	        Index = -1),
 	    Relation = none;
+	     purge_size_cross_refs(BiggestFirst, Entered, StillExited, _,
+				   DestTplt, SrcTplt, NewSrc),
+	         \+ StillExited = BiggestFirst,
+	         SourceLocation = by_shared_sizes,
+	         Index = -5,
+	         all(ame_gen, get_all_dims, [build(StillExited),
+					     append(Subs, [])]),
+		 Relation = DestTplt-SrcTplt-NewSrc;
+	    
 	(suffix([Base | ReallyExited], BiggestFirst);
 	  contains(Base, RemoteModel, ReallyExited),
 	    \+ member(Base, BiggestFirst)),
@@ -442,7 +484,8 @@ ready_type(Rect, Type) :-
 
 source_locn_name(Idx, Name) :-
 	Posn is -Idx,
-	nth(Posn, [up_hierarchy, in_8_nbrs, in_6_nbrs, in_offspring], Name).
+	nth(Posn, [up_hierarchy, in_8_nbrs, in_6_nbrs, in_offspring,
+		  by_shared_sizes], Name).
 
 relation_of_source(Exited, Entered, SourceLocation) :-
 	member(Far, Exited), member(Near, Entered),
@@ -641,6 +684,8 @@ name_from_role_texts(role_texts(Path, RelId, Dir, RelnCapt), Used, Name) :-
 	    append_atoms(from_offspring_, Tail, Remote_name);
 	  Dir = in_all_bases,
 	    append_atoms(Tail, '_from_base', Remote_name);
+	  Dir = by_shared_sizes,
+	    append_atoms(paired_, Tail, Remote_name);
 	  RelId = '/none/',
 	    append_atoms(every_, Tail, Remote_name);
 	  Dir = in_base,
