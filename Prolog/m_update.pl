@@ -350,24 +350,22 @@ path_bit_for(Sm, Bit) :-
     get_node_size(Sm, Dims),
     instance><path_section_for(Sm, _, Dims, Bit, _Hi, _Lo).
 
-purge_size_cross_refs([], Entered, [], Entered, DestTemplate, [], []) :-
+purge_size_cross_refs([], Entered, [], DestTemplate, [], []) :-
     all(m_update, path_bit_for, [build(Entered), build(DestTemplate)]).
 
-purge_size_cross_refs([Innermost | Exited], Entered, StillExited, LessEntered,
+purge_size_cross_refs([Innermost | Exited], Entered, StillExited,
 		     DestTemplate, [SrcBit | MoreSrcTplt], NewSrcPath) :-
-    purge_size_cross_refs(Exited, Entered, LessExited, LessEntered,
+    purge_size_cross_refs(Exited, Entered, LessExited,
 			  DestTemplate, MoreSrcTplt, MoreNewSrc),
     path_bit_for(Innermost, SrcBit),
-    (nth(Posn, LessEntered, Sharer),
+    (nth(Posn, Entered, Sharer),
         permutation([Innermost, Sharer], [Base, Share]),
 	size_cross_reffed(Base, Share), !,
-	%select(Sharer, LessEntered, StillEntered),
 	nth(Posn, DestTemplate, [sm(_,_,_, fm_loop(I, _,_,_)) | _Loops]),
 	SrcBit = [sm(S1, S2, S3, fm_loop(_, S4, S5, S6)) | _SLoops],
 	NewSrcBit = [sm(S1, S2, S3, fm_loop(I, S4, S5, S6))],
 	StillExited = LessExited;
      StillExited = [Innermost | LessExited],
-        %StillEntered = LessEntered,
 	NewSrcBit = SrcBit),
     NewSrcPath = [NewSrcBit | MoreNewSrc].
 
@@ -435,7 +433,7 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = up_hierarchy,
 	        Index = -1),
 	    Relation = none;
-	     purge_size_cross_refs(Exited, Entered, StillExited, _,
+	     purge_size_cross_refs(Exited, Entered, StillExited,
 				   DestTplt, SrcTplt, NewSrc),
 	         \+ StillExited = BiggestFirst,
 	         SourceLocation = by_shared_sizes,
