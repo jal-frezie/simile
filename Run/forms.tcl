@@ -17,15 +17,6 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
                 icount xproc xinc xunit xlibs eqnunit hide separate 0index} {
         set disaggregate($varName) [set $varName]
     }
-    set new 1
-
-    if {!$new} {
-	if [llength $icount]>0 {
-	    set disaggregate(icount) [join $icount ,]
-	} else  {
-	    set disaggregate(icount) 1
-	}
-    }
     #puts $disaggregate(icount)
     foreach stepId [list {Initialize only} {New params only} {Reset only} \
 			1st 2nd 3rd 4th 5th 6th 7th] {
@@ -73,44 +64,23 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     pack $cmtf -padx 2 -pady 2 -fill both -expand true
     pack $t.simple.notes -side bottom -padx 4 -pady 4 -fill both -expand true
 
-    if {$new} {
-	TitleFrame $t.simple.count \
-	    -text [tr. "Instances:"]
-	set disaggregate(countf) [GetFrame $t.simple.count]
-	foreach interpType {Single {Fixed array} {For data records} \
-				Population {Rectangular grid} \
-			    {Hexagonal grid}} {
-	    lappend disaggregate(labels) [tr. $interpType]
-	}
-	pack [ttk::combobox $disaggregate(countf).mb -state readonly \
+    TitleFrame $t.simple.count -text [tr. "Instances:"]
+    set disaggregate(countf) [GetFrame $t.simple.count]
+    foreach interpType {Single {Fixed array} {For data records} \
+			    Population {Rectangular grid} {Hexagonal grid}} {
+	lappend disaggregate(labels) [tr. $interpType]
+    }
+    pack [ttk::combobox $disaggregate(countf).mb -state readonly \
 	      -textvariable disaggregate(cbxv) -values $disaggregate(labels)] \
-	    -anchor w -side left -padx 4 -pady 4
+	-anchor w -side left -padx 4 -pady 4
 	
-	set exFrame [ttk::frame $disaggregate(countf).detail]
-	pack $exFrame -side left -anchor s -pady 4 -fill both -expand 1
-	pack [ttk::label $exFrame.l -wraplength 300p]
-	ShowDisagSetup ;# Set current type
-	bind $disaggregate(countf).mb <<ComboboxSelected>> \
-	    [list SetupDisagExtras $exFrame]
-	SetupDisagExtras $exFrame
-    } else {
-    TitleFrame $t.simple.count \
-	-text [tr. "Control of number of instances:"]
-    set countf [GetFrame $t.simple.count]
-
-    ttk::frame $countf.radio
-    foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
-        ttk::radiobutton $countf.radio.$rbutton \
-	    -text [tr. [lindex $rbutton 1]] -value [lindex $rbutton 0] \
-	    -variable disaggregate(type) -command "SetHighlights $countf"
-# TRANSLATOR: These are the second strings in each pair of braces after rbutton
-        pack $countf.radio.$rbutton -anchor w
-    }
-    pack $countf.radio -anchor w -side left
-    ::ttk::entry $countf.value -textvariable disaggregate(icount) -width 10
-    pack $countf.value -side left -anchor s -pady 4 -fill x -expand 1
-    bind $countf.value <Return> $okCmd
-    }
+    set exFrame [ttk::frame $disaggregate(countf).detail]
+    pack $exFrame -side left -anchor s -pady 4 -fill both -expand 1
+    pack [ttk::label $exFrame.l -wraplength 300p]
+    ShowDisagSetup ;# Set current type
+    bind $disaggregate(countf).mb <<ComboboxSelected>> \
+	[list SetupDisagExtras $exFrame]
+    SetupDisagExtras $exFrame
 
     pack $t.simple.count -padx 4 -pady 4 -fill both -expand true
 
@@ -424,25 +394,6 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     UpdateDisagInfo
     PackItUp $tt
 
-    if {$new} {
-	set icount $disaggregate(icount)
-    } else {
-    set icount {}
-    if [string compare $disaggregate(icount) 1] {
-        foreach newIndex [csv::split $disaggregate(icount)] {
-#            if {[string is double $newIndex] || \
-#                        [string match size(*) $newIndex] || \
-#                        [string match value(*) $newIndex]} {
-                lappend icount $newIndex
-#            } else {
-#                lappend icount \"$newIndex\"
-# enquoting removed as gave error with enum type -- only time used?
-#            }
-        }
-        set icount [csv::join $icount]
-    }
-    }
-
     if {$disaggregate(do_threads)} {
 	set disaggregate(separate) \
 	    $disaggregate(threads),$disaggregate(tasks),$disaggregate(tapers)
@@ -464,7 +415,8 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
         set result \
 	    [list $disaggregate(colour) $disaggregate(image) \
 		 $disaggregate(imgpos) $disaggregate(type) \
-		 $disaggregate(interp) $disaggregate(fatness) $icount $step \
+		 $disaggregate(interp) $disaggregate(fatness) \
+		 $disaggregate(icount) $step \
 		 $disaggregate(desc) $disaggregate(comment) \
 		 $disaggregate(eqnunit) $disaggregate(hide) \
 		 $disaggregate(separate) $disaggregate(0index) \
