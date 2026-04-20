@@ -437,7 +437,7 @@ get_unit_conversion(Remote, Local,
 				   DestTplt, SrcTplt, NewSrc),
 	         \+ StillExited = BiggestFirst,
 	         SourceLocation = by_shared_sizes,
-	         Index = -5,
+	         Index = 1, % >0 only means enabled by default unless relation
 	         all(ame_gen, get_all_dims, [build(StillExited),
 					     append(Subs, [])]),
 		 Relation = DestTplt-SrcTplt-NewSrc;
