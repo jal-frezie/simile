@@ -10,7 +10,8 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 		       fatness icount step desc comment enumLists \
 		       xproc xinc xunit xlibs eqnunit hide separate 0index} {
     global disaggregate tcl_platform window_info
-
+    package require csv
+    
     set mdl $window_info($parent,top_node)
     foreach varName {colour image imgpos type interp fatness \
                 icount xproc xinc xunit xlibs eqnunit hide separate 0index} {
@@ -428,7 +429,7 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     } else {
     set icount {}
     if [string compare $disaggregate(icount) 1] {
-        foreach newIndex [split $disaggregate(icount) ,] {
+        foreach newIndex [csv::split $disaggregate(icount)] {
 #            if {[string is double $newIndex] || \
 #                        [string match size(*) $newIndex] || \
 #                        [string match value(*) $newIndex]} {
@@ -438,7 +439,7 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 # enquoting removed as gave error with enum type -- only time used?
 #            }
         }
-        set icount [join $icount ,]
+        set icount [csv::join $icount]
     }
     }
 
@@ -658,6 +659,7 @@ proc SetupDisagExtras {exFrame} {
     } 1 {
 	$exFrame.l configure -text [tr. {Single- or multi-dimensional array of instances. Dimensions can be either numerical, or the names of enumerated types where there is one element for each member of the type. Enter the dimension(s) below, with commas between them if more than one.}]
 	set disaggregate(newdims) [join $disaggregate(icount) ,]
+	# do not use csv pkg, it adds quotes
 	pack [ttk::entry $exFrame.dims -textvariable disaggregate(newdims)]
     } 2 {
 	$exFrame.l configure -text [tr. {Submodel with one instance per value of a file parameter. It must contain at least one file parameter variable to set its membership.}]
@@ -713,13 +715,13 @@ proc UpdateDisagInfo {} {
 	    set disaggregate(type) generated
 	    set disaggregate(interp) none
 	    set disaggregate(icount) {}
-	    foreach newIndex [split $disaggregate(newdims) ,] {
+	    set newDims [string map {( (\" ) \")} $disaggregate(newdims)]
+	    foreach newIndex [csv::split $newDims] {
 		if {[string is double $newIndex]} {
 		    lappend disaggregate(icount) $newIndex
 		} elseif {[string first \( $newIndex]>=1} { 
-		    # arg is atom, enquote
-		    lappend disaggregate(icount) \
-			[string map {( (' ) ')}  $newIndex]
+		    # arg is atom, dequote?
+		    lappend disaggregate(icount) $newIndex
 		} else { ;# index is atom
 		    lappend disaggregate(icount) \'$newIndex\'
 		}
@@ -767,7 +769,7 @@ proc ShowDisagSetup {} {
 		generated {
 		    if {[llength $disaggregate(icount)]} {
 			set interpIdx 1
-			set sides [join [split $disaggregate(icount) ,] x]
+			set sides [csv::join [csv::split $disaggregate(icount)] x]
 		    } else {
 			set interpIdx 0
 		    }
