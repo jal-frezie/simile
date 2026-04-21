@@ -578,7 +578,6 @@ install:
 		IOTools/Standard\ tools/TablelistInspector.tcl \
 		IOTools/Standard\ tools/pestlink.tcl \
 		IOTools/two_table.tcl \
-		README \
 		Run/6d.h \
 		Run/backend.h \
 		Run/client5d.tcl \
@@ -616,9 +615,9 @@ install:
 		Run/window.tcl \
 		Run/simdoc32.ico \
 		simile.desktop | tar x -C "$(DESTDIR)"$(INSTALL_TGT)
-ifneq (, $(wildcard Scripts/help))
+ifneq (, $(wildcard help))
 	mkdir -p "$(DESTDIR)"$(INSTALL_TGT)/help
-	tar c -C Scripts/help concepts data diagrams elements \
+	tar c -C help concepts data diagrams elements \
 	equations files index.htm new/index.htm run start submodels \
 	| tar x -C "$(DESTDIR)"$(INSTALL_TGT)/help
 endif
