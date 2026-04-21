@@ -894,14 +894,16 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    DParam =.. [do | Param], % conversion to fn avoids recursion
 	    length(DoneExpr, Count),
 	    DDone =.. [do | DoneExpr];
-	 Param = makearray(Elt, Count),
-	    DParam = do(Elt, Count),
-	    DDone = do(EltExpr, CountExpr),
-	    DoneExpr = makearray(EltExpr, CountExpr)),
+	 Param =.. [makearray, Elt | Counts],
+	    DParam = do(Elt, Counts),
+	    length(Counts, NC),
+	    length(CountExprs, NC),
+	    DDone = do(EltExpr, CountExprs),
+	    DoneExpr =.. [makearray, EltExpr | CountExprs]),
 	    replace_subexps(DParam, dialogue, expand_params,
 			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DDone),
-	    DimL = [Count | SubL];
+	    append(Counts, SubL, DimL);
 	Param = element(List, Index),
 % work out dimty as if:
 % element([[a,b,c],[d,e,f]],[x,y,z]) is [element([a,d],x)...element([c,f],z)].

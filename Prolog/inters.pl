@@ -1053,52 +1053,39 @@ make_intermediates(
 
 	Source =.. [makearray | WrongLen],
 	    length(WrongLen, WrongNum),
-	    \+ WrongNum = 2,
+	    WrongNum < 2,
 	    throw(wrong_no_of_args(Source, built-in, makearray, WrongNum, 2));
 	    % do not leave this to general handler because it will complain
 	    % if arguments contain place_in(...)
 	(Source = makearray(Element,count(Reps)),
 	    fail, % hangs if element contains place_in() cos local_loop is vm
 	    make_intermediates(Reps, SubId, [dum], DestPath,_, PrevInters,
-			       BuildingArrays, Step, Used, _Dun, MidInters,
+			       BuildingArrays, Step, Used, _Dun, _MidInters,
 			       part_result(Counted, [], _, _DimVal)),
 	    get_model_and_loops(Counted, DestPath, SzLoops, _),
 	    suffix([LocalLoop], SzLoops), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
-	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
-	 ((catch(DimNum is float(Dim), _, fail),
-	          DimVal is round(DimNum), %allow idx to be float if = to an int
-	          DimNum is float(DimVal),
-	          MidInters = PrevInters,
-                  Dun = const_int;	% it is integer now
-	        make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,
-				   BuildingArrays, Step, Used, Dun, MidInters,
-				   part_result([], [], _, DimVal)),
-	        promote_unit(Dun, const_int)), !; % will be integer later
-		  throw(bad_index_number(Dim, makearray, 16777215))),
-	        NowBuilding = [LocalLoop | BuildingArrays],
-	        length(BuildingArrays, BDept),
-	        append_atoms(arraybuild, BDept, BuildName),
-		% generate_name(c, arraybuild, BuildName, Used),
-% added to stop bad rankings behaviour -- may clash with comp names
-% sorted that by not instantiating comp loops either...
-	        LocalInd = glob(BuildName, _);
+	((Source =.. [makearray, Element | Dims];
+	      Source = soloarr(Element), Dims=[1]),
+	    all(inters, decode_makearray_subscripts,
+		[build(Dims), unify(SubId), unify(Step),
+		 build(DimVals), build(Duns)]),
+	    length(BuildingArrays, BDept),
+	    create_build_loops(DimVals, Duns, LocalLoops, BDept),
+	        append(LocalLoops, BuildingArrays, NowBuilding);
 	    make_choose_form(Source, keep(LocalInd), 0, Element),
 	        length(Source, DimVal),
 		(DimVal > 1, !; throw(singlet_array(Source, DimVal))),
 %		DimSetups = [],
-	        MidInters = PrevInters,
 	        NowBuilding = BuildingArrays,
-	        Dun = const_int), !,
-	    ((\+ number(DimVal); DimVal > 1; Source = soloarr(_)), !;
-		throw(bad_array_size(Source, DimVal))),
-	    LocalLoop = set(LocalInd, loop(DimVal, Dun))),
+	        Dun = const_int,
+		LocalLoops = [set(LocalInd, loop(DimVal, Dun))])),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
-			MidInters, NowBuilding, Step, Used, Units, NewInters,
+			PrevInters, NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),
 %	    append(DimSetups, EltSetups, Setups),
 	    get_model_and_loops(EltContext, DestPath, EltLoops, EltBase),
-	    append(EltLoops, [LocalLoop | EltBase], SourceContext);
+	    append([EltLoops, LocalLoops, EltBase], SourceContext);
 
 /* This should work like current version of statearray(), i.e.,
    generate an inter that should get pruned as an idler in typical use
@@ -2050,6 +2037,24 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	 promote_unit(UR, U), !; % can use p_u because units always numeric
 	throw(mismatched_units(list_parts, [[H], T], [U1, UN], compatible))),
 	N is M+1.
+
+decode_makearray_subscripts(Dim, SubId, Step, DimVal, Dun) :-
+    (catch(DimNum is float(Dim), _, fail),
+        DimVal is round(DimNum), %allow idx to be float if = to an int
+	DimNum is float(DimVal),
+        Dun = const_int;	% it is integer now
+     decode_number(Dim, SubId, Step, DimVal, Dun),
+     (DimVal > 1, !;
+          throw(bad_array_size(Dim, DimVal))),
+        promote_unit(Dun, const_int)), !; % will be integer later
+    throw(bad_index_number(Dim, makearray, 16777215)).
+
+create_build_loops([], [], [], _).
+create_build_loops([DimVal | DimVals], [Dun | Duns], NewLoops, BDept) :-
+    BNewDept is BDept + 1,
+    append_atoms(arraybuild, BDept, BuildName),
+    create_build_loops(DimVals, Duns, LocalLoops, BNewDept),
+    append(LocalLoops, [set(glob(BuildName, _), loop(DimVal, Dun))], NewLoops).
 
 /* Returns expressions for a model's indices, those for outer loops first */
 indices_for(Level, [], [], []) :-
