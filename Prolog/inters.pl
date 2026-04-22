@@ -1068,7 +1068,8 @@ make_intermediates(
 	((Source =.. [makearray, Element | Dims];
 	      Source = soloarr(Element), Dims=[1]),
 	    all(inters, decode_makearray_subscripts,
-		[build(Dims), unify(SubId), unify(Step),
+		[build(Dims), unify([SubId, DestPath, PrevInters,
+				     BuildingArrays, Step, Used]),
 		 append(DimVals, []), append(Duns, [])]),
 	    length(BuildingArrays, BDept),
 	    create_build_loops(DimVals, Duns, LocalLoops, BDept),
@@ -2038,13 +2039,16 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	throw(mismatched_units(list_parts, [[H], T], [U1, UN], compatible))),
 	N is M+1.
 
-decode_makearray_subscripts(Dim, SubId, Step, DimVals, Duns) :-
+decode_makearray_subscripts(Dim, [SubId, DestPath, PrevInters, BuildingArrays,
+				  Step, Used], DimVals, Duns) :-
     get_actual_size(SubId, Dim, quoted, DimVals, _SrcTypes, Duns), !;
     (catch(DimNum is float(Dim), _, fail),
         DimVal is round(DimNum), %allow idx to be float if = to an int
 	DimNum is float(DimVal),
         Dun = const_int;	% it is integer now
-     decode_number(Dim, SubId, Step, DimVal, Dun),
+     make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,
+				   BuildingArrays, Step, Used, Dun, _MidInters,
+				   part_result([], [], _, DimVal)),
      (DimVal > 1, !;
           throw(bad_array_size(Dim, DimVal))),
         promote_unit(Dun, const_int)), !, % will be integer later
