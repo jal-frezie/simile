@@ -738,7 +738,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 
 	on_exception(ParseException,
 		     replace_subexps(Equation, dialogue, expand_params,
-			dim_data(DimL, UsedList, AllInputs, ExpInters),
+			dim_data(NearlyDimL, UsedList, AllInputs, ExpInters),
 				     top_down, _ParamSubs, FullExpr),
 		     ParseError = ParseException),
 	
@@ -749,7 +749,9 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	      inters><units_for_trigger_mag(Fn, _-TrigDG),
 	      append(TrigDG, _, TrigL);
 	  ParamList = UsedList),
-	    get_ground_part(DimL, DimDG),
+	    get_ground_part(NearlyDimL, NearlyDimDG),
+	    get_actual_sizes(Fn, NearlyDimDG, quoted, DimDG, _V, _U),
+	    append(DimDG, _, DimL),
 	    length(DimDG, LenD),
 	    length(DimDV, LenD),
 	    make_inds_for(DimDV, _, DLoops, _),
@@ -785,11 +787,14 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	    ParseError = expr_denotes_list;
 	   member(records, Dims), !,
 	    ParseError = expr_denotes_per_record_array;
-	   inters><promote_arg(Type, DUnits,_FType,_Conv),
-	  (suffix(Loops, DLoops), !;
+	  \+ suffix(Loops, DLoops),
 	   get_dims_from_loops(DLoops, SlotDims, _),
-	   ParseError = wrong_param_type('prev(n)', Dims, SlotDims, dimensions));
+	   ParseWarn = wrong_param_type('prev(n)', Dims, SlotDims, dimensions),
+	   (var(DUnits), fail -> % can still be var if used and dims bad!
+	       compile><tag_warn(ParseWarn), fail;
+	   ParseError = ParseWarn);
 
+	  inters><promote_arg(Type, DUnits,_FType,_Conv); % all good
 		% not sure how to make this happen
 	  ParseError = wrong_param_type('prev(n)', Type, DUnits, units))),
 	(nonvar(ParseError), !;
