@@ -1069,7 +1069,7 @@ make_intermediates(
 	      Source = soloarr(Element), Dims=[1]),
 	    all(inters, decode_makearray_subscripts,
 		[build(Dims), unify(SubId), unify(Step),
-		 build(DimVals), build(Duns)]),
+		 append(DimVals, []), append(Duns, [])]),
 	    length(BuildingArrays, BDept),
 	    create_build_loops(DimVals, Duns, LocalLoops, BDept),
 	        append(LocalLoops, BuildingArrays, NowBuilding);
@@ -2038,7 +2038,8 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	throw(mismatched_units(list_parts, [[H], T], [U1, UN], compatible))),
 	N is M+1.
 
-decode_makearray_subscripts(Dim, SubId, Step, DimVal, Dun) :-
+decode_makearray_subscripts(Dim, SubId, Step, DimVals, Duns) :-
+    get_actual_size(SubId, Dim, quoted, DimVals, _SrcTypes, Duns), !;
     (catch(DimNum is float(Dim), _, fail),
         DimVal is round(DimNum), %allow idx to be float if = to an int
 	DimNum is float(DimVal),
@@ -2046,7 +2047,8 @@ decode_makearray_subscripts(Dim, SubId, Step, DimVal, Dun) :-
      decode_number(Dim, SubId, Step, DimVal, Dun),
      (DimVal > 1, !;
           throw(bad_array_size(Dim, DimVal))),
-        promote_unit(Dun, const_int)), !; % will be integer later
+        promote_unit(Dun, const_int)), !, % will be integer later
+      [DimVals, Duns] = [[DimVal], [Dun]];
     throw(bad_index_number(Dim, makearray, 16777215)).
 
 create_build_loops([], [], [], _).
