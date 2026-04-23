@@ -745,10 +745,12 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	(nonvar(ParseError), !;
 	
 	 length(UsedList, _LenP),
-	 (select('/tm/', UsedList, ParamList) ->
+	 (member('/tm/', UsedList) ->
 	      inters><units_for_trigger_mag(Fn, _-TrigDG),
-	      append(TrigDG, _, TrigL);
-	  ParamList = UsedList),
+	      append(TrigDG, _, TrigL); true),
+	 (member('/dest/', UsedList) ->
+	      CheckDestFitsContext = true; true),
+	 purge(UsedList, ['/tm/','/dest/'], ParamList),
 	    get_ground_part(NearlyDimL, NearlyDimDG),
 	    get_actual_sizes(Fn, NearlyDimDG, quoted, DimDG, _V, _U),
 	    append(DimDG, _, DimL),
@@ -790,7 +792,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	  \+ suffix(Loops, DLoops),
 	   get_dims_from_loops(DLoops, SlotDims, _),
 	   ParseWarn = wrong_param_type('prev(n)', Dims, SlotDims, dimensions),
-	   (var(DUnits), fail -> % can still be var if used and dims bad!
+	   (var(CheckDestFitsContext) -> % dim guesser broken but not needed
 	       compile><tag_warn(ParseWarn), fail;
 	   ParseError = ParseWarn);
 
@@ -837,10 +839,11 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			   PLoops);
 		     true);
 	        (Param = '/dest/', !,
-		        get_ground_part(LRefs, GRefs),
-		        length(GRefs, L);
-		    m_update><analyze_array(Depth, any, Dims),
-	                make_inds_for(Dims, _, PLoops, Inds)),
+		     member(Param, PsUsed),
+		     get_ground_part(LRefs, GRefs),
+		     length(GRefs, L);
+		   m_update><analyze_array(Depth, any, Dims),
+	             make_inds_for(Dims, _, PLoops, Inds)),
 	            Type-PLoops = Loops,
 	            Units = param_history(_Defn, 1)),
 	        /* pass dims up the recursion loop */
