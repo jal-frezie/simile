@@ -319,7 +319,7 @@ $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -std=c++11 -DSHARELIB $(CFLAGS) $(CPPFLAGS) \
 		$(MAKEPIC) $(MAKESL) -I. -Wl,--out-implib,lib5d$(ARCHEXTN).a \
 		-o $(SHANK) shank.cpp -lpthread -L../$(RESDIR) -lportaudio; \
-	mv $(SHANK) ../$(SLDIR); \
+	mkdir -p ../$(SLDIR); mv $(SHANK) ../$(SLDIR); \
 	mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
 
 # Unix: not needed for Linux as it can build at run time

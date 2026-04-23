@@ -5,6 +5,8 @@ set newHelperClass TextView20140827
 oo::class create iotool::$newHelperClass {
     superclass iotool::Helper
 
+    variable winId
+
     self {
 	method identify {} {
 	    return "Text viewer"
