@@ -1615,12 +1615,12 @@ proc LoadDataFile {mode query mdl} {
     } else {
 	package require csv
 	set brkr $table_entry(separator)
-        gets $stream firstLine
         switch $mode {
             columns {
                 # csv handled by existing code other extensions handled with ODBC
                 if {[IsCSV $ext]} {
                         set i 1
+		        gets $stream firstLine
                         foreach hd [::csv::split $firstLine $brkr] {
 			    $fheads.lheads insert end [string trim $hd]
                             incr i
@@ -1641,8 +1641,7 @@ proc LoadDataFile {mode query mdl} {
 		    set brkr {}
 		}
                 set table_entry(col1) 1
-                set table_entry(coln) \
-		    [llength [eval $split_row {$firstLine} {$brkr}]]
+                set table_entry(coln) 1
                 set table_entry(row1) 1
                 set table_entry(rown) 1
                 while {[gets $stream firstLine]!=-1} {
@@ -2001,7 +2000,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 	    #ShowMess debug info "$connectString dbtable $dbtable field $field"  ok
 	    set datalist [ListColumn $db $dbtable $field]
 	    set indexArgs {}
-	    for {set idxPsn 2} {$idxPsn < [llength $tableSpec]} {incr idxPsn} {
+	    for {set idxPsn 3} {$idxPsn < [llength $tableSpec]} {incr idxPsn} {
 		lappend indexArgs idx$idxPsn \
 		    [ListColumn $db $dbtable [lindex $tableSpec $idxPsn]]
 	    }
@@ -2023,7 +2022,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		    # [EnquoteIfNonNumeric $datum] see above
 	    }]
 	    # reinsert dbtable into tableSpec so it gets written to .spfs
-	    set tableSpec [linsert $tableSpec 2 ,dbtable:$dbtable]
+	    set tableSpec [linsert $tableSpec 3 ,dbtable:$dbtable]
 	    #ShowMess debug info "datalist $datalist" ok
 	    # todo add error messages!!!
 	    # make sure have some data

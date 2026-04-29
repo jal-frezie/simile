@@ -107,6 +107,10 @@ if {$use_system_tcltk} {
 	package require md5 ;# Do now because even querying system package barfs
 	lappend auto_path "/System/Library/Tcl"
     }
+    if {$tcl_platform(platform) eq "windows"} {
+	# botch to make Unix-style launcher work for devs
+	lappend auto_path [file join $SIMILE_PATH System64 lib]
+    }
 } elseif {[info exists prolog_in_console]} {
     set auto_path [linsert $auto_path 0 $libDir] ;# must be 8.4, look everywhere
 } else {
