@@ -136,7 +136,7 @@ get_all_links(Function, SrcType, ids(RemoteNode, Relation),
 
 	get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Index, SourceLocn),
- 	(integer(Index), Index<0 -> member(Index, Enabs);
+ 	(integer(Index), Index < 0, Index > -5 -> member(Index, Enabs);
 	\+ member(Index, Supps)),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	(use_destination(Link, RemoteUnit, 
@@ -435,9 +435,9 @@ get_unit_conversion(Remote, Local,
 	    Relation = none;
 	     purge_size_cross_refs(Exited, Entered, StillExited,
 				   DestTplt, SrcTplt, NewSrc),
-	         \+ StillExited = BiggestFirst,
+	         \+ StillExited = Exited,
 	         SourceLocation = by_shared_sizes,
-	         Index = 1, % >0 only means enabled by default unless relation
+	         Index = -5, % -1 to -4 disabled by default
 	         all(ame_gen, get_all_dims, [build(StillExited),
 					     append(Subs, [])]),
 		 Relation = DestTplt-SrcTplt-NewSrc;

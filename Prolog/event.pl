@@ -1047,7 +1047,7 @@ role_ref_to_msg(Role-Ref, Message) :-
 	 Message = [with_role, Capt]).
 
 role_ref_to_stat(_-Ref, Suppd, Enabd, Status) :-
-	(integer(Ref), Ref<0 -> 
+	(integer(Ref), Ref < 0, Ref > -5 -> 
 	(Status = 1,
 	member(Ref, Enabd), !;
 	Status = 0);
