@@ -341,32 +341,63 @@ uses_as_event(VisSource, RealVar) :-
 	    (RealVar is_of_sort discrete; find_type(RealVar, state));
 	VisSource is_of_sort discrete. % event values to be used
 
-size_cross_reffed(Base, Share) :-
+size_cross_reffed(Base, Share, BaseCapt, In-Post) :-
     get_av_pair(Share, 0, multiplication_spec, MultSpec),
-    member(count=[size(BaseCapt)], MultSpec),
-    caption_for(Base, BaseCapt).
+    member(count=Dims, MultSpec),
+    caption_for(Base, BaseCapt),
+    suffix([size(BaseCapt) | Tail], Dims),
+    get_node_size(Base, BDims),
+    length(BDims, In),
+    get_actual_sizes(Share, Tail, bare, _, TDims, _),
+    length(TDims, Post).
 
 path_bit_for(Sm, Bit) :-
     get_node_size(Sm, Dims),
     instance><path_section_for(Sm, _, Dims, Bit, _Hi, _Lo).
 
+split_indices(All, Range, Pre, In, Post) :-
+    Range = all,
+      [Pre, In, Post] = [[], All, []];
+    Range = LIn-LPost,
+      length(Post, LPost),
+      length(In, LIn),
+      append(Mid, Post, All),
+      append(Pre, In, Mid).
+
+trim_loops(All, Range, Loops) :-
+    Range = all,
+      Loops = [];
+    Range = Lose-Start,
+      length(SLoops, Start),
+      length(ILoops, Lose),
+      append(SLoops, MLoops, All),
+      append(ILoops, TLoops, MLoops),
+      append(SLoops, TLoops, Loops).
+				 
 purge_size_cross_refs([], Entered, [], DestTemplate, [], []) :-
     all(m_update, path_bit_for, [build(Entered), build(DestTemplate)]).
 
-purge_size_cross_refs([Innermost | Exited], Entered, StillExited,
+
+purge_size_cross_refs([Innermost | Exited], Entered, NewSrcLoops,
 		     DestTemplate, [SrcBit | MoreSrcTplt], NewSrcPath) :-
-    purge_size_cross_refs(Exited, Entered, LessExited,
+    purge_size_cross_refs(Exited, Entered, MoreSrcLoops,
 			  DestTemplate, MoreSrcTplt, MoreNewSrc),
-    path_bit_for(Innermost, SrcBit),
     (nth(Posn, Entered, Sharer),
-        permutation([Innermost, Sharer], [Base, Share]),
-	size_cross_reffed(Base, Share), !,
-	nth(Posn, DestTemplate, [sm(_,_,_, fm_loop(I, _,_,_)) | _Loops]),
-	SrcBit = [sm(S1, S2, S3, fm_loop(_, S4, S5, S6)) | _SLoops],
-	NewSrcBit = [sm(S1, S2, S3, fm_loop(I, S4, S5, S6))],
-	StillExited = LessExited;
-     StillExited = [Innermost | LessExited],
-	NewSrcBit = SrcBit),
+     permutation([Innermost-SRange, Sharer-DRange],
+		 [Base-all, Share-ShareRange]),
+	size_cross_reffed(Base, Share, _ShareCapt, ShareRange), !,
+	nth(Posn, DestTemplate, [sm(_,_,_, fm_loop(DI, _,_,_)) | _DLoops]),
+	path_bit_for(Innermost, SrcBit),
+	SrcBit = [sm(S1, S2, S3, fm_loop(SI, S4, S5, S6)) | SLoops],
+	split_indices(DI, DRange, _DPre, DIn, _DPost),
+	split_indices(SI, SRange, SPre, _SIn, SPost),
+	append([SPre, DIn, SPost], I),
+	trim_loops(SLoops, SRange, Loops),
+	NewSrcBit = [sm(S1, S2, S3, fm_loop(I, S4, S5, S6)) | Loops],
+	inters><get_dims_from_loops(Loops, AddSrcLoops, _Inds);
+     get_all_dims(Innermost, AddSrcLoops),
+        NewSrcBit = SrcBit),
+    append(MoreSrcLoops, AddSrcLoops, NewSrcLoops),
     NewSrcPath = [NewSrcBit | MoreNewSrc].
 
 /* This generates the extra array nestings due to submodels that are exited between a
@@ -433,13 +464,11 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = up_hierarchy,
 	        Index = -1),
 	    Relation = none;
-	     purge_size_cross_refs(Exited, Entered, StillExited,
+	     purge_size_cross_refs(Exited, Entered, Subs,
 				   DestTplt, SrcTplt, NewSrc),
-	         \+ StillExited = Exited,
+	         \+ Subs = DefSubs,
 	         SourceLocation = by_shared_sizes,
 	         Index = -5, % -1 to -4 disabled by default
-	         all(ame_gen, get_all_dims, [build(StillExited),
-					     append(Subs, [])]),
 		 Relation = DestTplt-SrcTplt-NewSrc;
 	    
 	(suffix([Base | ReallyExited], BiggestFirst);
