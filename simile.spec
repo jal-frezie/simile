@@ -53,11 +53,11 @@ make DESTDIR=$RPM_BUILD_ROOT LIBDIR=%{_libdir} install
 # rm %{_mandir}/mann/tkDND.n.gz
 # untested -- remove docs after installing rather than adjusting makefile
 cd Extensions/tktable
-make DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir}/%{name}-%{version}/System/lib/Stubs install
+make DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir}/%{name}-%{version}/System/lib install
 # rm %{_mandir}/mann/tkTable.n.gz
 # path too long and 64 not xplat -- keep in Extensions?
 cd ..
-cp -R tablelist* ${RPM_BUILD_ROOT}%{_libdir}/%{name}-%{version}/System/lib/Stubs
+cp -R tablelist* ${RPM_BUILD_ROOT}%{_libdir}/%{name}-%{version}/System/lib
 cd -
 
 %files
