@@ -545,6 +545,7 @@ appropriate_units(Units, TypeBase, RawBase, CheckLevel,
 	\+ (EqnToUnitError = bad_type_conversion(_,_),
 	    % this never happens because we allow quiet upgrade of int units
 	    \+ NewUnits == TypeBase,
+	    event><unclick, % lost from GUI if it accepted eqn bar
 	    query(replace_units(ComboBase, NewUnits), question, fill_equation,
 		 [ok, cancel], ok)), % user chooses to override old unit field
 	(\+ EqnToUnitError == [],
@@ -961,6 +962,7 @@ check_param_usage(Current, AllowLinks, Used, Left, Challenge) :-
 	    \+ AllowLinks = [], % just fail if checking on propagation
 	    (AllowLinks = 0, Prob = unwanted_links(SourceCaption);
 		AllowLinks = 1, Prob = extra_links(SourceCaption)),
+	    event><unclick, % lost from GUI if it accepted eqn bar
 	    query(Prob, question, fill_equation, [ok, cancel], Choice),
 	    (Choice = ok,
 		event><off(LinkName),
