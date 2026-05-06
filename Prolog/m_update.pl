@@ -344,17 +344,21 @@ uses_as_event(VisSource, RealVar) :-
 	VisSource is_of_sort discrete. % event values to be used
 
 size_cross_reffed(Base, Share, BaseCapt, In-Post) :-
-    get_av_pair(Share, 0, multiplication_spec, MultSpec),
-    member(count=Dims, MultSpec),
     caption_for(Base, BaseCapt),
-    suffix([size(BaseCapt) | Tail], Dims),
+    (connects(Rel, Base, Share),
+     find_type(Rel, relation),
+     list_local_index_meanings(Share, _SDims, IndSpecs),
+     append(TDims, [ind_spec(_,_,_, Rel) | _], IndSpecs), !;
+    get_av_pair(Share, 0, multiplication_spec, MultSpec),
+     member(count=Dims, MultSpec),
+     suffix([size(BaseCapt) | Tail], Dims),
+     get_actual_sizes(Share, Tail, bare, _, TDims, _)),
     get_node_size(Base, BDims),
     length(BDims, In),
-    get_actual_sizes(Share, Tail, bare, _, TDims, _),
     length(TDims, Post).
 
 path_bit_for(Sm, Bit) :-
-    get_node_size(Sm, Dims),
+    get_all_dims(Sm, Dims),
     instance><path_section_for(Sm, _, Dims, Bit, _Hi, _Lo).
 
 split_indices(All, Range, Pre, In, Post) :-
