@@ -9,7 +9,7 @@ itself is only addressed from within the database module.
 
 sicstus_module(m_update,
 	       [list_evt_captions/2, get_av_pair/4, add_parameter/4,
-		list_index_meanings/2, list_local_index_meanings/2,
+		list_index_meanings/2, list_local_index_meanings/3,
 		get_input_info/2,get_link_source_data/7, find_node_with_data/3,
 		valid_input/3, check_unit/4,
 		need_same_dims/2,
@@ -248,7 +248,7 @@ get_spec_units(Node, Unit) :-
 list_index_meanings(root, []).
 
 list_index_meanings(Submodel, Meanings) :-
-	list_local_index_meanings(Submodel, Group1),
+	list_local_index_meanings(Submodel, _Dims, Group1),
 	find_all_comps(Contain, Submodel),
 	(instance><counts_as_outside(Submodel), !,
 	    find_all_comps(Parent, Contain);
@@ -256,7 +256,7 @@ list_index_meanings(Submodel, Meanings) :-
 	list_index_meanings(Parent, Group2),
 	append(Group1, Group2, Meanings).
 
-list_local_index_meanings(Submodel, Meanings) :-
+list_local_index_meanings(Submodel, Dims, Meanings) :-
 	caption_for(Submodel, BareCaption),
 	append_atoms(['"', BareCaption, '"'], Caption),
 	(is_population(Submodel), !,
@@ -270,7 +270,8 @@ list_local_index_meanings(Submodel, Meanings) :-
 			LocalDims, Group1),
 	list_links(Submodel, Links),
 	all(m_update, get_link_exits, [build(Links), build(Starts)]),
-	list_link_index_meanings(Caption, Starts, Group2),
+	list_link_index_meanings(Caption, Starts, LinkDims, Group2),
+	append(LocalDims, LinkDims, Dims),
 	append(Group1, Group2, Meanings).
 
 get_link_exits(Link, exits(Link, MPliers)) :-
@@ -288,20 +289,21 @@ list_exits_smallest_first(Link, Exits) :-
 	 There = []),
 	append(There, Here, Exits).
 */
-list_link_index_meanings(_, [], []).
+list_link_index_meanings(_, [], [], []).
 
-list_link_index_meanings(DestCapt, [exits(_, []) | Rest], Meanings) :-
-	list_link_index_meanings(DestCapt, Rest, Meanings).
+list_link_index_meanings(DestCapt, [exits(_, []) | Rest], Dims, Meanings) :-
+	list_link_index_meanings(DestCapt, Rest, Dims, Meanings).
 
 list_link_index_meanings(DestCapt, [exits(Link, [Start | SRest]) | LRest],
-			 Meanings) :-
-	list_local_index_meanings(Start, BaseMeanings),
+			 Dims, Meanings) :-
+	list_local_index_meanings(Start, StartDims, BaseMeanings),
 	caption_for(Link, LinkCapt),
 	sicstus_format_to_chars(" in role \"~a\" for ~a", [LinkCapt, DestCapt], RoleCaptStr),
 	all(m_update, append_base_role,
 	    [build(BaseMeanings), unify([Link, RoleCaptStr]), build(First)]),
 	list_link_index_meanings(DestCapt, [exits(Link, SRest) | LRest],
-				 Last),
+				 OtherDims, Last),
+	append(StartDims, OtherDims, Dims),
 	append(First, Last, Meanings).
 
 append_base_role(ind_spec(BaseMeaning, Posn, N, _OldLink), [Link, RoleCaptStr],
@@ -480,6 +482,7 @@ get_unit_conversion(Remote, Local,
 	    member(Assoc, Entered),
 	    connects(Relation, Base, Assoc),
 	    Relation has_type relation,
+	    variable_size(Assoc),
 	    Relation is_connector from Base to _,
 	    IndexRelation is_connector from _ to Assoc,
 	    IndexRelation has_type relation,
@@ -495,6 +498,7 @@ get_unit_conversion(Remote, Local,
 	        Entered = []),
 	    connects(Relation, Base, Assoc),
 	    Relation has_type relation,
+	    variable_size(Assoc),
 	    Relation is_connector from Base to _,
 	    find_reference(LocalModel, Index, Relation),
 	    (is_exclusive_role(Relation),
@@ -515,13 +519,12 @@ source_locn_name(Idx, Name) :-
 		  by_shared_sizes], Name).
 
 relation_of_source(Exited, Entered, SourceLocation) :-
-	member(Far, Exited), member(Near, Entered),
-	    (connects(Relation, Far, Near),
-		SourceLocation = in_base;
-	      connects(Relation, Near, Far),
-		SourceLocation = in_assoc),
-	    Relation has_type relation, !;
-	  SourceLocation = in_hierarchy.
+    member(Far, Exited), member(Near, Entered),
+    permutation([Far-in_base, Near-in_assoc], [Source-SourceLocation, Dest-_]),
+    connects(Relation, Source, Dest),
+    variable_size(Dest),
+    Relation has_type relation, !;
+    SourceLocation = in_hierarchy.
 
 is_exclusive_role(Role) :-
 	find_name_host(Role, RoleWithAttrs),

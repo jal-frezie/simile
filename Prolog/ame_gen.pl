@@ -779,8 +779,7 @@ enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 		     hex_grid(R,C)-hex_nbr-6-n(hex_nbr)-'HEX_NBR'])),
 % only try to find relevant grid type in model if needed
 % otherwise takes too long
-	    Grid has_class_refinement multiplication_spec of MS,
-	    member(interpretation=Form, MS),
+	    builtin_nbr_refs(Grid, Form),
 	    contains(Project, Grid),
 	    backup><is_toplevel(Project),
 	    contains(Project, Model);
@@ -840,15 +839,17 @@ canonical order, i.e., those accessed by the highest index numbers first. */
 get_all_dims(Source, AllDims) :-
 	Source has_class_refinement assume_simple of 1, !,
 	    AllDims = [];
-	variable_size(Source), !,
-	    AllDims = [var];
 	by_record(Source),
 	    (by_record_brackets(curly),
 		AllDims = [var]; % change to en/disable indexed reference
 	     AllDims = [records]), !;
+	variable_size(Source), !,
+	     AllDims = [var];
 	(find_type(Source, submodel) ->
-	     get_node_size(Source, AllDims);
-	 AllDims = []). % compatibility: g_n_s used to return [] for primitives
+	     m_update><list_local_index_meanings(Source, RevLoopDims, _),
+	     reverse(RevLoopDims, LoopDims),
+	     get_actual_sizes(Source, LoopDims, bare, _SizeN, AllDims, _U);
+	get_node_size(Source, AllDims)).
 	
 /* Purge removes all elements of the 2nd arg from the 1st leaving the 3rd.
 It uses the database so templates which match many different elements
@@ -893,7 +894,14 @@ contains(Big, Small, Chain) :-
 
 variable_size(Source) :-
 	is_population(Source);
-	is_conditional(Source).
+	is_conditional(Source);
+        Link is_connector from _ to Source,
+        Link has_type relation,
+	terminates(Link, Source),
+	initiates(Link, Origin),
+	get_chain(Origin, Source, _Top, Exited, _Entered),
+	member(VmLevel, Exited),
+	variable_size(VmLevel).
 
 /* list_links returns the starting arcs of relations terminating on a
 node. They are sorted so those with the highest indices (most recently
@@ -935,11 +943,8 @@ from_value(Node) :-
 	member(type=derived, Spec).
 
 is_conditional(Node) :-
-	Link is_connector from _ to Node,
-	Link has_type relation,
-	terminates(Link, Node), !; /* all assoc models are vm */
-	Node has_part Query,
-	find_type(Query, condition).
+    Node has_part Query,
+    find_type(Query, condition).
 
 builtin_nbr_refs(Node, Interp) :-
 	Node has_class_refinement multiplication_spec of Spec,

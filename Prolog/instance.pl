@@ -72,17 +72,23 @@ instantiate_nodes(Nodes, New_instances, Path, RefsIn, RefsOut) :-
 instantiate_trees([], [], [], _, []).
 
 instantiate_trees([Node|Nodes], [Instance|Instances], Count, Path, ResultOut) :-
-	get_node_size(Node, Multiple),
+        get_all_dims(Node, FinalDims),
+	(FinalDims = [var] ->
+	     get_node_size(Node, Multiple);
+	 Multiple = FinalDims),
 	pointer_from(Path, HiPtr),
 	path_section_for(Node, Name, Multiple, NewBit, HiPtr, _),
 	append(NewBit, Path, NewPath),
 	instantiate(Node, Submodel, NewPath, Results),
-	list_links(Node, Links),
-	make_base_refs(Node, Links, BaseRefs),
+	(variable_size(Node) ->
+	     list_links(Node, Links),
+	     make_base_refs(Node, Links, BaseRefs);
+	 BaseRefs = []),
 	/* I don't think the assoc_refs need to be in any special order... */
 	(setof(base(Assoc, Link, _),
 			FarEnd^(connects(Link, Node, Assoc),
 				Link is_connector from Node to FarEnd,
+				variable_size(FarEnd),
 				Link has_type relation),
 			AssocRefs), !;
 	AssocRefs = []),
@@ -845,7 +851,7 @@ inds_from_rel_posn(Cloud, Y, X, [Idx2, Idx1]) :-
 
 % 3rd arg of *m_loop(...) is inserted by extract_submodel_assignments
 path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
-	list_local_index_meanings(SmName, ISpecs),
+	list_local_index_meanings(SmName, _Dims, ISpecs),
 	all(dialogue, index_types, [build(ISpecs), build(RevIndxCount)]),
 	reverse(RevIndxCount, IndxCount),
 	(variable_size(SmName), !,

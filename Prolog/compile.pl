@@ -832,7 +832,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 			xrefs(Model, Bases, _), Name, ModelType-_),
 	(variable_size(SymbolicName), !,
 	    /* Declare the type with 'compartment' to hold instance numbers */
-	    list_local_index_meanings(SymbolicName, Bounds),
+	    list_local_index_meanings(SymbolicName, _Dims, Bounds),
 	    append_atoms(ModelType, '*', PtrType),
 	    (is_population(SymbolicName), !,
 		DummyCompDims = [1],
@@ -897,7 +897,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 generate_metadata(L, Instance, Tree, Level, Used, Stream) :-
 	Instance = instance(Type, Node, Loc, _, _-CSizes),
 	(Type = submodel, !,
-	    list_local_index_meanings(Node, SmIndSpecs),
+	    list_local_index_meanings(Node, _Dims, SmIndSpecs),
 	    all(forms, index_names_and_sizes,
 		[build(SmIndSpecs), build(_Names), build(RSizes)]),
 	    reverse(RSizes, SmSizes);
@@ -1643,8 +1643,9 @@ get_swaps_and_waits([instance(submodel, ID, _,_,_) | _], FarEnds, _, [], []) :-
 	FarEnds = [].
 
 get_swaps_and_waits(Tree, [base(Assoc, Link, Ptrs) | Rest], Dir,
-	  [path_substitution(Exited, Entered, Link) | MorePathSwaps], Waits) :-
-	(Dir = out,
+	  PathSwaps, Waits) :-
+	get_swaps_and_waits(Tree, Rest, Dir, MorePathSwaps, OtherWaits),
+        (Dir = out,
 	    make_branch(Tree, Assoc, OutTree, InTree),
 	    levels_to_path(OutTree, Exited, TopPtr, _),
 	    levels_to_path(InTree, Entered, TopPtr, _),
@@ -1668,7 +1669,7 @@ get_swaps_and_waits(Tree, [base(Assoc, Link, Ptrs) | Rest], Dir,
 	    levels_to_path(InTree, Entered, TopPtr, _),
 	    get_base_ptrs(Exited, _, Ptrs), /* this actually sets them */
 	    wait_for_submodels(Exited, TheseWaits)),	
-	get_swaps_and_waits(Tree, Rest, Dir, MorePathSwaps, OtherWaits),
+	PathSwaps = [path_substitution(Exited, Entered, Link) | MorePathSwaps],
 	append(TheseWaits, OtherWaits, Waits).
 
 convert_base_specs(time, on_reset).
