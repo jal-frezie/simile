@@ -521,10 +521,10 @@ multiple_draw(VComp, Num) :-
         Num = -2;
     is_population(Comp), !,
         Num = -1;
-    is_conditional(Comp), !,
-        Num = 0;
-    catch(get_node_size(Comp, [Val | _], _,_), _ListDimmedNode, Val = 0), !,
-        Num is min(Val, 4);
+    catch(get_all_dims(Comp, [Siz | _]), _ListDimmedNode, Siz = 0), !,
+        (Siz = var -> Num = 0;
+         get_actual_size(Comp, Siz, bare, Val, _, _),
+	   Num is min(Val, 4));
     Num = 1).
 /* This stuff has been put into get_actual_sizes
 mention(Comp, Winge, Val) :-
