@@ -400,7 +400,7 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	  Wrinkle = has_hanging_influence(OuterText, HasHanger, HangerRef);
 	fail).
 
-looked_up(_, index(N), IndexDefs, 0) :-
+looked_up(IndexDefs, index(N), _, 0) :-
     IndexDefs = [ind_spec(_,_,_, Link) | _],
     nth(N, IndexDefs, IndSpec),
     IndSpec = ind_spec(_,_,_, Link).
