@@ -210,20 +210,21 @@ rel_path_name(RemoteNode, DestBox, Relation, SourceLocn, RemoteName, Tail) :-
 
 v5.7 version: merely generate the strings and allow their arrangement elsewhere
 according to norms of whichever language is being used */
-rel_path_name(RemoteNode, DestBox, Relation, Dir,
+rel_path_name(RemoteNode, DestBox, Method, Dir,
 	      role_texts(AbsName, BaseBoxCaption, Dir, RelCaption)) :-
 	abs_path_name(RemoteNode, DestBox, AbsName),
-	(Relation = none, !,
+	(Method = none, !,
 	    RelCaption = '/none/',
 	    BaseBoxCaption = '/none/';
-	 Relation = _-_-_, !,
+	 Dir = by_shared_sizes, !,
 	    RelCaption = '/paired/',
 	    BaseBoxCaption = '/paired/';
-	Relation has_type relation, !,
+	 member(Dir, [in_base, in_assoc]), !,
+	    (Method = source_path_edit(Relation, _,_,_) -> true; Relation = Method),
 	    caption_for(Relation, RelCaption),
 	    initiates(Relation, BaseBox),
 	    caption_for(BaseBox, BaseBoxCaption);
-	append_atoms(['/', Relation, '/'], RelCaption)).
+	 append_atoms(['/', Method, '/'], RelCaption)).
 	
 list_downs([], '').
 
@@ -343,7 +344,7 @@ uses_as_event(VisSource, RealVar) :-
 	    (RealVar is_of_sort discrete; find_type(RealVar, state));
 	VisSource is_of_sort discrete. % event values to be used
 
-size_cross_reffed(Base, Share, BaseCapt, In-Post) :-
+size_cross_reffed(Base, Share, Rel, In-Post) :-
     caption_for(Base, BaseCapt),
     (connects(Rel, Base, Share),
      find_type(Rel, relation),
@@ -352,6 +353,7 @@ size_cross_reffed(Base, Share, BaseCapt, In-Post) :-
     get_av_pair(Share, 0, multiplication_spec, MultSpec),
      member(count=Dims, MultSpec),
      suffix([size(BaseCapt) | Tail], Dims),
+     Rel = by_shared_sizes,
      get_actual_sizes(Share, Tail, bare, _, TDims, _)),
     get_node_size(Base, BDims),
     length(BDims, In),
@@ -380,18 +382,20 @@ trim_loops(All, Range, Loops) :-
       append(ILoops, TLoops, MLoops),
       append(SLoops, TLoops, Loops).
 				 
-purge_size_cross_refs([], Entered, [], DestTemplate, [], []) :-
+purge_size_cross_refs([], Entered, [], none, DestTemplate, [], []) :-
     all(m_update, path_bit_for, [build(Entered), build(DestTemplate)]).
 
 
-purge_size_cross_refs([Innermost | Exited], Entered, NewSrcLoops,
+purge_size_cross_refs([Innermost | Exited], Entered, NewSrcLoops, SourceLocn,
 		     DestTemplate, [SrcBit | MoreSrcTplt], NewSrcPath) :-
-    purge_size_cross_refs(Exited, Entered, MoreSrcLoops,
+    purge_size_cross_refs(Exited, Entered, MoreSrcLoops, OldSrcLocn,
 			  DestTemplate, MoreSrcTplt, MoreNewSrc),
     (nth(Posn, Entered, Sharer),
-     permutation([Innermost-SRange, Sharer-DRange],
-		 [Base-all, Share-ShareRange]),
-	size_cross_reffed(Base, Share, _ShareCapt, ShareRange), !,
+     permutation([Innermost-SRange-UseLoc, Sharer-DRange-_],
+		 [Base-all-in_base, Share-ShareRange-in_assoc]),
+        size_cross_reffed(Base, Share, ShareCapt, ShareRange), !,
+	(ShareCapt = by_shared_sizes -> SourceLocn = ShareCapt;
+	  SourceLocn =.. [UseLoc, ShareCapt]),
 	nth(Posn, DestTemplate, [sm(_,_,_, fm_loop(DI, _,_,_)) | _DLoops]),
 	path_bit_for(Innermost, SrcBit),
 	SrcBit = [sm(S1, S2, S3, fm_loop(SI, S4, S5, S6)) | SLoops],
@@ -401,7 +405,8 @@ purge_size_cross_refs([Innermost | Exited], Entered, NewSrcLoops,
 	trim_loops(SLoops, SRange, Loops),
 	NewSrcBit = [sm(S1, S2, S3, fm_loop(I, S4, S5, S6)) | Loops],
 	inters><get_dims_from_loops(Loops, AddSrcLoops, _Inds);
-     get_all_dims(Innermost, AddSrcLoops),
+     SourceLocn = OldSrcLocn,
+        get_all_dims(Innermost, AddSrcLoops),
         NewSrcBit = SrcBit),
     append(MoreSrcLoops, AddSrcLoops, NewSrcLoops),
     NewSrcPath = [NewSrcBit | MoreNewSrc].
@@ -470,12 +475,15 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = up_hierarchy,
 	        Index = -1),
 	    Relation = none;
-	     purge_size_cross_refs(Exited, Entered, Subs,
+	     purge_size_cross_refs(Exited, Entered, Subs, SourceCombo,
 				   DestTplt, SrcTplt, NewSrc),
 	         \+ Subs = DefSubs,
-	         SourceLocation = by_shared_sizes,
-	         Index = -5, % -1 to -4 disabled by default
-		 Relation = DestTplt-SrcTplt-NewSrc;
+	         (SourceCombo =.. [SourceLocation, RelnName] ->
+		      Index = 0; % -1 to -4 disabled by default
+		  SourceCombo = SourceLocation,
+		      RelnName = size_share,
+		      Index = -5),
+		 Relation = source_path_edit(RelnName, DestTplt, SrcTplt, NewSrc);
 	    
 	(suffix([Base | ReallyExited], BiggestFirst);
 	  contains(Base, RemoteModel, ReallyExited),
@@ -724,7 +732,8 @@ name_from_role_texts(role_texts(Path, RelId, Dir, RelnCapt), Used, Name) :-
 	    append_atoms(every_, Tail, Remote_name);
 	  Dir = in_base,
 	    append_atoms([RelnCapt, '_', Tail], Remote_name);
-	  append_atoms([Tail, '_', RelnCapt], Remote_name)), !,
+	  Dir = in_assoc,
+	    append_atoms([Tail, '_', RelnCapt], Remote_name)), !,
 	generate_name(prolog, Remote_name, Name, Used).
 	
 /* This one updates the info on the links after the dialogue box has been filled in.

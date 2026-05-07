@@ -1043,7 +1043,8 @@ role_ref_to_msg(Role-Ref, Message) :-
 	integer(Ref),
 	 (Ref < 0 ->
 	    source_locn_name(Ref, Message);
-	  caption_for(Role, Capt),
+	  member(Role, [source_path_edit(RelnName, _,_,_), RelnName]),
+	    caption_for(RelnName, Capt),
 	 Message = [with_role, Capt]).
 
 role_ref_to_stat(_-Ref, Suppd, Enabd, Status) :-
