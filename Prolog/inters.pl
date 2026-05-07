@@ -151,8 +151,8 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		      [sm(Name, D, B, progen), sm(Name, A, D, C)], 
 		      pop),
 	            pointer_from(RealPath, SmPtr);
-		  Location = by_shared_sizes,
-		    Link = MatchDest-MatchSrc-SubbedSrc,
+		  member(Location, [by_shared_sizes, in_base, in_assoc]),
+		    Link = source_path_edit(_Reln, MatchDest, MatchSrc, SubbedSrc),
 		    Wait = [],
 		    append(MatchSrc, Tail),
 		    append(MatchDest, Head), 
