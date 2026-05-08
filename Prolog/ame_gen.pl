@@ -846,8 +846,8 @@ get_all_dims(Source, AllDims) :-
 	variable_size(Source), !,
 	     AllDims = [var];
 	(find_type(Source, submodel) ->
-	     m_update><list_local_index_meanings(Source, RevLoopDims, _),
-	     reverse(RevLoopDims, LoopDims),
+	     m_update><list_local_index_meanings(Source, LoopDims, _),
+	     %reverse(RevLoopDims, LoopDims),
 	     get_actual_sizes(Source, LoopDims, bare, _SizeN, AllDims, _U);
 	AllDims = []). % compatibility: g_n_s used to return [] for primitives
 
