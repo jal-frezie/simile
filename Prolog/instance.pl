@@ -88,7 +88,7 @@ instantiate_trees([Node|Nodes], [Instance|Instances], Count, Path, ResultOut) :-
 	(setof(base(Assoc, Link, _),
 			FarEnd^(connects(Link, Node, Assoc),
 				Link is_connector from Node to FarEnd,
-				variable_size(FarEnd),
+				variable_size(Assoc),
 				Link has_type relation),
 			AssocRefs), !;
 	AssocRefs = []),
