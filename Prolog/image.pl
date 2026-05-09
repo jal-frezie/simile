@@ -513,19 +513,23 @@ trailing away from each corner.
 -1 is population submodel; these don't even have an important order, so draw a sort
 of random pile. */
 
-multiple_draw(VComp, Num) :-
-    find_base(VComp, Comp),
-    (from_value(Comp), !,
-        Num = -3;
-    by_record(Comp), !,
-        Num = -2;
-    is_population(Comp), !,
-        Num = -1;
-    catch(get_all_dims(Comp, [Siz | _]), _ListDimmedNode, Siz = 0), !,
-        (Siz = var -> Num = 0;
-         get_actual_size(Comp, Siz, bare, Val, _, _),
-	   Num is min(Val, 4));
-    Num = 1).
+multiple_draw(Comp, Num) :-
+    (Comp is_of_sort has_function, !,
+	get_node_size(Comp, Vals);
+     from_value(Comp), !,
+        Vals = [-3];
+     by_record(Comp), !,
+        Vals = [-2];
+     is_population(Comp), !,
+        Vals = [-1];
+     variable_size(Comp), !,
+        Vals = [0];
+     list_local_index_meanings(Comp, Sizs, _), 
+        get_actual_sizes(Comp, Sizs, bare, Vals, _, _)),
+    (Vals = [Val | _] ->
+	 Num is min(Val, 4);
+     Num = 1).
+
 /* This stuff has been put into get_actual_sizes
 mention(Comp, Winge, Val) :-
 	caption_for(Comp, Capt),
