@@ -301,7 +301,11 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 7.4
+<<<<<<< HEAD
 set sendvars(simP) {.3}
+=======
+set sendvars(simP) {.2}
+>>>>>>> 93b9e775 (Get it to identify itself)
 
 if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols
