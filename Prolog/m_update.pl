@@ -272,7 +272,7 @@ list_local_index_meanings(Submodel, Dims, Meanings) :-
 	list_links(Submodel, Links),
 	all(m_update, get_link_exits, [build(Links), build(Starts)]),
 	list_link_index_meanings(Caption, Starts, LinkDims, Group2),
-	append(LocalDims, LinkDims, Dims),
+	append(LinkDims, LocalDims, Dims),
 	append(Group1, Group2, Meanings).
 
 get_link_exits(Link, exits(Link, MPliers)) :-
@@ -304,7 +304,7 @@ list_link_index_meanings(DestCapt, [exits(Link, [Start | SRest]) | LRest],
 	    [build(BaseMeanings), unify([Link, RoleCaptStr]), build(First)]),
 	list_link_index_meanings(DestCapt, [exits(Link, SRest) | LRest],
 				 OtherDims, Last),
-	append(StartDims, OtherDims, Dims),
+	append(OtherDims, StartDims, Dims),
 	append(First, Last, Meanings).
 
 append_base_role(ind_spec(BaseMeaning, Posn, N, _OldLink), [Link, RoleCaptStr],
@@ -347,9 +347,11 @@ uses_as_event(VisSource, RealVar) :-
 size_cross_reffed(Base, Share, Rel, In-Post) :-
     caption_for(Base, BaseCapt),
     (connects(Rel, Base, Share),
+     Rel is_connector from _ to Share, % only use index section
      find_type(Rel, relation),
      list_local_index_meanings(Share, _SDims, IndSpecs),
-     append(TDims, [ind_spec(_,_,_, Rel) | _], IndSpecs), !;
+     append(TDims, [ind_spec(_,_,_, Rel) | _], IndSpecs),
+     \+ member(ind_spec(_,_,_, Rel), TDims);
     get_av_pair(Share, 0, multiplication_spec, MultSpec),
      member(count=Dims, MultSpec),
      suffix([size(BaseCapt) | Tail], Dims),
@@ -393,7 +395,7 @@ purge_size_cross_refs([Innermost | Exited], Entered, NewSrcLoops, SourceLocn,
     (nth(Posn, Entered, Sharer),
      permutation([Innermost-SRange-UseLoc, Sharer-DRange-_],
 		 [Base-all-in_base, Share-ShareRange-in_assoc]),
-        size_cross_reffed(Base, Share, ShareCapt, ShareRange), !,
+        size_cross_reffed(Base, Share, ShareCapt, ShareRange),
 	(ShareCapt = by_shared_sizes -> SourceLocn = ShareCapt;
 	  SourceLocn =.. [UseLoc, ShareCapt]),
 	nth(Posn, DestTemplate, [sm(_,_,_, fm_loop(DI, _,_,_)) | _DLoops]),
@@ -479,7 +481,7 @@ get_unit_conversion(Remote, Local,
 				   DestTplt, SrcTplt, NewSrc),
 	         \+ Subs = DefSubs,
 	         (SourceCombo =.. [SourceLocation, RelnName] ->
-		      Index = 0; % -1 to -4 disabled by default
+		      find_reference(LocalModel, Index, RelnName);
 		  SourceCombo = SourceLocation,
 		      RelnName = size_share,
 		      Index = -5),
