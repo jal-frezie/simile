@@ -829,11 +829,6 @@ proc Undisturb {rightPlace} {
 
 proc LoadProgram {node lang} {
     global runState myNode
-    if {$runState($node,updated)==-1} {
-	set runState($node,updated) 1
-    } else {
-	set runState($node,updated) 0
-    }
     set runState($node,lang) $lang
     if {[info exists runState($node,runParams)] && \
 	    ![info exists runState($node,currentTime)]} {
@@ -841,6 +836,13 @@ proc LoadProgram {node lang} {
     }
     update_executable $node $lang
     set runState($node,reloadParams) -2 ;# the initialize phase
+    if {$runState($node,updated)==-1} {
+	set runState($node,updated) 1
+    } elseif {$lang ne "c"} {
+	set runState($node,updated) 2
+    } else {
+	set runState($node,updated) 0
+    }
     if {![StartRun $node]} {
 	return 0
     }
