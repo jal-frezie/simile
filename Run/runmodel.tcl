@@ -1334,8 +1334,10 @@ proc StartRun {node} {
 	unset projectParams($smPath)
 	if {[file exists $spFile]} {
 	    MergeParams $node /$node$smPath $spFile 0 0
-	    # file delete -force $spFile
-	    # In case we loaded a v<7 model which needs this separate
+	    if {![string first $::simtmpdir $spFile]} {
+		file delete -force $spFile ;# don't let it save with model
+	    }
+	    # else we loaded a v<7 model which needs this separate
 	    if {$smPath eq ""} {
 		set sxFile [file rootname $spFile].sxf
 		if {[file exists $sxFile]} {
