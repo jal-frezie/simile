@@ -1561,7 +1561,7 @@ proc GetTclCompExecData {topNode prop args} {
     set node [lindex $args 0]
     set incoming [lrange $args 1 end]
     switch -regexp $prop {
-	Value {
+	Value|DefVal { ;# DefVal means from default case in expt (no expts in Tcl)
 	    return [tcl_insert $node [lindex $incoming 0]]
 	} default {
 	    error "Property $prop not available in debug mode"

@@ -1205,9 +1205,10 @@ Now one that uses a special conditional level */
 	         PtrInit = [],
 	         all(inters, type_ind, [build(Limits), build(XpectTypes)])),
 	       m_update><applies_in(SubId, index0, I0),
+	       m_update><applies_in(SubId, eqn_units, NoReals),
 	       all(inters, match_index_units,
 		   [build(XpectTypes), build(IndxRefs), build(Ints),
-		    build(IntIndxRefs), unify(Step), unify(I0), unify(Array)]);
+		    build(IntIndxRefs), unify([Step, I0, NoReals, Array])]);
 	     throw(only_works_on_array(element, Array))),
 	    
 	    append(ASetups, ISetups, Setups),
@@ -1554,7 +1555,7 @@ remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
 	    Units = 1;
 	standard_name(SrcUnits, Units)).
 
-match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, I0, Array) :-
+match_index_units(XpectType, IndxRef, Int, IntIndxRef, [Step, I0, NeedInt, Array]) :-
 	(NeedType = XpectType;
             % bodge: if building code, bounds have been made integer, so
 	    % accept boolean or ET as index
@@ -1569,7 +1570,7 @@ match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, I0, Array) :-
 	     promote_unit(Int, int),
 		promote_unit(NeedType, int),
 		TryIndxRef = IndxRef;
-	     fail, promote_unit(Int, 1), % succeeds only if unitless
+	     NeedInt = 'No', promote_unit(Int, 1), % succeeds only if unitless
 		promote_unit(NeedType, 1),
 		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
 	(((NeedType = boolean; \+ NeedType = a(_), I0 = 'Yes'),
