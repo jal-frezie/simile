@@ -1329,6 +1329,7 @@ proc StartRun {node} {
 	unset projectParams($smPath)
 	if {[file exists $spFile]} {
 	    MergeParams $node /$node$smPath $spFile 0 0
+	    file delete -force $spFile
 	    if {$smPath eq ""} {
 		set sxFile [file rootname $spFile].sxf
 		if {[file exists $sxFile]} {
