@@ -350,8 +350,9 @@ size_cross_reffed(Base, Share, Rel, In-Post) :-
      Rel is_connector from Base to _, % only use index section
      find_type(Rel, relation),
      list_local_index_meanings(Share, _SDims, IndSpecs),
-     append(TDims, [ind_spec(_,_,_, Rel) | _], IndSpecs),
-     \+ member(ind_spec(_,_,_, Rel), TDims);
+     (IdxRel = Rel; sequence(IdxRel, Rel)), % l_l_i_m lists first section in link
+     append(TDims, [ind_spec(_,_,_, IdxRel) | _], IndSpecs),
+     \+ member(ind_spec(_,_,_, IdxRel), TDims);
     get_av_pair(Share, 0, multiplication_spec, MultSpec),
      member(count=Dims, MultSpec),
      suffix([size(BaseCapt) | Tail], Dims),
