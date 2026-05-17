@@ -2,7 +2,10 @@ set SIMILE_PATH [file dirname [file dirname [file normalize [info script]]]]
 # WRONNGGG for Linux installation as System not under /usr/share !!
 source [file join $SIMILE_PATH Run setup.tcl]
 
-append env(PATH) ";[file nativename $env(SYSDIR)/bin]" ;# for Windows
+if {$tcl_platform(platform) eq "windows"} {
+    append env(PATH) ";[file nativename $env(SYSDIR)/bin]"
+# for Windows...causes Linux to try to run sed
+}
 
 # for Ame_dll to load the 5-D sharelib on Mac (and Linux for 5.9 on) 
 # the wd has to be right relative to it
