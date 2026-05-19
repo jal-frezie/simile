@@ -2042,7 +2042,8 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 
 decode_makearray_subscripts(Dim, [SubId, DestPath, PrevInters, BuildingArrays,
 				  Step, Used], DimVals, Duns) :-
-    get_actual_size(SubId, Dim, quoted, _SrcVals, DimVals, Duns), !;
+    % get_actual_size(SubId, Dim, quoted, _SrcVals, DimVals, Duns), !;
+    % above would allow size(multidim) to make multidim array, but too buggy with ETs
     (catch(DimNum is float(Dim), _, fail),
         DimVal is round(DimNum), %allow idx to be float if = to an int
 	DimNum is float(DimVal),
