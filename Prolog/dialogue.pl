@@ -897,7 +897,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DsDone),
 	    DoneExpr =.. [Cumulative | DsDone],
-	    SubL = [_IntOrVar | DimL];
+	    (Cumulative = count -> true; % count is always scalar
+	     SubL = [_IntOrVar | DimL]);
 	(is_list(Param),
 	    length(Param, Count),
 	    Counts = [Count],
