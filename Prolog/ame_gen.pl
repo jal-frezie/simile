@@ -826,6 +826,7 @@ get_node_size(Source, SizeN, Size, Units) :-
 	    m_update><analyze_array(Unit, _Base, QDim),
 	    library><dequote_ET_units(QDim, Dim)), !,
 	get_actual_sizes(Source, Dim, bare, SizeN, Size, Units),
+nsions)
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
 	    raise_exception(submodel_size_variable(Capt)));
