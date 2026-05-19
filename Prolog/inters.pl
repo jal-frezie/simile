@@ -2042,7 +2042,7 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 
 decode_makearray_subscripts(Dim, [SubId, DestPath, PrevInters, BuildingArrays,
 				  Step, Used], DimVals, Duns) :-
-    get_actual_size(SubId, Dim, quoted, DimVals, _SrcTypes, Duns), !;
+    get_actual_size(SubId, Dim, quoted, _SrcVals, DimVals, Duns), !;
     (catch(DimNum is float(Dim), _, fail),
         DimVal is round(DimNum), %allow idx to be float if = to an int
 	DimNum is float(DimVal),
@@ -2117,7 +2117,8 @@ type_ind(Ind, Type) :-
 	(integer(Ind); Ind = glob(_,_); Ind = _+0;
 	    Ind = pop; Ind = records; Ind = pra_bound(_,_)), Type = int;
 	Ind = boolean, Type = boolean;
-	Type = a(Ind).
+	(ame_gen><dequote(Ind, BareInd) -> true; BareInd = Ind),
+	Type = a(BareInd).
 
 make_choose_form([LastElt], _,_, LastElt) :- !.
 
