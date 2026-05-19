@@ -847,8 +847,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	            Units = param_history(_Defn, 1)),
 	        /* pass dims up the recursion loop */
 	        length(Dims, L),
-%	        list_of(x, L, DimB),
-	        append(Dims, _, DimL),
+	        list_of(x, L, DimB),
+	        append(DimB, _, DimL),
 		source_compat(Link, Compat),
 	        DoneExpr = param(arr(_, Param, Inds), Type, PLoops, Compat, []);
 	    raise_exception(undefined_parameter(Param)));
@@ -896,10 +896,10 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DsDone),
 	    DoneExpr =.. [Cumulative | DsDone],
 	    (Cumulative = count -> true; % count is always scalar
-	     SubL = [_IntOrVar | DimL]);
+	     SubL = [x | DimL]);
 	(is_list(Param),
 	    length(Param, Count),
-	    Counts = [Count],
+%	    Counts = [Count],
 	    DParam =.. [do | Param], % conversion to fn avoids recursion
 	    length(DoneExpr, Count),
 	    DDone =.. [do | DoneExpr];
@@ -912,7 +912,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    replace_subexps(DParam, dialogue, expand_params,
 			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DDone),
-	    append(Counts, SubL, DimL);
+	    list_of(x, NC, Xs),
+	    append(Xs, SubL, DimL);
 	Param = element(List, Index),
 % work out dimty as if:
 % element([[a,b,c],[d,e,f]],[x,y,z]) is [element([a,d],x)...element([c,f],z)].
