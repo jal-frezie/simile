@@ -2050,7 +2050,7 @@ decode_makearray_subscripts(Dim, [SubId, DestPath, PrevInters, BuildingArrays,
      make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, _MidInters,
 				   part_result([], [], _, DimVal)),
-     (DimVal > 1, !;
+     ((\+ number(DimVal); DimVal > 1; Dim = soloarr(_)), !;
           throw(bad_array_size(Dim, DimVal))),
         promote_unit(Dun, const_int)), !, % will be integer later
       [DimVals, Duns] = [[DimVal], [Dun]];
