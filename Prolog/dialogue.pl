@@ -739,7 +739,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 
 	on_exception(ParseException,
 		     replace_subexps(Equation, dialogue, expand_params,
-			dim_data(NearlyDimL, UsedList, AllInputs, ExpInters),
+			dim_data(DimL, UsedList, AllInputs, ExpInters),
 				     top_down, _ParamSubs, FullExpr),
 		     ParseError = ParseException),
 	
@@ -752,9 +752,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 (member('/dest/', UsedList) ->
 	      CheckDestFitsContext = true; true),
 	 purge(UsedList, ['/tm/','/dest/'], ParamList),
-	    get_ground_part(NearlyDimL, NearlyDimDG),
-	    get_actual_sizes(Fn, NearlyDimDG, quoted, DimDG, _V, _U),
-	    append(DimDG, _, DimL),
+	    get_ground_part(DimL, DimDG),
 	    length(DimDG, LenD),
 	    length(DimDV, LenD),
 	    make_inds_for(DimDV, _, DLoops, _),
@@ -849,8 +847,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	            Units = param_history(_Defn, 1)),
 	        /* pass dims up the recursion loop */
 	        length(Dims, L),
-%	        list_of(x, L, DimB),
-	        append(Dims, _, DimL),
+	        list_of(x, L, DimB),
+	        append(DimB, _, DimL),
 		source_compat(Link, Compat),
 	        DoneExpr = param(arr(_, Param, Inds), Type, PLoops, Compat, []);
 	    raise_exception(undefined_parameter(Param)));
@@ -897,10 +895,11 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DsDone),
 	    DoneExpr =.. [Cumulative | DsDone],
-	    SubL = [_IntOrVar | DimL];
+	    (Cumulative = count -> true; % count is always scalar
+	     SubL = [x | DimL]);
 	(is_list(Param),
 	    length(Param, Count),
-	    Counts = [Count],
+%	    Counts = [Count],
 	    DParam =.. [do | Param], % conversion to fn avoids recursion
 	    length(DoneExpr, Count),
 	    DDone =.. [do | DoneExpr];
@@ -913,7 +912,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    replace_subexps(DParam, dialogue, expand_params,
 			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DDone),
-	    append(Counts, SubL, DimL);
+	    list_of(x, NC, Xs),
+	    append(Xs, SubL, DimL);
 	Param = element(List, Index),
 % work out dimty as if:
 % element([[a,b,c],[d,e,f]],[x,y,z]) is [element([a,d],x)...element([c,f],z)].

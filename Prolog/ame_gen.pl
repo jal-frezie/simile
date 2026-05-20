@@ -820,10 +820,11 @@ get_node_size(Source, Size) :-
 
 get_node_size(Source, SizeN, Size, Units) :-
 	(Source has_class_refinement multiplication_spec of Multi,
-	   member(count=Dim, Multi);
+	    member(count=Dim, Multi);
 	  (implicit_function(Source, CompFn); CompFn=Source),
             CompFn has_class_refinement units of Unit,
-	    m_update><analyze_array(Unit, _Base, Dim)), !,
+	    m_update><analyze_array(Unit, _Base, QDim),
+	    library><dequote_ET_units(QDim, Dim)), !,
 	get_actual_sizes(Source, Dim, bare, SizeN, Size, Units),
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),

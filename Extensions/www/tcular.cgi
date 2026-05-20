@@ -1,4 +1,4 @@
-#!/usr/bin/tclsh8.6
+#!/usr/bin/tclsh
 
 encoding system utf-8
 foreach local {sPath sHome mdl} val $argv {
@@ -6,7 +6,6 @@ foreach local {sPath sHome mdl} val $argv {
 }
 puts "Here [pwd] args $argv<br>"
 exec echo {} > /tmp/error-output.txt
-lappend auto_path [file join $sPath System lib] /usr/share/tcl9.0 /usr/lib64/tcl9.0
 if {![file exists [file join $sHome .simile userinfo.txt]]} {
     file delete -force $sHome
     file mkdir $sHome
@@ -18,7 +17,8 @@ catch {file delete $mdl.so}
 catch {file delete [file join $sHome .simile Desktop1.smx]}
 # puts $auto_path<br>
 if {[catch {
-    package require SimileAutoObj
+    set SimileAutoObjLoaded 1 ;# avoid normal Simile startup
+    source [file join $sPath Run simile.tcl]
 
     similescript::ModelWindow create modelWin
     modelWin open $mdl.sml

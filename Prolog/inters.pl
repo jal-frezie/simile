@@ -1066,9 +1066,10 @@ make_intermediates(
 	    suffix([LocalLoop], SzLoops), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	((Source =.. [makearray, Element | Dims];
-	      Source = soloarr(Element), Dims=[1]),
+	     Source = soloarr(Element), Dims=[1]),
+	    reverse(Dims, RDims), % dims are in same order as nested makearrays
 	    all(inters, decode_makearray_subscripts,
-		[build(Dims), unify([SubId, DestPath, PrevInters,
+		[build(RDims), unify([SubId, DestPath, PrevInters,
 				     BuildingArrays, Step, Used]),
 		 append(DimVals, []), append(Duns, [])]),
 	    length(BuildingArrays, BDept),
@@ -2042,7 +2043,8 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 
 decode_makearray_subscripts(Dim, [SubId, DestPath, PrevInters, BuildingArrays,
 				  Step, Used], DimVals, Duns) :-
-    get_actual_size(SubId, Dim, quoted, DimVals, _SrcTypes, Duns), !;
+    % get_actual_size(SubId, Dim, quoted, _SrcVals, DimVals, Duns), !;
+    % above would allow size(multidim) to make multidim array, but too buggy with ETs
     (catch(DimNum is float(Dim), _, fail),
         DimVal is round(DimNum), %allow idx to be float if = to an int
 	DimNum is float(DimVal),
@@ -2050,7 +2052,7 @@ decode_makearray_subscripts(Dim, [SubId, DestPath, PrevInters, BuildingArrays,
      make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, _MidInters,
 				   part_result([], [], _, DimVal)),
-     (DimVal > 1, !;
+     ((\+ number(DimVal); DimVal > 1; Dim = soloarr(_)), !;
           throw(bad_array_size(Dim, DimVal))),
         promote_unit(Dun, const_int)), !, % will be integer later
       [DimVals, Duns] = [[DimVal], [Dun]];
@@ -2117,7 +2119,8 @@ type_ind(Ind, Type) :-
 	(integer(Ind); Ind = glob(_,_); Ind = _+0;
 	    Ind = pop; Ind = records; Ind = pra_bound(_,_)), Type = int;
 	Ind = boolean, Type = boolean;
-	Type = a(Ind).
+	(ame_gen><dequote(Ind, BareInd) -> true; BareInd = Ind),
+	Type = a(BareInd).
 
 make_choose_form([LastElt], _,_, LastElt) :- !.
 

@@ -508,7 +508,7 @@ proc PipeSetup {mdl modelLocn} {
     set incFileTxt [GetFrame $t.incfilefr].txt
     pack [text $incFileTxt -width 32 -height 1] \
 	-side left -fill x
-    if {$::tcl_platform(platform) eq "Windows"} { # pipe name can be anything
+    if {$::tcl_platform(platform) eq "windows"} { # pipe name can be anything
 	$incFileTxt insert 1.0 $prev
     } else { # must be in file system
 	AddIncBrowse $incFileTxt $prev 1 $mdl $modelLocn
