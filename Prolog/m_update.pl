@@ -347,12 +347,11 @@ uses_as_event(VisSource, RealVar) :-
 size_cross_reffed(Base, Share, Rel, In-Post) :-
     caption_for(Base, BaseCapt),
     (connects(Rel, Base, Share),
-     Rel is_connector from _ to Share, % only use index section
+     Rel is_connector from Base to _, % only use index section
      find_type(Rel, relation),
      list_local_index_meanings(Share, _SDims, IndSpecs),
-     (IdxRel = Rel; sequence(IdxRel, Rel)), % l_l_i_m lists first section in link
-     append(TDims, [ind_spec(_,_,_, IdxRel) | _], IndSpecs),
-     \+ member(ind_spec(_,_,_, IdxRel), TDims);
+     append(TDims, [ind_spec(_,_,_, Rel) | _], IndSpecs),
+     \+ member(ind_spec(_,_,_, Rel), TDims);
     get_av_pair(Share, 0, multiplication_spec, MultSpec),
      member(count=Dims, MultSpec),
      suffix([size(BaseCapt) | Tail], Dims),
@@ -482,7 +481,10 @@ get_unit_conversion(Remote, Local,
 				   DestTplt, SrcTplt, NewSrc),
 	         \+ Subs = DefSubs,
 	         (SourceCombo =.. [SourceLocation, RelnName] ->
-		      find_reference(LocalModel, Index, RelnName);
+		      (SourceLocation = in_assoc -> RefReln = RelnName;
+		       (RefReln = RelnName; sequence(RelnName, RefReln)),
+		       RefReln is_connector from _ to LocalModel),
+		      find_reference(LocalModel, Index, RefReln);
 		  SourceCombo = SourceLocation,
 		      RelnName = size_share,
 		      Index = -5),
