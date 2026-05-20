@@ -5,24 +5,16 @@
 
 Name:		simile
 Version:	7.4
-<<<<<<< HEAD
-Release:	5%{?dist}
-=======
-Release:	3%{?dist}
->>>>>>> 599b74ff (Version number increased to reflect change in equation language)
+Release:	6%{?dist}
 Summary:	Multi-paradigm graphical modelling environment
 
 License:	Proprietary
 URL:		http://simulistics.com
-<<<<<<< HEAD
-source:		simile_7.4.5.tar.gz
-=======
-source:		simile_7.4.3.tar.gz
->>>>>>> 599b74ff (Version number increased to reflect change in equation language)
+source:		simile_7.4.6.tar.gz
 
 BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, redhat-lsb, tcl-devel >= 9.0, tk-devel >= 9.0, libXcursor-devel >= 1.0, portaudio-devel >= 19
 # tk needed for building tktable, tcllib for dtplite
-Requires:       tk >= 8.5, gcc-c++ >= 4.0, tcl-tclxml >= 3.2, tcllib >= 1.11, tklib >= 0.5, tkimg >= 1.3, portaudio >= 19, tkdnd >= 2.8
+Requires:       tk >= 9.0, gcc-c++ >= 4.0, tcl-tclxml >= 3.2, tcllib >= 1.11, tklib >= 0.5, tkimg >= 1.3, portaudio >= 19, tkdnd >= 2.8
 
 %description 
 Multi-paradigm modelling and simulation software for complex dynamic
@@ -41,7 +33,7 @@ intuitive way.
 %build
 make -j8
 # cd Extensions/tkdnd
-# Fedora has had good tktable since f24 so no longer needed
+# Fedora has had good tkdnd since f24 so no longer needed
 # %configure
 # make -j8
 # this configures and makes the bundled tkdnd
@@ -84,6 +76,9 @@ cd -
 
 
 %changelog
+* Wed Sep 02 2026 Simulistics Ltd <info@simulistics.com> - 7.4-6
+- Patch release
+
 * Tue Jun 23 2026 Simulistics Ltd <info@simulistics.com> - 7.4-5
 - Patch release
 
