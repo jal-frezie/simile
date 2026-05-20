@@ -76,7 +76,7 @@ cd -
 
 
 %changelog
-* Wed Sep 02 2026 Simulistics Ltd <info@simulistics.com> - 7.4-5
+* Wed Sep 02 2026 Simulistics Ltd <info@simulistics.com> - 7.4-6
 - Patch release
 
 * Tue Jun 23 2026 Simulistics Ltd <info@simulistics.com> - 7.4-5
