@@ -1066,9 +1066,10 @@ make_intermediates(
 	    suffix([LocalLoop], SzLoops), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	((Source =.. [makearray, Element | Dims];
-	      Source = soloarr(Element), Dims=[1]),
+	     Source = soloarr(Element), Dims=[1]),
+	    reverse(Dims, RDims), % dims are in same order as nested makearrays
 	    all(inters, decode_makearray_subscripts,
-		[build(Dims), unify([SubId, DestPath, PrevInters,
+		[build(RDims), unify([SubId, DestPath, PrevInters,
 				     BuildingArrays, Step, Used]),
 		 append(DimVals, []), append(Duns, [])]),
 	    length(BuildingArrays, BDept),
