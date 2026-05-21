@@ -1082,13 +1082,14 @@ make_intermediates(
 	         Selector=LocalInd;
 	      Source = {AnIndex:_,_},
 	      enum_type_ref(AnIndex, SubId, quoted, _, DimType, _),
-	      (DimType = boolean -> DimName = DimType, Selector = LocalInd;
-	       a(DimName) = DimType, Selector=LocalInd+1),
+	      (DimType = boolean -> DimName = DimType, RealSelector = LocalInd;
+	       a(DimName) = DimType, RealSelector=LocalInd+1),
 	      (Step = dummy ->
 		   DimVal = DimName,
 		   Dun = n(DimVal),
 	           Selector = LocalInd;
-	       get_actual_size(SubId, DimName, bare, [DimVal], _, [Dun]))),
+	       get_actual_size(SubId, DimName, bare, [DimVal], _, [Dun]),
+	           Selector = RealSelector)),
 	       %decode_number(DimType, SubId, Step, DimVal, Dun)),
 %		DimSetups = [],
 	        make_choose_form(Source, keep(Selector), 0, Element),
