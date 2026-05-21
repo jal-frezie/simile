@@ -1379,6 +1379,10 @@ Now one that uses a special conditional level */
 		RUnits = int,
 		ValRef = check_limit(RActEqn, Lower, Upper, Flags, GraphId,
 				     Step, RDiffs);
+	    Source =.. [after | _],
+	        get_host(SubId, VisId),
+		\+ VisId is_of_sort discrete,
+		throw('after_for_continuous');
 	    % Source =.. [Op | ArgListForm], (done)
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
@@ -1930,6 +1934,7 @@ builtin('Model properties', first, boolean, [int]).
 builtin('Model properties', as_number, int, [boolean]).
 builtin('Model properties', as_number, int, [a(_T)]).
 builtin('Model properties', as_number, int, [n(_T)]). % so it works on count()
+builtin('Model properties', as_number, int, [int]).
 builtin('Model properties', as_number, 1, [real]). % strip physical units
 builtin('Model properties', as_type, a(T), [n(T), int]).
 builtin('Model properties', as_type, int, [const_int, int]).
@@ -2328,7 +2333,9 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	    append(SpareLoops, Model, UseContext),
 	    % now set up input node
 	    get_dims_from_loops(NeededLoops, UsingDims, _),
-	    m_update><build_array(Unit, UsingDims, NewU),
+	    promote_unit(Unit, CheckableUnit),
+	    \+ member(CheckableUnit, [const_int, const_ratio]),
+	    m_update><build_array(CheckableUnit, UsingDims, NewU),
 	    /* pick_elt_from(Source, SpareLoops, SourceElt),
 				% wrap in element(..)
 	    m_update><add_parameter(DestId, 0, value, SourceElt),
