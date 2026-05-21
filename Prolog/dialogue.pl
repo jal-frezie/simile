@@ -899,7 +899,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	     SubL = [x | DimL]);
 	(is_list(Param),
 	    length(Param, Count),
-%	    Counts = [Count],
+	    NC = 1,
 	    DParam =.. [do | Param], % conversion to fn avoids recursion
 	    length(DoneExpr, Count),
 	    DDone =.. [do | DoneExpr];
