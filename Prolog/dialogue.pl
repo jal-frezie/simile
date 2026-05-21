@@ -813,6 +813,10 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	(   so index(n) will work) but no loops, so we don't need to add it
 	to the relative source contexts */
 
+list_object_mems({Idx:Val}, [Idx], [Val]).
+list_object_mems({Idx:Val, More}, [Idx | Idxs], [Val | Vals]) :-
+    list_object_mems({More}, Idxs, Vals).
+
 expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	      Param, DoneExpr, Recurse) :-
 	% start by checking if param is in a special role for a ready-made
@@ -897,12 +901,16 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    DoneExpr =.. [Cumulative | DsDone],
 	    (Cumulative = count -> true; % count is always scalar
 	     SubL = [x | DimL]);
-	(is_list(Param),
+	((is_list(Param),
 	    length(Param, Count),
-	    NC = 1,
 	    DParam =.. [do | Param], % conversion to fn avoids recursion
-	    length(DoneExpr, Count),
+	    length(DoneExpr, Count), % must set length so next line works
 	    DDone =.. [do | DoneExpr];
+	  list_object_mems(Param, Idxs, Vals),
+	    list_object_mems(DoneExpr, Idxs, DoneVals),
+	    DParam =.. [do | Vals],
+	    DDone =.. [do | DoneVals]),
+	   NC = 1;
 	 Param =.. [makearray, Elt | Counts],
 	    DParam =.. [do, Elt | Counts],
 	    length(Counts, NC),
