@@ -1075,12 +1075,24 @@ make_intermediates(
 	    length(BuildingArrays, BDept),
 	    create_build_loops(DimVals, Duns, LocalLoops, BDept),
 	        append(LocalLoops, BuildingArrays, NowBuilding);
-	    make_choose_form(Source, keep(LocalInd), 0, Element),
-	        length(Source, DimVal),
-		(DimVal > 1, !; throw(singlet_array(Source, DimVal))),
+	    (is_list(Source) ->
+		 length(Source, DimVal),
+		 (DimVal > 1, !; throw(singlet_array(Source, DimVal))),
+	         Dun = const_int,
+	         Selector=LocalInd;
+	      Source = {AnIndex:_,_},
+	      enum_type_ref(AnIndex, SubId, quoted, _, DimType, _),
+	      (DimType = boolean -> DimName = DimType, Selector = LocalInd;
+	       a(DimName) = DimType, Selector=LocalInd+1),
+	      (Step = dummy ->
+		   DimVal = DimName,
+		   Dun = n(DimVal),
+	           Selector = LocalInd;
+	       get_actual_size(SubId, DimName, bare, [DimVal], _, [Dun]))),
+	       %decode_number(DimType, SubId, Step, DimVal, Dun)),
 %		DimSetups = [],
+	        make_choose_form(Source, keep(Selector), 0, Element),
 	        NowBuilding = BuildingArrays,
-	        Dun = const_int,
 		LocalLoops = [set(LocalInd, loop(DimVal, Dun))])),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			PrevInters, NowBuilding, Step, Used, Units, NewInters,
@@ -2127,6 +2139,12 @@ make_choose_form([LastElt], _,_, LastElt) :- !.
 make_choose_form([Elt | Elts], Ind, N, choose(Ind==N,Elt,Later)) :-
 	M is N+1,
 	make_choose_form(Elts, Ind, M, Later).
+
+make_choose_form({_Default:LastElt}, _,_, LastElt).
+make_choose_form({Att:Val, Elts}, Ind, N, choose(Ind==Att,Val,Later)) :-
+	M is N+1,
+	make_choose_form({Elts}, Ind, M, Later).
+
 
 /* If the source is in submodels that the dest is not, this copies their loops
 (because if there are two refs to it the loops might be different for each
