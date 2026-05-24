@@ -671,6 +671,8 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 #	    } elseif {$suppliedData($compName) ne ""} {
 #		set msgs(param_source_$compName) $msgs(fce)
 # would allow absent value to be accepted
+	    } else {
+		set msgs(param_source_$compName) [tr. Unsaved] ;# overwrite previous
 	    }
 	    if {$caseId ne "s" && $suppliedData($compName) ne ""} {
 		set dataChanged 1 ;# still need to clear old param
