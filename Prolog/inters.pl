@@ -1894,7 +1894,7 @@ builtin('Trigonometry', arctan, 1, [1]).
 
 %builtin('Statistics', rand_var, real, [real, real]). Is now macro
 builtin('Arithmetic', pow, 1, [1, 1]). /* my c++ does not have int powers */
-builtin('Arithmetic', fmod, 1, [1, 1]).
+builtin('Arithmetic', fmod, real, [real]).
 
 builtin('Trigonometry', hypot, real, [real, real]).
 builtin('Trigonometry', atan2, 1, [real, real]).
