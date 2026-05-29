@@ -988,11 +988,7 @@ namespace eval ::$keyValue {
             #array set Ynew_array $Ynew
             array set Yold_array $Yold
             foreach {element newVal} $Ynew {
-		if {[llength $id]} {
-		    set identList $id ;# single level colouring
-		} else {
-		    set identList [concat $id [list $element]]
-		}
+		set identList [concat $id [list $element]]
                 if {![info exists Yold_array($element)]} {
 		    set Yold_array($element) {}
 		}
