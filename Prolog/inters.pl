@@ -1893,17 +1893,17 @@ builtin('Arithmetic', round, int, [1]).
 builtin('Arithmetic', ceil, int, [1]).
 builtin('Arithmetic', floor, int, [1]).
 
-builtin('Trigonometry', sin, 1, [1]).
-builtin('Trigonometry', cos, 1, [1]).
-builtin('Trigonometry', tan, 1, [1]).
+builtin('Trigonometry', sin, 1, [rad]).
+builtin('Trigonometry', cos, 1, [rad]).
+builtin('Trigonometry', tan, 1, [rad]).
 builtin('Trigonometry', sinh, 1, [1]).
 builtin('Trigonometry', cosh, 1, [1]).
 builtin('Trigonometry', tanh, 1, [1]).
 
-builtin('Trigonometry', asin, 1, [1]).
-builtin('Trigonometry', acos, 1, [1]).
-builtin('Trigonometry', atan, 1, [1]).
-builtin('Trigonometry', arctan, 1, [1]).
+builtin('Trigonometry', asin, rad, [1]).
+builtin('Trigonometry', acos, rad, [1]).
+builtin('Trigonometry', atan, rad, [1]).
+builtin('Trigonometry', arctan, rad, [1]).
 
 %builtin('Statistics', rand_var, real, [real, real]). Is now macro
 builtin('Arithmetic', pow, 1, [1, 1]). /* my c++ does not have int powers */
@@ -1927,6 +1927,7 @@ builtin('Model properties', first, boolean, [int]).
 builtin('Model properties', as_number, int, [boolean]).
 builtin('Model properties', as_number, int, [a(_T)]).
 builtin('Model properties', as_number, int, [n(_T)]). % so it works on count()
+builtin('Model properties', as_number, 1, [real]). % strip physical units
 builtin('Model properties', as_type, a(T), [n(T), int]).
 builtin('Model properties', as_type, int, [const_int, int]).
 builtin('Model properties', dies_of, boolean, [boolean]).
