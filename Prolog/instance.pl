@@ -508,8 +508,8 @@ is_lookup_cond(GroundExpr, UseExpr) :-
 	havify(IsConjunct, _C, Cascade).
 
 % use of 'choose' is arbitrary, it has the right unit tolerance
-havify(index(1) is Val, 1, Val).
-havify(index(N) is Val and Inner, N, choose('"true"', Val, Inners)) :-
+havify(index(1) is Val, 1, as_number(Val)).
+havify(index(N) is Val and Inner, N, choose('"true"', as_number(Val), Inners)) :-
 	M is N-1,
 	havify(Inner, M, Inners).
 
