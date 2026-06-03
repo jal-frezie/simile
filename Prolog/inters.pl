@@ -1466,9 +1466,10 @@ Now one that uses a special conditional level */
 		     SourceRef = ValRef,
 		     Units = RUnits;
 		  var(RUnits),
-		     fn_or_op(Op, MxOp, RUnits, OrigTemplate),
+		     fn_or_op(Op, MxOp, OrigRUnits, OrigTemplate),
 		     all(inters, remove_physical_units_if_disabled,
-			 [unify(SubId), build(OrigTemplate), build(Arg_template)]),
+			 [unify(SubId), build([OrigRUnits | OrigTemplate]),
+			  build([RUnits | Arg_template])]),
 		    /* first, check my units are right... */
 	            retractall(trying_units(_,_)),
 	            assert(trying_units(Op, Arg_template)),

@@ -1961,11 +1961,11 @@ proc OpenProjectFile {path} {
 	    set lang tcl
 	}
 	OpenProgressBox $tw.canvas
-	set builtOK [prolog tk_code($topNode,run_$lang,dummy)]
+	set builtOK [GetFromProlog tk_code($topNode,run_$lang,dummy)]
 	CloseProgressBox
-	if {$builtOK} {
-	    LoadProgram $topNode $lang
-	}
+	if {!$builtOK} return
+	LoadProgram $topNode $lang
+
 	set runState($topNode,updated) [expr {1-$SimileProject(modelRunning)}]
 	# after running so out-of-date warning not produced on load
 	UpdateByOS
