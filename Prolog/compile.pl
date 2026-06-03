@@ -34,9 +34,9 @@ compile( Language, Parent, DestDir, Action) :-
 	asserta(error_free(build)),
 	catch(build_instances(Language, DestDir, Parent, Parent, 1, 
 			      _, Action), Err, 
-	      (Err = aborted, !; % no further message needed
-		  retractall(error_free(build)),
-% It really as the wrong thing to do to have the help reference as an
+	      (retractall(error_free(build)),
+	       Err = aborted, !; % no further message needed
+		  % It really as the wrong thing to do to have the help reference as an
 % argument to query(). It should be in messages.tcl, along with the
 % text strings, since we are unlikely to ever want to offer different
 % help pages with the same dialogue.		  
