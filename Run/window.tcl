@@ -1463,7 +1463,7 @@ proc MenuSelect { window button item } {
 #	        set tgt [file join $simtmpdir for_web$extn]
 #	    }
 	    OpenProgressBox $window
-	    set builtOK [prolog tk_code($node,$item,dummy)]
+	    set builtOK [GetFromProlog tk_code($node,$item,dummy)]
 	    CloseProgressBox
 	    if {$builtOK} {
 		if {[info exists lang]} {

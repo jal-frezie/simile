@@ -38,13 +38,16 @@ tk_code(Node, RunCmd, _Dummy) :-
 	/* Compile the thing into whatever, load it */
 	use_temp_dir(Dir),
 	% draw><scrub_run(Node, 0),
-	rebuild_code(Lang, Node, Dir, prepare_exec),
+	(rebuild_code(Lang, Node, Dir, prepare_exec) ->
+	     Success = 1,
 	    % if exceps happen here, catch in Tcl and return failure
 	    % on_exception(Whoops,
 	%		 output><prepare_execution(Node, Lang),
 % 		     (sicstus_write_to_chars(Whoops, Squeak),
 % 			 scrub_run(Node, 0))),
-	set_running_model(Node).
+	     set_running_model(Node);
+	 Success = 0),
+	output><tk_callback(Success).
 
 rebuild_code(Lang, Node, ProgFileDir, Action) :-
         compile(Lang, Node, ProgFileDir, Action);
