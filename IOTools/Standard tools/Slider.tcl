@@ -128,7 +128,7 @@ namespace eval slide139 {
     proc InsertSlider {winId node title nest} {
 	global widgetSeln sliderDoes
 
-	set sliderDoes($title,node) $node
+	set sliderDoes($winId,$title,node) $node
 	if {[RunningInC $::myNode]} {
 	    set node [GetModelBase $node] ;# ghosts not listed in debug mode
 	}
@@ -148,8 +148,8 @@ namespace eval slide139 {
 	}
         set type [GetModelType $node]
 	set class [GetModelClass $node]
-	set sliderDoes($title,type) $type
-	set sliderDoes($title,class) $class
+	set sliderDoes($winId,$title,type) $type
+	set sliderDoes($winId,$title,class) $class
         switch -glob $type {
             FLAG {
             } ENUM(*) {
@@ -168,8 +168,8 @@ namespace eval slide139 {
                 }
             }
         }
-        set sliderDoes($title,dims) [GetModelDims $node]
-        set useDim [FindUseDim $sliderDoes($title,dims)]
+        set sliderDoes($winId,$title,dims) [GetModelDims $node]
+        set useDim [FindUseDim $sliderDoes($winId,$title,dims)]
         if {$nest} {
             set f [MakeSubFrames $winId $::topSFrame($winId) \
                     $levels [namespace current] 0]
@@ -275,7 +275,7 @@ namespace eval slide139 {
             set allVals $defVal
 	} else {
             #	    set useTrans [lindex $trans $useDim]
-            set count [lindex $sliderDoes($title,dims) $useDim]
+            set count [lindex $sliderDoes($winId,$title,dims) $useDim]
             # bodge it to work with record submodels
             if {[string equal RECORDS $count]} {
                 set count [expr [llength $initVal]/2]
@@ -394,7 +394,7 @@ namespace eval slide139 {
             }
         }
 	if {[winfo exists $f.caption]} {
-	    set nodeDims [TransBounds $trans $sliderDoes($title,dims)]
+	    set nodeDims [TransBounds $trans $sliderDoes($winId,$title,dims)]
 	    set dimList [MakeDimsLegible $nodeDims $type]
             set comment [do_in_editor GetFromProlog tk_get_info($node,comment)]
             BindPopup $f.caption "[lindex $levels end] ($dimList)" $comment
@@ -696,10 +696,10 @@ namespace eval slide139 {
 
         foreach currentCaption [GetState $winId] {
             set title [RestoreCrs $currentCaption]
-            if {[string equal EVENT $sliderDoes($title,class)]} continue
-            set node $sliderDoes($title,node)
-            set type $sliderDoes($title,type)
-            set dims $sliderDoes($title,dims)
+            if {[string equal EVENT $sliderDoes($winId,$title,class)]} continue
+            set node $sliderDoes($winId,$title,node)
+            set type $sliderDoes($winId,$title,type)
+            set dims $sliderDoes($winId,$title,dims)
 
 #            set valGroup [InputVarFor [$helperTable($winId,whichInstance) \
 #					   getNode] $node]
@@ -717,7 +717,7 @@ namespace eval slide139 {
 	    if {$data eq "novalue"} {
 		error "Component $title has been deleted"
 	    }
-            set useDim [FindUseDim $sliderDoes($title,dims)]
+            set useDim [FindUseDim $sliderDoes($winId,$title,dims)]
 	    if {$useDim==-1} {
 		if {[info exists widgetSeln(resetting)]} {
 		    WidgetSelnToC $node 0 
@@ -731,7 +731,7 @@ namespace eval slide139 {
 		    }
 		}
             } else {
-                set count [lindex $sliderDoes($title,dims) $useDim]
+                set count [lindex $sliderDoes($winId,$title,dims) $useDim]
                 # bodge it to work with record submodels
                 if {[string equal RECORDS $count]} {
                     set count [expr {[llength $data]/2}]

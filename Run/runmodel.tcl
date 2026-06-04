@@ -701,8 +701,12 @@ proc TellAllHelpers {node payload doAll fun args} {
 	    set helperTable(beingCalled) $inst
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		puts $::errorInfo
+		set tgts {}
+		foreach focus $helperTable($inst,foci) {
+		    lappend tgts [GetCompProperty $node Caption $focus]
+		}
 		Query [list iotool_run_fail [[info object class $inst] identify] \
-			   $fun $::errorInfo [$inst getState]] \
+			   $tgts $fun $::errorInfo [$inst getState]] \
 		    warning helpers {} ok
 		set failure 1
 	    }
