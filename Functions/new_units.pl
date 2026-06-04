@@ -18,7 +18,7 @@ longhand(kelvin, k).
 baseline(rad, angle).
 longhand(radian, rad).
 
-unit_definition(deg,rad*180/3.1415927).
+unit_definition(deg,rad*3.1415927/180).
 longhand(degree, deg).
 
 unit_definition(l, dm^3).
