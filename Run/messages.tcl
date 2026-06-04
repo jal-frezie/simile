@@ -961,7 +961,7 @@ set msgs(iotool_restore_fail_detail) [tr. {Click "See all..." to see all error m
 set msgs(iotool_restore_fail_full) [tr. {The error message was:
 %2$s}]
 set msgs(iotool_run_fail_title) [tr. {Error running I/O tool}]
-set msgs(iotool_run_fail_message) [tr. {I/O tool "%1$s" raised a problem during model execution. This occurred while doing the %2$s operation.}]
+set msgs(iotool_run_fail_message) [tr. {I/O tool "%1$s" for component(s) "%2$s" raised a problem during model execution. This occurred while doing the %3$s operation.}]
 set msgs(iotool_run_fail_detail) [tr. {The model has been paused. To continue running it you may have to kill this helper's display.}]
 set msgs(iotool_run_fail_full) [tr. {The error message was:
 %3$s

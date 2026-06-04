@@ -218,9 +218,13 @@ proc AddToWatched {node} {
     global helperTable myNode
 
     if {$helperTable(beingCalled) eq ""} return
-    lappend helperTable($helperTable(beingCalled),foci) $node
+    set current $helperTable(beingCalled)
+    if {![info exists helperTable($current,foci)] || \
+	    [lsearch $helperTable($current,foci) $node]==-1} {
+	lappend helperTable($current,foci) $node
+    }
 #    $helperTable(VariableList)::AddHelperLeaf $RunEnv::variableListFrame($myNode).container $node $helperTable(beingCalled)
-    $::runState($myNode,inspId) helperLeaf $node $helperTable(beingCalled) 1
+    $::runState($myNode,inspId) helperLeaf $node $current 1
 }
 
 proc ListFoci {node} {
