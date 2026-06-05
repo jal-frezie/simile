@@ -1889,13 +1889,16 @@ proc NextCaption {canvas} {
         #	$canvas itemconfigure $this -fill blue
         # left in in case the thing fails to highlight, or is exec_only
 
-	CanvasSee $canvas $this [expr $window_info($canvas,width)/2] \
-	    [expr $window_info($canvas,height)/2]
-        set find(now,$canvas) $this
-	prolog tk_do_colours($find(now,$canvas),seln)
+	if {[CanvasSee $canvas $this [expr $window_info($canvas,width)/2] \
+		 [expr $window_info($canvas,height)/2]]} {
+	    set find(now,$canvas) $this
+	    prolog tk_do_colours($find(now,$canvas),seln)
 #        FlashSymbol $canvas $find(now,$canvas) orange orange
         #	HandleObjClick $canvas $this clicktext $tgtX $tgtY
         #	ReleaseObj $canvas $tgtX $tgtY
+	} else {
+	    NextCaption $canvas
+	}
     }
 }
 
@@ -1911,8 +1914,11 @@ proc CanvasSee {c this scnX scnY} {
     set middleY [$c canvasy $scnY]
     scan [$c bbox $this] {%d %d %d %d} tgtL tgtT tgtR tgtB
     if {![info exists tgtL]} {
-	scan [eval ScaleRect $c [GetFromProlog tk_locate('$c',$this)]] \
-	    {%f %f %f %f} tgtL tgtT tgtR tgtB
+	set plRect [GetFromProlog tk_locate('$c',$this)]
+	if {[llength $plRect]<4} {
+	    return 0
+	}
+	scan [eval ScaleRect $c $plRect] {%f %f %f %f} tgtL tgtT tgtR tgtB
 	# Get caption if we feel like displaying it
 #	set hidden [GetFromProlog tk_get_info($this,context)]
 #	set hidden [string range $hidden 0 [string first " . " $hidden]-1]
@@ -1929,6 +1935,7 @@ proc CanvasSee {c this scnX scnY} {
     $c scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
     $c scan dragto [expr int(-0.05*($tgtL+$tgtR))] \
 	[expr int(-0.05*($tgtT+$tgtB))]
+    return 1
 }
 
 proc cleanup {canvas} {
