@@ -952,10 +952,12 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 		  -state normal]
 	if {$dlgStyle eq "continuous"} {
 	    pack [::ttk::label $wrapf.bm -text [tr. "Between points:"]]
+	    if {![info exists table_entry(others)]} {
+		set table_entry(others) [lindex $table_entry(between_txts) 0]
+	    }
 	    pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
 		      -width 10 -values $table_entry(between_txts) \
 		      -state readonly]
-	    set table_entry(others) [lindex $table_entry(between_txts) 0]
 	} else {
 	    array unset table_entry others
 	}
@@ -964,10 +966,6 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 	    pack [entry $wrapf.we -width 1 -textvariable table_entry(wrapPt)] \
                 -expand true -fill x
         }
-    } else {
-	array unset table_entry others
-	array unset table_entry wrapPt
-	array unset table_entry uftsi
     }
     if {![string equal .equation $parent]} {
         pack [ttk::checkbutton $bf.keepvals -var table_entry(bytes) \
