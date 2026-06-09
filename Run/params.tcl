@@ -2029,6 +2029,9 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
+    array unset table_entry uftsi
+    array unset table_entry others
+    array unset table_entry wrapPt
     
     if {[info exists paramState($compName)]} {
         set table_entry(data) $paramState($compName)
