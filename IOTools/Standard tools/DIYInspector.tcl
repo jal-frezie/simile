@@ -387,7 +387,7 @@ oo::class create iotool::$newHelperClass {
 
     method AddPopup {wid X Y node capt} {
 	PostPopup $wid $X $Y
-	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt
+	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt {}
     }
 
     method empty {path} {
