@@ -1217,7 +1217,7 @@ proc AddEqnPopup {node winId plName X Y} {
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-            AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName
+            AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName {}
 	    
 	}
 }
