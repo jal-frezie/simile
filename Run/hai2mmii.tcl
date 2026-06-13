@@ -267,14 +267,14 @@ proc ExtractCList {dH count loseZeros {inds {}} {newVals {}}} {
     return $runTot
 }
 
-proc ExtractJList {dH count loseZeros doTrans loseQuotes} {
+proc ExtractJList {dH count loseZeros doTrans loseQuotes indxs} {
     if {$loseQuotes} {
 	set style pretty
     } else {
 	set style json
     }
     if {[llength $dH]==1} {
-	return [extract_$style $dH $count $loseZeros $doTrans]
+	return [extract_$style $dH $count $loseZeros $doTrans $indxs]
     } ;# else
     set runTot {}
     set snip [expr {2*$count/[llength $dH]}]

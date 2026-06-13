@@ -325,8 +325,29 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
       if (*count<0) { // start at last index group and work back
 	block = block+(membership-1)*(dims[1]*sizeof(int)+subBlocks[1]);
       }
-      localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
-				     &membership, &block, loseZeros, enums, translateEnums, count, jsonic);
+      int preload=0;
+      while (indxs[preload]>-1 && preload<dims[1]) {
+	indices[preload] = indxs[preload]+1; // convert to modeller indices
+	++preload;
+      }
+      // What we want to do is go through the members and for each
+      // one, check each of its indices against the corresponding
+      // filter index. If we find one that is wrong, skip the
+      // member. Otherwise, call the list builder.
+      int j=0;
+      while (membership && j<preload) {
+	for (j=0; j<preload; ++j) {
+	  if (((int*)block)[j]!=indices[j]) {
+	    --membership;
+	    block += (dims[1]*sizeof(int) + subBlocks[1]); // - if reverse
+	    break; // go back to while loop
+	  }
+	}
+      }
+      localObj =
+	append_list_members(dims[1], preload, dims+2, indices, subBlocks+1,
+			    &membership, &block, loseZeros, enums,
+			    translateEnums, count, jsonic);
       free(indices);
       break;
     case VALUELESS:

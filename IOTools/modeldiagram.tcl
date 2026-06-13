@@ -32,6 +32,7 @@ namespace eval ::ModelDiagram20060804 {
 		  -command [namespace code "click $winId top Desktop"]] \
 	    -side left
 	AddToolbar $winId
+	pack [ttk::entry $winId.bbframe.e] -side left
 	AddDiagram $winId {}
 	GrabClicks $winId
     }
@@ -162,7 +163,8 @@ namespace eval ::ModelDiagram20060804 {
 #		set value [lindex $mVal 0]
 		#puts "trans $trans value $value"
 #	    }
-	    AddPopupMessage novalue \#ffffc0 GetShortVals $topNode $context
+	    AddPopupMessage novalue \#ffffc0 GetShortVals $topNode $context \
+		[[winfo parent $winId].bbframe.e get]
 	    AddPopupMessage [GetCompProperty $topNode Spec $context] \#c0ffc0
 	    set desc [GetCompProperty $topNode Desc $context]
 	    set comment [GetCompProperty $topNode Comment $context]

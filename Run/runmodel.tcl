@@ -765,8 +765,8 @@ proc CountCValues {dH loseZeros} {
     return $runTot
 }
 
-proc GetShortVals {topNode plName limit} {
-    set dataDimty [llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM]]
+proc GetShortVals {topNode plName indxs limit} {
+    set dataDimty [expr {[llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM]]-[llength $indxs]}]
     set showMatrix [expr {[PrefValue custom(dispMatrix) dispMatrix] && \
 			      $dataDimty==3}]
     set precis [PrefValue custom(popupPrecision) popupPrecision]
@@ -784,17 +784,18 @@ proc GetShortVals {topNode plName limit} {
 			     [GetCompProperty $topNode Class $plName]]>-1}]
 	    set count [CountCValues $hdl $loseZeros]
 	    if {$showMatrix} {
-		set text [ExtractCList $hdl 16777216 $loseZeros]
+		set text [ExtractCList $hdl 16777216 $loseZeros $indxs]
 		# add option to translate values only?
 		ReleaseHandle $topNode $hdl
 	    } else {
 		set ::tcl_precision $precis
-		if {$count<$limit/3 || [llength $hdl]>1} {
-		    set text [ExtractJList $hdl 16777216 $loseZeros 1 1]
+		if {$count<$limit/3 || [llength $hdl]>1 || [llength $indxs]>0} {
+		    # botch: always start with all values if filtering
+		    set text [ExtractJList $hdl 16777216 $loseZeros 1 1 $indxs]
 		} else {
 		    set tail [expr {$limit/6}]
-		    set text [concat [ExtractJList $hdl $tail $loseZeros 1 1] \
-				  [ExtractJList $hdl -$tail $loseZeros 1 1]]
+		    set text [concat [ExtractJList $hdl $tail $loseZeros 1 1 $indxs] \
+				  [ExtractJList $hdl -$tail $loseZeros 1 1 $indxs]]
 		}
 		set ::tcl_precision 0
 		ReleaseHandle $topNode $hdl
