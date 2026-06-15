@@ -682,6 +682,7 @@ namespace eval ::$keyValue {
 	    append caption \[[join [lrange $trVals 0 end-1] ,]\]
 	}
         if {[catch {
+	    set ::myNode [GetTopNode $winId] ;# in case window not raised
 	    set lastval [lindex [GetModelValue $node] 0]
 	    while {[llength $lastval]>1} {
 		array set valArray $lastval
