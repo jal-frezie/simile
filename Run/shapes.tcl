@@ -514,8 +514,10 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	    -outline {} -fill $fillColour -tags /new_bg/
     }
     # Now to stick it behind anything that might be drawn inside
-    $w raise /new_bg/ target_and_background
-    $w dtag target_and_background
+    if {[llength [$w find withtag target_and_background]]} {
+	$w raise /new_bg/ target_and_background
+	$w dtag target_and_background
+    }
     set stackOn /new_bg/
 
     if {![string equal none $fillImage]} {
@@ -548,9 +550,6 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	    -width $width -fill $col -tags /new_bd/
 	$w create line [expr {$mr+$cornerRad}] $mm $mr $mm \
 	    -width $width -fill $col -tags /new_bd/
-    }
-    foreach tag [concat $tagSet /background/] {
-	$w addtag $tag withtag /new_bg/
     }
     set tabs 0
     while {$tabs < $back} {
@@ -610,6 +609,9 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
         }
         incr tabs
     }
+    }
+    foreach tag [concat $tagSet /background/] {
+	$w addtag $tag withtag /new_bg/
     }
 #    if {$pile} {
 #        set stackDistance [expr -$stackSpacing]

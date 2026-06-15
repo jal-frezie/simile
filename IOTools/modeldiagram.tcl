@@ -72,11 +72,11 @@ namespace eval ::ModelDiagram20060804 {
 	set window_info($winId.c,height) [winfo height $winId.c]
 	set ::custom(showgrids,$winId.c) 0
 	prolog state'><'set_display_depth('$winId.c',_,32)
-	set bg [$winId.c create rectangle 0 0 1 1 -outline {} -fill beige \
-		    -tags "/base/ /background"]
+#	set bg [$winId.c create rectangle 0 0 1 1 -outline {} -fill beige \
+#		    -tags "/base/ /background"]
 	prolog tcl_export_graphics('$winId.c',$node)
 	$winId.c configure -scrollregion $::fromProlog
-	$winId.c coords $bg $::fromProlog
+#	$winId.c coords $bg $::fromProlog
 	array unset window_info $winId.c,top_node
 
 	ReleaseClicks $winId
