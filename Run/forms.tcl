@@ -880,7 +880,7 @@ proc CheckForETDuplicates {new} {
 
     if {![info exists enumTypeMPEntry] || ![string length $enumTypeMPEntry]} {
 	set query [list no_et_member $new]
-    } elseif {[lsearch {NULL novalue none noitem} $enumTypeMPEntry]>-1} {
+    } elseif {[lsearch {NULL novalue none noitem default} $enumTypeMPEntry]>-1} {
 	set query [list bad_et_member $new $enumTypeMPEntry]
     } elseif {[lsearch {boolean false true} $enumTypeMPEntry]>-1} {
 	set query [list reserved_et_member $new $enumTypeMPEntry]
