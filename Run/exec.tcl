@@ -999,6 +999,9 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
     foreach {indx sublist} $list {
         # was array set sub $list...above would allow us to check that all indices were
         # the right type if we could be bothered...OK then...
+	if {$indx eq "default"} {
+	    set indx [lindex $thisTrans 0]
+	}
 	if {[catch {UntransVal $thisTrans $indx index} poss]} {
 	    set redoStep [AddErrorTo $redoStep $poss $subs]
 	} ;# seems we do not need actual position!?
@@ -1007,6 +1010,15 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 			      [list repeated_index $indx] $subs]
         }
         set sub($indx) $sublist
+    }
+    set type [lindex $thisTrans 0]
+    if {$thisTrans ne {false true} && [info exists sub($type)]} { ;# default
+	foreach indx [lrange $thisTrans 1 end] {
+	    if {![info exists sub($indx)]} {
+		set sub($indx) $sub($type)
+	    }
+	}
+	unset sub($type)
     }
     if {$redoStep != 1} { ;# do not proceed with bad time step
 	return $redoStep
