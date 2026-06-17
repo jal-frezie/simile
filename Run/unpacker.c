@@ -302,6 +302,13 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
     if (indxs[0]>-1) { // Select element by index
       //      printf("indxs start %d,%d...sublocks %d %d...\n", indxs[0], indxs[1],
       //	     subBlocks[0],subBlocks[1]);
+      if (indxs[0]>=dims[0]) {
+	if (jsonic==1)
+	  localObj = Tcl_NewStringObj("\"none\"", -1);
+	else
+	  localObj = Tcl_NewStringObj("none", -1);
+	*count -= *count>0?1:-1;
+      } else 
       localObj = convert_to_tcl(dims+1,subBlocks+1, block+indxs[0]*subBlocks[1],
 				loseZeros, enums+1, translateEnums, indxs+1,
 				count, jsonic);
