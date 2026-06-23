@@ -736,14 +736,14 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     } elseif {$runState($topNode,modelRunning)<=2} {
 	set dataChanged 1
     }
-	
+
     # Make array form if data has changed
     if {$dataChanged} {
         set useCppArray [RunningInC $topNode]
 
 	if {$msgs(param_source_$compName) eq $msgs(fce)} {
 	    # Parameter removed, delete its space to go back to eqn value
-	    if  {$readMany($compName)} {
+	    if {$readMany($compName)} {
 		set newData {}
 	    } else {
 		if {$useCppArray} {
