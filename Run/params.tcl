@@ -1856,6 +1856,7 @@ proc ExistCheck {topNode path level notInput source} {
     }
     if {[string equal nomatch $node]} {
         set nextLook $restoredComp
+	set bookmark [focus]
         while {[string equal nomatch $node]} {
             set lostBit $nextLook
 	    set listVers [split $lostBit /]
@@ -1882,6 +1883,8 @@ proc ExistCheck {topNode path level notInput source} {
 		set newPath [ChooseByInspection $topNode $lostBit $lostType]
 	    }
 	}
+	focus -force $bookmark ;# docs say use sparingly but we have just
+	# closed a window and nothing else seems to work
         if {[string equal submodel $lostType]} {
             lappend bermudaTriangle $lostBit [lindex $newPath 0]
 	    if {![string equal none $newPath]} { ;# check remaining nest levels
