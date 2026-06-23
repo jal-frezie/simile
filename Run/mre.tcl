@@ -374,11 +374,13 @@ namespace eval RunEnv {
 	set oldTab $helperTable($notebook,showing)
 	if {$oldTab ne $newTab} {
 	    if {[winfo exists $oldTab]} {
-		set helperTable($oldTab,tabPosns) [SashPosns $oldTab]
+		# tab posn recorder not needed, we avoid ttk::style command after
+		# adding parameters explorer
+		#set helperTable($oldTab,tabPosns) [SashPosns $oldTab]
 	    }
 	    if {[info exists helperTable($newTab,tabPosns)] && \
 		    [llength $helperTable($newTab,tabPosns)]} {
-		eval {*}$helperTable($newTab,tabPosns)
+		#eval {*}$helperTable($newTab,tabPosns)
 	    }
 	}
 	set helperTable($notebook,showing) $newTab
