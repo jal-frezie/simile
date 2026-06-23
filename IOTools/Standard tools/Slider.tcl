@@ -140,7 +140,7 @@ namespace eval slide139 {
         set initVal [lindex [GetModelValue $node] 0]
 	set includesExpts [expr {[llength $initVal]>1 && ![lindex $initVal 0]}]
         #ShowMess debug info $def ok
-        set levels [split $title /]
+        set levels [split $::myNode$title /]
         set trans [GetTransTable $node]
 	if {$includesExpts} {
 	    set initVal [lindex $initVal 1]  ;# defaults only
@@ -184,7 +184,8 @@ namespace eval slide139 {
                 $f configure -bg $lbg
 		SetState $winId [concat [GetState $winId] \
 				     [list [StripCrs $title]]]
-		set scaleStyle [ScaleStyleFor $f $dbg]
+		set holder [TailForLevels [lrange $levels 0 end-1]]
+		set scaleStyle scaleStyle$holder
             }
         } else {
             set f $winId
@@ -195,7 +196,6 @@ namespace eval slide139 {
 	if {$useDim==-1} {
             set defVal [GetDefVal $initVal -1 0]
 	    if {!$live} {
-		set holder [winfo parent $f]
 		pack [::ttk::button $f.zap -style style$holder \
 			  -image $::iconImages(zap) \
 			  -command [namespace code \
@@ -402,6 +402,8 @@ namespace eval slide139 {
 	return $allVals
     }
 
+    # no longer used here because the scale styles are all done by the
+    # parameters explorer now
     proc ScaleStyleFor {f col} {
 	set style scaleStyle$f
 	if {![llength [ttk::style configure $style]]} {
