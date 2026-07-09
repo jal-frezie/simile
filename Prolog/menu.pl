@@ -1246,7 +1246,7 @@ set_properties(Wid, Model) :-
 		FatFactor is Fatness/NewFatness,
 		start_progress_dialogue(Wid),
 		reassure_user(pl_refatten, []),
-		refatten(Model, FatFactor),
+		refatten(Model, FatFactor, 1),
 		finish_progress_dialogue),
 
 	    /* Changes in fatness require redrawing submodel's
@@ -1285,10 +1285,17 @@ change_enum_type(Node, ArgAtom) :-
 	add_parameter(Node, 0, enum_types, NewEnumTypes),
 	finish_move(Node, 1).
 
-refatten(Model, FatFactor) :-
+refatten(Model, FatFactor, ReInherit) :-
 	FatTrans = [0,0, FatFactor, FatFactor],
 	get_shape(Model, internal_extent, Extent),
-	translate(Extent, FatTrans, NewExtent),
+	(ReInherit -> Extent = [OL, OT, OR, OB],
+		      get_shape(Model, bounding_box, [BL, BT, BR, BB]),
+		      NL is (OL+OR)/2-(BR-BL)/2,
+		      NT is (OT+OB)/2-(BB-BT)/2,
+		      NR is (OL+OR)/2+(BR-BL)/2,
+		      NB is (OT+OB)/2+(BB-BT)/2,
+		      NewExtent = [NL, NT, NR, NB];
+	     translate(Extent, FatTrans, NewExtent)),
 	change_shape(Model, internal_extent, NewExtent),
 %		adjust_toplevel_windows(Model, NewExtent),
 	refatten_toplevels(Model, FatFactor),
@@ -1304,7 +1311,7 @@ refatten(Model, FatFactor) :-
 	    (find_type(Submodel, submodel),
 		m_update><fatness_for(Submodel, SubFat),
 		SubFat > 1.005,
-		refatten(Submodel, SubFat),
+		refatten(Submodel, SubFat, false),
 		fail;
 	      true),
 	    redisplay_border(Submodel),
