@@ -1463,13 +1463,18 @@ proc SaveFile {topNode tree tgt {noPkg 0}} {
 	# spfs to $tree
     }
 
+    if {[CanvasSavesSelected]} {
+	set ascEncoding base64
+    } else {
+	set ascEncoding quoted-printable
+    }
     if {[catch {
 	set parts [GetParts $tree $tree $noPkg]
 	#ShowMess debug info "SaveFile GetParts $tree" ok
 	if {[info exists runState($topNode,runParams)]} {
 	    lappend parts [mime::initialize -canonical application/x-simile \
 			   -header [list "Content-Description" "Run Status"] \
-			   -encoding base64 \
+			   -encoding $ascEncoding \
 			   -string $runState($topNode,runParams)]
 	    lappend projectInfo \
 		"Model execution parameters"
@@ -1603,9 +1608,11 @@ proc GetParts {top tree noPkg} {
     set mimes {}
     set mdlExts pl,spj,shf,spf,sxf
     set genExts png,gif,jpeg
+    set ascEncoding quoted-printable
     if {[CanvasSavesSelected]} {
 	append mdlExts ,cnv,svg,cpp,so,dylib,dll,tcl
 	append genExts ,.o
+	set ascEncoding base64
     }
     foreach subtree [glob -nocomplain \
 			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
@@ -1716,8 +1723,13 @@ proc GetParts {top tree noPkg} {
 		fconfigure $flStream -translation binary
 		set boddledy [read $flStream]
 		close $flStream
+		if {$PartType eq "application/x-simile"} {
+		    set nowEncoding $ascEncoding
+		} else {
+		    set nowEncoding base64
+		}
 		set newM [mime::initialize -canonical $PartType \
-			      -encoding base64 -string $boddledy]
+			      -encoding $nowEncoding -string $boddledy]
 		set headers [list "Content-Disposition" $Disposition \
 				 "Content-Description" $Description \
 				 "Date-Modified" $Date]
