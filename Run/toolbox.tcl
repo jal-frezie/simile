@@ -1161,7 +1161,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
 		  [list custom(widgetTheme) widgetTheme [concat CHOICE $themes] [tr. "Widget theme:"]] \
 		  [list custom(textSize) textSize {12 4 36} [tr. "Text size (pts):"]] \
-		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
+		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "All working data"] [tr. "Source data only"]] [tr. "Save models as..."]] \
 		  [list custom(recentCount) recentCount {10 0 200} [tr. "Entries on recently used file list"]] \
 		  [list custom(quickExit) quickExit [list CHOICE [tr. "Full dialogue"] [tr. "Short dialogue"]] [tr. "Closing model..."]] \
 		  [list custom(leaveEqnBar) leaveEqnBar [list CHOICE [tr. "Apply change"] [tr. "Abandon change"] [tr. "Ask what to do"]] [tr. "Leaving equation bar..."]] \
@@ -1601,7 +1601,12 @@ proc GetParts {top tree noPkg} {
     global projectInfo
 
     set mimes {}
-    set mdlExts pl,cnv,svg,spj,shf,spf,sxf,cpp,so,dylib,dll,tcl
+    set mdlExts pl,spj,shf,spf,sxf
+    set genExts png,gif,jpeg
+    if {[CanvasSavesSelected]} {
+	append mdlExts ,cnv,svg,cpp,so,dylib,dll,tcl
+	append genExts ,.o
+    }
     foreach subtree [glob -nocomplain \
 			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
         #ShowMess debug info "GetParts subtree $subtree" ok
