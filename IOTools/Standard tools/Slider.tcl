@@ -711,7 +711,7 @@ namespace eval slide139 {
 	    if {[string match ENUM(*) $type]} {
                 # will need widget address to update it!
                 set f [MakeSubFrames $winId $::topSFrame($winId) \
-                        [split $title /] [namespace current] 0]
+                        [split $model$title /] [namespace current] 0]
             } else {
                 set f {}
             }
