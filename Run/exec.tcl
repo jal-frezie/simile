@@ -1108,8 +1108,15 @@ proc DoNotPassTcl {caseId node dims tableSpec} {
     }
 
     package require gdal
-    set hg [gdal_open_read_only [lindex $tableSpec 0]]
-    set hdl [gdal_get_raster_band $hg [lindex $tableSpec 6]]
+    set fn [lindex $tableSpec 0]
+    set rb [lindex $tableSpec 6]
+    if {![string is integer $rb]} { ;# its a subdataset name from netcdf
+	set fn NETCDF:\"$fn\":$rb
+	set rb 1
+    }
+    puts "read $fn"
+    set hg [gdal_open_read_only $fn]
+    set hdl [gdal_get_raster_band $hg $rb]
     set dataRows [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]
     set dataCols [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]]
     set fillRows [lindex $dims 0]

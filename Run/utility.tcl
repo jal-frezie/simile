@@ -649,8 +649,14 @@ proc Rebag {bag axis tab lo hi} {
 proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
     package require gdal
 #puts "RGRTL $tableSpec $x $y"
-    set hg [gdal_open_read_only [lindex $tableSpec 0]]
-    set hdl [gdal_get_raster_band $hg 1]
+    set fn [lindex $tableSpec 0]
+    set rb [lindex $tableSpec 6]
+    if {![string is integer $rb]} { ;# its a subdataset name from netcdf
+	set fn NETCDF:\"$fn\":$rb
+	set rb 1
+    }
+    set hg [gdal_open_read_only $fn]
+    set hdl [gdal_get_raster_band $hg $rb]
     set l [expr [lindex $tableSpec 4]-1]
     set t [expr [lindex $tableSpec 2]-1]
     set w [expr [lindex $tableSpec 5]-$l]
