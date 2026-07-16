@@ -515,7 +515,7 @@ of random pile. */
 
 multiple_draw(Comp, Num) :-
     (Comp is_of_sort has_function, !,
-	get_node_size(Comp, Vals);
+	get_node_size(Comp, Vals, _,_);
      from_value(Comp), !,
         Vals = [-3];
      by_record(Comp), !,
