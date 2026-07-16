@@ -865,7 +865,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack $ft.ftable
     # dropdown combobox for table names
     set tablecb [ttk::combobox $ftable.tablecb -state readonly  -width 50 -textvariable table_entry(vrtable)]
-    pack $tablecb -side left
+    pack $tablecb -fill x
     # end new frame March 2017 for the choice of layer in a geotiff/netcdf JAT
     TitleFrame $ft.limits -text [tr. "Boundaries of area to load "]
     set flim [GetFrame $ft.limits]
@@ -1606,8 +1606,21 @@ proc LoadDataFile {mode query mdl} {
         set table_entry(row1) 1
         set table_entry(rown) [gdal_get_y_size $hdl]
 	set tablenames [gdal_get_var_names $hdl]
+	if {$tablenames eq {}} { ;# file has subdatasets instead
+	    array set sds [GetSubDatasetInfo $hdl]
+	}
 	set tablecb [GetFrame $tn.gdal.ftable].tablecb
-	$tablecb configure -values $tablenames
+	if {[array exists sds]} {
+	    $tablecb configure -values [array names sds]
+	    set tablel [winfo parent $tablecb].dslabel
+	    if {![winfo exists $tablel]} {
+		pack [ttk::label $tablel -text [tr. {Select a subdataset}]]
+	    }
+	    bind $tablecb <<ComboboxSelected>> \
+		[list ShowDSDescription $tablel [array get sds]]
+	} else {
+	    $tablecb configure -values $tablenames
+	}
 	$tablecb set [lindex $tablenames 0]
         gdal_close $hdl
     } else {
@@ -1680,6 +1693,36 @@ proc LoadDataFile {mode query mdl} {
 	}
     }
     return 1
+}
+
+proc GetSubDatasetInfo {hdl} {
+    set gdalInfo [gdal_get_info $hdl]
+    foreach sdLine [split $gdalInfo \n] {
+	set score [scan $sdLine { SUBDATASET_%d_%4s=%n} ind sort payload]
+	if {$score==3} {
+	    set ${sort}($ind) [string range $sdLine $payload end]
+	}
+    }
+    # This is dodgy, descs are not unique!
+    foreach ind [array names NAME] {
+	lappend result [lindex [split $NAME($ind) :] end] $DESC($ind)
+    }
+    return $result
+}
+
+proc ShowDSDescription {label descTable} {
+    global table_entry
+    array set descArray $descTable
+    set seln [[winfo parent $label].tablecb get]
+    $label configure -text $descArray($seln)
+
+    set fn NETCDF:\"$table_entry(fileName)\":$seln
+    set tempHdl [gdal_open_read_only $fn]
+    set table_entry(row1) 1
+    set table_entry(rown) [gdal_get_y_size $tempHdl]
+    set table_entry(col1) 1
+    set table_entry(coln) [gdal_get_x_size $tempHdl]
+    gdal_close $tempHdl
 }
 
 proc DoOnDataBaseColumnsLoaded { cH tablecb fheads } {
