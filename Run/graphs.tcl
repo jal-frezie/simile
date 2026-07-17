@@ -1614,7 +1614,7 @@ proc LoadDataFile {mode query mdl} {
 	    $tablecb configure -values [array names sds]
 	    set tablel [winfo parent $tablecb].dslabel
 	    if {![winfo exists $tablel]} {
-		pack [ttk::label $tablel -text [tr. {Select a subdataset}]]
+		pack [ttk::label $tablel -text [tr. {No subdataset selected}]]
 	    }
 	    bind $tablecb <<ComboboxSelected>> \
 		[list ShowDSDescription $tablel [array get sds]]

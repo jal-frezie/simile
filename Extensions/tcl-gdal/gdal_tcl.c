@@ -425,9 +425,9 @@ EXPORT int Gdal_Init(Tcl_Interp *interp) {
     printf("Failed to open shared object: %s\n", dlerror());
     return 0;
   }
-  void* fns[10];
-  char* fn_names[] = {"GDALAllRegister", "GDALOpen", "GDALGetDriverByName", "GDALCreateCopy", "GDALGetRasterXSize", "GDALGetRasterYSize", "GDALGetRasterCount", "GDALGetRasterBand", "GDALClose", "GDALRasterIO"};
-  int i; for (i=0; i<10; ++i)  {
+  void* fns[11];
+  char* fn_names[] = {"GDALAllRegister", "GDALOpen", "GDALGetDriverByName", "GDALCreateCopy", "GDALGetRasterXSize", "GDALGetRasterYSize", "GDALGetRasterCount", "GDALGetRasterBand", "GDALClose", "GDALRasterIO", "GDALInfo"};
+  int i; for (i=0; i<11; ++i)  {
     fns[i] = dlsym(handle,fn_names[i]);
     if (!fns[i]) {
       printf("Failed to find shared functtion %s because %s\n",
@@ -445,6 +445,7 @@ EXPORT int Gdal_Init(Tcl_Interp *interp) {
   GDALGetRasterBand = (GDALGetRasterBand_type*)fns[7];
   GDALClose = (GDALClose_type*)fns[8];
   GDALRasterIO = (GDALRasterIO_type*)fns[9];
+  GDALInfo = (GDALInfo_type*)fns[10];
 #endif
   
   GDALAllRegister();
