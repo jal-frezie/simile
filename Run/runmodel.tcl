@@ -353,9 +353,11 @@ proc SetState {winId newState} {
     ::RunEnv::PreserveSetup 1
 }
 
-proc ProdObj {topNode nodeId caption} {
+proc ProdObj {topNode nodeId caption {filter {}}} {
     global helperTable
-    if {![catch {set inst $helperTable($topNode,current)}]} {
+    if {$::pushedbutton eq "snap"} {
+	return [llength [snap $topNode $nodeId $filter]]
+    } elseif {![catch {set inst $helperTable($topNode,current)}]} {
 # Supplied caption is submodel hierarchy from diagram (unless I get rid of that)
 # -- however we need hierarchy of base component if this is a ghost, so...
 	set useCapt [GetCompProperty $topNode Caption $nodeId]
@@ -754,13 +756,13 @@ proc EatInput {} {
     eval [join $blether \n]
 }
 
-proc CountCValues {dH loseZeros} {
+proc CountCValues {dH loseZeros indxs} {
     if {[llength $dH]==1} {
 	set dH [list default $dH]
     }
     set runTot 0
     foreach {case hdl} $dH {
-	incr runTot [count_values $hdl $loseZeros]
+	incr runTot [count_values $hdl $loseZeros $indxs]
     }
     return $runTot
 }
@@ -782,7 +784,7 @@ proc GetShortVals {topNode plName indxs limit} {
 	    }
 	    set loseZeros [expr {[lsearch {EVENT SQUIRT} \
 			     [GetCompProperty $topNode Class $plName]]>-1}]
-	    set count [CountCValues $hdl $loseZeros]
+	    set count [CountCValues $hdl $loseZeros $indxs]
 	    if {$showMatrix} {
 		set text [ExtractCList $hdl 16777216 $loseZeros $indxs]
 		# add option to translate values only?
@@ -930,18 +932,22 @@ proc MakeSnapText {w} {
             -font {arial 10 bold}
 }
 
-proc snap {topNode node} {
+proc snap {topNode node filter} {
     global runState
     
     set full_label [GetCompProperty $topNode Caption $node]
     set w .snap$node
+    if {[llength $filter]} {
+	append w i[join $filter ,]
+    }
     set last_slash [string last / $full_label]
     set start_label [expr $last_slash+1]
     set end_submodels [expr $last_slash-1]
     set submodels [string range $full_label 0 $end_submodels]
     set label [string range $full_label $start_label end]
-    if {[winfo exists $w]} { ;# do not allow two on same component
-	UpdateSnap $w $label $submodels $topNode $node
+    if {[winfo exists $w] && $filter eq $runState(fltr$w)} {
+	# do not allow two on same component with same filter
+	UpdateSnap $w $label $submodels $topNode $node $filter
 	raise $w
 	return $w
     }
@@ -952,7 +958,7 @@ proc snap {topNode node} {
 		 [list save.gif "Save to file" \
 		      [list SaveSnap $w $label $topNode]] \
 		 [list refresh.gif "Update" \
-		      [list UpdateSnap $w $label $submodels $topNode $node]] \
+		      [list UpdateSnap $w $label $submodels $topNode $node $filter]] \
 		 [list reel.gif "Log to file" \
 		      [list LogSnap $w $label $submodels $topNode $node]]]
     ::graphtools::MakeToolBar $w $tbItems
@@ -963,14 +969,14 @@ proc snap {topNode node} {
     pack $w.xscroll -side bottom -fill x
     pack $w.text -expand yes -fill both
     
-    if {[UpdateSnap $w $label $submodels $topNode $node]} { ;# raised error
+    if {[UpdateSnap $w $label $submodels $topNode $node $filter]} { ;# raised error
 	destroy $w
 	return 
     }
     return $w ;# for scripting
 }
 
-proc UpdateSnap {w label submodels topNode node} {
+proc UpdateSnap {w label submodels topNode node filter} {
     global runState
 
 #    $w.text delete 1.0 end
@@ -981,10 +987,11 @@ proc UpdateSnap {w label submodels topNode node} {
     MakeSnapText $w
     pack $w.text -expand yes -fill both
 
-    set rawVals [GetCompExecData $topNode Value $node]
+    set rawVals [GetCompExecData $topNode Value $node $filter]
     if {[string equal novalue $rawVals]} {
 	return 1
     }
+    set runState(fltr$w) $filter
     set v1 [set runState(val$w) [TransEnums [GetCompProperty $topNode Trans \
 						 $node] [lindex $rawVals 0]]]
     catch {GetCompProperty $topNode Type $node} iType
@@ -1001,7 +1008,12 @@ proc UpdateSnap {w label submodels topNode node} {
     }
     
     $w.text insert end "Variable "
-    $w.text insert end "$label\n" colour3
+    $w.text insert end "$label" colour3
+    if {[llength $filter]} {
+	$w.text insert end " at indices "
+	$w.text insert end "$filter" colour3
+    }
+    $w.text insert end "\n"
     if {[string length $submodels]>0} then {
         $w.text insert end "in submodel "
         $w.text insert end "$submodels\n" colour3
@@ -1014,7 +1026,7 @@ proc UpdateSnap {w label submodels topNode node} {
     # check size
     if {[RunningInC $topNode]} {
 	set hdl [GetHandle $topNode $node]
-	set count [CountCValues $hdl 0]
+	set count [CountCValues $hdl 0 $filter]
 	ReleaseHandle $topNode $hdl
     } else {
 	set count [CountValues $runState(val$w)]

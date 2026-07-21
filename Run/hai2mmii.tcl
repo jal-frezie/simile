@@ -470,19 +470,18 @@ proc GetTransTable { node } {
     return $result
 #    return [do_in_editor GetTransTable $node]
 }
-
 proc MakeSubFrames {clientId nextLevel hierarchy ns nextPt} {
     AddSubFrames $::myNode $clientId $nextLevel $hierarchy $ns $nextPt
 }
 
-proc ProdFromHelper {winId node caption} {
+proc ProdFromHelper {winId node caption {filter {}}} {
     global helperTable
     if {[string first .new $winId]==0 && [string length $node]} { 
 	# choosing new target for lost param data 
 	set ::paramData(newPath,done) [list $caption $node]
     } else {
 	set inst $helperTable($winId,whichInstance)
-	ProdObj [$inst getNode] $node $caption
+	ProdObj [$inst getNode] $node $caption $filter
     }
 }
 
