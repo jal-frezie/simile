@@ -1114,7 +1114,6 @@ proc DoNotPassTcl {caseId node dims tableSpec} {
 	set fn NETCDF:\"$fn\":$rb
 	set rb 1
     }
-    puts "read $fn"
     set hg [gdal_open_read_only $fn]
     set hdl [gdal_get_raster_band $hg $rb]
     set dataRows [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]

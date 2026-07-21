@@ -141,7 +141,8 @@ namespace eval ::ModelDiagram20060804 {
 	set context [GetClickCapt $winId $canx $cany $node]
 
 	ProdFromHelper [winfo parent $winId] $node \
-	    [CaptPathFromPoint $winId $x $y]
+	    [CaptPathFromPoint $winId $x $y] \
+	    [[winfo parent $winId].bbframe.e get]
     }
     
     proc DoInspPopup {winId x y X Y} {

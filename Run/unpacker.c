@@ -963,23 +963,26 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *const argv[]) {
-  int size, error, baseType, loseZeros;
+  int size, error, baseType, loseZeros, indxs[32];
   nodeValues* accessTool;
   valCallback* callback_proc;
 
-  if (argc < 2 || argc > 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "data_handle ?lose_zeros?");
+  if (argc < 3 || argc > 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle lose_zeros ?from_indices?");
     return TCL_ERROR;
   }
   sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &accessTool);
 
-  if (argc == 3) {
-    error = Tcl_GetIntFromObj(interp, argv[2], &loseZeros);
-    if (error != TCL_OK) {
-      return error;
-    }
+  error = Tcl_GetIntFromObj(interp, argv[2], &loseZeros);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  if (argc >= 4) {
+    if ((error = ints_from_list(interp, argv[3], indxs)) != TCL_OK)
+    return error;
   } else
-    loseZeros = 0;
+    indxs[0] = -1;
 
   if (loseZeros && accessTool->dimSpecs[0] != UNSTABLE) {
     size = 0;
@@ -993,9 +996,21 @@ FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
       callback_proc = add_nonzero_ints_to_size;
   } else
     callback_proc = add_to_size;
-  
+
+  int subBlocks[32], curIndx = 0;
+  char* block = accessTool->contents;
+  make_sub_block_sizes(accessTool->dimSpecs, subBlocks);
+  while (indxs[curIndx] > -1 && accessTool->dimSpecs[curIndx] > 0) {
+    // filtering by index not yet done for vm arrays
+    if (indxs[curIndx]>=accessTool->dimSpecs[curIndx]) {
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+      return TCL_OK;
+    }
+    block += indxs[curIndx]*subBlocks[curIndx+1];
+    ++curIndx;
+  }
   size = 0;
-  call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+  call_for_each_val(accessTool->dimSpecs + curIndx, block, 0,
 		    callback_proc, (void*)&size);
   // this increments size once for each value
 
