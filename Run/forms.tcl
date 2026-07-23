@@ -1039,7 +1039,6 @@ proc SetDiagImage {newImage capt mdl} {
 	    $newImage configure -width 0 -height 0
             if {![catch {$newImage read $new -shrink} readFlop]} {
                 PutSize $newImage
-		puts [$newImage cget -width]
                 return 1
            } else {
 		Query [list read_image_failed $readFlop] warning top {} ok
