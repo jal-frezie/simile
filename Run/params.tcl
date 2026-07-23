@@ -75,7 +75,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
 }
 
 proc AlignParamsToModel {topNode} {
-    global paramData msgs
+    global paramState paramData msgs paramMetadata
     
     set ::bermudaTriangle {}
     foreach curVal [array names paramData /$topNode/*] {
@@ -92,8 +92,15 @@ proc AlignParamsToModel {topNode} {
                 } default {
 		    if {![string equal $shortVal $hitsPath]} {
 			set newPath /$topNode$hitsPath
+			set paramState($newPath) $paramState($curVal)
 			set paramData($newPath) $paramData($curVal)
-			unset paramData($curVal)
+			set msgs(param_source_$newPath) $msgs(param_source_$curVal)
+			set toTrim [string length $curVal]
+			foreach {oldPath meta} [array get paramMetadata $curVal,*] {
+			    set paramMetadata($newPath[string range $oldPath $toTrim end]) $meta
+			}
+			array unset paramMetadata $curVal,*
+			unset paramState($curVal) paramData($curVal) msgs(param_source_$curVal)
 		    }
 		}
             }
@@ -696,6 +703,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	    }
 	    set suppliedData($compName) $preload
 	} elseif {$complain > 0 && \
+		      [lindex $suppliedData($compName) 1] ne ",gdal" && \
 	    ![string equal $newData [UglifyValList $suppliedData($compName) $readMany($compName)]]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
