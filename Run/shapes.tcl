@@ -1390,7 +1390,9 @@ proc ShiftImages {topDir way args} {
 #			}
 #		    }
 		    # ...actually why suffer patent worries when there's .png?
-		    $image write $imgFile.png -format png
+		    if {[llength [info commands $image]]} {
+			$image write $imgFile.png -format png
+		    }
                 }
             }
         }
