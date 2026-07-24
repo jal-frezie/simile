@@ -92,7 +92,10 @@ proc AlignParamsToModel {topNode} {
                 } default {
 		    if {![string equal $shortVal $hitsPath]} {
 			set newPath /$topNode$hitsPath
-			set paramState($newPath) $paramState($curVal)
+			if {[info exists paramState($curVal)]} {
+			    set paramState($newPath) $paramState($curVal)
+			    unset paramState($curVal)
+			}
 			set paramData($newPath) $paramData($curVal)
 			set msgs(param_source_$newPath) $msgs(param_source_$curVal)
 			set toTrim [string length $curVal]
@@ -100,7 +103,7 @@ proc AlignParamsToModel {topNode} {
 			    set paramMetadata($newPath[string range $oldPath $toTrim end]) $meta
 			}
 			array unset paramMetadata $curVal,*
-			unset paramState($curVal) paramData($curVal) msgs(param_source_$curVal)
+			unset paramData($curVal) msgs(param_source_$curVal)
 		    }
 		}
             }
