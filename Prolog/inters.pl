@@ -1930,6 +1930,7 @@ builtin('Model properties', first, boolean, [int]).
 builtin('Model properties', as_number, int, [boolean]).
 builtin('Model properties', as_number, int, [a(_T)]).
 builtin('Model properties', as_number, int, [n(_T)]). % so it works on count()
+builtin('Model properties', as_number, int, [int]).
 builtin('Model properties', as_number, 1, [real]). % strip physical units
 builtin('Model properties', as_type, a(T), [n(T), int]).
 builtin('Model properties', as_type, int, [const_int, int]).
