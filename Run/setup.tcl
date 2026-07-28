@@ -65,6 +65,7 @@ set refreshCreds {[Newer $installedCreds $creds m]}
 
 if $refreshCreds {
     file copy -force $installedCreds $creds
+    set creds $installedCreds ;# read source instead to avoid race
 }
 
 set UserStream [open $creds r]
