@@ -612,16 +612,6 @@ proc LoseDTRef {statusLine} {
     return $result
 }
 
-proc UpdateIfFreezy {node} {
-    global updateLastDone
-    if {$updateLastDone < [clock clicks -milliseconds]-40} {
-	if {![RunningInC $node]} {
-	    update ;# includes getting input clicks
-	}
-	set updateLastDone [clock clicks -milliseconds]
-    }
-}
-
 proc ShiftDisplays {node payload current display doAll} {
     global helperTable runState
     if {[catch {

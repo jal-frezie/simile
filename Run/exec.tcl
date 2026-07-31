@@ -242,122 +242,6 @@ proc ExecuteTo {node current pause unitLength display \
     return $currentMode
 }
 
-proc OldExecuteTo {node current pause unitLength display foci \
-		    intMethod maxErr lmtPause evtMsg evtDisp} {
-    global dispDone actDone
-
-    set dispDone 0
-    set actDone 0 ;# nothing so far
-    set forward [expr {($pause>$current)*2-1}] ;# 1 for forward, -1 for back
-    set scaled_current [expr {$current*$unitLength}]
-    if {$display} {
-	set lastDisp [expr int($current/$display)]
-	set timedDisp 1
-    }
-    set currentMode start
-    set evtPause [expr {$evtMsg || $evtDisp}] ;# event sounds selected
-    set ptClasses {}
-    set oldPayload {}
-    set payload {}
-    foreach point $foci {
-	lappend ptClasses [GetCompProperty dummy Class $point]
-    }
-    while {[lsearch {exit stop} $currentMode]==-1} {
-	if {$display} {
-	    if {$timedDisp} {
-		set nextDisp [expr 1.0*$display*[incr lastDisp $forward]]
-# ensure display updated at end of run -- make optional?
-		if {($nextDisp-$pause)*$forward>0} {
-		    set nextDisp $pause
-		}
-		set scaled_next [expr {$nextDisp*$unitLength}]
-	    }
-	} else {
-	    set nextDisp [expr 2*$pause-$current]
-	    set scaled_next [expr {$pause*$unitLength}]
-	}
-	if {$scaled_next == $scaled_current} {
-	    ResetModel $node 0 $scaled_current 1
-	    set howAndWhen 0
-	} else {
-	    set howAndWhen [ExecuteModel $node $intMethod $scaled_current \
-				$scaled_next $maxErr $lmtPause $evtPause]
-	    set scaled_current [lindex $howAndWhen 1]
-	}
-	set displayNow 0
-	switch -- [lindex $howAndWhen 0] {
-	    -1 {
-		set currentMode exit
-	    } 0 {
-		set currentMode stop
-	    } 2 { ;# event
-		if {$evtDisp} {
-		    set displayNow 1
-		}
-		if {$evtMsg} {
-		    ExplainError $node [lrange $scaled_current 1 end] unused
-		    set currentMode stop
-		}
-		# do sounds
-		# foreach {evt sound} [array get ::eventSounds] {
-		#     set hdl [GetHandle $node $evt]
-		#     set evtVals [extract_list $hdl 16777216]
-		#     ReleaseHandle $node $hdl
-		#     if {[SumVals $evtVals]} {
-		# 	exec aplay $sound &
-		#     }
-		# }
-		set scaled_current [lindex $scaled_current 3]
-	    }
-	} ;# default: keep going
-	set current [expr {$scaled_current/$unitLength}]
-	set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
-	if {($current-$pause)*$forward > -1e-12} {
-	    set currentMode stop
-	}
-	if {![string equal exit $currentMode]} { ;# do a display update
-	    FreeAll $oldPayload
-	    set oldPayload $payload
-	    set payload {}
-	    foreach point $foci class $ptClasses {
-		if {[catch {GetPayload $node $point $class} dataHand]} {
-# data has gone, so hope it is no longer needed
-		} else {
-		    lappend payload $point $dataHand
-		}
-	    }
-#	    if {[ShiftDisplays $::nodeId $payload [format %.8g $current] \
-#		     $display [expr {$timedDisp || $displayNow}]]} {
-#		set currentMode stop
-	    #	    }
-	    set shiftCmd [list ShiftDisplays $::nodeId $payload [format %.8g $current] \
-			      $display [expr {$timedDisp || $displayNow}]]
-	    if {$currentMode eq "start"} {
-		if {[RunningInC $node]} {
-		    after idle $shiftCmd
-		} else {
-		    eval $shiftCmd ;# tcl execution does not include gui update
-		}
-	    } else {
-		update ;# make sure penultimate state appears in animation
-		eval $shiftCmd
-	    }
-
-#	    if {![TellAllHelpers $node $payload Display $current $display 1]} {
-#		set currentMode stop
-#	    }
-	    # now it is done, previous one must have finished, if any
-	}
-    }
-#    OuteractGUI $scaled_current 1
-# above is required to leave right time in progress display if not finishing
-# on display interval boundary
-    waitForDisps
-    MarkUncached $payload
-    FreeAll $payload
-    return $currentMode
-}
-
 proc GetPayload {node point class} {
     if {[RunningInC $node]} {
 	return [list ptr $class [GetHandle $node $point]]
@@ -418,38 +302,6 @@ proc PlanRefresh {} {
     set ::refreshDue [expr {[clock clicks -milliseconds]+50}]
 }
 
-proc OldResetModel {myNode howInt initTime redo} {
-    global model_id instance_id dispDone
-
-    set dispDone 0 ;# allow execution to call back
-    set preserveSliders [expr {$howInt-1}] ;# -1 selects new slider rollover
-    # StartRemoteModels $myNode ; do here rather than in c++ to catch error msg
-
-    PlanRefresh
-    if {[catch {
-	if {[RunningInC $myNode]} {
-#	    set model_id $myNode
-	    CResetModel $myNode $initTime $preserveSliders $redo
-	} else {
-	    TclResetModel $myNode $initTime $preserveSliders $redo
-	}
-    } errList]} {
-	if {[string match tcl_model_err* $errList]} {
-	    set severity [ExplainError $myNode [lrange $errList 1 end] \
-			  $::errorInfo]
-	} else {
-	    error "Unexpected problem in Tcl model initialization" $::errorInfo
-	}
-	set done 0
-    } else {
-	set done 1
-    }
-#    set ::userAction 1
-#    InteractGUI $myNode $initTime 0 ;# put somewhere else?
-# make sure time is scaled right if putting this back
-    return $done
-}
-
 proc ResetModel {myNode howInt initTime redo} {
     global model_id instance_id
 
@@ -474,29 +326,6 @@ proc RepeatReset {myNode time} {
     } else {
 	ResetTimeSeries $myNode
     }
-}
-
-proc OldWatchModel {gui end} {
-    global model_id instance_id
-    # should work for any model operation
-    if {![catch {c_checkmodel $model_id $instance_id $gui} status]} {
-	# puts "Send $gui recv \"$status\""
-	if {$status eq ""} { # has run to end
-	    set status [list [expr {1-($gui==2)}] $end]
-	}
-	if {[llength $status] == 2} {
-	    set gui [OuteractGUI [lindex $status 1] [lindex $status 0]]
-	}
-	set going [expr {[lindex $status 0]==2}]
-	if {$going} {
-	    update
-	    return [WatchModel $gui $end]
-	}
-    } else { puts $::errorInfo }
-    if {[lindex $status 0]==1 && $gui==2} { # model step done but paused
-	lset status 0 0
-    }
-    return $status
 }
 
 proc WatchRecursive {node gui end phase} {
@@ -592,41 +421,6 @@ proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
     return [CJoinExecution $myNode $finish 1]
 }
 
-proc OldExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
-    if {[catch {
-	if {[RunningInC $myNode]} {
-#	    set model_id $myNode
-	    CExecuteModel [expr ![string equal Euler $howInt]] \
-		$start $finish $errLim $lmtPause $evtPause
-	} else {
-	    TclExecuteModel $myNode $howInt $start $finish $errLim \
-		$lmtPause $evtPause
-	}
-    } errList]} {
-	if {[string match tcl_model_err* $errList]} {
-	    set severity [ExplainError $myNode [lrange $errList 1 end] \
-			  $::errorInfo]
-	} else {
-	    error "Unexpected problem in Tcl model execution" $::errorInfo
-	}
-    } elseif {[lindex $errList 0]>-1} { ;# requires no message
-	return $errList
-    } elseif {[lindex $errList 5] eq "event"} {
-	return [list 2 $errList]
-    } else {
-	set severity [ExplainError $myNode [lrange $errList 1 end] unused]
-    }
-    OuteractGUI [lindex $errList 3] 2
-    return [list $severity [lindex $errList 3]]
-}
-
-proc waitForDisps {} {
-    global dispDone
-    if {![info exists dispDone]} {
-	vwait dispDone
-    }
-}
-
 proc OuteractGUI {time mode} {
     global nodeId web_service
 
@@ -634,56 +428,6 @@ proc OuteractGUI {time mode} {
 	return 1
     }
     return [InteractGUI $nodeId $time $mode]
-}
-
-proc InMaster {cmd result} {
-    thread::send -async $::masterId [lreplace $cmd 1 1 $::nodeId] $result
-}
-
-if {[info exists masterId]} { ;# we are in separate thread
-    proc PullAction {inst} {
-	return [tsv::get action $inst]
-    }
-
-    proc AbortCheck {nodeId args} {
-	InMaster [info level 0] dummy
-	return [PullAction $nodeId]
-    }
- 
-    proc InteractGUI {nodeId args} {
-	global masterId
-
-	if {![info exists ::dispDone]} { ;# GUI is busy
-	    update ;# in case GUI waiting for this thread
-	    return 0
-	}
-	thread::send -async $masterId [info level 0]
-	return [PullAction $nodeId]
-    }
- 
-# This one needs to wait till previous call finished    
-    proc ShiftDisplays {nodeId args} {
-	global dispDone
-	waitForDisps
-	if {$dispDone} { ;# helper has stuffed up
-	    return 1
-	} else {
-	    unset dispDone
-	    InMaster [info level 0] dispDone
-	    return [PullAction $nodeId]
-	}
-    }
-# these are straight copies
-    foreach straight {ExecQuery TransEnums} { ;# InDays not needed
-	proc $straight {args} {
-	    global masterId cbRes
-
-	    waitForDisps
-	    thread::send -async $masterId [info level 0] cbRes
-	    vwait cbRes
-	    return $cbRes
-	}
-    }
 }
 
 proc RunningInC {myNode} {
@@ -1395,22 +1139,6 @@ foreach oldCProc {setparamelement settimepointelement settimepointarray \
 	}
 	return [eval [list new[lindex $cmd 0] $usePrm] [lrange $cmd 3 end]]
 		# elt 1 (2nd) is top node, not needed here
-    }
-}
-
-proc ParamsFromGUI {inst} {
-    # not used as it causes a deadly embrace
-    global masterId instance_id
-
-    set instance_id $inst
-    if {[info exists masterId]} {
-	thread::send -async $masterId \
-	    [list FileParamDialogue $::web_service(node) {} 0] params_done
-	vwait params_done
-	unset instance_id
-	return $::params_done
-    } else {
-	return [FileParamDialogue $::web_service(node) {} 0]
     }
 }
 
