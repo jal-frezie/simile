@@ -1229,8 +1229,9 @@ proc ControlDraw {prologVersion} {
 proc InitExecThread {node} {
     global execThread execInterp SIMILE_PATH simplify
 
-    set useThreads 0 ;# v7 parallelizes model execution at c++ level
+    set useThreads 0 ;# v7 parallelizes model execution at c++ level which does not help
     if {$useThreads} {
+	package require Thread
 	set execThread($node,id) [thread::create]
 # puts "Created thread $execThread($node,id) for $node from [thread::id]"
     } else {
@@ -1252,7 +1253,8 @@ proc InitExecThread {node} {
 		# puts "exec bother [info level 0]"
 		set execSideCmd [info level 0]
 		set execSideCmd [lreplace $execSideCmd 1 1 {}]
-		return [thread::send $execThread($node,id) $execSideCmd]
+		set booty [thread::send $execThread($node,id) $execSideCmd]
+		return $booty
 	    }
 	} else {
 	    proc $stubCmd {node args} {
@@ -1292,26 +1294,34 @@ proc InitExecThread {node} {
 
     if {$useThreads} {
 	thread::send $execThread($node,id) [list set masterId [thread::id]]
-	thread::send $execThread($node,id) [list set nodeId $node]
-	thread::send $execThread($node,id) \
-	    [list source [file join $SIMILE_PATH Run support.tcl]]
-	thread::send $execThread($node,id) \
-	    [list source [file join $SIMILE_PATH Run exec.tcl]]
-	thread::send $execThread($node,id) \
-	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
-    } else {
-	$execInterp($node,id) eval [list set nodeId $node]
-	$execInterp($node,id) eval \
-	    [list source [file join $SIMILE_PATH Run support.tcl]]
-	$execInterp($node,id) eval \
-	    [list source [file join $SIMILE_PATH Run exec.tcl]]
-	$execInterp($node,id) eval \
-	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
-	# callback cmds will need adjusting to include global nodeid
-	foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached ExecQuery TransEnums InDays VisitUrl FileParamDialogue ListFoci ReportParams extract_list extract_json extract_gif_tail distinct_values} {
+    }
+    foreach initCmd [list [list set nodeId $node] \
+			 [list source [file join $SIMILE_PATH Run support.tcl]] \
+			 [list source [file join $SIMILE_PATH Run exec.tcl]] \
+			 [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]] {
+	if {$useThreads} {
+	    thread::send $execThread($node,id) $initCmd
+	} else {
+	    $execInterp($node,id) eval $initCmd
+	}
+    }
+    
+    foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached ExecQuery TransEnums InDays VisitUrl FileParamDialogue ListFoci ReportParams extract_list extract_json extract_gif_tail distinct_values} {
+	if {$useThreads} {
+	    set callbackDefn [list proc $callbackCmd {args} {
+		set myCmd [info level 0]
+		set cbVar cbRes_[lindex $myCmd 0]
+		global masterId $cbVar
+		thread::send -async $masterId $myCmd $cbVar
+		vwait $cbVar
+		return [set $cbVar]
+	    }]
+	    thread::send $execThread($node,id) $callbackDefn
+	} else {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }
+    
     if {[catch {load_c_stub_1 $node $::auto_path $::execDir}]} {
 	if {[string match Linux $::tcl_platform(os)]} {
 # try rebuilding 5d dll if in Linux -- c++ libraries may have changed!
@@ -1325,6 +1335,14 @@ proc InitExecThread {node} {
 	}
 # now just do it again so error gets raised as per usual if still bad
 	load_c_stub_1 $node $::auto_path $::execDir
+    }
+}
+
+proc UpdateIfInInterp {myNode} {
+    if {![info exists ::execThread($myNode,id)]} {
+	# callback from interpreter, event loop not running
+	after idle [list set backToWork 1]
+	vwait ::backToWork ;# UpdateIfFreezy $myNode
     }
 }
 

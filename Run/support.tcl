@@ -742,6 +742,7 @@ proc CheckGUI {node modelTime thisOp} {
     return $result
 }
     
+# called from tcl model execution
 proc abort_check {args} {
     global myNode
     if {[AbortCheck $myNode]>=10} {

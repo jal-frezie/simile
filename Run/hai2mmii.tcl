@@ -250,7 +250,7 @@ proc ListFoci {node} {
 		set allFoci($focus) 1
 	    }
 	}
-	return [array names allFoci]
+        return [array names allFoci]
 }
 
 proc ExtractCList {dH count loseZeros {inds {}} {newVals {}}} {
