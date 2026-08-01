@@ -1289,7 +1289,8 @@ proc ReverseDraw {canvas} {
 #        } else {
 	set config {}
             foreach conf [$canvas itemconfigure $object] {
-                set default [lindex $conf 3]
+                set prop [lindex $conf 0]
+		set default [lindex $conf 3]
                 set value [lindex $conf 4]
                 # Evade grotesque bugs in tk8.3
                 if {[string match bezier $value]} {
@@ -1298,15 +1299,20 @@ proc ReverseDraw {canvas} {
                 if {[string match $default $value.0]} {
                     set value $default
                 }
+		# supress new properties in tk9 which make no sense to tk8
+		# (or tk9...)
+		if {[$canvas type $object] eq "arc" && $prop eq "-height"} {
+		    continue
+		}
 		# this should allow Unicode to be independent of system
 		# encoding. 'Bad' characters also substituted so we can use
 		# concat to stop Tcl making it a list member (sensible?)
-		if {[string equal -text [lindex $conf 0]]} {
+		if {[string equal -text $prop]} {
 		    # for some reason, breaking next line with \ causes error
 		    set config [concat $config [list -text] [EscapeNasties $value]]
 		} elseif {[string compare $default $value]} {
 		    # Don't bother writing default values
-                    lappend config [lindex $conf 0] $value
+                    lappend config $prop $value
                 }
             }
 	    append result [concat \$c create [$canvas type $object] \
