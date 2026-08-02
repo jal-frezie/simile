@@ -1255,7 +1255,7 @@ proc CanvasDefBG {} {
 }
 
 proc CanvasSavesSelected {} {
-    if {[string equal [tr. {Canvas file}] \
+    if {[string equal [tr. {All working data}] \
 	     [PrefValue custom(saveExtras) saveExtras]]} {
 	return 1
     } else {
