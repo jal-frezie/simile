@@ -1,6 +1,7 @@
 # Location of Simile configuration folder
 if {[string equal windows $tcl_platform(platform)]} {
-#    set homeDir [file attributes $env(HOME) -shortname] ;# is Ascii
+    #lappend auto_path "c:/Program files/Simile$env(SIMILE_VERSION)/System/lib"
+    #    set homeDir [file attributes $env(HOME) -shortname] ;# is Ascii
     package require registry
     set homeDir [string map [list %USERPROFILE% $env(USERPROFILE)] \
 		     [registry get {HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders} {Personal}]] ;# who cares if Ascii
