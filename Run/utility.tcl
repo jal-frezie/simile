@@ -20,7 +20,9 @@ if {[info tclversion] eq 8.6} {
 } else {
     set altVersion 8.6
 }
-lappend env(PATH) /usr/bin ;# PATH not available in some server cases
+if {$tcl_platform(os) eq "Linux"} {
+    append env(PATH) :/usr/bin ;# PATH not available in some server cases
+}
 if {[llength [auto_execok tclsh$altVersion]]} {
     lappend auto_path \
 	{*}[exec echo "package require style;puts \$auto_path" | tclsh$altVersion]
