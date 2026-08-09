@@ -2398,7 +2398,8 @@ here we instantiate the 4th arg of vm_loop to the phase in all the paths... */
 insert_enum_phases(_, []).
 
 insert_enum_phases(VmSpecPairs, [Path | MorePaths]) :-
-	(suffix([sm(Name, _,_, Loop) | Head], Path),
+        (nonvar(Path), % sometimes BPath is a list of vars which gets stuck here
+	 suffix([sm(Name, _,_, Loop) | Head], Path),
 	    (Loop = vm_loop(_,_, BPaths, Phase), !,
 		member(vm_spec_pair(Name, Phase), VmSpecPairs), % must be there
 		(var(BPaths) -> ToDo = [Head | MorePaths];
