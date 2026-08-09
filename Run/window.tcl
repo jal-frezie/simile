@@ -262,7 +262,7 @@ proc ClickObj { x y winId X Y action} {
     }
     # IO tool took the click, so do no more
     if {[string compare $pushedbutton snap]==0} then {
-        snap $topNode $node
+        snap $topNode $node {}
     } else {
 	set window_info(lastClickCapt) $context
         if {[string equal click $action]} {
