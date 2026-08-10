@@ -1966,8 +1966,8 @@ connect_params(AllInsts, Insts) :-
                 \+ OrigParam = this_loop(Deferred),
                 (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
 		 nonvar(Al), !; % if in alarm let other loops exit
-		 SafePath = [sm(_,_,_, vm_loop(_,_, [_B1, _B2 |_], _)) | _],
-		 !); % same if in association
+		 SafePath = [sm(_,_,_, vm_loop(_,_, Assocs, _)) | _],
+		 nonvar(Assocs), Assocs = [_B1, _B2 |_], !); % same if in association
 	       % SafePath = [_RetroLevel | CommonPath],
 	       % suffix(SafePath, Path),
 	       suffix(SafePathPlus, PathPlus),
