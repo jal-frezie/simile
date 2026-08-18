@@ -253,15 +253,15 @@ proc ListFoci {node} {
         return [array names allFoci]
 }
 
-proc ExtractCList {dH count loseZeros {inds {}} {newVals {}}} {
+proc ExtractCList {dH count loseZeros doTrans {inds {}} {newVals {}}} {
     if {[llength $dH]==1} {
-	return [extract_list $dH $count $loseZeros 0 $inds] ;# skip trans
+	return [extract_list $dH $count $loseZeros $doTrans $inds]
     } ;# else
     set runTot {}
     set ortho -1
     set snip [expr {2*$count/[llength $dH]}]
     foreach {case hdl} $dH {
-	set sector [extract_list $hdl $snip $loseZeros 0 $inds] ;# skip trans
+	set sector [extract_list $hdl $snip $loseZeros $doTrans $inds]
 	lappend runTot [incr ortho] $sector ;# 1st is 0
     }
     return $runTot
@@ -301,7 +301,8 @@ proc GetModelValue { node {keepEvtZeros 0} {defCaseOnly 0} {fromInds {}}} {
 	    if {$defCaseOnly} {
 		set hdl [DefFrom $hdl]
 	    }
-	    return [list [ExtractCList $hdl 16777216 $loseZeros $fromInds]] ;# enough I hope
+	    return [list [ExtractCList $hdl 16777216 $loseZeros 0 $fromInds]]
+	    # enough I hope
 	} else { # from tcl model or measured value from pest interface
 	    return [list $subbedPlots($node)]
 	}
@@ -315,7 +316,7 @@ proc SetModelValue { node newVals {defCaseOnly 0} {inds {}}} {
 
     set getWhat Value
     if {$defCaseOnly} {set getWhat DefVal}
-    return [GetCompExecData $myNode $getWhat $node $inds $newVals]
+    return [GetCompExecData $myNode $getWhat $node 0 $inds $newVals]
 }
 
 proc DefFrom {hdlList} {
