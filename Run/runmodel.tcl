@@ -795,7 +795,7 @@ proc GetShortVals {topNode plName indxs limit} {
 	    }
 	}
     } else {
-	set text [lindex [GetCompExecData $topNode Value $plName] 0]
+	set text [lindex [GetCompExecData $topNode Value $plName 1] 0]
 	# no zero removal!
 	set count [ShrinkValueList text $limit]
     }
@@ -977,13 +977,12 @@ proc UpdateSnap {w label submodels topNode node filter} {
     MakeSnapText $w
     pack $w.text -expand yes -fill both
 
-    set rawVals [GetCompExecData $topNode Value $node $filter]
+    set rawVals [GetCompExecData $topNode Value $node 1 $filter]
     if {[string equal novalue $rawVals]} {
 	return 1
     }
     set runState(fltr$w) $filter
-    set v1 [set runState(val$w) [TransEnums [GetCompProperty $topNode Trans \
-						 $node] [lindex $rawVals 0]]]
+    set v1 [set runState(val$w) [lindex $rawVals 0]]
     catch {GetCompProperty $topNode Type $node} iType
     if {[string equal REAL $iType]} {
 	set precis [PrefValue custom(snapPrecision) snapPrecision]
