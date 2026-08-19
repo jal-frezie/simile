@@ -776,7 +776,7 @@ proc GetShortVals {topNode plName indxs limit} {
 			     [GetCompProperty $topNode Class $plName]]>-1}]
 	    set count [CountCValues $hdl $loseZeros $indxs]
 	    if {$showMatrix} {
-		set text [ExtractCList $hdl 16777216 $loseZeros $indxs]
+		set text [ExtractCList $hdl 16777216 $loseZeros 0 $indxs]
 		# add option to translate values only?
 		ReleaseHandle $topNode $hdl
 	    } else {
@@ -799,7 +799,7 @@ proc GetShortVals {topNode plName indxs limit} {
 	# no zero removal!
 	set count [ShrinkValueList text $limit]
     }
-    if {![string equal novalue $text]} {
+    if {[lsearch {novalue unstable} $text] == -1} {
 	catch {GetCompProperty $topNode Type $plName} iType
 	if {[string equal REAL $iType]} {
 	    if {$precis} {
