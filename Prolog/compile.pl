@@ -1966,8 +1966,8 @@ connect_params(AllInsts, Insts) :-
                 \+ OrigParam = this_loop(Deferred),
                 (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
 		 nonvar(Al), !; % if in alarm let other loops exit
-		 SafePath = [sm(_,_,_, vm_loop(_,_, [_B1, _B2 |_], _)) | _],
-		 !); % same if in association
+		 SafePath = [sm(_,_,_, vm_loop(_,_, Assocs, _)) | _],
+		 nonvar(Assocs), Assocs = [_B1, _B2 |_], !); % same if in association
 	       % SafePath = [_RetroLevel | CommonPath],
 	       % suffix(SafePath, Path),
 	       suffix(SafePathPlus, PathPlus),
@@ -2398,7 +2398,8 @@ here we instantiate the 4th arg of vm_loop to the phase in all the paths... */
 insert_enum_phases(_, []).
 
 insert_enum_phases(VmSpecPairs, [Path | MorePaths]) :-
-	(suffix([sm(Name, _,_, Loop) | Head], Path),
+        (nonvar(Path), % sometimes BPath is a list of vars which gets stuck here
+	 suffix([sm(Name, _,_, Loop) | Head], Path),
 	    (Loop = vm_loop(_,_, BPaths, Phase), !,
 		member(vm_spec_pair(Name, Phase), VmSpecPairs), % must be there
 		(var(BPaths) -> ToDo = [Head | MorePaths];

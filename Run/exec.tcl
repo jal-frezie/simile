@@ -1142,6 +1142,22 @@ foreach oldCProc {setparamelement settimepointelement settimepointarray \
     }
 }
 
+proc ParamsFromGUI {inst} {
+    # not used (much) as it causes a deadly embrace
+    global masterId instance_id
+
+    set instance_id $inst
+    if {[info exists masterId]} {
+	thread::send -async $masterId \
+	    [list FileParamDialogue $::web_service(node) {} 0] params_done
+	vwait params_done
+	unset instance_id
+	return $::params_done
+    } else {
+	return [FileParamDialogue $::web_service(node) {} 0]
+    }
+}
+
 proc StartWebService {node scratch inst {runParams {}}} {
     array set ::web_service [list local $scratch node $::nodeId]
     start_server localhost 7464 similive.simulistics.com {} $inst $runParams
