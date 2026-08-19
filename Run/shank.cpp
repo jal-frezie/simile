@@ -112,7 +112,7 @@ char globMess[256];
 // time point borders are happening frequently.
 
 int stat_check(void* id) {
-  return FALSE;
+  return ((ExecutingModel*)id)->stopRequest;
 }
 
 
@@ -1562,6 +1562,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   loadedInst->event_predict = init_time+steps[1]; // just initialize  
   freq = steps[modelSpec->phases];
 
+  stopRequest = 0;
   (loadedInst->userStop).targetId = 0;
   (loadedInst->userStop).excpSource = this;
   if (loadedInst->do_evalmodel(top_phase)) {
@@ -1612,6 +1613,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   }
   LaunchThreads(execute_grp_instance);
   
+  stopRequest = 0;
   excpData* userDefStop = &(loadedInst->userStop);
   userDefStop->excpSource = this;
 
@@ -1929,7 +1931,12 @@ excpData* ExecutingModel::check_thread(int cancel, int max_wait) {
       pthread_mutex_unlock(&topList->mtx); // allow it to complete
       pthread_kill(topList->thredd, SIGINFO); // will be caught and cause exit
 #else
+#ifdef _WIN32
+      pthread_mutex_unlock(&topList->mtx); // allow it to complete
+      stopRequest = 1;
+#else
       pthread_cancel(topList->thredd); // does not work on Mac
+#endif      
 #endif
       pthread_join(topList->thredd, NULL);
       clientResult->completed = 2;

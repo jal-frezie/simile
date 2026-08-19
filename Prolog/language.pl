@@ -166,7 +166,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	   excrete(L, assignment, CountSlot=IndCount, Indent, Stream),
 	   excrete(L, while_start, PtrNonNull, Indent, Stream),
 	   deepen_indent(Indent, Indent1),
-	   % excrete(L, procedure_call, abort_check, Indent1, Stream),
+	   excrete(L, procedure_call, abort_check, Indent1, Stream),
 	   all(language, declare_ptrs,
 	       [build(Names), build(Types), build(BasePtrs),
 		unify([L, Indent1, Stream])]),
@@ -246,7 +246,7 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 
 	make_struct_reference(L, Pointer, new_instance, NewInstance, _),
 
-	% excrete(L, procedure_call, abort_check, Indent, Stream),
+	excrete(L, procedure_call, abort_check, Indent, Stream),
 	length(RefIndices, NumIndices),
 	(NumIndices = 0,
 	    ptr_compare(L, MPTargetRef, 0, CallPrune);

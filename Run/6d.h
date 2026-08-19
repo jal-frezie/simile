@@ -205,6 +205,7 @@ class ExecutingModel
 
   //! Time at which GUI was last updated with model execution status
   unsigned long int last_check;
+  int stopRequest;
   // stuff for doing default case in separate thread from GUI
   #define FLASH CLOCKS_PER_SEC/25 // 40ms
  

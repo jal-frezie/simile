@@ -49,7 +49,7 @@ int compare_instance_status (const int pointers[], const int ref_pointers[],
    return 0;
 }
 
-#define PASSUP_TIMER 1048576
+#define PASSUP_TIMER 1024
 thread_local int amWorker = 0;
 thread_local int lazy = PASSUP_TIMER;
 
@@ -66,11 +66,11 @@ void InstanceOfModel::abort_check () {
   int valToSend = WORKER_QUERY_GUI;
   if (!lazy--) {
     lazy = PASSUP_TIMER;
-    if (!amWorker) { // in master, save to prod Tcl
+    // if (!amWorker) { // in master, save to prod Tcl
       if (stat_check(partner))
 	throw -101;
-    } else
-      int ness = PIPEWRITE(phoneHome, (char*)&valToSend, sizeof(int));	
+    // } else
+    //   int ness = PIPEWRITE(phoneHome, (char*)&valToSend, sizeof(int));	
   }
 }
 #ifdef SIM_PAR_EXEC
