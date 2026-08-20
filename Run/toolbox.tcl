@@ -920,7 +920,7 @@ proc Respond {relayProc} {
             StartComms 0
             eval $action
 	} default {
-	    puts "Warning -- relay exited with no command. Not restarting."
+	    puts "Warning -- relay exited with $action. Not restarting."
 # no command, probably crash -- restart may cause nasty loop
         }
     }

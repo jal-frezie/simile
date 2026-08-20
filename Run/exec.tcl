@@ -394,7 +394,12 @@ proc CJoinExecution {node until phase} {
 	if {[lindex $result 5] eq "event"} {
 	    return [list 2 $result]
 	} else {
-	    set result [list [ExplainError $node [lrange $result 1 end] $::errorInfo] [lindex $result 3]]
+	    if {[lindex $result 0] eq "tcl_model_err"} { # error -- re-throw
+		set whatCaught $::errorInfo
+	    } else {
+		set whatCaught unused
+	    }
+	    set result [list [ExplainError $node [lrange $result 1 end] $whatCaught] [lindex $result 3]]
 	}
     }
     return $result
