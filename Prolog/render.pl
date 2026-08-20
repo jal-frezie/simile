@@ -596,7 +596,13 @@ strings_direct(L, struct_defn, [Name | Members], Indent, Stream) :-
 			  build(Members), unify(I1), unify(Stream)]),
 	sicstus_tab(Stream, Indent),
     format(Stream, "};\n", []).
-	
+
+strings_direct(L, abort_check, _, Indent, Stream) :-
+    L = c ->
+	sicstus_tab(Stream, Indent),
+	write(Stream, 'ABORT_CHECK'), nl(Stream); % refs macro defn in backend.h
+    strings_direct(L, procedure_call, abort_check, Indent, Stream).
+    
 excrete(L, Stat, Args, Indent, Stream) :-
 	strings_direct(L, Stat, Args, Indent, Stream), !;
 	do_obsolete_thing(L, Stat, Args, Indent, Stream), fail; true.

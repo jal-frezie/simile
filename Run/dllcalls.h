@@ -103,7 +103,7 @@ typedef unsigned char BOOLEAN;
 #define USEGRAPH       23
 
 // Identifier
-#define MDL_OBJ_VERS 7.0091
+#define MDL_OBJ_VERS 7.0406
 
 #define SIMILE_VERSION	"7.4"
 #define NEST 32

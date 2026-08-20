@@ -5,8 +5,10 @@
 #ifdef _WIN32
    #define TSPOUT handle_for_win32
    typedef void* TSPOUT;
+   #define ABORT_CHECK abort_check();
 #else
    #define TSPOUT int
+   #define ABORT_CHECK
 #endif
 
 // class definition and handling procedure for extra variables used in
