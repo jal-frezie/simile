@@ -123,7 +123,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    excrete(L, while_start, TryRef, Indent, Stream),
 	    deepen_indent(Indent, Indent1),
 	    (L = c ->
-		 excrete(L, procedure_call, pthread_testcancel, Indent1, Stream);
+		 excrete(L, abort_check, _, Indent1, Stream);
 	     true),
 	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	    excrete(L, if_start, AlarmRef, Indent1, Stream),

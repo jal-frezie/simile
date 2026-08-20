@@ -584,7 +584,7 @@ int size_for_data_type(int dtype) { // only works if is_base_type
 }
 
 /* This takes a pointer into a dimension list, and returns the number
-   of items rrepresented by that list, setting its second arg to point
+   of items represented by that list, setting its second arg to point
    to the position in the dim list that specifies one data item in the
    bloc. */
 
