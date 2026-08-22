@@ -1,6 +1,4 @@
 #include <setjmp.h>
-// special integers sent between mgr and worker threads
-#define WORKER_QUERY_GUI -1
 
 #ifdef _WIN32
    #define TSPOUT handle_for_win32
