@@ -63,14 +63,10 @@ void setup_thread(int id) {
 TSPOUT homeCalling, phoneHome;
 
 void InstanceOfModel::abort_check () {
-  int valToSend = WORKER_QUERY_GUI;
   if (!lazy--) {
     lazy = PASSUP_TIMER;
-    // if (!amWorker) { // in master, save to prod Tcl
-      if (stat_check(partner))
-	throw -101;
-    // } else
-    //   int ness = PIPEWRITE(phoneHome, (char*)&valToSend, sizeof(int));	
+    if (stat_check(partner))
+      throw -101;
   }
 }
 #ifdef SIM_PAR_EXEC
@@ -190,11 +186,6 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   
   for (i=1; i<=nTask; ++i) {
     PIPEREAD(come[0], (char*)snf, sizeof(int))==0;
-    if (*snf == WORKER_QUERY_GUI) { // thread not finished, checking interrupt
-      if (stat_check(partner))
-	throw -101;
-      --i; // do not count finish
-    }
   }
   // Step is over, record idle times
   stopwatch = now();
