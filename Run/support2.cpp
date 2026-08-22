@@ -45,7 +45,6 @@ int AME_model::do_evalmodel(int phase) {
     }
     catch (int error) {
       userStop.excpNo = error;
-      report_context();
       return 1;
     }
     report_events(ctxCount, ctxSaved, activeEvtCount,
