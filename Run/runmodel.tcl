@@ -797,7 +797,9 @@ proc GetShortVals {topNode plName indxs limit} {
     } else {
 	set text [lindex [GetCompExecData $topNode Value $plName 1] 0]
 	# no zero removal!
-	set count [ShrinkValueList text $limit]
+	if {!$showMatrix} {
+	    set count [ShrinkValueList text $limit]
+	}
     }
     if {[lsearch {novalue unstable} $text] == -1} {
 	catch {GetCompProperty $topNode Type $plName} iType

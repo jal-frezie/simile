@@ -21,6 +21,11 @@ proc FindRecord {node} {
 	if {[string equal $node [lindex $nodedata($record) 0]]} {
 	    return $nodedata($record)
 	}
+	for {set gcount 0} {$gcount < [lindex $nodedata($record) 4]} {incr gcount} {
+	    if {[set ::[lindex $nodedata($record) 5]($gcount,0)] eq $node} {
+		return [FindRecord [set ::[lindex $nodedata($record) 5]($gcount,1)]]
+	    }
+	}
     }
     return {}
 }
