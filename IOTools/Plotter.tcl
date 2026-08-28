@@ -361,7 +361,7 @@ namespace eval ::$keyValue {
 	$w.canvas bind graph <Button-1> \
 	    [namespace code [list TraceHighlight $w]]
 	$w.canvas bind graph <Enter> \
-	    [concat QueuePopup [namespace code [list TracePopup $w %X %Y %x]]]
+	    [concat QueuePopup [namespace code [list TracePopup $w %X %Y %x %y]]]
 	$w.canvas bind graph <Leave> RemovePopup
         pack $w.canvas -fill both -expand true -side bottom
     }
@@ -643,7 +643,7 @@ namespace eval ::$keyValue {
         }
     }
     
-    proc TracePopup {winId X Y x} {
+    proc TracePopup {winId X Y x y} {
         global ::graphtools::plot
         
         #::graphtools::get_datax {w Xc Xscale}
@@ -652,19 +652,28 @@ namespace eval ::$keyValue {
 # Make sure values are nice -- retreive graph segment and use its coords
 	set canvas [GetCanvas $winId]
 	set segment [$canvas find withtag current]
-	set origin [$canvas coords $segment]
+	set ident [lsearch -inline [$canvas itemcget $segment -tags] *.*]
+	set next $segment
+	set xz [$canvas canvasx $x]
+	set yz [$canvas canvasy $y]
+	while {[set next [$canvas find closest $xz $yz 1 $next]] ne $segment} {
+	    set haloTags [$canvas gettags $next]
+	    if {[lsearch $haloTags trace*]>-1} {
+		set stack([lsearch -inline $haloTags *.*]) 1
+	    }
+	}
+	array unset stack $ident
 #	set LoX [lindex $origin 0]
 #	set HiX [lindex $origin end-1]
 #	set hoveredCoord [expr {min(1-1e-6,max(0,($x-$LoX)/($HiX-$LoX))) \
 #				    * ([llength $origin]/2 - 1)}]
 #	set origin [lrange $origin [expr {2*int($hoveredCoord)}] end]
 #
-        set nearestval [::graphtools::get_datay $winId [lindex $origin 1] \
+        set nearestval [::graphtools::get_datay $winId $yz \
 			    $plot($winId,Yscale)]
-        set nearesttime [::graphtools::get_datax $winId [lindex $origin 0] \
+        set nearesttime [::graphtools::get_datax $winId $xz \
 			     $plot($winId,Tscale)]
 
-	set ident [lsearch -inline [$canvas itemcget $segment -tags] *.*]
 	set mid [string first . $ident]
 	set node [string range $ident 0 $mid-1]
         set caption $plot(caption,$node)
@@ -697,10 +706,15 @@ namespace eval ::$keyValue {
 #         if {![winfo exists .popup]} {
 #             toplevel .popup -width 1 -height 1 -bd 2 -relief raised
 #             wm overrideredirect .popup 1 
-	AddPopupMessage "$caption, run $rc\n\
+	set msg "$caption, run $rc\n\
                 x     : $nearesttime\n\
                 y     : [lindex $trVals end]\n\
-                last y: $lastval" \#ffffc0
+                last y: $lastval"
+	if {[array size stack]} {
+	    append msg "\n\
+	        and [array size stack] more"
+	}
+	AddPopupMessage $msg \#ffffc0
 #             pack [message .popup.message -aspect 400 -bg \#ffffc0] \
 #                     -fill x -expand true
 #             raise .popup
