@@ -1199,3 +1199,6 @@ proc ExScrubRun {node} {
         unset model_id
     }
 }
+
+proc AbortCheck {args} { ;# Tcl stuck model exit check -- not working
+}
