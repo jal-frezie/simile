@@ -1282,6 +1282,7 @@ namespace eval RunEnv {
 		# or $panedwindow sash place won't work
 		set pageId [FindParentNotebookPage $parseStatus(currentPath)]
 		if {[string length $pageId]} {
+		    UpdateByOS ;# sort any remaining pane moves in old tab
 		    [winfo parent $pageId] select $pageId
 		    PageRaiseCmd [winfo parent $pageId]
 		}
@@ -1467,6 +1468,7 @@ namespace eval RunEnv {
                     # or $panedwindow sash place won't work
                     set pageId [FindParentNotebookPage $panedwindow]
 		    if {[string length $pageId]} {
+			UpdateByOS ;# sort any remaining pane moves in old tab
 			[winfo parent $pageId] select $pageId
 			PageRaiseCmd [winfo parent $pageId]
 		    }
