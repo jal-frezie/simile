@@ -205,7 +205,8 @@ context_find(Wid, Query, Target) :-
 	    (get_info(Comp, description, Field);
 	    get_info(Comp, comment, Field));
 	 Target = equation,
-	    get_info(Comp, eqn, Field),
+	    (get_info(Comp, eqn, Field);
+	     get_info(Comp, units, Field)),
 	    \+ Field = '<none>';
 	 Target = caption,
 	    \+ Comp is_of_sort captionless,
