@@ -94,7 +94,8 @@ function hoverIn(evt) {
 //		     return e.id == prolog;
 // 		     });
   tooltip_q.firstChild.data = model_json[prolog].equation;
-    tooltip_v.firstChild.data = prettify(JSON.parse(values_json[prolog]), 0);
+//  tooltip_v.firstChild.data = prettify(JSON.parse(values_json[prolog]), 0);
+  tooltip_v.firstChild.data = values_json[prolog];
   tooltip_c.firstChild.data = model_json[prolog].comment;
 // above will break function if it doesn't work
 
