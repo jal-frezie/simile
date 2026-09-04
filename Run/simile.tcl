@@ -26,7 +26,7 @@ regsub -all /\\./ [info script] / scriptCmd
 # development version starting
 
 set env(SIMILE_VERSION) 7.4
-set sendvars(simP) {.6}
+set sendvars(simP) {.7}
 
 set SIMILE_PATH [file normalize [file dirname [file dirname $scriptCmd]]]
 source [file join $SIMILE_PATH Run setup.tcl]
