@@ -1544,6 +1544,7 @@ proc LoadFile {topNode tree tgt} {
     global loadingProject mimedir
     #ShowMess debug info "LoadFile $tree $tgt" ok
     set CodeChecked no
+    set mimedir $tree
     if {[catch {
 	# following fails in Linux if mime has DOS line ends
 	# set multiT [mime::initialize -file $tgt]
@@ -1603,7 +1604,6 @@ proc LoadFile {topNode tree tgt} {
             if {[file exists $tree/model.spj]} {
                 #ShowMess debug info "LoadFile file is package" ok
                 set loadingProject [list $topNode $tgt]
-                set mimedir $tree
                 #OpenProjectFile $tree
             }
         } Lossage]} {
