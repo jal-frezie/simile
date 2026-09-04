@@ -1246,7 +1246,7 @@ set_properties(Wid, Model) :-
 		FatFactor is Fatness/NewFatness,
 		start_progress_dialogue(Wid),
 		reassure_user(pl_refatten, []),
-		refatten(Model, FatFactor, 1),
+		refatten(Model, FatFactor, true),
 		finish_progress_dialogue),
 
 	    /* Changes in fatness require redrawing submodel's
