@@ -363,10 +363,11 @@ strings_direct(tcl, clear_memory, instance(submodel,_,_, Name, _-Dims), Indent,
 	(\+ number(Dims), !;
 	excrete(tcl, end(for), makenames, Indent, Stream)).
 
-strings_direct(c, clear_memory, instance(submodel,_,_,_,_), Indent, 
-	       Stream) :-
-	sicstus_tab(Stream, Indent),
-	format(Stream, "delete this;\n", []).
+strings_direct(c, clear_memory, instance(submodel,_,_,_,_), _Indent, 
+	       _Stream).
+% no need, can be done in support code, and this is dodgy...
+%       sicstus_tab(Stream, Indent),
+%	format(Stream, "delete this;\n", []).
 
 /* assignment */
 strings_direct(L, assignment, Dest=Source, Indent, Stream) :-

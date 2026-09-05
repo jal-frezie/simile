@@ -3307,7 +3307,6 @@ excpData* execute(void* modelType, void* modelHandle, int how_int,
 char* myexit(void* modelType, void* modelHandle) {  
   if (modelHandle) {
     ((ExecutingModel*)modelHandle)->ExitInstance();
-    // swap below cmd for above at next minor version increment
     delete (ExecutingModel*)modelHandle;
   }
   if (modelType) {
