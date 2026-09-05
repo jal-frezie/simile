@@ -1379,6 +1379,10 @@ Now one that uses a special conditional level */
 		RUnits = int,
 		ValRef = check_limit(RActEqn, Lower, Upper, Flags, GraphId,
 				     Step, RDiffs);
+	    Source =.. [after | _],
+	        get_host(SubId, VisId),
+		\+ VisId is_of_sort discrete,
+		throw('after_for_continuous');
 	    % Source =.. [Op | ArgListForm], (done)
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
