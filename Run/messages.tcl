@@ -462,6 +462,10 @@ set msgs(null_exponentiation_title) [tr. {Null exponentiation}]
 set msgs(null_exponentiation_message) [tr. {This equation contains the subexpression "%1$s", in which a value is raised to the power of 1. This operation will always leave the value unchanged, therefore it is likely that this is a typo.}]
 set msgs(null_exponentiation_detail) [tr. {The usual cause of this problem is an attempt to get the nth root of a subexpression by writing x^1/n. Exponentiation binds more strongly than division, so for this to work correctly, the exponent should be parenthesized, e.g., x^(1/n).}]
 
+set msgs(after_for_continuous_title) [tr. {Wrong component type for function}]
+set msgs(after_for_continuous_message) [tr. {The "after" function generates an event occurrence a given period of time after a triggering event. It has no use in the equation of a continuously changing component.}]
+set msgs(after_for_continuous_detail) [tr. {Use this function in the equation of an event or squirt.}]
+    
 set msgs(missing_graph_or_table_data_title) [tr. {Built-in data missing}]
 set msgs(missing_graph_or_table_data_message) [tr. {Subexpression "%1$s" is a reference to a %2$s, but no data has been entered for it.}]
 set msgs(missing_graph_or_table_data_detail) [tr. {Use the Graph and Table buttons in the equation dialogue to add these functions and define data for them.}]
