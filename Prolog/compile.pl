@@ -300,9 +300,9 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	     unify(KeepDir), unify(none)]).
 
 check_level_for_reds(TopNode, Wrinkle) :-
-    contains(TopNode, Submodel, Chain),
+    contains(TopNode, Submodel, _Chain),
     find_type(Submodel, submodel),
-    \+ (member(Frag, Chain), \+ appears(Frag)), % no function fragments
+%    \+ (member(Frag, Chain), \+ appears(Frag)), % no function fragments
 	(Submodel = TopNode -> OuterText = '(none)';
 	 abs_path_name(Submodel, TopNode, OuterText)),
 	(find_all_comps(Submodel, VisEntity),
@@ -338,7 +338,7 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	SmChannel is_of_sort pop_only,
 	caption_for(SmChannel, InnerText),
 	Wrinkle = misplaced_channel(InnerText, OuterText);
-	contains(Submodel, Param),
+	Submodel has_part Param,
 	appears(Param),
 	is_parameter(Param, N),
 	(Param is_of_sort discrete -> N>1 ; N>0),

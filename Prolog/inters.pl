@@ -2333,7 +2333,9 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	    append(SpareLoops, Model, UseContext),
 	    % now set up input node
 	    get_dims_from_loops(NeededLoops, UsingDims, _),
-	    m_update><build_array(Unit, UsingDims, NewU),
+	    promote_unit(Unit, CheckableUnit),
+	    \+ member(CheckableUnit, [const_int, const_ratio]),
+	    m_update><build_array(CheckableUnit, UsingDims, NewU),
 	    /* pick_elt_from(Source, SpareLoops, SourceElt),
 				% wrap in element(..)
 	    m_update><add_parameter(DestId, 0, value, SourceElt),
