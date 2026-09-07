@@ -300,7 +300,7 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	     unify(KeepDir), unify(none)]).
 
 check_level_for_reds(TopNode, Wrinkle) :-
-    contains(TopNode, Submodel, Chain),
+    contains(TopNode, Submodel, _Chain),
     find_type(Submodel, submodel),
 	(Submodel = TopNode -> OuterText = '(none)';
 	 abs_path_name(Submodel, TopNode, OuterText)),
