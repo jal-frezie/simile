@@ -239,6 +239,8 @@ list_ups([_ | Rest], All) :-
 	append_atoms('../', End, All).
 
 get_spec_units(Node, Unit) :-
+        Node has_class_refinement complete of false, Unit = any, !;
+            % units of red node may be out-of-date
 	Node has_class_refinement units of Unit, !;
 	Node has_attribute units of Unit, !;
 	Unit = any.
