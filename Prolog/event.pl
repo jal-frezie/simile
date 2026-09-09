@@ -1093,9 +1093,10 @@ spread_dims(Node) :-
 	     (default_units(Node, DefBase, _DefDims) ->
 		  (DoingUnits = 'No' ->
 		    DefCheckLevel = 1;
-		  DefCheckLevel = 2),
+		   DefCheckLevel = 1), % was 2 but we want to propagate to
+		  % compartment even if transports mismatch
 		  check_unit(Type, DefBase, DefCheckLevel, []),
-		  OnwardType = DefBase; OnwardType = Type),
+		  OnwardType = Type; OnwardType = Type), % 1st case was DefBase
 		(get_actual_sizes(Node, FoundArray, bare, _, Array, _),
 		    get_actual_sizes(Node, GivenArray, bare, _, Array, _) ->
 		    UseArray = GivenArray;

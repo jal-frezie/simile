@@ -300,12 +300,13 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	     unify(KeepDir), unify(none)]).
 
 check_level_for_reds(TopNode, Wrinkle) :-
-    contains(TopNode, Submodel, _Chain),
+    contains(TopNode, Submodel),
     find_type(Submodel, submodel),
-%    \+ (member(Frag, Chain), \+ appears(Frag)), % no function fragments
 	(Submodel = TopNode -> OuterText = '(none)';
 	 abs_path_name(Submodel, TopNode, OuterText)),
-	(find_all_comps(Submodel, VisEntity),
+	(appears(Submodel), % legacy fragment toplevels may contain components
+                            % wrongly marked incomplete, do not check them
+	find_all_comps(Submodel, VisEntity),
 	appears(VisEntity),
 	\+ VisEntity is_of_sort captionless,
 	\+ is_ghost(VisEntity),
