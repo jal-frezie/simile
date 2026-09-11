@@ -485,8 +485,9 @@ get_unit_conversion(Remote, Local,
 	         \+ Subs = DefSubs,
 	         (SourceCombo =.. [SourceLocation, RelnName] ->
 		      (SourceLocation = in_assoc -> RefReln = RelnName;
+		       connects(RelnName, _, LandingModel),
 		       (RefReln = RelnName; sequence(RelnName, RefReln)),
-		       RefReln is_connector from _ to LocalModel),
+		       RefReln is_connector from _ to LandingModel),
 		      find_reference(LocalModel, Index, RefReln);
 		  SourceCombo = SourceLocation,
 		      RelnName = size_share,
@@ -542,7 +543,6 @@ relation_of_source(Exited, Entered, SourceLocation) :-
     member(Far, Exited), member(Near, Entered),
     permutation([Far-in_base, Near-in_assoc], [Source-SourceLocation, Dest-_]),
     connects(Relation, Source, Dest),
-    variable_size(Dest),
     Relation has_type relation, !;
     SourceLocation = in_hierarchy.
 
