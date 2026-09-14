@@ -85,7 +85,7 @@ ensure_loops_happen(Context) :-
     member(sm(_,_,_, fm_loop(Inds, _,_,_)), Context),
     member(Ind, Inds),
     var(Ind),
-    Ind = glob(_,_), wake,
+    Ind = glob(_,_),
     ensure_loops_happen(Context);
     true.
 	 
