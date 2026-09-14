@@ -346,9 +346,9 @@ uses_as_event(VisSource, RealVar) :-
 	    (RealVar is_of_sort discrete; find_type(RealVar, state));
 	VisSource is_of_sort discrete. % event values to be used
 
-size_cross_reffed(Base, Share, Rel, In-Post) :-
+size_cross_reffed(Base, Share, IdxRel, In-Post) :-
     caption_for(Base, BaseCapt),
-    (connects(Rel, Base, Share),
+    (connects(Rel, _InnerBase, Share),
      Rel is_connector from Base to _, % only use index section
      find_type(Rel, relation),
      list_local_index_meanings(Share, _SDims, IndSpecs),
@@ -358,7 +358,7 @@ size_cross_reffed(Base, Share, Rel, In-Post) :-
     get_av_pair(Share, 0, multiplication_spec, MultSpec),
      member(count=Dims, MultSpec),
      suffix([size(BaseCapt) | Tail], Dims),
-     Rel = by_shared_sizes,
+     IdxRel = by_shared_sizes,
      get_actual_sizes(Share, Tail, bare, _, TDims, _)),
     get_node_size(Base, BDims),
     length(BDims, In),
@@ -386,35 +386,42 @@ trim_loops(All, Range, Loops) :-
       append(SLoops, MLoops, All),
       append(ILoops, TLoops, MLoops),
       append(SLoops, TLoops, Loops).
-				 
-purge_size_cross_refs([], Entered, [], none, DestTemplate, [], []) :-
-    all(m_update, path_bit_for, [build(Entered), build(DestTemplate)]).
+
+purge_size_cross_refs([], _, [], _,_, [], []).
+
+purge_size_cross_refs([X1 | Exited], Entered, NewSrcLoops, SrcLocn,
+	  DestTpt, [OldL | OldSrc], [NewL | NewSrc]) :-
+    purge_size_cross_refs(Exited, Entered, AddSrcLoops, SrcLocn, DestTpt, OldSrc, NewSrc),
+    purge_level_size_cross_refs(X1, Entered, SrcLocn, DestTpt, OldL, NewL),
+        NewL = [_SmLvl | Loops],
+	inters><get_dims_from_loops(Loops, NewXLoops, _Inds),
+	append(NewXLoops, AddSrcLoops, NewSrcLoops).
 
 
-purge_size_cross_refs([Innermost | Exited], Entered, NewSrcLoops, SourceLocn,
-		     DestTemplate, [SrcBit | MoreSrcTplt], NewSrcPath) :-
-    purge_size_cross_refs(Exited, Entered, MoreSrcLoops, OldSrcLocn,
-			  DestTemplate, MoreSrcTplt, MoreNewSrc),
-    (nth(Posn, Entered, Sharer),
-     permutation([Innermost-SRange-UseLoc, Sharer-DRange-_],
+purge_level_size_cross_refs(Exits, [], _, [], SrcBit, SrcBit) :-
+    path_bit_for(Exits, SrcBit).
+
+purge_level_size_cross_refs(Exits, [Sharer | Entered], SourceLocn,
+			    [DestL | DestTpt], OldSrc, NewSrc) :-
+    purge_level_size_cross_refs(Exits, Entered, SourceLocn,
+				DestTpt, OldSrc, MidSrc),
+    path_bit_for(Sharer, DestL),
+    (assertz(no_xrefs_available),
+     permutation([Exits-SRange-UseLoc, Sharer-DRange-_],
 		 [Base-all-in_base, Share-ShareRange-in_assoc]),
-        size_cross_reffed(Base, Share, ShareCapt, ShareRange),
+     size_cross_reffed(Base, Share, ShareCapt, ShareRange),
+        retractall(no_xrefs_available), % role always used if any present
 	(ShareCapt = by_shared_sizes -> SourceLocn = ShareCapt;
-	  SourceLocn =.. [UseLoc, ShareCapt]),
-	nth(Posn, DestTemplate, [sm(_,_,_, fm_loop(DI, _,_,_)) | _DLoops]),
-	path_bit_for(Innermost, SrcBit),
-	SrcBit = [sm(S1, S2, S3, fm_loop(SI, S4, S5, S6)) | SLoops],
+	 SourceLocn =.. [UseLoc, ShareCapt]),
+	DestL = [sm(_,_,_, fm_loop(DI, _,_,_)) | _DLoops],
+	MidSrc = [sm(S1, S2, S3, fm_loop(SI, S4, S5, S6)) | SLoops],
 	split_indices(DI, DRange, _DPre, DIn, _DPost),
 	split_indices(SI, SRange, SPre, _SIn, SPost),
 	append([SPre, DIn, SPost], I),
 	trim_loops(SLoops, SRange, Loops),
-	NewSrcBit = [sm(S1, S2, S3, fm_loop(I, S4, S5, S6)) | Loops],
-	inters><get_dims_from_loops(Loops, AddSrcLoops, _Inds);
-     SourceLocn = OldSrcLocn,
-        get_all_dims(Innermost, AddSrcLoops),
-        NewSrcBit = SrcBit),
-    append(MoreSrcLoops, AddSrcLoops, NewSrcLoops),
-    NewSrcPath = [NewSrcBit | MoreNewSrc].
+	NewSrc = [sm(S1, S2, S3, fm_loop(I, S4, S5, S6)) | Loops];
+     retract(no_xrefs_available),
+        NewSrc = MidSrc).
 
 /* This generates the extra array nestings due to submodels that are exited between a
 link's source and its destination. Note that if the destination is a creation or
@@ -444,14 +451,7 @@ get_unit_conversion(Remote, Local,
 	get_chain(RemoteModel, LocalModel, TopModel, Exited, Entered),
 	reverse(Exited, BiggestFirst),
 	all(ame_gen, get_all_dims, [build(BiggestFirst), append(DefSubs, [])]),
-	(/* Do not display parameter for input without role reference if there
-	is a reference...as of v5.7, do -- but use in_base or in_assoc as
-	appropriate (keep link id of none). */
-	Index = none,
-	    Subs = DefSubs,
-	    relation_of_source(Exited, Entered, SourceLocation),
-	    Relation = DefRel;
-	 % this disjunct should give us a role that gets values from
+	(% this disjunct should give us a role that gets values from
 	 % all instances of the current submodel
 	% RemoteModel = LocalModel,
 	 % (allow cross-border if within right type of submodel?
@@ -483,6 +483,7 @@ get_unit_conversion(Remote, Local,
 	     purge_size_cross_refs(Exited, Entered, Subs, SourceCombo,
 				   DestTplt, SrcTplt, NewSrc),
 	         \+ Subs = DefSubs,
+	        (nonvar(SourceCombo); SourceCombo = none),   
 	         (SourceCombo =.. [SourceLocation, RelnName] ->
 		      (SourceLocation = in_assoc -> RefReln = RelnName;
 		       connects(RelnName, _, LandingModel),
@@ -528,7 +529,15 @@ get_unit_conversion(Remote, Local,
 	    \+ is_exclusive_role(Relation),
 		all(ame_gen, get_all_dims,
 		    [build([Assoc | ReallyExited]), append(Subs, [])])),
-	    SourceLocation = in_assoc).
+	    SourceLocation = in_assoc;
+	 /* Do not display parameter for input without role reference if there
+	is a reference...as of v5.7, do -- but use in_base or in_assoc as
+	appropriate (keep link id of none).
+	This disjunct moved to last to make debugging the others easier */
+	Index = none,
+	    Subs = DefSubs,
+	    relation_of_source(Exited, Entered, SourceLocation),
+	    Relation = DefRel).
 
 ready_type(Rect, Type) :-
 	m_update><get_av_pair(Rect, 0, multiplication_spec, M),
