@@ -277,7 +277,7 @@ render(tcl, class_declaration,
 		name(ExitMaker, ExitMakerStr),
 		Closes = [ExitMaker, CloseNS | ProcCloses],
 		refer_value(tcl, instance, Target);
-	    get_node_size(SymbolicName, What, _,_),
+	    get_all_dims(SymbolicName, What),
 		make_array_assignment(tcl, Indent, What, _,_,_,
 				      Indices, Opens, ArrCloses),
 		Closes = [CloseNS | ArrCloses],
