@@ -2543,11 +2543,7 @@ hang_on_tree(Inst, Using, make_level(_Cur, Insts, SubTrees)) :-
 	    suffix([Next], Tail),
 	    member(NextTree, SubTrees),
 	    NextTree = make_level(OldNext, _,_),
-	    (Next = sm(A,B,C, fm_loop(Inds, X, Y, Z)),
-		 nonvar(OldNext) ->
-		 OldNext = sm(A,B,C, fm_loop(OldInds, X, Y, Z)),
-		 Inds == OldInds;
-	     Next = OldNext), !,
+	    (var(OldNext), OldNext = Next; same_context(Next, OldNext)), !,
 	    hang_on_tree(Inst, [Next | Using], NextTree)).
 
 close_lists(make_level(_L, Insts, Subs)) :-

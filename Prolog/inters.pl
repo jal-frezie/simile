@@ -1,7 +1,7 @@
 sicstus_module(inters, [final_assignment/13, make_intermediates/12,
 			expand_library/2, expand_special_role/3,
 			macro_expansion/2, fragment_expansion/5, function/4,
-			promote_unit/2,
+			promote_unit/2, same_context/2,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			inherently_bound/1, make_inds_for/4, pointer_from/2,
 			with_capt/4]).
@@ -2227,10 +2227,11 @@ same_context(C1, C2) :-
 	    % breaks [arr]+[0,element([arr],1)]
 	    (L1 = fm_loop(S1, _,_,_),
 		L = fm_loop(S, _,_,_),
-		nth(N, S1, I1),
-		nth(N, S, I),
-		permutation([I1, I], [Ia, Ib-1]),
-		var(Ia), integer(Ib);
+%		nth(N, S1, I1),
+%		nth(N, S, I),
+%		permutation([I1, I], [Ia, Ib-1]),
+%		var(Ia), integer(Ib);
+		\+ S1 == S;
 	    L = L1,
 	    \+ L = vm_loop(_,_,_,_), % pointers meaningless -- syntax check
 	    \+ P1 == P2)),
