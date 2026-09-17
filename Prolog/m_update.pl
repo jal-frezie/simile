@@ -393,8 +393,7 @@ purge_size_cross_refs([X1 | Exited], Entered, NewSrcLoops, SrcLocn,
 	  DestTpt, [OldL | OldSrc], [NewL | NewSrc]) :-
     purge_size_cross_refs(Exited, Entered, AddSrcLoops, SrcLocn, DestTpt, OldSrc, NewSrc),
     purge_level_size_cross_refs(X1, Entered, SrcLocn, DestTpt, OldL, NewL),
-        NewL = [_SmLvl | Loops],
-	inters><get_dims_from_loops(Loops, NewXLoops, _Inds),
+	inters><get_dims_from_loops(NewL, NewXLoops, _Inds),
 	append(NewXLoops, AddSrcLoops, NewSrcLoops).
 
 
