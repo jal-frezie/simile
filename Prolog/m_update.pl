@@ -348,12 +348,15 @@ uses_as_event(VisSource, RealVar) :-
 
 size_cross_reffed(Base, Share, IdxRel, In-Post) :-
     caption_for(Base, BaseCapt),
-    (connects(Rel, _InnerBase, Share),
+    (connects(Rel, InnerBase, Share),
+     contains(Base, InnerBase, Chain),
+     all(ame_gen, get_all_dims, [build(Chain), append(Lengthened, IndSpecs)]),
+     % added members make sure TDims is right
      Rel is_connector from Base to _, % only use index section
      find_type(Rel, relation),
      list_local_index_meanings(Share, _SDims, IndSpecs),
      (IdxRel = Rel; sequence(IdxRel, Rel)), % l_l_i_m lists first section in link
-     append(TDims, [ind_spec(_,_,_, IdxRel) | _], IndSpecs),
+     append(TDims, [ind_spec(_,_,_, IdxRel) | _], Lengthened),
      \+ member(ind_spec(_,_,_, IdxRel), TDims);
     get_av_pair(Share, 0, multiplication_spec, MultSpec),
      member(count=Dims, MultSpec),
@@ -394,7 +397,7 @@ purge_size_cross_refs([X1 | Exited], Entered, NewSrcLoops, SrcLocn,
     purge_size_cross_refs(Exited, Entered, AddSrcLoops, SrcLocn, DestTpt, OldSrc, NewSrc),
     purge_level_size_cross_refs(X1, Entered, SrcLocn, DestTpt, OldL, NewL),
 	inters><get_dims_from_loops(NewL, NewXLoops, _Inds),
-	append(NewXLoops, AddSrcLoops, NewSrcLoops).
+	append(AddSrcLoops, NewXLoops, NewSrcLoops).
 
 
 purge_level_size_cross_refs(Exits, [], _, [], SrcBit, SrcBit) :-
