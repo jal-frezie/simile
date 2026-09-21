@@ -1268,6 +1268,8 @@ proc RelationCheck {parent title type entries state init_comment} {
     }
     foreach attr $entries val $state {
 	set capt [format $msgs([lindex $attr 0]) [lrange $attr 1 end]]
+	if {[winfo exists $f.$attr]} continue
+	# sticking plaster as we cannot yet handle multiple size crossrefs
         pack [ttk::checkbutton $f.$attr -text $capt \
                 -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
         set relation($attr) $val
