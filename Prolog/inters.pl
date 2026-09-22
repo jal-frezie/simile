@@ -2505,20 +2505,27 @@ make_inds_for([Bound | RB], [Dim | RD], Sets, [Ind | RI]) :-
 	Level = set(Ind, loop(Bound, Dim))),
 	make_inds_for(RB, RD, RX, RI),
 	append(RX, [Level], Sets).
-	    
-get_dims_from_loops([], [], []).
 
 get_dims_from_loops(Loops, Dims, Inds) :-
+    get_dims_from_loops(Loops, Dims, _Types, Inds).
+
+get_dims_from_loops([], [], [], []).
+
+get_dims_from_loops(Loops, Dims, Types, Inds) :-
 	append(InnerLoops, [Loop], Loops),
-	(Loop = set(Ind, loop(Dim,_)), !,
+	(Loop = set(Ind, loop(Dim, Bound)),
+	    (Bound = n(Type); Type = Dim), !,
 	    Dims = [Dim | RDims],
+	    Types = [Type | RTypes],
 	    Inds = [Ind | RInds];
 	 loops(Loop), !, % any other looping construct we might invent
 	    Dims = [var | RDims],
+	    Types = [var | RTypes],
 	    Inds = [none | RInds];
 	 Dims = RDims,
+	    Types = RTypes,
 	    Inds = RInds),
-	get_dims_from_loops(InnerLoops, RDims, RInds).
+	get_dims_from_loops(InnerLoops, RDims, RTypes, RInds).
 
 loops(set(_, loop(_,_))).
 loops(sm(_,_,_, vm_loop(Dims,_,_,_))) :- \+ Dims == start_only.
