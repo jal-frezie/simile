@@ -1590,13 +1590,14 @@ proc ContextSensitiveHelp {context page} {
     global SIMILE_PATH
 
     global tcl_platform helphtml env
+    set helpPage [file join $SIMILE_PATH help $page]
     switch [tk windowingsystem] {
         win32 {
-            package require winhelp
-            winhelp $context [file join $SIMILE_PATH help simile_book.chm] $page
+#           package require winhelp
+#           winhelp $context [file join $SIMILE_PATH help simile_book.chm] $page
+	    exec cmd /c start [file nativename $helpPage]
         } aqua {
 # try Snow Leopard location first
-	    set helpPage [file join $SIMILE_PATH help $page]
 #	    if {[catch {exec open -a "HelpViewer.app" $helpPage}]} {
 #		exec open -a "Help Viewer.app" $helpPage
 #	    }
@@ -1604,7 +1605,7 @@ proc ContextSensitiveHelp {context page} {
 # able to work out, so just use default browser
 	    exec open $helpPage
         } x11 {
-            set url file://${SIMILE_PATH}/help/$page
+            set url file://$helpPage
             if {![info exists env(BROWSER)]} {
                 foreach possBrowser {chromium firefox mozilla netscape konqueror lynx} {
                     set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
