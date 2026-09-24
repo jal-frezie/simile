@@ -45,7 +45,6 @@ int AME_model::do_evalmodel(int phase) {
     }
     catch (int error) {
       userStop.excpNo = error;
-      report_context();
       return 1;
     }
     report_events(ctxCount, ctxSaved, activeEvtCount,
@@ -156,6 +155,7 @@ void InstanceOfModel::report_context() {
   int mdCount = 0, n, *m;
   ctxCount = 0;
   while (loopIndexPtrs[mdCount]) {
+    //printf("level %d ptr %p count %d idxs %d\n", mdCount, loopIndexPtrs[mdCount], loopIndexCounts[mdCount], ctxCount);
     if (loopIndexCounts[mdCount] == -1) {
       ctxSaved[ctxCount++] = *(int*)(loopIndexPtrs[mdCount]);
     } else {

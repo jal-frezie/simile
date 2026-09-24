@@ -302,6 +302,13 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
     if (indxs[0]>-1) { // Select element by index
       //      printf("indxs start %d,%d...sublocks %d %d...\n", indxs[0], indxs[1],
       //	     subBlocks[0],subBlocks[1]);
+      if (indxs[0]>=dims[0]) {
+	if (jsonic==1)
+	  localObj = Tcl_NewStringObj("\"none\"", -1);
+	else
+	  localObj = Tcl_NewStringObj("none", -1);
+	*count -= *count>0?1:-1;
+      } else 
       localObj = convert_to_tcl(dims+1,subBlocks+1, block+indxs[0]*subBlocks[1],
 				loseZeros, enums+1, translateEnums, indxs+1,
 				count, jsonic);
@@ -325,8 +332,29 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
       if (*count<0) { // start at last index group and work back
 	block = block+(membership-1)*(dims[1]*sizeof(int)+subBlocks[1]);
       }
-      localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
-				     &membership, &block, loseZeros, enums, translateEnums, count, jsonic);
+      int preload=0;
+      while (indxs[preload]>-1 && preload<dims[1]) {
+	indices[preload] = indxs[preload]+1; // convert to modeller indices
+	++preload;
+      }
+      // What we want to do is go through the members and for each
+      // one, check each of its indices against the corresponding
+      // filter index. If we find one that is wrong, skip the
+      // member. Otherwise, call the list builder.
+      int j=0;
+      while (membership && j<preload) {
+	for (j=0; j<preload; ++j) {
+	  if (((int*)block)[j]!=indices[j]) {
+	    --membership;
+	    block += (dims[1]*sizeof(int) + subBlocks[1]); // - if reverse
+	    break; // go back to while loop
+	  }
+	}
+      }
+      localObj =
+	append_list_members(dims[1], preload, dims+2, indices, subBlocks+1,
+			    &membership, &block, loseZeros, enums,
+			    translateEnums, count, jsonic);
       free(indices);
       break;
     case VALUELESS:
@@ -935,23 +963,26 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *const argv[]) {
-  int size, error, baseType, loseZeros;
+  int size, error, baseType, loseZeros, indxs[32];
   nodeValues* accessTool;
   valCallback* callback_proc;
 
-  if (argc < 2 || argc > 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "data_handle ?lose_zeros?");
+  if (argc < 3 || argc > 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle lose_zeros ?from_indices?");
     return TCL_ERROR;
   }
   sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &accessTool);
 
-  if (argc == 3) {
-    error = Tcl_GetIntFromObj(interp, argv[2], &loseZeros);
-    if (error != TCL_OK) {
-      return error;
-    }
+  error = Tcl_GetIntFromObj(interp, argv[2], &loseZeros);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  if (argc >= 4) {
+    if ((error = ints_from_list(interp, argv[3], indxs)) != TCL_OK)
+    return error;
   } else
-    loseZeros = 0;
+    indxs[0] = -1;
 
   if (loseZeros && accessTool->dimSpecs[0] != UNSTABLE) {
     size = 0;
@@ -965,9 +996,21 @@ FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
       callback_proc = add_nonzero_ints_to_size;
   } else
     callback_proc = add_to_size;
-  
+
+  int subBlocks[32], curIndx = 0;
+  char* block = accessTool->contents;
+  make_sub_block_sizes(accessTool->dimSpecs, subBlocks);
+  while (indxs[curIndx] > -1 && accessTool->dimSpecs[curIndx] > 0) {
+    // filtering by index not yet done for vm arrays
+    if (indxs[curIndx]>=accessTool->dimSpecs[curIndx]) {
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+      return TCL_OK;
+    }
+    block += indxs[curIndx]*subBlocks[curIndx+1];
+    ++curIndx;
+  }
   size = 0;
-  call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+  call_for_each_val(accessTool->dimSpecs + curIndx, block, 0,
 		    callback_proc, (void*)&size);
   // this increments size once for each value
 

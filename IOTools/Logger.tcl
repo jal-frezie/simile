@@ -56,6 +56,7 @@ oo::class create iotool::$newHelperClass {
 
     destructor {
 	my CloseAllFiles
+	next
     }
 
     method Reset {} {

@@ -1,7 +1,7 @@
 sicstus_module(inters, [final_assignment/13, make_intermediates/12,
 			expand_library/2, expand_special_role/3,
 			macro_expansion/2, fragment_expansion/5, function/4,
-			promote_unit/2,
+			promote_unit/2, same_context/2,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			inherently_bound/1, make_inds_for/4, pointer_from/2,
 			with_capt/4]).
@@ -85,7 +85,7 @@ ensure_loops_happen(Context) :-
     member(sm(_,_,_, fm_loop(Inds, _,_,_)), Context),
     member(Ind, Inds),
     var(Ind),
-    Ind = glob(_,_), wake,
+    Ind = glob(_,_),
     ensure_loops_happen(Context);
     true.
 	 
@@ -1075,12 +1075,25 @@ make_intermediates(
 	    length(BuildingArrays, BDept),
 	    create_build_loops(DimVals, Duns, LocalLoops, BDept),
 	        append(LocalLoops, BuildingArrays, NowBuilding);
-	    make_choose_form(Source, keep(LocalInd), 0, Element),
-	        length(Source, DimVal),
-		(DimVal > 1, !; throw(singlet_array(Source, DimVal))),
+	    (is_list(Source) ->
+		 length(Source, DimVal),
+		 (DimVal > 1, !; throw(singlet_array(Source, DimVal))),
+	         Dun = const_int,
+	         Selector=LocalInd;
+	      Source = {AnIndex:_,_},
+	      enum_type_ref(AnIndex, SubId, quoted, _, DimType, _),
+	      (DimType = boolean -> DimName = DimType, RealSelector = LocalInd;
+	       a(DimName) = DimType, RealSelector=LocalInd+1),
+	      (Step = dummy ->
+		   DimVal = DimName,
+		   Dun = n(DimVal),
+	           Selector = LocalInd;
+	       get_actual_size(SubId, DimName, bare, [DimVal], _, [Dun]),
+	           Selector = RealSelector)),
+	       %decode_number(DimType, SubId, Step, DimVal, Dun)),
 %		DimSetups = [],
+	        make_choose_form(Source, keep(Selector), 0, Element),
 	        NowBuilding = BuildingArrays,
-	        Dun = const_int,
 		LocalLoops = [set(LocalInd, loop(DimVal, Dun))])),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			PrevInters, NowBuilding, Step, Used, Units, NewInters,
@@ -1366,6 +1379,10 @@ Now one that uses a special conditional level */
 		RUnits = int,
 		ValRef = check_limit(RActEqn, Lower, Upper, Flags, GraphId,
 				     Step, RDiffs);
+	    Source =.. [after | _],
+	        get_host(SubId, VisId),
+		\+ VisId is_of_sort discrete,
+		throw('after_for_continuous');
 	    % Source =.. [Op | ArgListForm], (done)
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
@@ -1453,7 +1470,10 @@ Now one that uses a special conditional level */
 		     SourceRef = ValRef,
 		     Units = RUnits;
 		  var(RUnits),
-		     fn_or_op(Op, MxOp, RUnits, Arg_template),
+		     fn_or_op(Op, MxOp, OrigRUnits, OrigTemplate),
+		     all(inters, remove_physical_units_if_disabled,
+			 [unify(SubId), build([OrigRUnits | OrigTemplate]),
+			  build([RUnits | Arg_template])]),
 		    /* first, check my units are right... */
 	            retractall(trying_units(_,_)),
 	            assert(trying_units(Op, Arg_template)),
@@ -1880,21 +1900,21 @@ builtin('Arithmetic', round, int, [1]).
 builtin('Arithmetic', ceil, int, [1]).
 builtin('Arithmetic', floor, int, [1]).
 
-builtin('Trigonometry', sin, 1, [1]).
-builtin('Trigonometry', cos, 1, [1]).
-builtin('Trigonometry', tan, 1, [1]).
+builtin('Trigonometry', sin, 1, [rad]).
+builtin('Trigonometry', cos, 1, [rad]).
+builtin('Trigonometry', tan, 1, [rad]).
 builtin('Trigonometry', sinh, 1, [1]).
 builtin('Trigonometry', cosh, 1, [1]).
 builtin('Trigonometry', tanh, 1, [1]).
 
-builtin('Trigonometry', asin, 1, [1]).
-builtin('Trigonometry', acos, 1, [1]).
-builtin('Trigonometry', atan, 1, [1]).
-builtin('Trigonometry', arctan, 1, [1]).
+builtin('Trigonometry', asin, rad, [1]).
+builtin('Trigonometry', acos, rad, [1]).
+builtin('Trigonometry', atan, rad, [1]).
+builtin('Trigonometry', arctan, rad, [1]).
 
 %builtin('Statistics', rand_var, real, [real, real]). Is now macro
 builtin('Arithmetic', pow, 1, [1, 1]). /* my c++ does not have int powers */
-builtin('Arithmetic', fmod, 1, [1, 1]).
+builtin('Arithmetic', fmod, real, [real, real]).
 
 builtin('Trigonometry', hypot, real, [real, real]).
 builtin('Trigonometry', atan2, 1, [real, real]).
@@ -1914,6 +1934,8 @@ builtin('Model properties', first, boolean, [int]).
 builtin('Model properties', as_number, int, [boolean]).
 builtin('Model properties', as_number, int, [a(_T)]).
 builtin('Model properties', as_number, int, [n(_T)]). % so it works on count()
+builtin('Model properties', as_number, int, [int]).
+builtin('Model properties', as_number, 1, [real]). % strip physical units
 builtin('Model properties', as_type, a(T), [n(T), int]).
 builtin('Model properties', as_type, int, [const_int, int]).
 builtin('Model properties', dies_of, boolean, [boolean]).
@@ -2128,6 +2150,12 @@ make_choose_form([Elt | Elts], Ind, N, choose(Ind==N,Elt,Later)) :-
 	M is N+1,
 	make_choose_form(Elts, Ind, M, Later).
 
+make_choose_form({_Default:LastElt}, _,_, LastElt).
+make_choose_form({Att:Val, Elts}, Ind, N, choose(Ind==Att,Val,Later)) :-
+	M is N+1,
+	make_choose_form({Elts}, Ind, M, Later).
+
+
 /* If the source is in submodels that the dest is not, this copies their loops
 (because if there are two refs to it the loops might be different for each
 copy_extras(Source, Dest, Extras) :-
@@ -2199,10 +2227,11 @@ same_context(C1, C2) :-
 	    % breaks [arr]+[0,element([arr],1)]
 	    (L1 = fm_loop(S1, _,_,_),
 		L = fm_loop(S, _,_,_),
-		nth(N, S1, I1),
-		nth(N, S, I),
-		permutation([I1, I], [Ia, Ib-1]),
-		var(Ia), integer(Ib);
+%		nth(N, S1, I1),
+%		nth(N, S, I),
+%		permutation([I1, I], [Ia, Ib-1]),
+%		var(Ia), integer(Ib);
+		\+ S1 == S;
 	    L = L1,
 	    \+ L = vm_loop(_,_,_,_), % pointers meaningless -- syntax check
 	    \+ P1 == P2)),
@@ -2305,7 +2334,9 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	    append(SpareLoops, Model, UseContext),
 	    % now set up input node
 	    get_dims_from_loops(NeededLoops, UsingDims, _),
-	    m_update><build_array(Unit, UsingDims, NewU),
+	    promote_unit(Unit, CheckableUnit),
+	    \+ member(CheckableUnit, [const_int, const_ratio]),
+	    m_update><build_array(CheckableUnit, UsingDims, NewU),
 	    /* pick_elt_from(Source, SpareLoops, SourceElt),
 				% wrap in element(..)
 	    m_update><add_parameter(DestId, 0, value, SourceElt),
@@ -2474,20 +2505,27 @@ make_inds_for([Bound | RB], [Dim | RD], Sets, [Ind | RI]) :-
 	Level = set(Ind, loop(Bound, Dim))),
 	make_inds_for(RB, RD, RX, RI),
 	append(RX, [Level], Sets).
-	    
-get_dims_from_loops([], [], []).
 
 get_dims_from_loops(Loops, Dims, Inds) :-
+    get_dims_from_loops(Loops, Dims, _Types, Inds).
+
+get_dims_from_loops([], [], [], []).
+
+get_dims_from_loops(Loops, Dims, Types, Inds) :-
 	append(InnerLoops, [Loop], Loops),
-	(Loop = set(Ind, loop(Dim,_)), !,
+	(Loop = set(Ind, loop(Dim, Bound)),
+	    (nonvar(Bound), Bound = n(Type); Type = Dim), !,
 	    Dims = [Dim | RDims],
+	    Types = [Type | RTypes],
 	    Inds = [Ind | RInds];
 	 loops(Loop), !, % any other looping construct we might invent
 	    Dims = [var | RDims],
+	    Types = [var | RTypes],
 	    Inds = [none | RInds];
 	 Dims = RDims,
+	    Types = RTypes,
 	    Inds = RInds),
-	get_dims_from_loops(InnerLoops, RDims, RInds).
+	get_dims_from_loops(InnerLoops, RDims, RTypes, RInds).
 
 loops(set(_, loop(_,_))).
 loops(sm(_,_,_, vm_loop(Dims,_,_,_))) :- \+ Dims == start_only.

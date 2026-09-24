@@ -880,7 +880,7 @@ proc CheckForETDuplicates {new} {
 
     if {![info exists enumTypeMPEntry] || ![string length $enumTypeMPEntry]} {
 	set query [list no_et_member $new]
-    } elseif {[lsearch {NULL novalue none noitem} $enumTypeMPEntry]>-1} {
+    } elseif {[lsearch {NULL novalue none noitem default} $enumTypeMPEntry]>-1} {
 	set query [list bad_et_member $new $enumTypeMPEntry]
     } elseif {[lsearch {boolean false true} $enumTypeMPEntry]>-1} {
 	set query [list reserved_et_member $new $enumTypeMPEntry]
@@ -1039,7 +1039,6 @@ proc SetDiagImage {newImage capt mdl} {
 	    $newImage configure -width 0 -height 0
             if {![catch {$newImage read $new -shrink} readFlop]} {
                 PutSize $newImage
-		puts [$newImage cget -width]
                 return 1
            } else {
 		Query [list read_image_failed $readFlop] warning top {} ok
@@ -1269,6 +1268,8 @@ proc RelationCheck {parent title type entries state init_comment} {
     }
     foreach attr $entries val $state {
 	set capt [format $msgs([lindex $attr 0]) [lrange $attr 1 end]]
+	if {[winfo exists $f.$attr]} continue
+	# sticking plaster as we cannot yet handle multiple size crossrefs
         pack [ttk::checkbutton $f.$attr -text $capt \
                 -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
         set relation($attr) $val

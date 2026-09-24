@@ -21,6 +21,11 @@ proc FindRecord {node} {
 	if {[string equal $node [lindex $nodedata($record) 0]]} {
 	    return $nodedata($record)
 	}
+	for {set gcount 0} {$gcount < [lindex $nodedata($record) 4]} {incr gcount} {
+	    if {[set ::[lindex $nodedata($record) 5]($gcount,0)] eq $node} {
+		return [FindRecord [set ::[lindex $nodedata($record) 5]($gcount,1)]]
+	    }
+	}
     }
     return {}
 }
@@ -742,6 +747,7 @@ proc CheckGUI {node modelTime thisOp} {
     return $result
 }
     
+# called from tcl model execution
 proc abort_check {args} {
     global myNode
     if {[AbortCheck $myNode]>=10} {
@@ -992,6 +998,7 @@ proc RKUpdate {node} {
     global ts dts phasecount
 
     set weePhase [expr $phasecount+1]
+    set dts($weePhase) 0 ;# must exist for subphase losses
     set dts(0) $weePhase
     AdvanceTime $node $phasecount 0.5
     set ts(0) 2
@@ -1562,7 +1569,7 @@ proc GetTclCompExecData {topNode prop args} {
     set incoming [lrange $args 1 end]
     switch -regexp $prop {
 	Value|DefVal { ;# DefVal means from default case in expt (no expts in Tcl)
-	    return [tcl_insert $node [lindex $incoming 0]]
+	    return [tcl_insert $node [lindex $incoming 1]] ;# 0 is some unsupported opt
 	} default {
 	    error "Property $prop not available in debug mode"
 	}

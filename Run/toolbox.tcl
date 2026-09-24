@@ -920,7 +920,7 @@ proc Respond {relayProc} {
             StartComms 0
             eval $action
 	} default {
-	    puts "Warning -- relay exited with no command. Not restarting."
+	    puts "Warning -- relay exited with $action. Not restarting."
 # no command, probably crash -- restart may cause nasty loop
         }
     }
@@ -1161,7 +1161,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
 		  [list custom(widgetTheme) widgetTheme [concat CHOICE $themes] [tr. "Widget theme:"]] \
 		  [list custom(textSize) textSize {12 4 36} [tr. "Text size (pts):"]] \
-		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
+		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "All working data"] [tr. "Source data only"]] [tr. "Save models as..."]] \
 		  [list custom(recentCount) recentCount {10 0 200} [tr. "Entries on recently used file list"]] \
 		  [list custom(quickExit) quickExit [list CHOICE [tr. "Full dialogue"] [tr. "Short dialogue"]] [tr. "Closing model..."]] \
 		  [list custom(leaveEqnBar) leaveEqnBar [list CHOICE [tr. "Apply change"] [tr. "Abandon change"] [tr. "Ask what to do"]] [tr. "Leaving equation bar..."]] \
@@ -1229,8 +1229,9 @@ proc ControlDraw {prologVersion} {
 proc InitExecThread {node} {
     global execThread execInterp SIMILE_PATH simplify
 
-    set useThreads 0 ;# v7 parallelizes model execution at c++ level
+    set useThreads 0 ;# v7 parallelizes model execution at c++ level which does not help
     if {$useThreads} {
+	package require Thread
 	set execThread($node,id) [thread::create]
 # puts "Created thread $execThread($node,id) for $node from [thread::id]"
     } else {
@@ -1252,7 +1253,8 @@ proc InitExecThread {node} {
 		# puts "exec bother [info level 0]"
 		set execSideCmd [info level 0]
 		set execSideCmd [lreplace $execSideCmd 1 1 {}]
-		return [thread::send $execThread($node,id) $execSideCmd]
+		set booty [thread::send $execThread($node,id) $execSideCmd]
+		return $booty
 	    }
 	} else {
 	    proc $stubCmd {node args} {
@@ -1292,26 +1294,34 @@ proc InitExecThread {node} {
 
     if {$useThreads} {
 	thread::send $execThread($node,id) [list set masterId [thread::id]]
-	thread::send $execThread($node,id) [list set nodeId $node]
-	thread::send $execThread($node,id) \
-	    [list source [file join $SIMILE_PATH Run support.tcl]]
-	thread::send $execThread($node,id) \
-	    [list source [file join $SIMILE_PATH Run exec.tcl]]
-	thread::send $execThread($node,id) \
-	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
-    } else {
-	$execInterp($node,id) eval [list set nodeId $node]
-	$execInterp($node,id) eval \
-	    [list source [file join $SIMILE_PATH Run support.tcl]]
-	$execInterp($node,id) eval \
-	    [list source [file join $SIMILE_PATH Run exec.tcl]]
-	$execInterp($node,id) eval \
-	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
-	# callback cmds will need adjusting to include global nodeid
-	foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached ExecQuery TransEnums InDays VisitUrl FileParamDialogue ListFoci ReportParams extract_list extract_json extract_gif_tail distinct_values} {
+    }
+    foreach initCmd [list [list set nodeId $node] \
+			 [list source [file join $SIMILE_PATH Run support.tcl]] \
+			 [list source [file join $SIMILE_PATH Run exec.tcl]] \
+			 [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]] {
+	if {$useThreads} {
+	    thread::send $execThread($node,id) $initCmd
+	} else {
+	    $execInterp($node,id) eval $initCmd
+	}
+    }
+    
+    foreach callbackCmd {InteractGUI HandleStuck ShiftDisplays MarkUncached ExecQuery TransEnums InDays VisitUrl FileParamDialogue ListFoci ReportParams extract_list extract_json extract_gif_tail distinct_values} {
+	if {$useThreads} {
+	    set callbackDefn [list proc $callbackCmd {args} {
+		set myCmd [info level 0]
+		set cbVar cbRes_[lindex $myCmd 0]
+		global masterId $cbVar
+		thread::send -async $masterId $myCmd $cbVar
+		vwait $cbVar
+		return [set $cbVar]
+	    }]
+	    thread::send $execThread($node,id) $callbackDefn
+	} else {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }
+    
     if {[catch {load_c_stub_1 $node $::auto_path $::execDir}]} {
 	if {[string match Linux $::tcl_platform(os)]} {
 # try rebuilding 5d dll if in Linux -- c++ libraries may have changed!
@@ -1325,6 +1335,14 @@ proc InitExecThread {node} {
 	}
 # now just do it again so error gets raised as per usual if still bad
 	load_c_stub_1 $node $::auto_path $::execDir
+    }
+}
+
+proc UpdateIfInInterp {myNode} {
+    if {![info exists ::execThread($myNode,id)]} {
+	# callback from interpreter, event loop not running
+	after idle [list set backToWork 1]
+	vwait ::backToWork ;# UpdateIfFreezy $myNode
     }
 }
 
@@ -1463,13 +1481,18 @@ proc SaveFile {topNode tree tgt {noPkg 0}} {
 	# spfs to $tree
     }
 
+    if {[CanvasSavesSelected]} {
+	set ascEncoding base64
+    } else {
+	set ascEncoding quoted-printable
+    }
     if {[catch {
 	set parts [GetParts $tree $tree $noPkg]
 	#ShowMess debug info "SaveFile GetParts $tree" ok
 	if {[info exists runState($topNode,runParams)]} {
 	    lappend parts [mime::initialize -canonical application/x-simile \
 			   -header [list "Content-Description" "Run Status"] \
-			   -encoding base64 \
+			   -encoding $ascEncoding \
 			   -string $runState($topNode,runParams)]
 	    lappend projectInfo \
 		"Model execution parameters"
@@ -1521,6 +1544,7 @@ proc LoadFile {topNode tree tgt} {
     global loadingProject mimedir
     #ShowMess debug info "LoadFile $tree $tgt" ok
     set CodeChecked no
+    set mimedir $tree
     if {[catch {
 	# following fails in Linux if mime has DOS line ends
 	# set multiT [mime::initialize -file $tgt]
@@ -1580,7 +1604,6 @@ proc LoadFile {topNode tree tgt} {
             if {[file exists $tree/model.spj]} {
                 #ShowMess debug info "LoadFile file is package" ok
                 set loadingProject [list $topNode $tgt]
-                set mimedir $tree
                 #OpenProjectFile $tree
             }
         } Lossage]} {
@@ -1601,7 +1624,14 @@ proc GetParts {top tree noPkg} {
     global projectInfo
 
     set mimes {}
-    set mdlExts pl,cnv,svg,spj,shf,spf,sxf,cpp,so,dylib,dll,tcl
+    set mdlExts pl,spj,shf,spf,sxf
+    set genExts png,gif,jpeg
+    set ascEncoding quoted-printable
+    if {[CanvasSavesSelected]} {
+	append mdlExts ,cnv,svg,cpp,so,dylib,dll,tcl
+	append genExts ,.o
+	set ascEncoding base64
+    }
     foreach subtree [glob -nocomplain \
 			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
         #ShowMess debug info "GetParts subtree $subtree" ok
@@ -1711,8 +1741,13 @@ proc GetParts {top tree noPkg} {
 		fconfigure $flStream -translation binary
 		set boddledy [read $flStream]
 		close $flStream
+		if {$PartType eq "application/x-simile"} {
+		    set nowEncoding $ascEncoding
+		} else {
+		    set nowEncoding base64
+		}
 		set newM [mime::initialize -canonical $PartType \
-			      -encoding base64 -string $boddledy]
+			      -encoding $nowEncoding -string $boddledy]
 		set headers [list "Content-Disposition" $Disposition \
 				 "Content-Description" $Description \
 				 "Date-Modified" $Date]
@@ -1961,11 +1996,11 @@ proc OpenProjectFile {path} {
 	    set lang tcl
 	}
 	OpenProgressBox $tw.canvas
-	set builtOK [prolog tk_code($topNode,run_$lang,dummy)]
+	set builtOK [GetFromProlog tk_code($topNode,run_$lang,dummy)]
 	CloseProgressBox
-	if {$builtOK} {
-	    LoadProgram $topNode $lang
-	}
+	if {!$builtOK} return
+	LoadProgram $topNode $lang
+
 	set runState($topNode,updated) [expr {1-$SimileProject(modelRunning)}]
 	# after running so out-of-date warning not produced on load
 	UpdateByOS

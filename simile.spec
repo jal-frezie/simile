@@ -5,16 +5,16 @@
 
 Name:		simile
 Version:	7.4
-Release:	3%{?dist}
+Release:	6%{?dist}
 Summary:	Multi-paradigm graphical modelling environment
 
 License:	Proprietary
 URL:		http://simulistics.com
-source:		simile_7.4.3.tar.gz
+source:		simile_7.4.6.tar.gz
 
 BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, redhat-lsb, tcl-devel >= 9.0, tk-devel >= 9.0, libXcursor-devel >= 1.0, portaudio-devel >= 19
 # tk needed for building tktable, tcllib for dtplite
-Requires:       tk >= 8.5, gcc-c++ >= 4.0, tcl-tclxml >= 3.2, tcllib >= 1.11, tklib >= 0.5, tkimg >= 1.3, portaudio >= 19, tkdnd >= 2.8
+Requires:       tk >= 9.0, gcc-c++ >= 4.0, tcl-tclxml >= 3.2, tcllib >= 1.11, tklib >= 0.5, tkimg >= 1.3, portaudio >= 19, tkdnd >= 2.8
 
 %description 
 Multi-paradigm modelling and simulation software for complex dynamic
@@ -33,7 +33,7 @@ intuitive way.
 %build
 make -j8
 # cd Extensions/tkdnd
-# Fedora has had good tktable since f24 so no longer needed
+# Fedora has had good tkdnd since f24 so no longer needed
 # %configure
 # make -j8
 # this configures and makes the bundled tkdnd
@@ -53,6 +53,8 @@ make DESTDIR=$RPM_BUILD_ROOT LIBDIR=%{_libdir} install
 # rm %{_mandir}/mann/tkDND.n.gz
 # untested -- remove docs after installing rather than adjusting makefile
 cd Extensions/tktable
+make DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir}/%{name}-%{version}/System/lib install
+cd ../tcl-gdal
 make DESTDIR=$RPM_BUILD_ROOT libdir=%{_libdir}/%{name}-%{version}/System/lib install
 # rm %{_mandir}/mann/tkTable.n.gz
 # path too long and 64 not xplat -- keep in Extensions?
@@ -74,6 +76,15 @@ cd -
 
 
 %changelog
+* Wed Sep 02 2026 Simulistics Ltd <info@simulistics.com> - 7.4-6
+- Patch release
+
+* Tue Jun 23 2026 Simulistics Ltd <info@simulistics.com> - 7.4-5
+- Patch release
+
+* Wed Jun 03 2026 Simulistics Ltd <info@simulistics.com> - 7.4-4
+- Patch release
+
 * Wed May 20 2026 Simulistics Ltd <info@simulistics.com> - 7.4-3
 - Patch release
 

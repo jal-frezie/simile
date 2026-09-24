@@ -13,18 +13,19 @@
 # scripted (R) cases
 
 # for script-only version
-if {$tcl_platform(os) eq "Linux"} {
+if {$use_system_tcltk} {
 # Include packages from other version in path, after dynamic additions
 if {[info tclversion] eq 8.6} {
     set altVersion 9.0
 } else {
     set altVersion 8.6
 }
-lappend env(PATH) /usr/bin ;# PATH not available in some server cases
+if {$tcl_platform(os) eq "Linux"} {
+    append env(PATH) :/usr/bin ;# PATH not available in some server cases
+}
 if {[llength [auto_execok tclsh$altVersion]]} {
     lappend auto_path \
 	{*}[exec echo "package require style;puts \$auto_path" | tclsh$altVersion]
-}
 }
 # now make sure to respond positively if checking we have v8
 proc newpackage {args} {
@@ -36,6 +37,7 @@ proc newpackage {args} {
 }
 rename package oldpackage
 rename newpackage package
+}
 
 package require xml::tcl
 package require xml::tclparser
@@ -649,8 +651,14 @@ proc Rebag {bag axis tab lo hi} {
 proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
     package require gdal
 #puts "RGRTL $tableSpec $x $y"
-    set hg [gdal_open_read_only [lindex $tableSpec 0]]
-    set hdl [gdal_get_raster_band $hg 1]
+    set fn [lindex $tableSpec 0]
+    set rb [lindex $tableSpec 6]
+    if {![string is integer $rb]} { ;# its a subdataset name from netcdf
+	set fn NETCDF:\"$fn\":$rb
+	set rb 1
+    }
+    set hg [gdal_open_read_only $fn]
+    set hdl [gdal_get_raster_band $hg $rb]
     set l [expr [lindex $tableSpec 4]-1]
     set t [expr [lindex $tableSpec 2]-1]
     set w [expr [lindex $tableSpec 5]-$l]

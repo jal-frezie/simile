@@ -197,7 +197,7 @@ oo::class create iotool::$newHelperClass {
 #		set value [lindex $mVal 0]
 #		#puts "trans $trans value $value"
 #	    }
-	    AddPopupMessage novalue \#ffffc0 GetShortVals $myNode $plName
+	    AddPopupMessage novalue \#ffffc0 GetShortVals $myNode $plName {}
 	}
     }
     

@@ -75,7 +75,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
 }
 
 proc AlignParamsToModel {topNode} {
-    global paramData msgs
+    global paramState paramData msgs paramMetadata
     
     set ::bermudaTriangle {}
     foreach curVal [array names paramData /$topNode/*] {
@@ -92,8 +92,18 @@ proc AlignParamsToModel {topNode} {
                 } default {
 		    if {![string equal $shortVal $hitsPath]} {
 			set newPath /$topNode$hitsPath
+			if {[info exists paramState($curVal)]} {
+			    set paramState($newPath) $paramState($curVal)
+			    unset paramState($curVal)
+			}
 			set paramData($newPath) $paramData($curVal)
-			unset paramData($curVal)
+			set msgs(param_source_$newPath) $msgs(param_source_$curVal)
+			set toTrim [string length $curVal]
+			foreach {oldPath meta} [array get paramMetadata $curVal,*] {
+			    set paramMetadata($newPath[string range $oldPath $toTrim end]) $meta
+			}
+			array unset paramMetadata $curVal,*
+			unset paramData($curVal) msgs(param_source_$curVal)
 		    }
 		}
             }
@@ -255,7 +265,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     set slot [AddSubFrames $topNode $topNode $topFrame $levels fileparams 0]
     set holder [winfo parent $slot]
     set lbg [$holder.head cget -bg]
-    set colStyle style$holder
+    set colStyle style[TailForLevels [lrange $levels 0 end-1]]
     $slot configure -bg $lbg
 
     pack [ttk::label $slot.caption -text [lindex $levels end] \
@@ -436,16 +446,15 @@ proc MakeDimsLegible {dimList dataType} {
 # gives them the Load and Save commands in a given namespace. So we must put
 # the commands in a matching one...
 
-proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
+proc AddSubFrames {topNode clientId base hierarchy ns pt} {
     global msgs iconImages
+    set nextLevel $base
+    set tail [TailForLevels [lrange $hierarchy 0 $pt]]
+    append nextLevel $tail
     set level [lindex $hierarchy $pt]
     set nextPt [expr $pt+1]
     set leaf [expr {[llength $hierarchy]<=$nextPt}]
-#    if {$leaf} {
-#        set nextLevel $parent.box$level
-#    } else {
-        set nextLevel $parent.frame$level
-#    }
+
     if {![winfo exists $nextLevel]} {
 	switch $clientId {
 	    insp {
@@ -456,6 +465,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	}
 #            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken]
 	frame $nextLevel -bd $defBd -relief sunken
+	set parent [winfo parent $nextLevel]
 	if {$pt} {
 	    pack $nextLevel -in $parent.body \
 		-fill x -expand true -padx $defBd -pady $defBd
@@ -487,20 +497,40 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 # now create a style for this level which we will use for the buttons
 # to set their background colour to that of the appropriate submodel
 	    set srcStyle Toolbutton
-	    set bStyle style$nextLevel
-	    eval [list ttk::style configure $bStyle] \
-		[ttk::style configure $srcStyle]
-	    eval [list ttk::style map $bStyle] [ttk::style map $srcStyle]
-	    ttk::style layout $bStyle [ttk::style layout $srcStyle]
+	    set bStyle style$tail
+            set path [join [lrange $hierarchy 0 $pt] /]
+            # added setting of SimileProject element to store spf path
+	    set node [IdFromTail $topNode /$path 0]
+	    set fColour [GetFromProlog tk_get_info($node,colour)]
+	    if {$fColour eq "clear"} {
+		set fColour $::looks(buttonColor)
+	    }
+	    set dbg [Gradient $fColour $nextLevel 15]
+	    #if {$clientId ne "sliders"} {} ;# if not they are already done
+	    # -- just check if they are
+	    if {![llength [ttk::style configure $bStyle]]} {
+		ttk::style configure $bStyle \
+		    {*}[ttk::style configure $srcStyle]
+		ttk::style map $bStyle {*}[ttk::style map $srcStyle]
+		ttk::style layout $bStyle [ttk::style layout $srcStyle]
+		ttk::style map $bStyle -background \
+		    [list pressed [Gradient $fColour $nextLevel 15] \
+			 active [Gradient $fColour $nextLevel -75] {} $fColour]
+	    }
+	    # scale styles for slider helper
+	    set sStyle scaleStyle$tail
+	    if {![llength [ttk::style configure $sStyle]]} {
+		ttk::style configure $sStyle {*}[ttk::style configure TScale]
+		ttk::style layout Horizontal.$sStyle [ttk::style layout Horizontal.TScale]
+		ttk::style configure $sStyle -background $dbg -troughcolor $dbg \
+		    -borderwidth 2
+	    }
 
             pack [frame $nextLevel.head] -fill x -expand true
             frame $nextLevel.body ;# only pack if dropped
 	    pack [button $nextLevel.head.vis \
 		      -image $iconImages(rerun) \
 		      -command [list Compand $nextLevel]] -side left
-            set path [join [lrange $hierarchy 0 $pt] /]
-            # added setting of SimileProject element to store spf path
-	    set node [IdFromTail $topNode /$path 0]
             pack [ttk::label $nextLevel.head.label -text $level:] -side left \
 		-expand 1
 	    if {[llength $ns]} {
@@ -536,19 +566,12 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 #colours set so it looks odd, but then I discovered ttk styles...
 
 # take advantage to have header pop submodel comment
-	    set fColour [GetFromProlog tk_get_info($node,colour)]
-	    if {$fColour eq "clear"} {
-		set fColour $::looks(buttonColor)
-	    }
 	    $nextLevel configure -bg $fColour
 	    if {$pt} {
 		$nextLevel.tree configure -bg $fColour
 	    }
 	    $nextLevel.head configure -bg $fColour
 #	    $nextLevel.head.label configure -style $bStyle
-	    ttk::style map $bStyle -background \
-		[list pressed [Gradient $fColour $nextLevel 15] \
-		     active [Gradient $fColour $nextLevel -75] {} $fColour]
 	    $nextLevel.head.vis configure -highlightbackground $fColour
 	    $nextLevel.head.label configure -background $fColour \
 		-foreground $::looks(outlineColor)
@@ -559,11 +582,15 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	}
     }
     if {!$leaf && [lindex $hierarchy $nextPt] ne {}} {
-	return [AddSubFrames $topNode $clientId $nextLevel $hierarchy \
+	return [AddSubFrames $topNode $clientId $base $hierarchy \
 		    $ns $nextPt]
     } else {
 	return $nextLevel
     }
+}
+
+proc TailForLevels {levels} {
+    return .frame[join $levels .frame]
 }
 
 proc Compand {level} {
@@ -671,12 +698,15 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 #	    } elseif {$suppliedData($compName) ne ""} {
 #		set msgs(param_source_$compName) $msgs(fce)
 # would allow absent value to be accepted
+	    } else {
+		set msgs(param_source_$compName) [tr. Unsaved] ;# overwrite previous
 	    }
 	    if {$caseId ne "s" && $suppliedData($compName) ne ""} {
 		set dataChanged 1 ;# still need to clear old param
 	    }
 	    set suppliedData($compName) $preload
 	} elseif {$complain > 0 && \
+		      [lindex $suppliedData($compName) 1] ne ",gdal" && \
 	    ![string equal $newData [UglifyValList $suppliedData($compName) $readMany($compName)]]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
@@ -717,14 +747,14 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     } elseif {$runState($topNode,modelRunning)<=2} {
 	set dataChanged 1
     }
-	
+
     # Make array form if data has changed
     if {$dataChanged} {
         set useCppArray [RunningInC $topNode]
 
 	if {$msgs(param_source_$compName) eq $msgs(fce)} {
 	    # Parameter removed, delete its space to go back to eqn value
-	    if  {$readMany($compName)} {
+	    if {$readMany($compName)} {
 		set newData {}
 	    } else {
 		if {$useCppArray} {
@@ -1837,6 +1867,7 @@ proc ExistCheck {topNode path level notInput source} {
     }
     if {[string equal nomatch $node]} {
         set nextLook $restoredComp
+	set bookmark [focus]
         while {[string equal nomatch $node]} {
             set lostBit $nextLook
 	    set listVers [split $lostBit /]
@@ -1863,6 +1894,8 @@ proc ExistCheck {topNode path level notInput source} {
 		set newPath [ChooseByInspection $topNode $lostBit $lostType]
 	    }
 	}
+	focus -force $bookmark ;# docs say use sparingly but we have just
+	# closed a window and nothing else seems to work
         if {[string equal submodel $lostType]} {
             lappend bermudaTriangle $lostBit [lindex $newPath 0]
 	    if {![string equal none $newPath]} { ;# check remaining nest levels
@@ -2027,6 +2060,9 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
+    array unset table_entry uftsi
+    array unset table_entry others
+    array unset table_entry wrapPt
     
     if {[info exists paramState($compName)]} {
         set table_entry(data) $paramState($compName)

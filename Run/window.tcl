@@ -262,7 +262,7 @@ proc ClickObj { x y winId X Y action} {
     }
     # IO tool took the click, so do no more
     if {[string compare $pushedbutton snap]==0} then {
-        snap $topNode $node
+        snap $topNode $node {}
     } else {
 	set window_info(lastClickCapt) $context
         if {[string equal click $action]} {
@@ -1217,7 +1217,7 @@ proc AddEqnPopup {node winId plName X Y} {
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-            AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName
+            AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName {}
 	    
 	}
 }
@@ -1463,7 +1463,7 @@ proc MenuSelect { window button item } {
 #	        set tgt [file join $simtmpdir for_web$extn]
 #	    }
 	    OpenProgressBox $window
-	    set builtOK [prolog tk_code($node,$item,dummy)]
+	    set builtOK [GetFromProlog tk_code($node,$item,dummy)]
 	    CloseProgressBox
 	    if {$builtOK} {
 		if {[info exists lang]} {

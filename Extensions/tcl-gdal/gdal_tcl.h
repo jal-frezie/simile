@@ -42,6 +42,7 @@ typedef enum
     /*! Complex Float64 */ GDT_CFloat64 = 11,
     GDT_TypeCount = 15 /* maximum type # + 1 */
 } GDALDataType;
+typedef void *GDALInfoOptions;
 
 // callback functions
 typedef int (*GDALProgressFunc) (double dfComplete,
@@ -78,3 +79,5 @@ typedef CPLErr GDALRasterIO_type(GDALRasterBandH hRBand,
 		      int nPixelSpace,
 		      int nLineSpace);
 GDALRasterIO_type *GDALRasterIO;
+typedef char* GDALInfo_type(GDALDatasetH, const GDALInfoOptions);
+GDALInfo_type *GDALInfo;

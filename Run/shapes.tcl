@@ -514,8 +514,10 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	    -outline {} -fill $fillColour -tags /new_bg/
     }
     # Now to stick it behind anything that might be drawn inside
-    $w raise /new_bg/ target_and_background
-    $w dtag target_and_background
+    if {[llength [$w find withtag target_and_background]]} {
+	$w raise /new_bg/ target_and_background
+	$w dtag target_and_background
+    }
     set stackOn /new_bg/
 
     if {![string equal none $fillImage]} {
@@ -548,9 +550,6 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	    -width $width -fill $col -tags /new_bd/
 	$w create line [expr {$mr+$cornerRad}] $mm $mr $mm \
 	    -width $width -fill $col -tags /new_bd/
-    }
-    foreach tag [concat $tagSet /background/] {
-	$w addtag $tag withtag /new_bg/
     }
     set tabs 0
     while {$tabs < $back} {
@@ -610,6 +609,9 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
         }
         incr tabs
     }
+    }
+    foreach tag [concat $tagSet /background/] {
+	$w addtag $tag withtag /new_bg/
     }
 #    if {$pile} {
 #        set stackDistance [expr -$stackSpacing]
@@ -1253,7 +1255,7 @@ proc CanvasDefBG {} {
 }
 
 proc CanvasSavesSelected {} {
-    if {[string equal [tr. {Canvas file}] \
+    if {[string equal [tr. {All working data}] \
 	     [PrefValue custom(saveExtras) saveExtras]]} {
 	return 1
     } else {
@@ -1287,7 +1289,8 @@ proc ReverseDraw {canvas} {
 #        } else {
 	set config {}
             foreach conf [$canvas itemconfigure $object] {
-                set default [lindex $conf 3]
+                set prop [lindex $conf 0]
+		set default [lindex $conf 3]
                 set value [lindex $conf 4]
                 # Evade grotesque bugs in tk8.3
                 if {[string match bezier $value]} {
@@ -1296,15 +1299,20 @@ proc ReverseDraw {canvas} {
                 if {[string match $default $value.0]} {
                     set value $default
                 }
+		# supress new properties in tk9 which make no sense to tk8
+		# (or tk9...)
+		if {[$canvas type $object] eq "arc" && $prop eq "-height"} {
+		    continue
+		}
 		# this should allow Unicode to be independent of system
 		# encoding. 'Bad' characters also substituted so we can use
 		# concat to stop Tcl making it a list member (sensible?)
-		if {[string equal -text [lindex $conf 0]]} {
+		if {[string equal -text $prop]} {
 		    # for some reason, breaking next line with \ causes error
 		    set config [concat $config [list -text] [EscapeNasties $value]]
 		} elseif {[string compare $default $value]} {
 		    # Don't bother writing default values
-                    lappend config [lindex $conf 0] $value
+                    lappend config $prop $value
                 }
             }
 	    append result [concat \$c create [$canvas type $object] \
@@ -1388,7 +1396,9 @@ proc ShiftImages {topDir way args} {
 #			}
 #		    }
 		    # ...actually why suffer patent worries when there's .png?
-		    $image write $imgFile.png -format png
+		    if {[llength [info commands $image]]} {
+			$image write $imgFile.png -format png
+		    }
                 }
             }
         }
@@ -1889,13 +1899,16 @@ proc NextCaption {canvas} {
         #	$canvas itemconfigure $this -fill blue
         # left in in case the thing fails to highlight, or is exec_only
 
-	CanvasSee $canvas $this [expr $window_info($canvas,width)/2] \
-	    [expr $window_info($canvas,height)/2]
-        set find(now,$canvas) $this
-	prolog tk_do_colours($find(now,$canvas),seln)
+	if {[CanvasSee $canvas $this [expr $window_info($canvas,width)/2] \
+		 [expr $window_info($canvas,height)/2]]} {
+	    set find(now,$canvas) $this
+	    prolog tk_do_colours($find(now,$canvas),seln)
 #        FlashSymbol $canvas $find(now,$canvas) orange orange
         #	HandleObjClick $canvas $this clicktext $tgtX $tgtY
         #	ReleaseObj $canvas $tgtX $tgtY
+	} else {
+	    NextCaption $canvas
+	}
     }
 }
 
@@ -1911,8 +1924,11 @@ proc CanvasSee {c this scnX scnY} {
     set middleY [$c canvasy $scnY]
     scan [$c bbox $this] {%d %d %d %d} tgtL tgtT tgtR tgtB
     if {![info exists tgtL]} {
-	scan [eval ScaleRect $c [GetFromProlog tk_locate('$c',$this)]] \
-	    {%f %f %f %f} tgtL tgtT tgtR tgtB
+	set plRect [GetFromProlog tk_locate('$c',$this)]
+	if {[llength $plRect]<4} {
+	    return 0
+	}
+	scan [eval ScaleRect $c $plRect] {%f %f %f %f} tgtL tgtT tgtR tgtB
 	# Get caption if we feel like displaying it
 #	set hidden [GetFromProlog tk_get_info($this,context)]
 #	set hidden [string range $hidden 0 [string first " . " $hidden]-1]
@@ -1929,6 +1945,7 @@ proc CanvasSee {c this scnX scnY} {
     $c scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
     $c scan dragto [expr int(-0.05*($tgtL+$tgtR))] \
 	[expr int(-0.05*($tgtT+$tgtB))]
+    return 1
 }
 
 proc cleanup {canvas} {

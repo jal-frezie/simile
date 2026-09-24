@@ -353,9 +353,11 @@ proc SetState {winId newState} {
     ::RunEnv::PreserveSetup 1
 }
 
-proc ProdObj {topNode nodeId caption} {
+proc ProdObj {topNode nodeId caption {filter {}}} {
     global helperTable
-    if {![catch {set inst $helperTable($topNode,current)}]} {
+    if {$::pushedbutton eq "snap"} {
+	return [llength [snap $topNode $nodeId $filter]]
+    } elseif {![catch {set inst $helperTable($topNode,current)}]} {
 # Supplied caption is submodel hierarchy from diagram (unless I get rid of that)
 # -- however we need hierarchy of base component if this is a ghost, so...
 	set useCapt [GetCompProperty $topNode Caption $nodeId]
@@ -610,16 +612,6 @@ proc LoseDTRef {statusLine} {
     return $result
 }
 
-proc UpdateIfFreezy {node} {
-    global updateLastDone
-    if {$updateLastDone < [clock clicks -milliseconds]-40} {
-	if {![RunningInC $node]} {
-	    update ;# includes getting input clicks
-	}
-	set updateLastDone [clock clicks -milliseconds]
-    }
-}
-
 proc ShiftDisplays {node payload current display doAll} {
     global helperTable runState
     if {[catch {
@@ -701,8 +693,12 @@ proc TellAllHelpers {node payload doAll fun args} {
 	    set helperTable(beingCalled) $inst
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		puts $::errorInfo
+		set tgts {}
+		foreach focus $helperTable($inst,foci) {
+		    lappend tgts [GetCompProperty $node Caption $focus]
+		}
 		Query [list iotool_run_fail [[info object class $inst] identify] \
-			   $fun $::errorInfo [$inst getState]] \
+			   $tgts $fun $::errorInfo [$inst getState]] \
 		    warning helpers {} ok
 		set failure 1
 	    }
@@ -750,19 +746,19 @@ proc EatInput {} {
     eval [join $blether \n]
 }
 
-proc CountCValues {dH loseZeros} {
+proc CountCValues {dH loseZeros indxs} {
     if {[llength $dH]==1} {
 	set dH [list default $dH]
     }
     set runTot 0
     foreach {case hdl} $dH {
-	incr runTot [count_values $hdl $loseZeros]
+	incr runTot [count_values $hdl $loseZeros $indxs]
     }
     return $runTot
 }
 
-proc GetShortVals {topNode plName limit} {
-    set dataDimty [llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM]]
+proc GetShortVals {topNode plName indxs limit} {
+    set dataDimty [expr {[llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM]]-[llength $indxs]}]
     set showMatrix [expr {[PrefValue custom(dispMatrix) dispMatrix] && \
 			      $dataDimty==3}]
     set precis [PrefValue custom(popupPrecision) popupPrecision]
@@ -778,19 +774,20 @@ proc GetShortVals {topNode plName limit} {
 	    }
 	    set loseZeros [expr {[lsearch {EVENT SQUIRT} \
 			     [GetCompProperty $topNode Class $plName]]>-1}]
-	    set count [CountCValues $hdl $loseZeros]
+	    set count [CountCValues $hdl $loseZeros $indxs]
 	    if {$showMatrix} {
-		set text [ExtractCList $hdl 16777216 $loseZeros]
+		set text [ExtractCList $hdl 16777216 $loseZeros 0 $indxs]
 		# add option to translate values only?
 		ReleaseHandle $topNode $hdl
 	    } else {
 		set ::tcl_precision $precis
-		if {$count<$limit/3 || [llength $hdl]>1} {
-		    set text [ExtractJList $hdl 16777216 $loseZeros 1 1]
+		if {$count<$limit/3 || [llength $hdl]>1 || [llength $indxs]>0} {
+		    # botch: always start with all values if filtering
+		    set text [ExtractJList $hdl 16777216 $loseZeros 1 1 $indxs]
 		} else {
 		    set tail [expr {$limit/6}]
-		    set text [concat [ExtractJList $hdl $tail $loseZeros 1 1] \
-				  [ExtractJList $hdl -$tail $loseZeros 1 1]]
+		    set text [concat [ExtractJList $hdl $tail $loseZeros 1 1 $indxs] \
+				  [ExtractJList $hdl -$tail $loseZeros 1 1 $indxs]]
 		}
 		set ::tcl_precision 0
 		ReleaseHandle $topNode $hdl
@@ -798,11 +795,13 @@ proc GetShortVals {topNode plName limit} {
 	    }
 	}
     } else {
-	set text [lindex [GetCompExecData $topNode Value $plName] 0]
+	set text [lindex [GetCompExecData $topNode Value $plName 1] 0]
 	# no zero removal!
-	set count [ShrinkValueList text $limit]
+	if {!$showMatrix} {
+	    set count [ShrinkValueList text $limit]
+	}
     }
-    if {![string equal novalue $text]} {
+    if {[lsearch {novalue unstable} $text] == -1} {
 	catch {GetCompProperty $topNode Type $plName} iType
 	if {[string equal REAL $iType]} {
 	    if {$precis} {
@@ -925,18 +924,22 @@ proc MakeSnapText {w} {
             -font {arial 10 bold}
 }
 
-proc snap {topNode node} {
+proc snap {topNode node filter} {
     global runState
     
     set full_label [GetCompProperty $topNode Caption $node]
     set w .snap$node
+    if {[llength $filter]} {
+	append w i[join $filter ,]
+    }
     set last_slash [string last / $full_label]
     set start_label [expr $last_slash+1]
     set end_submodels [expr $last_slash-1]
     set submodels [string range $full_label 0 $end_submodels]
     set label [string range $full_label $start_label end]
-    if {[winfo exists $w]} { ;# do not allow two on same component
-	UpdateSnap $w $label $submodels $topNode $node
+    if {[winfo exists $w] && $filter eq $runState(fltr$w)} {
+	# do not allow two on same component with same filter
+	UpdateSnap $w $label $submodels $topNode $node $filter
 	raise $w
 	return $w
     }
@@ -947,7 +950,7 @@ proc snap {topNode node} {
 		 [list save.gif "Save to file" \
 		      [list SaveSnap $w $label $topNode]] \
 		 [list refresh.gif "Update" \
-		      [list UpdateSnap $w $label $submodels $topNode $node]] \
+		      [list UpdateSnap $w $label $submodels $topNode $node $filter]] \
 		 [list reel.gif "Log to file" \
 		      [list LogSnap $w $label $submodels $topNode $node]]]
     ::graphtools::MakeToolBar $w $tbItems
@@ -958,14 +961,14 @@ proc snap {topNode node} {
     pack $w.xscroll -side bottom -fill x
     pack $w.text -expand yes -fill both
     
-    if {[UpdateSnap $w $label $submodels $topNode $node]} { ;# raised error
+    if {[UpdateSnap $w $label $submodels $topNode $node $filter]} { ;# raised error
 	destroy $w
 	return 
     }
     return $w ;# for scripting
 }
 
-proc UpdateSnap {w label submodels topNode node} {
+proc UpdateSnap {w label submodels topNode node filter} {
     global runState
 
 #    $w.text delete 1.0 end
@@ -976,12 +979,12 @@ proc UpdateSnap {w label submodels topNode node} {
     MakeSnapText $w
     pack $w.text -expand yes -fill both
 
-    set rawVals [GetCompExecData $topNode Value $node]
+    set rawVals [GetCompExecData $topNode Value $node 1 $filter]
     if {[string equal novalue $rawVals]} {
 	return 1
     }
-    set v1 [set runState(val$w) [TransEnums [GetCompProperty $topNode Trans \
-						 $node] [lindex $rawVals 0]]]
+    set runState(fltr$w) $filter
+    set v1 [set runState(val$w) [lindex $rawVals 0]]
     catch {GetCompProperty $topNode Type $node} iType
     if {[string equal REAL $iType]} {
 	set precis [PrefValue custom(snapPrecision) snapPrecision]
@@ -996,7 +999,12 @@ proc UpdateSnap {w label submodels topNode node} {
     }
     
     $w.text insert end "Variable "
-    $w.text insert end "$label\n" colour3
+    $w.text insert end "$label" colour3
+    if {[llength $filter]} {
+	$w.text insert end " at indices "
+	$w.text insert end "$filter" colour3
+    }
+    $w.text insert end "\n"
     if {[string length $submodels]>0} then {
         $w.text insert end "in submodel "
         $w.text insert end "$submodels\n" colour3
@@ -1009,7 +1017,7 @@ proc UpdateSnap {w label submodels topNode node} {
     # check size
     if {[RunningInC $topNode]} {
 	set hdl [GetHandle $topNode $node]
-	set count [CountCValues $hdl 0]
+	set count [CountCValues $hdl 0 $filter]
 	ReleaseHandle $topNode $hdl
     } else {
 	set count [CountValues $runState(val$w)]
@@ -1329,7 +1337,10 @@ proc StartRun {node} {
 	unset projectParams($smPath)
 	if {[file exists $spFile]} {
 	    MergeParams $node /$node$smPath $spFile 0 0
-	    file delete -force $spFile
+	    if {![string first $::simtmpdir $spFile]} {
+		file delete -force $spFile ;# don't let it save with model
+	    }
+	    # else we loaded a v<7 model which needs this separate
 	    if {$smPath eq ""} {
 		set sxFile [file rootname $spFile].sxf
 		if {[file exists $sxFile]} {

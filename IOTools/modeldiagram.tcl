@@ -32,6 +32,7 @@ namespace eval ::ModelDiagram20060804 {
 		  -command [namespace code "click $winId top Desktop"]] \
 	    -side left
 	AddToolbar $winId
+	pack [ttk::entry $winId.bbframe.e] -side left
 	AddDiagram $winId {}
 	GrabClicks $winId
     }
@@ -71,11 +72,11 @@ namespace eval ::ModelDiagram20060804 {
 	set window_info($winId.c,height) [winfo height $winId.c]
 	set ::custom(showgrids,$winId.c) 0
 	prolog state'><'set_display_depth('$winId.c',_,32)
-	set bg [$winId.c create rectangle 0 0 1 1 -outline {} -fill beige \
-		    -tags "/base/ /background"]
+#	set bg [$winId.c create rectangle 0 0 1 1 -outline {} -fill beige \
+#		    -tags "/base/ /background"]
 	prolog tcl_export_graphics('$winId.c',$node)
 	$winId.c configure -scrollregion $::fromProlog
-	$winId.c coords $bg $::fromProlog
+#	$winId.c coords $bg $::fromProlog
 	array unset window_info $winId.c,top_node
 
 	ReleaseClicks $winId
@@ -140,7 +141,8 @@ namespace eval ::ModelDiagram20060804 {
 	set context [GetClickCapt $winId $canx $cany $node]
 
 	ProdFromHelper [winfo parent $winId] $node \
-	    [CaptPathFromPoint $winId $x $y]
+	    [CaptPathFromPoint $winId $x $y] \
+	    [[winfo parent $winId].bbframe.e get]
     }
     
     proc DoInspPopup {winId x y X Y} {
@@ -162,7 +164,8 @@ namespace eval ::ModelDiagram20060804 {
 #		set value [lindex $mVal 0]
 		#puts "trans $trans value $value"
 #	    }
-	    AddPopupMessage novalue \#ffffc0 GetShortVals $topNode $context
+	    AddPopupMessage novalue \#ffffc0 GetShortVals $topNode $context \
+		[[winfo parent $winId].bbframe.e get]
 	    AddPopupMessage [GetCompProperty $topNode Spec $context] \#c0ffc0
 	    set desc [GetCompProperty $topNode Desc $context]
 	    set comment [GetCompProperty $topNode Comment $context]

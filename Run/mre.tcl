@@ -323,20 +323,22 @@ namespace eval RunEnv {
         destroy $containerId.belowbox
         
         $containerId configure -highlightthickness 0 ;# no longer a leaf
-	::ttk::notebook $containerId.notebook
-	bind $containerId.notebook <<NotebookTabChanged>> \
-	    [list ::RunEnv::PageRaiseCmd $containerId.notebook]
+	set nb $containerId.notebook
+	::ttk::notebook $nb
+	set ::helperTable($nb,showing) $nb.fpage0
+	bind $nb <<NotebookTabChanged>> \
+	    [list ::RunEnv::PageRaiseCmd $nb]
         
         for  {set i 1} {$i<=4} {incr i} {
-	    set pane$i [AddNotebookPage $containerId.notebook]
+	    set pane$i [AddNotebookPage $nb]
         }
         
-	KoreanClick $containerId.notebook 1 {}
-        bind $containerId.notebook <Double-1> "::RunEnv::EditTabLabel %W"
-        CrossPlatformBind $containerId.notebook "::RunEnv::EditTabLabel %W"
+	KoreanClick $nb 1 {}
+        bind $nb <Double-1> "::RunEnv::EditTabLabel %W"
+        CrossPlatformBind $nb "::RunEnv::EditTabLabel %W"
         
-        $containerId.notebook select [lindex [$containerId.notebook tabs] 0]
-        pack $containerId.notebook -fill both -expand yes
+        $nb select [lindex [$nb tabs] 0]
+        pack $nb -fill both -expand yes
 	return $pane1
     }
     
@@ -366,8 +368,24 @@ namespace eval RunEnv {
     }
     
     proc PageRaiseCmd {notebook} {
+	global helperTable
+	set newTab [$notebook select]
+
+	set oldTab $helperTable($notebook,showing)
+	if {$oldTab ne $newTab} {
+	    if {[winfo exists $oldTab]} {
+		# tab posn recorder not needed, we avoid ttk::style command after
+		# adding parameters explorer
+		#set helperTable($oldTab,tabPosns) [SashPosns $oldTab]
+	    }
+	    if {[info exists helperTable($newTab,tabPosns)] && \
+		    [llength $helperTable($newTab,tabPosns)]} {
+		#eval {*}$helperTable($newTab,tabPosns)
+	    }
+	}
+	set helperTable($notebook,showing) $newTab
 	if {[llength [$notebook tabs]]} {
-            SetLeafCurrent [$notebook select]
+            SetLeafCurrent $newTab
         }
     }
     
@@ -1231,6 +1249,7 @@ namespace eval RunEnv {
 		$parseStatus(currentPath) configure -highlightthickness 0
 		set path $parseStatus(currentPath).notebook
 		::ttk::notebook $path
+		set helperTable($path,showing) $path.fpage0
 		bind $path <<NotebookTabChanged>> \
 		    [list ::RunEnv::PageRaiseCmd $path]
         
@@ -1263,7 +1282,9 @@ namespace eval RunEnv {
 		# or $panedwindow sash place won't work
 		set pageId [FindParentNotebookPage $parseStatus(currentPath)]
 		if {[string length $pageId]} {
+		    UpdateByOS ;# sort any remaining pane moves in old tab
 		    [winfo parent $pageId] select $pageId
+		    PageRaiseCmd [winfo parent $pageId]
 		}
 		UpdateByOS
 		set sashp [RealSashPos $parseStatus(currentPath) \
@@ -1447,7 +1468,9 @@ namespace eval RunEnv {
                     # or $panedwindow sash place won't work
                     set pageId [FindParentNotebookPage $panedwindow]
 		    if {[string length $pageId]} {
+			UpdateByOS ;# sort any remaining pane moves in old tab
 			[winfo parent $pageId] select $pageId
+			PageRaiseCmd [winfo parent $pageId]
 		    }
 		    UpdateByOS
                     #ShowMess debug info "$panedwindow sash place $index $sashx $sashy \n\
@@ -1466,6 +1489,7 @@ namespace eval RunEnv {
                     set path $dp0.$tail
                     ::ttk::notebook $path
 		    lappend newNotebooks $path
+		    set helperTable($path,showing) $path.fpage0
 		    bind $path <<NotebookTabChanged>> \
 			[list ::RunEnv::PageRaiseCmd $path]
         

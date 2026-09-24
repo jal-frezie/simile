@@ -46,10 +46,14 @@ endif
 endif
 USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERSION) -L$(TCLDIR)/lib -ltclstub$(VERS)
 
+#USEGDAL = -lgdal
+USEGDAL = -DLINK_ON_RUN
+
 gdal: $(SHAREDLIBPREFX)gdal_tcl$(SHAREDLIBEXTN)
 
 libgdal_tcl.so: gdal_tcl.c gdal_tcl.h
-	$(GCCCMD) -fPIC -shared -o libgdal_tcl.so gdal_tcl.c $(USETCL)
+	$(GCCCMD) -fPIC -shared -o libgdal_tcl.so gdal_tcl.c \
+		$(USETCL) $(USEGDAL)
 
 gdal_tcl.dll: gdal_tcl.c gdal_tcl.h
 	$(GCCCMD) -shared -o gdal_tcl.dll gdal_tcl.c $(USETCL) -I/usr/local$(BITEXTN)/include -L/usr/local$(BITEXTN)/lib -lgdal_i

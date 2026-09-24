@@ -277,7 +277,8 @@ render(tcl, class_declaration,
 		name(ExitMaker, ExitMakerStr),
 		Closes = [ExitMaker, CloseNS | ProcCloses],
 		refer_value(tcl, instance, Target);
-	    get_node_size(SymbolicName, What, _,_),
+	     m_update><list_local_index_meanings(SymbolicName, LoopDims, _),
+	     get_actual_sizes(SymbolicName, LoopDims, bare, What, _AllDims, _U),
 		make_array_assignment(tcl, Indent, What, _,_,_,
 				      Indices, Opens, ArrCloses),
 		Closes = [CloseNS | ArrCloses],
@@ -363,10 +364,11 @@ strings_direct(tcl, clear_memory, instance(submodel,_,_, Name, _-Dims), Indent,
 	(\+ number(Dims), !;
 	excrete(tcl, end(for), makenames, Indent, Stream)).
 
-strings_direct(c, clear_memory, instance(submodel,_,_,_,_), Indent, 
-	       Stream) :-
-	sicstus_tab(Stream, Indent),
-	format(Stream, "delete this;\n", []).
+strings_direct(c, clear_memory, instance(submodel,_,_,_,_), _Indent, 
+	       _Stream).
+% no need, can be done in support code, and this is dodgy...
+%       sicstus_tab(Stream, Indent),
+%	format(Stream, "delete this;\n", []).
 
 /* assignment */
 strings_direct(L, assignment, Dest=Source, Indent, Stream) :-
@@ -596,7 +598,13 @@ strings_direct(L, struct_defn, [Name | Members], Indent, Stream) :-
 			  build(Members), unify(I1), unify(Stream)]),
 	sicstus_tab(Stream, Indent),
     format(Stream, "};\n", []).
-	
+
+strings_direct(L, abort_check, _, Indent, Stream) :-
+    L = c ->
+	sicstus_tab(Stream, Indent),
+	write(Stream, 'ABORT_CHECK'), nl(Stream); % refs macro defn in backend.h
+    strings_direct(L, procedure_call, abort_check, Indent, Stream).
+    
 excrete(L, Stat, Args, Indent, Stream) :-
 	strings_direct(L, Stat, Args, Indent, Stream), !;
 	do_obsolete_thing(L, Stat, Args, Indent, Stream), fail; true.

@@ -110,7 +110,7 @@ oo::class create iotool::$newLayerClass {
         #create widgets
         set coloursF [labelframe $dlg.colours -text "Colour scale"]
 	pack [button $coloursF.change -text "Edit colour key" \
-		  -command [namespace code [list [self object] EditKey $dlg]]]
+		  -command [namespace code [list my EditKey $dlg]]]
 #	foreach {ptName ptId} {Low bot Middle mid High top} {
 #	    pack [ttk::labelframe $coloursF.${ptId}colourF \
 #		      -text "$ptName  colour"] -fill x -padx 10
@@ -127,7 +127,7 @@ oo::class create iotool::$newLayerClass {
 	pack [ttk::combobox $dlg.stipple.cbox \
 		  -values {none gray75 gray50 gray25 gray12} \
 		  -textvar [self namespace]::useNodes($winId,stipple)]
-	bind $dlg.stipple.cbox <<ComboboxSelected>> [list [self object] Restipple]
+	bind $dlg.stipple.cbox <<ComboboxSelected>> [namespace code [list my Restipple]]
         pack $stippleF -padx 10 -pady 10 -fill x
         
         set borderF [labelframe $dlg.border -text "Borders"]
@@ -138,7 +138,7 @@ oo::class create iotool::$newLayerClass {
         pack [ttk::labelframe $borderF.colourF -text "Colour"] -fill x -padx 10
         frame $borderF.colourF.colF -width 20 -height 15 -bg $useNodes($winId,cbord)
         pack [button $borderF.colourF.cbutton -text "..." \
-		  -command [list [self object] Recolour bord $borderF.colourF.colF]] -side right
+		  -command [namespace code [list my Recolour bord $borderF.colourF.colF]]] -side right
         pack $borderF.colourF.colF -side right -padx 10
         pack $borderF -padx 10 -pady 10
         
@@ -344,7 +344,7 @@ oo::class create iotool::$newLayerClass {
 		set useNodes($winId,c$prog) [lindex $map $prog]
 	    }
 	    array unset useNodes $winId,c$prog ;# leave gap to stop loading
-	    Display 0 0 0	    
+	    my display 0 0 0	    
 	}
 	PackItUp $subDlg
     }
@@ -399,7 +399,7 @@ oo::class create iotool::$newLayerClass {
 	    SetColours useNodes $winId
 #	    recolour_scale [namespace current] $winId
 	}
-	Display 0 0 0
+	my display 0 0 0
     }
 
     method DoForData {inds proc key} {

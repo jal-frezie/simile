@@ -205,7 +205,8 @@ context_find(Wid, Query, Target) :-
 	    (get_info(Comp, description, Field);
 	    get_info(Comp, comment, Field));
 	 Target = equation,
-	    get_info(Comp, eqn, Field),
+	    (get_info(Comp, eqn, Field);
+	     get_info(Comp, units, Field)),
 	    \+ Field = '<none>';
 	 Target = caption,
 	    \+ Comp is_of_sort captionless,
@@ -1090,18 +1091,16 @@ spread_dims(Node) :-
 	     applies_in(Obj, eqn_units, DoingUnits),
 	    (Err = [],
 	     (default_units(Node, DefBase, _DefDims) ->
-		  (DoingUnits = 'No' ->
-		    DefCheckLevel = 1;
-		  DefCheckLevel = 2),
-		  check_unit(Type, DefBase, DefCheckLevel, []),
-		  OnwardType = DefBase; OnwardType = Type),
+		  DefCheckLevel = 1, % was 2 when units on but we want to
+		  % propagate to compartment even if transports mismatch
+		  check_unit(Type, DefBase, DefCheckLevel, []); true),
 		(get_actual_sizes(Node, FoundArray, bare, _, Array, _),
 		    get_actual_sizes(Node, GivenArray, bare, _, Array, _) ->
 		    UseArray = GivenArray;
 		  UseArray = FoundArray,
 		    SpecChanged = dims),
-		(OnwardType = real -> Base = 1;
-		 inters><promote_unit(OnwardType, Base),
+		(Type = real -> Base = 1;
+		 inters><promote_unit(Type, Base),
 		   \+ member(Base, [const_int, const_ratio])),
 		((DoingUnits = 'No';
 		  IList = [], inters><promote_unit(Base,1)),

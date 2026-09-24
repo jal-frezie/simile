@@ -234,7 +234,7 @@ set msgs(eqListComments) [tr. {Include comments in the equation listing}]
 set msgs(ncfv) [tr. {No comment for value}]
 set msgs(fce) [tr. {From component equation}]
 set msgs(recentCount) [tr. {Save names of recently opened models for display on the File menu.}]
-set msgs(saveExtras) [tr. {Save the canvas file to reduce the time initially taken to draw the model diagram.}]
+set msgs(saveExtras) [tr. {Save additional working data such as the canvas file and model executables to reduce the time initially taken to start working on the model.}]
 set msgs(quickExit) [tr. {Choose an option to be offered in a short query when closing a window with unsaved content -- "None" goes straight to full query}]
 set msgs(flowRouting) [tr. {Draw flows as a series of horizontal or vertical segments.}]
 set msgs(infRouting) [tr. {Curvature of influence arrows (degrees to right)}]
@@ -462,6 +462,10 @@ set msgs(null_exponentiation_title) [tr. {Null exponentiation}]
 set msgs(null_exponentiation_message) [tr. {This equation contains the subexpression "%1$s", in which a value is raised to the power of 1. This operation will always leave the value unchanged, therefore it is likely that this is a typo.}]
 set msgs(null_exponentiation_detail) [tr. {The usual cause of this problem is an attempt to get the nth root of a subexpression by writing x^1/n. Exponentiation binds more strongly than division, so for this to work correctly, the exponent should be parenthesized, e.g., x^(1/n).}]
 
+set msgs(after_for_continuous_title) [tr. {Wrong component type for function}]
+set msgs(after_for_continuous_message) [tr. {The "after" function generates an event occurrence a given period of time after a triggering event. It has no use in the equation of a continuously changing component.}]
+set msgs(after_for_continuous_detail) [tr. {Use this function in the equation of an event or squirt.}]
+    
 set msgs(missing_graph_or_table_data_title) [tr. {Built-in data missing}]
 set msgs(missing_graph_or_table_data_message) [tr. {Subexpression "%1$s" is a reference to a %2$s, but no data has been entered for it.}]
 set msgs(missing_graph_or_table_data_detail) [tr. {Use the Graph and Table buttons in the equation dialogue to add these functions and define data for them.}]
@@ -961,7 +965,7 @@ set msgs(iotool_restore_fail_detail) [tr. {Click "See all..." to see all error m
 set msgs(iotool_restore_fail_full) [tr. {The error message was:
 %2$s}]
 set msgs(iotool_run_fail_title) [tr. {Error running I/O tool}]
-set msgs(iotool_run_fail_message) [tr. {I/O tool "%1$s" raised a problem during model execution. This occurred while doing the %2$s operation.}]
+set msgs(iotool_run_fail_message) [tr. {I/O tool "%1$s" for component(s) "%2$s" raised a problem during model execution. This occurred while doing the %3$s operation.}]
 set msgs(iotool_run_fail_detail) [tr. {The model has been paused. To continue running it you may have to kill this helper's display.}]
 set msgs(iotool_run_fail_full) [tr. {The error message was:
 %3$s

@@ -4,7 +4,7 @@
     #define EXPORT __declspec( dllexport )
 #else
     #define EXPORT
-    #define LINK_ON_RUN 1
+//  #define LINK_ON_RUN 1
 #endif
 // extern "C" not needed, this _is_ C
 
@@ -25,19 +25,20 @@
     #include <GDAL/gdal.h>
     #include <GDAL/cpl_string.h>
 #else
-    #include <gdal.h>
-    #include <cpl_string.h>
+    #include <gdal/gdal.h>
+    #include <gdal/cpl_string.h>
+    #include <gdal/gdal_utils.h>
 #endif
 #endif
 
 #if TCL_MAJOR_VERSION<9
 typedef int Tcl_Size;
 #endif
-
 #define XSIZE 0
 #define YSIZE 1
 #define COUNT 2
 #define VARS 3
+#define INFO 4
 #define CLOSE 99
 
 char scratch[256];
@@ -129,6 +130,10 @@ int gdalAccessCmd(ClientData clientData, Tcl_Interp *interp,
       Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp),
 			       Tcl_NewIntObj(setInfo));
     }
+    return TCL_OK;
+  case INFO:
+    Tcl_SetStringObj(Tcl_GetObjResult(interp), GDALInfo(*hDataset, NULL), -1);
+    // cannot figure how to set options param to get json
     return TCL_OK;
   case CLOSE:
     GDALClose(*hDataset);
@@ -420,9 +425,9 @@ EXPORT int Gdal_Init(Tcl_Interp *interp) {
     printf("Failed to open shared object: %s\n", dlerror());
     return 0;
   }
-  void* fns[10];
-  char* fn_names[] = {"GDALAllRegister", "GDALOpen", "GDALGetDriverByName", "GDALCreateCopy", "GDALGetRasterXSize", "GDALGetRasterYSize", "GDALGetRasterCount", "GDALGetRasterBand", "GDALClose", "GDALRasterIO"};
-  int i; for (i=0; i<10; ++i)  {
+  void* fns[11];
+  char* fn_names[] = {"GDALAllRegister", "GDALOpen", "GDALGetDriverByName", "GDALCreateCopy", "GDALGetRasterXSize", "GDALGetRasterYSize", "GDALGetRasterCount", "GDALGetRasterBand", "GDALClose", "GDALRasterIO", "GDALInfo"};
+  int i; for (i=0; i<11; ++i)  {
     fns[i] = dlsym(handle,fn_names[i]);
     if (!fns[i]) {
       printf("Failed to find shared functtion %s because %s\n",
@@ -440,6 +445,7 @@ EXPORT int Gdal_Init(Tcl_Interp *interp) {
   GDALGetRasterBand = (GDALGetRasterBand_type*)fns[7];
   GDALClose = (GDALClose_type*)fns[8];
   GDALRasterIO = (GDALRasterIO_type*)fns[9];
+  GDALInfo = (GDALInfo_type*)fns[10];
 #endif
   
   GDALAllRegister();
@@ -455,6 +461,8 @@ EXPORT int Gdal_Init(Tcl_Interp *interp) {
 		       (ClientData)COUNT, (Tcl_CmdDeleteProc *)NULL);
   Tcl_CreateObjCommand(interp, "gdal_get_var_names", gdalAccessCmd,
 		       (ClientData)VARS, (Tcl_CmdDeleteProc *)NULL);
+  Tcl_CreateObjCommand(interp, "gdal_get_info", gdalAccessCmd,
+		       (ClientData)INFO, (Tcl_CmdDeleteProc *)NULL);
   Tcl_CreateObjCommand(interp, "gdal_get_raster_band", gdalGetRasterBand,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   Tcl_CreateObjCommand(interp, "gdal_get_raster_values", gdalGetRasterValues,

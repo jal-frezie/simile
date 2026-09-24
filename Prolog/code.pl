@@ -29,22 +29,27 @@ tk_code(Model, CompOrBuild, _Tgt) :-
 	    append_atoms([Temp, '/', Path], CompDir)),
 	caption_for(Model, Capt),	  
 	utility><append_atoms([CompDir, '/', Capt, '/model', 1, Ident], Top),
-	(\+ rebuild_code(c, Model, CompDir, Action), !;
-	    output><safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)),
-	output><safe_tcl_eval(['Undisturb', Top], _).
+	(\+ rebuild_code(c, Model, CompDir, Action), !, Success = 0;
+	 output><safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _),
+	   Success = 1),
+	output><safe_tcl_eval(['Undisturb', Top], _),
+	output><tk_callback(Success).
 
 tk_code(Node, RunCmd, _Dummy) :-
 	member([RunCmd, Lang], [[run_c, c], [run_in_browser, c], [run_tcl, tcl]]),
 	/* Compile the thing into whatever, load it */
 	use_temp_dir(Dir),
 	% draw><scrub_run(Node, 0),
-	rebuild_code(Lang, Node, Dir, prepare_exec),
+	(rebuild_code(Lang, Node, Dir, prepare_exec) ->
+	     Success = 1,
 	    % if exceps happen here, catch in Tcl and return failure
 	    % on_exception(Whoops,
 	%		 output><prepare_execution(Node, Lang),
 % 		     (sicstus_write_to_chars(Whoops, Squeak),
 % 			 scrub_run(Node, 0))),
-	set_running_model(Node).
+	     set_running_model(Node);
+	 Success = 0),
+	output><tk_callback(Success).
 
 rebuild_code(Lang, Node, ProgFileDir, Action) :-
         compile(Lang, Node, ProgFileDir, Action);

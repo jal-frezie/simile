@@ -34,9 +34,9 @@ compile( Language, Parent, DestDir, Action) :-
 	asserta(error_free(build)),
 	catch(build_instances(Language, DestDir, Parent, Parent, 1, 
 			      _, Action), Err, 
-	      (Err = aborted, !; % no further message needed
-		  retractall(error_free(build)),
-% It really as the wrong thing to do to have the help reference as an
+	      (retractall(error_free(build)),
+	       Err = aborted, !; % no further message needed
+		  % It really as the wrong thing to do to have the help reference as an
 % argument to query(). It should be in messages.tcl, along with the
 % text strings, since we are unlikely to ever want to offer different
 % help pages with the same dialogue.		  
@@ -302,10 +302,11 @@ build_sub_instances(Language, DestDir, Parent, Node,
 check_level_for_reds(TopNode, Wrinkle) :-
     contains(TopNode, Submodel),
     find_type(Submodel, submodel),
-    appears(Submodel), % no function fragments
 	(Submodel = TopNode -> OuterText = '(none)';
 	 abs_path_name(Submodel, TopNode, OuterText)),
-	(find_all_comps(Submodel, VisEntity),
+	(appears(Submodel), % legacy fragment toplevels may contain components
+                            % wrongly marked incomplete, do not check them
+	find_all_comps(Submodel, VisEntity),
 	appears(VisEntity),
 	\+ VisEntity is_of_sort captionless,
 	\+ is_ghost(VisEntity),
@@ -338,7 +339,7 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	SmChannel is_of_sort pop_only,
 	caption_for(SmChannel, InnerText),
 	Wrinkle = misplaced_channel(InnerText, OuterText);
-	contains(Submodel, Param),
+	Submodel has_part Param,
 	appears(Param),
 	is_parameter(Param, N),
 	(Param is_of_sort discrete -> N>1 ; N>0),
@@ -1967,8 +1968,8 @@ connect_params(AllInsts, Insts) :-
                 \+ OrigParam = this_loop(Deferred),
                 (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
 		 nonvar(Al), !; % if in alarm let other loops exit
-		 SafePath = [sm(_,_,_, vm_loop(_,_, [_B1, _B2 |_], _)) | _],
-		 !); % same if in association
+		 SafePath = [sm(_,_,_, vm_loop(_,_, Assocs, _)) | _],
+		 nonvar(Assocs), Assocs = [_B1, _B2 |_], !); % same if in association
 	       % SafePath = [_RetroLevel | CommonPath],
 	       % suffix(SafePath, Path),
 	       suffix(SafePathPlus, PathPlus),
@@ -2399,7 +2400,8 @@ here we instantiate the 4th arg of vm_loop to the phase in all the paths... */
 insert_enum_phases(_, []).
 
 insert_enum_phases(VmSpecPairs, [Path | MorePaths]) :-
-	(suffix([sm(Name, _,_, Loop) | Head], Path),
+        (nonvar(Path), % sometimes BPath is a list of vars which gets stuck here
+	 suffix([sm(Name, _,_, Loop) | Head], Path),
 	    (Loop = vm_loop(_,_, BPaths, Phase), !,
 		member(vm_spec_pair(Name, Phase), VmSpecPairs), % must be there
 		(var(BPaths) -> ToDo = [Head | MorePaths];
@@ -2540,7 +2542,8 @@ hang_on_tree(Inst, Using, make_level(_Cur, Insts, SubTrees)) :-
 	      member(Inst, Insts);
 	    suffix([Next], Tail),
 	    member(NextTree, SubTrees),
-	    NextTree = make_level(Next, _,_), !,
+	    NextTree = make_level(OldNext, _,_),
+	    (var(OldNext), OldNext = Next; same_context(Next, OldNext)), !,
 	    hang_on_tree(Inst, [Next | Using], NextTree)).
 
 close_lists(make_level(_L, Insts, Subs)) :-

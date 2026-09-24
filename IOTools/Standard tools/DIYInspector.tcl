@@ -387,7 +387,7 @@ oo::class create iotool::$newHelperClass {
 
     method AddPopup {wid X Y node capt} {
 	PostPopup $wid $X $Y
-	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt
+	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt {}
     }
 
     method empty {path} {
@@ -395,7 +395,7 @@ oo::class create iotool::$newHelperClass {
 
 	set topF [MakeSubFrames [self object] $topFrame \
 		      [split $path/ /] {} 0]
-	puts [CrossPlatformBind $topF]
+	#puts [CrossPlatformBind $topF]
 	set safePath [lindex [CrossPlatformBind $topF] 0 3 2]
 	foreach subF [winfo children $topF] {
 	    set lvl [string range $subF [string length ${topF}.] end]

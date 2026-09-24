@@ -902,7 +902,7 @@ variable_size(Source) :-
 	initiates(Link, Origin),
 	get_chain(Origin, Source, _Top, Exited, _Entered),
 	member(VmLevel, Exited),
-	variable_size(VmLevel).
+	(variable_size(VmLevel); by_record(VmLevel)).
 
 /* list_links returns the starting arcs of relations terminating on a
 node. They are sorted so those with the highest indices (most recently
