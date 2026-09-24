@@ -96,8 +96,8 @@ if {$tcl_platform(os) eq "Linux" || \
     	$tcl_platform(platform) eq "windows" && [file tail [info nameofexecutable]] ne "Simile.exe"} {
     set use_system_tcltk 1
 }
-# Avoid system TclTk on MacOS, it's modtly broken and will be removed
 
+# Avoid system TclTk on MacOS, it's mostly broken and will be removed
 if {$use_system_tcltk} {
     set auto_path [linsert $auto_path 0 $libDir]
 # special Simile things that cannot be found in standard TclTk
