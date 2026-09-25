@@ -1593,9 +1593,8 @@ proc ContextSensitiveHelp {context page} {
     set helpPage [file join $SIMILE_PATH help $page]
     switch [tk windowingsystem] {
         win32 {
-#           package require winhelp
-#           winhelp $context [file join $SIMILE_PATH help simile_book.chm] $page
-	    exec cmd /c start [file nativename $helpPage]
+	    # if running from msys2 console
+	    exec cmd /c start "" "[file nativename $helpPage]"
         } aqua {
 # try Snow Leopard location first
 #	    if {[catch {exec open -a "HelpViewer.app" $helpPage}]} {

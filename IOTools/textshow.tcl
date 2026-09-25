@@ -17,9 +17,16 @@ oo::class create iotool::$newHelperClass {
 	next $modelInst $winTitle
 
 	pack [text $winId.tx] -fill both -expand 1
+	bind $winId.tx <Shift-Return> [namespace code [list my RunCmd]]
 	if {[string length $state]} { ;# we are restoring 
 	    $winId.tx insert end $state
 	}
+    }
+
+    method RunCmd {} {
+	set cmd [$winId.tx get 1.0 1.end]
+	catch $cmd spill
+	$winId.tx insert end $spill\n
     }
 
     method PrepareSaveString {} {
