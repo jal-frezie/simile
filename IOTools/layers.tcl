@@ -416,6 +416,7 @@ oo::class create iotool::$newHelperClass {
 	set newMidY [expr {(($middleY-$yfromt)-$t)/($b-$t)}]
 	$id xview moveto $newMidX
 	$id yview moveto $newMidY
+	my posnLegends
     }
 
     method Fit {} {
@@ -428,7 +429,6 @@ oo::class create iotool::$newHelperClass {
 	    set scale $vscale
 	}
 	my Zoom $scale $scale
-	my posnLegends
     }
 
     method BboxForGroup {id style} {
