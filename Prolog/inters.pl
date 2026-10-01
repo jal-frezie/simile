@@ -2475,7 +2475,7 @@ wait_for_submodels([Level | AlsoExited], Waits) :-
 	((member(Level, [sm(MM, _,_, vm_loop(_,_,_,_)), % variable membership
 			set(_, loop(pra_bound(_, MM), _))]); % by record
 	  Level = sm(MM, _,_, fm_loop(_,_,al_action(Al, _), _)),
-	      nonvar(Al)), !, % alarm submodel
+	      nonvar(Al)), !, % iteration submodel
 	    (outside(MM, Model) -> true; MM = Model),
 	 Waits = [enumerate(Model) | Others];
 	Waits = Others),

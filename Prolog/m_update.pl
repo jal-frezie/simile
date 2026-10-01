@@ -1140,11 +1140,11 @@ can_connect(Arc, Node1, Node2) :-
 	  [[[compartment, cloud], [compartment, cloud]]]],
 	 [influence,
 	  [[[compartment, state, variable, flow,
-	     alarm, creation, immigration, reproduction, loss],
+	     iteration, creation, immigration, reproduction, loss],
 	    [variable, flow, compartment, state, event, squirt,
-	     alarm, condition, creation, immigration, reproduction, loss]],
+	     iteration, condition, creation, immigration, reproduction, loss]],
 	   [[event, squirt],
-	    [event, squirt, state, alarm, condition,
+	    [event, squirt, state, iteration, condition,
 	     immigration, reproduction, loss]]]],
 	 [relation, [[[submodel], [submodel]]]]];
 	    
@@ -1157,7 +1157,7 @@ can_connect(Arc, Node1, Node2) :-
 	  [[compartment, [function]], 
 	   [function,
 	    [variable, flow, compartment,
-	     alarm, condition, creation, immigration, reproduction, loss]], 
+	     iteration, condition, creation, immigration, reproduction, loss]], 
 	   [variable, [function]],
 	   [flow, [function]]]],
 	 [relation, [[submodel, [submodel]]]]]),

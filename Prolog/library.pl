@@ -139,7 +139,9 @@ revert_to_present(Future, Now) :-
 % 1998: does not write model refinements
 
 save_node(SavedModel, Node, Stream, SelOnly, ArcsUsed ) :-
-	Node has_class Class,
+        Node has_class NewClass,
+	(NewClass = iteration -> Class = alarm;
+	 Class = NewClass),
 	any_setof( Child,
 		   (Node has_part Child, go_with(Child, SelOnly)),
 		   Children ),

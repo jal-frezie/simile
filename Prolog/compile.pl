@@ -1155,13 +1155,13 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, ExtInters, Used,
 	/* Alarm submodels now marked in e_s_a
 	Alarm fns must now be evalled in 1st pass
 	and no exports done till after so below should not be needed
-	(select(instance(alarm,_,_,elt(_, Al,_),_), Functions, NoAlarm),
+	(select(instance(iteration,_,_,elt(_, Al,_),_), Functions, NoAlarm),
 	    select(instance(al_function,_, al_spec(_,_, EvtExp),
 			    elt(_, Al,_), _), NoAlarm, ForAlarm),
 	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Al, EvtExp), _)) | _], !,
-	    % now make alarm depend on everything in its submodel
+	    % now make iteration depend on everything in its submodel
 	    % so the whole thing gets done in one pass
-%% Having removed this, some alarm submodels do not work because the alarm
+%% Having removed this, some iteration submodels do not work because the iteration
 %% gets updated before some component that checks it for initial condition
 %% Does it therefore need restoring?
 	    all_targets(model(ForAlarm, Submodels), AlConds),
@@ -1894,7 +1894,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Assigns = [assign(Val, Fn)],
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
 	    suffix(DestPath, Path), % because LoopStart evaluated when opening
-				% alarm submodel, before alarm condition done?
+				% iteration submodel, before iteration condition done?
 	    Acts = [assign(Val, LoopExitExpr)];
 	  Type = compartment,
 	    Assigns = [assign(Val, ValRef+FChange+QChange)],
@@ -1952,7 +1952,7 @@ Issue: if there are multiple made_at conds for the same param, only one
 made_for will need to be made, so add an integer to separate them 
 
 Note params used in same time step do not have to be set in same loop if in an
-alarm submodel, unless they are in_preceding (with this_loop() wrapper) */
+iteration submodel, unless they are in_preceding (with this_loop() wrapper) */
 
 connect_params(AllInsts, Insts) :-
 	select(make(Tgt, Conds, PathPlus, Step, Acts), AllInsts, LeftInsts),
@@ -1967,7 +1967,7 @@ connect_params(AllInsts, Insts) :-
 	      (suffix(SafePath, CommonPath),
                 \+ OrigParam = this_loop(Deferred),
                 (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
-		 nonvar(Al), !; % if in alarm let other loops exit
+		 nonvar(Al), !; % if in iteration let other loops exit
 		 SafePath = [sm(_,_,_, vm_loop(_,_, Assocs, _)) | _],
 		 nonvar(Assocs), Assocs = [_B1, _B2 |_], !); % same if in association
 	       % SafePath = [_RetroLevel | CommonPath],
@@ -2145,13 +2145,13 @@ order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign) :
 	    /* If this line uncommented, do not do anything that would use the
 	    check-member feature */
 	    % \+ (number(TestPhase), TestPhase < Phase),
-	    /* Do not go into an alarmed submodel unless I can get the whole
+	    /* Do not go into an iterationed submodel unless I can get the whole
 	    thing done in this pass
 	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm)),
 		   nonvar(Alarm),
 		   \+ (member(AlarmSubPass, SubPasses),
 			  member(make(Alarm, _,_,_,_), AlarmSubPass))),
-	    ...allow if alarm loop in shorter time step, as follows: */
+	    ...allow if iteration loop in shorter time step, as follows: */
 	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, al_action(Alarm, _), _)),
 		   nonvar(Alarm),
 		   member(make(Alarm, _,_, [_,_, AlP, AlDone | _], _), All),
@@ -2462,7 +2462,7 @@ can_find_id(_)]), % dummy to do with one-sided enumeration
 	    (member(KeyFunc, [ % keyword functors
 this_step, % Cond to be made in same phase, earlier or later
 this_loop, % Cond to be made in same program loop, later
-later]), !, % Cond to be made in same program loop unless in alarm or assoc
+later]), !, % Cond to be made in same program loop unless in iteration or assoc
 		Refs = [nodep(Ref)];
 	    member(KeyFunc, [ % keyword functors
 earlier]), !, % Cond to be made earlier in the program but phase dont matter
@@ -2517,12 +2517,12 @@ order_all_assignments(Step, All, Done) :-
 %	Ready = [];
 %	Ready = [All].
 %
-% select existence_tested and alarm instructions as these need special ordering
+% select existence_tested and iteration instructions as these need special ordering
 select_ext_tests(All, XTests) :-
 	(All = make(existence_tested(_), _,_,_,_);
 	 All = make(Al, _, Path, _,_),
 	    member(sm(_,_,_, fm_loop(_,_, Alarm, _)), Path),
-	    % alarm cond may of course be set in a submodel loop
+	    % iteration cond may of course be set in a submodel loop
 	    nonvar(Alarm),
 	    Alarm = al_action(Al, _)), !,
 	XTests = [All];

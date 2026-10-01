@@ -116,7 +116,7 @@ proc PutShape {w l t r b file fatness colourScheme title} {
     set oCol $::looks($::window_info($w,top_node),channel,outline)
     set fCol $::looks($::window_info($w,top_node),channel,fill)
     set nameList {condition cond creation creation \
-                immigration immig reproduction repro loss loss alarm alarm}
+                immigration immig reproduction repro loss loss iteration iteration}
     set point [expr [lsearch $nameList $file] + 1]
     set fileName [lindex $nameList $point]
     

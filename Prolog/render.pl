@@ -784,7 +784,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 				   compartment-'COMPARTMENT',
 				   flow-'FLOW',
 				   condition-'CONDITION',
-				   alarm-'ALARM',
+				   iteration-'ALARM',
 				   creation-'CREATION',
 				   reproduction-'REPRODUCTION',
 				   immigration-'IMMIGRATION',
