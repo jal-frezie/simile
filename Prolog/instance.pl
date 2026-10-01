@@ -397,7 +397,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	      EndRefs = EvtRefs,
 	      define_tm_if_needed(choose(EvtTrigger, CondExpr,
 					 Void), EvtMag, FinalExpr));
-	  (RType = alarm, !,
+	  (RType = iteration, !,
 	    FType = al_function,
 	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, Later),
 	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Name, Later), _)) | _],
@@ -473,7 +473,7 @@ are the same as the functions from which they are generated. This also goes for
 condition, creation and loss nodes. Type is as function. */
 
 instance_of(Type, Node, _, Inst, Ref) :-
-	member(Type, [variable, condition, creation, alarm, 
+	member(Type, [variable, condition, creation, iteration, 
 		      event, state]),
 	(member(Node, [B, A]),
 	    Arc is_connector from A to B, !,

@@ -82,6 +82,7 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 	RealNode is_part_of _,	% the node must be already known
 	
 	(member(OldClass, [source, sink]), !, Class = cloud;
+	    OldClass = alarm, !, Class = iteration;
 	    Class = OldClass),                  % Remove obsolete types
 	RealNode has_new_class Class,		% add the info
 	add_children(Bindings, RealNode, Children, NewBindings),

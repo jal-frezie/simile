@@ -1724,7 +1724,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $em2 add command -label [tr. "Existence condition"] -command \
             "MenuSelect $c edit condition"
     $em2 add command -label [tr. "Iteration condition"] -command \
-            "MenuSelect $c edit alarm"
+            "MenuSelect $c edit iteration"
     $fm add separator
     
     $fm add command -label [tr. Undo] -command "UnOrReDo $c 0" \
@@ -1918,7 +1918,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 # add state event squirt separator3 before creation for v5
     set lookers [list compartment variable flow influence separator1 \
 		      submodel relation separator2 \
-		      creation immigration reproduction loss condition alarm \
+		      creation immigration reproduction loss condition iteration \
 		     separator4 text image]
     if {[info exists ::do_events]} {
 	set lookers [linsert $lookers 8 state event squirt separator3]
