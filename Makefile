@@ -394,7 +394,6 @@ install:
 		Images/HelpAboutUpper.gif \
 		Images/Icons/*.png \
 		Images/Welcome.gif \
-		Images/alarm.cnv \
 		Images/bigsimile.gif \
 		Images/cond.cnv \
 		Images/creation.cnv \
@@ -402,6 +401,7 @@ install:
 		Images/ghost.mask.xbm \
 		Images/ghost.xbm \
 		Images/immig.cnv \
+		Images/iteration.cnv \
 		Images/loss.cnv \
 		Images/repro.cnv \
 		Images/weegraph.xbm \
@@ -409,7 +409,6 @@ install:
 		Images/Eqnbar/function.gif \
 		Images/Eqnbar/inputs.gif \
 		Images/Eqnbar/tick.gif \
-		Images/Toolbar/Large/alarm.gif \
 		Images/Toolbar/Large/compartment.gif \
 		Images/Toolbar/Large/condition.gif \
 		Images/Toolbar/Large/copy.gif \
@@ -427,6 +426,7 @@ install:
 		Images/Toolbar/Large/image.gif \
 		Images/Toolbar/Large/immigration.gif \
 		Images/Toolbar/Large/influence.gif \
+		Images/Toolbar/Large/iteration.gif \
 		Images/Toolbar/Large/loss.gif \
 		Images/Toolbar/Large/move.gif \
 		Images/Toolbar/Large/new.gif \
@@ -456,7 +456,6 @@ install:
 		Images/Toolbar/Large/zoomsel.gif \
 		Images/Toolbar/3d_objects.png \
 		Images/Toolbar/add.gif \
-		Images/Toolbar/alarm.gif \
 		Images/Toolbar/caselist.png \
 		Images/Toolbar/clear.gif \
 		Images/Toolbar/colourrcontr.gif \
@@ -489,6 +488,7 @@ install:
 		Images/Toolbar/immigration.gif \
 		Images/Toolbar/influence.gif \
 		Images/Toolbar/input.gif \
+		Images/Toolbar/iteration.gif \
 		Images/Toolbar/less.gif \
 		Images/Toolbar/list.gif \
 		Images/Toolbar/loss.gif \
