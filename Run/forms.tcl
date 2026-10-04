@@ -1604,7 +1604,8 @@ proc ContextSensitiveHelp {context page} {
 # able to work out, so just use default browser
 	    exec open $helpPage
         } x11 {
-            set url file://$helpPage
+            set url file://[file join [file dirname [file dirname $SIMILE_PATH]] \
+ share doc [file tail $SIMILE_PATH] $page]
             if {![info exists env(BROWSER)]} {
                 foreach possBrowser {chromium firefox mozilla netscape konqueror lynx} {
                     set env(BROWSER) [lindex [auto_execok $possBrowser] 0]

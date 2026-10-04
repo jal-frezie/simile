@@ -31,7 +31,7 @@ typedef unsigned char BOOLEAN;
 #define REPRODUCTION    6
 #define IMMIGRATION     7
 #define LOSS            8
-#define ALARM           9
+#define ITERATION       9
 #define EVENT           10
 #define SQUIRT          11
 #define STATE           12
@@ -103,9 +103,9 @@ typedef unsigned char BOOLEAN;
 #define USEGRAPH       23
 
 // Identifier
-#define MDL_OBJ_VERS 7.0406
+#define MDL_OBJ_VERS 7.05
 
-#define SIMILE_VERSION	"7.4"
+#define SIMILE_VERSION	"7.5"
 #define NEST 32
 
 #if TCL_MAJOR_VERSION<9

@@ -1,5 +1,5 @@
 MAJREL = 7
-MINREL = 4
+MINREL = 5
 # botch to make Windows work
 ifndef CC
 CC = gcc
@@ -616,10 +616,10 @@ install:
 		Run/simdoc32.ico \
 		simile.desktop | tar x -C "$(DESTDIR)"$(INSTALL_TGT)
 ifneq (, $(wildcard help))
-	mkdir -p "$(DESTDIR)"$(INSTALL_TGT)/help
+	mkdir -p "$(DESTDIR)"$(SHAREDIR)/doc/$(SIMILE_DIR)
 	tar c -C help concepts data diagrams elements \
 	equations files index.htm new/index.htm run start submodels \
-	| tar x -C "$(DESTDIR)"$(INSTALL_TGT)/help
+	| tar x -C "$(DESTDIR)"$(SHAREDIR)/doc/$(SIMILE_DIR)
 endif
 # target only used in Linux which ignores this file
 	mkdir -p "$(DESTDIR)"$(SHAREDIR)/applications

@@ -901,14 +901,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    DoneExpr =.. [Cumulative | DsDone],
 	    (Cumulative = count -> true; % count is always scalar
 	     SubL = [x | DimL]);
-<<<<<<< HEAD
 	((is_list(Param),
 	    length(Param, Count),
-=======
-	(is_list(Param),
-	    length(Param, Count),
-%	    Counts = [Count],
->>>>>>> dee3986b (Firefighting problems with makearray introduced in 7.4)
 	    DParam =.. [do | Param], % conversion to fn avoids recursion
 	    length(DoneExpr, Count), % must set length so next line works
 	    DDone =.. [do | DoneExpr];
