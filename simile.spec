@@ -73,6 +73,7 @@ cd -
 # %%{_mandir}/mann/tkDND.n.gz
 %{_mandir}/mann/tkTable.n.gz
 # last two should be removed to avoid conflict with real package
+/usr/share/doc/%{name}-%{version}/*
 
 
 %changelog
