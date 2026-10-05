@@ -300,12 +300,13 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	     unify(KeepDir), unify(none)]).
 
 check_level_for_reds(TopNode, Wrinkle) :-
-    contains(TopNode, Submodel, Chain),
+    contains(TopNode, Submodel),
     find_type(Submodel, submodel),
-    \+ (member(Frag, Chain), \+ appears(Frag)), % no function fragments
 	(Submodel = TopNode -> OuterText = '(none)';
 	 abs_path_name(Submodel, TopNode, OuterText)),
-	(find_all_comps(Submodel, VisEntity),
+	(appears(Submodel), % legacy fragment toplevels may contain components
+                            % wrongly marked incomplete, do not check them
+	find_all_comps(Submodel, VisEntity),
 	appears(VisEntity),
 	\+ VisEntity is_of_sort captionless,
 	\+ is_ghost(VisEntity),
@@ -338,7 +339,7 @@ check_level_for_reds(TopNode, Wrinkle) :-
 	SmChannel is_of_sort pop_only,
 	caption_for(SmChannel, InnerText),
 	Wrinkle = misplaced_channel(InnerText, OuterText);
-	contains(Submodel, Param),
+	Submodel has_part Param,
 	appears(Param),
 	is_parameter(Param, N),
 	(Param is_of_sort discrete -> N>1 ; N>0),
@@ -832,7 +833,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 			xrefs(Model, Bases, _), Name, ModelType-_),
 	(variable_size(SymbolicName), !,
 	    /* Declare the type with 'compartment' to hold instance numbers */
-	    list_local_index_meanings(SymbolicName, Bounds),
+	    list_local_index_meanings(SymbolicName, _Dims, Bounds),
 	    append_atoms(ModelType, '*', PtrType),
 	    (is_population(SymbolicName), !,
 		DummyCompDims = [1],
@@ -897,7 +898,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 generate_metadata(L, Instance, Tree, Level, Used, Stream) :-
 	Instance = instance(Type, Node, Loc, _, _-CSizes),
 	(Type = submodel, !,
-	    list_local_index_meanings(Node, SmIndSpecs),
+	    list_local_index_meanings(Node, _Dims, SmIndSpecs),
 	    all(forms, index_names_and_sizes,
 		[build(SmIndSpecs), build(_Names), build(RSizes)]),
 	    reverse(RSizes, SmSizes);
@@ -1154,13 +1155,13 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, ExtInters, Used,
 	/* Alarm submodels now marked in e_s_a
 	Alarm fns must now be evalled in 1st pass
 	and no exports done till after so below should not be needed
-	(select(instance(alarm,_,_,elt(_, Al,_),_), Functions, NoAlarm),
+	(select(instance(iteration,_,_,elt(_, Al,_),_), Functions, NoAlarm),
 	    select(instance(al_function,_, al_spec(_,_, EvtExp),
 			    elt(_, Al,_), _), NoAlarm, ForAlarm),
 	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Al, EvtExp), _)) | _], !,
-	    % now make alarm depend on everything in its submodel
+	    % now make iteration depend on everything in its submodel
 	    % so the whole thing gets done in one pass
-%% Having removed this, some alarm submodels do not work because the alarm
+%% Having removed this, some iteration submodels do not work because the iteration
 %% gets updated before some component that checks it for initial condition
 %% Does it therefore need restoring?
 	    all_targets(model(ForAlarm, Submodels), AlConds),
@@ -1643,8 +1644,9 @@ get_swaps_and_waits([instance(submodel, ID, _,_,_) | _], FarEnds, _, [], []) :-
 	FarEnds = [].
 
 get_swaps_and_waits(Tree, [base(Assoc, Link, Ptrs) | Rest], Dir,
-	  [path_substitution(Exited, Entered, Link) | MorePathSwaps], Waits) :-
-	(Dir = out,
+	  PathSwaps, Waits) :-
+	get_swaps_and_waits(Tree, Rest, Dir, MorePathSwaps, OtherWaits),
+        (Dir = out,
 	    make_branch(Tree, Assoc, OutTree, InTree),
 	    levels_to_path(OutTree, Exited, TopPtr, _),
 	    levels_to_path(InTree, Entered, TopPtr, _),
@@ -1668,7 +1670,7 @@ get_swaps_and_waits(Tree, [base(Assoc, Link, Ptrs) | Rest], Dir,
 	    levels_to_path(InTree, Entered, TopPtr, _),
 	    get_base_ptrs(Exited, _, Ptrs), /* this actually sets them */
 	    wait_for_submodels(Exited, TheseWaits)),	
-	get_swaps_and_waits(Tree, Rest, Dir, MorePathSwaps, OtherWaits),
+	PathSwaps = [path_substitution(Exited, Entered, Link) | MorePathSwaps],
 	append(TheseWaits, OtherWaits, Waits).
 
 convert_base_specs(time, on_reset).
@@ -1892,7 +1894,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Assigns = [assign(Val, Fn)],
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
 	    suffix(DestPath, Path), % because LoopStart evaluated when opening
-				% alarm submodel, before alarm condition done?
+				% iteration submodel, before iteration condition done?
 	    Acts = [assign(Val, LoopExitExpr)];
 	  Type = compartment,
 	    Assigns = [assign(Val, ValRef+FChange+QChange)],
@@ -1950,7 +1952,7 @@ Issue: if there are multiple made_at conds for the same param, only one
 made_for will need to be made, so add an integer to separate them 
 
 Note params used in same time step do not have to be set in same loop if in an
-alarm submodel, unless they are in_preceding (with this_loop() wrapper) */
+iteration submodel, unless they are in_preceding (with this_loop() wrapper) */
 
 connect_params(AllInsts, Insts) :-
 	select(make(Tgt, Conds, PathPlus, Step, Acts), AllInsts, LeftInsts),
@@ -1965,7 +1967,7 @@ connect_params(AllInsts, Insts) :-
 	      (suffix(SafePath, CommonPath),
                 \+ OrigParam = this_loop(Deferred),
                 (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
-		 nonvar(Al), !; % if in alarm let other loops exit
+		 nonvar(Al), !; % if in iteration let other loops exit
 		 SafePath = [sm(_,_,_, vm_loop(_,_, Assocs, _)) | _],
 		 nonvar(Assocs), Assocs = [_B1, _B2 |_], !); % same if in association
 	       % SafePath = [_RetroLevel | CommonPath],
@@ -2143,13 +2145,13 @@ order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign) :
 	    /* If this line uncommented, do not do anything that would use the
 	    check-member feature */
 	    % \+ (number(TestPhase), TestPhase < Phase),
-	    /* Do not go into an alarmed submodel unless I can get the whole
+	    /* Do not go into an iterationed submodel unless I can get the whole
 	    thing done in this pass
 	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm)),
 		   nonvar(Alarm),
 		   \+ (member(AlarmSubPass, SubPasses),
 			  member(make(Alarm, _,_,_,_), AlarmSubPass))),
-	    ...allow if alarm loop in shorter time step, as follows: */
+	    ...allow if iteration loop in shorter time step, as follows: */
 	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, al_action(Alarm, _), _)),
 		   nonvar(Alarm),
 		   member(make(Alarm, _,_, [_,_, AlP, AlDone | _], _), All),
@@ -2460,7 +2462,7 @@ can_find_id(_)]), % dummy to do with one-sided enumeration
 	    (member(KeyFunc, [ % keyword functors
 this_step, % Cond to be made in same phase, earlier or later
 this_loop, % Cond to be made in same program loop, later
-later]), !, % Cond to be made in same program loop unless in alarm or assoc
+later]), !, % Cond to be made in same program loop unless in iteration or assoc
 		Refs = [nodep(Ref)];
 	    member(KeyFunc, [ % keyword functors
 earlier]), !, % Cond to be made earlier in the program but phase dont matter
@@ -2515,12 +2517,12 @@ order_all_assignments(Step, All, Done) :-
 %	Ready = [];
 %	Ready = [All].
 %
-% select existence_tested and alarm instructions as these need special ordering
+% select existence_tested and iteration instructions as these need special ordering
 select_ext_tests(All, XTests) :-
 	(All = make(existence_tested(_), _,_,_,_);
 	 All = make(Al, _, Path, _,_),
 	    member(sm(_,_,_, fm_loop(_,_, Alarm, _)), Path),
-	    % alarm cond may of course be set in a submodel loop
+	    % iteration cond may of course be set in a submodel loop
 	    nonvar(Alarm),
 	    Alarm = al_action(Al, _)), !,
 	XTests = [All];
@@ -2540,7 +2542,8 @@ hang_on_tree(Inst, Using, make_level(_Cur, Insts, SubTrees)) :-
 	      member(Inst, Insts);
 	    suffix([Next], Tail),
 	    member(NextTree, SubTrees),
-	    NextTree = make_level(Next, _,_), !,
+	    NextTree = make_level(OldNext, _,_),
+	    (var(OldNext), OldNext = Next; same_context(Next, OldNext)), !,
 	    hang_on_tree(Inst, [Next | Using], NextTree)).
 
 close_lists(make_level(_L, Insts, Subs)) :-

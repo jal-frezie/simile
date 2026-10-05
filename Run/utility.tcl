@@ -25,15 +25,16 @@ if {$tcl_platform(os) eq "Linux"} {
 }
 if {[llength [auto_execok tclsh$altVersion]]} {
     lappend auto_path \
-	{*}[exec echo "package require style;puts \$auto_path" | tclsh$altVersion]
+	{*}[exec echo "catch {package require style};puts \$auto_path" | tclsh$altVersion]
 }
 # now make sure to respond positively if checking we have v8
 proc newpackage {args} {
-    if {[lrange $args 0 1] eq {require Tcl}} {
-	oldpackage require Tcl
-    } else {
-	eval oldpackage $args
+    set vreq [lindex $args end]
+    if {[lindex $args 0] ne "vcompare" && [string match 8* $vreq] && \
+	    [string first - $vreq]==-1} {
+	lset args end $vreq-
     }
+    eval oldpackage $args
 }
 rename package oldpackage
 rename newpackage package

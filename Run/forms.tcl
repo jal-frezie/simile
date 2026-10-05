@@ -1268,6 +1268,8 @@ proc RelationCheck {parent title type entries state init_comment} {
     }
     foreach attr $entries val $state {
 	set capt [format $msgs([lindex $attr 0]) [lrange $attr 1 end]]
+	if {[winfo exists $f.$attr]} continue
+	# sticking plaster as we cannot yet handle multiple size crossrefs
         pack [ttk::checkbutton $f.$attr -text $capt \
                 -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
         set relation($attr) $val
@@ -1588,13 +1590,13 @@ proc ContextSensitiveHelp {context page} {
     global SIMILE_PATH
 
     global tcl_platform helphtml env
+    set helpPage [file join $SIMILE_PATH help $page]
     switch [tk windowingsystem] {
         win32 {
-            package require winhelp
-            winhelp $context [file join $SIMILE_PATH help simile_book.chm] $page
+	    # if running from msys2 console
+	    exec cmd /c start "" "[file nativename $helpPage]"
         } aqua {
 # try Snow Leopard location first
-	    set helpPage [file join $SIMILE_PATH help $page]
 #	    if {[catch {exec open -a "HelpViewer.app" $helpPage}]} {
 #		exec open -a "Help Viewer.app" $helpPage
 #	    }
@@ -1602,7 +1604,8 @@ proc ContextSensitiveHelp {context page} {
 # able to work out, so just use default browser
 	    exec open $helpPage
         } x11 {
-            set url file://${SIMILE_PATH}/help/$page
+            set url file://[file join [file dirname [file dirname $SIMILE_PATH]] \
+ share doc [file tail $SIMILE_PATH] $page]
             if {![info exists env(BROWSER)]} {
                 foreach possBrowser {chromium firefox mozilla netscape konqueror lynx} {
                     set env(BROWSER) [lindex [auto_execok $possBrowser] 0]

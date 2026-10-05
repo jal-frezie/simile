@@ -459,7 +459,7 @@ proc GetCCompProperty {DUMMY prop args} {
 	} Class|Type|Eval {
 	    array set propData [list Class,cIdx 11 Class,names \
 			    {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
-			       CREATION REPRODUCTION IMMIGRATION LOSS ALARM \
+			       CREATION REPRODUCTION IMMIGRATION LOSS ITERATION \
 			       EVENT SQUIRT STATE} \
 			    Type,cIdx 1 Type,names \
 			    {VALUELESS REAL INTEGER FLAG EXTERNAL} \

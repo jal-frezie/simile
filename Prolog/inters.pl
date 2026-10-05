@@ -1,7 +1,7 @@
 sicstus_module(inters, [final_assignment/13, make_intermediates/12,
 			expand_library/2, expand_special_role/3,
 			macro_expansion/2, fragment_expansion/5, function/4,
-			promote_unit/2,
+			promote_unit/2, same_context/2,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			inherently_bound/1, make_inds_for/4, pointer_from/2,
 			with_capt/4]).
@@ -85,7 +85,7 @@ ensure_loops_happen(Context) :-
     member(sm(_,_,_, fm_loop(Inds, _,_,_)), Context),
     member(Ind, Inds),
     var(Ind),
-    Ind = glob(_,_), wake,
+    Ind = glob(_,_),
     ensure_loops_happen(Context);
     true.
 	 
@@ -151,8 +151,8 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		      [sm(Name, D, B, progen), sm(Name, A, D, C)], 
 		      pop),
 	            pointer_from(RealPath, SmPtr);
-		  Location = by_shared_sizes,
-		    Link = MatchDest-MatchSrc-SubbedSrc,
+		  member(Location, [by_shared_sizes, in_base, in_assoc]),
+		    Link = source_path_edit(_Reln, MatchDest, MatchSrc, SubbedSrc),
 		    Wait = [],
 		    append(MatchSrc, Tail),
 		    append(MatchDest, Head), 
@@ -2227,10 +2227,11 @@ same_context(C1, C2) :-
 	    % breaks [arr]+[0,element([arr],1)]
 	    (L1 = fm_loop(S1, _,_,_),
 		L = fm_loop(S, _,_,_),
-		nth(N, S1, I1),
-		nth(N, S, I),
-		permutation([I1, I], [Ia, Ib-1]),
-		var(Ia), integer(Ib);
+%		nth(N, S1, I1),
+%		nth(N, S, I),
+%		permutation([I1, I], [Ia, Ib-1]),
+%		var(Ia), integer(Ib);
+		\+ S1 == S;
 	    L = L1,
 	    \+ L = vm_loop(_,_,_,_), % pointers meaningless -- syntax check
 	    \+ P1 == P2)),
@@ -2333,7 +2334,9 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	    append(SpareLoops, Model, UseContext),
 	    % now set up input node
 	    get_dims_from_loops(NeededLoops, UsingDims, _),
-	    m_update><build_array(Unit, UsingDims, NewU),
+	    promote_unit(Unit, CheckableUnit),
+	    \+ member(CheckableUnit, [const_int, const_ratio]),
+	    m_update><build_array(CheckableUnit, UsingDims, NewU),
 	    /* pick_elt_from(Source, SpareLoops, SourceElt),
 				% wrap in element(..)
 	    m_update><add_parameter(DestId, 0, value, SourceElt),
@@ -2472,7 +2475,7 @@ wait_for_submodels([Level | AlsoExited], Waits) :-
 	((member(Level, [sm(MM, _,_, vm_loop(_,_,_,_)), % variable membership
 			set(_, loop(pra_bound(_, MM), _))]); % by record
 	  Level = sm(MM, _,_, fm_loop(_,_,al_action(Al, _), _)),
-	      nonvar(Al)), !, % alarm submodel
+	      nonvar(Al)), !, % iteration submodel
 	    (outside(MM, Model) -> true; MM = Model),
 	 Waits = [enumerate(Model) | Others];
 	Waits = Others),
@@ -2502,20 +2505,27 @@ make_inds_for([Bound | RB], [Dim | RD], Sets, [Ind | RI]) :-
 	Level = set(Ind, loop(Bound, Dim))),
 	make_inds_for(RB, RD, RX, RI),
 	append(RX, [Level], Sets).
-	    
-get_dims_from_loops([], [], []).
 
 get_dims_from_loops(Loops, Dims, Inds) :-
+    get_dims_from_loops(Loops, Dims, _Types, Inds).
+
+get_dims_from_loops([], [], [], []).
+
+get_dims_from_loops(Loops, Dims, Types, Inds) :-
 	append(InnerLoops, [Loop], Loops),
-	(Loop = set(Ind, loop(Dim,_)), !,
+	(Loop = set(Ind, loop(Dim, Bound)),
+	    (nonvar(Bound), Bound = n(Type); Type = Dim), !,
 	    Dims = [Dim | RDims],
+	    Types = [Type | RTypes],
 	    Inds = [Ind | RInds];
 	 loops(Loop), !, % any other looping construct we might invent
 	    Dims = [var | RDims],
+	    Types = [var | RTypes],
 	    Inds = [none | RInds];
 	 Dims = RDims,
+	    Types = RTypes,
 	    Inds = RInds),
-	get_dims_from_loops(InnerLoops, RDims, RInds).
+	get_dims_from_loops(InnerLoops, RDims, RTypes, RInds).
 
 loops(set(_, loop(_,_))).
 loops(sm(_,_,_, vm_loop(Dims,_,_,_))) :- \+ Dims == start_only.

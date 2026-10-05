@@ -139,7 +139,9 @@ revert_to_present(Future, Now) :-
 % 1998: does not write model refinements
 
 save_node(SavedModel, Node, Stream, SelOnly, ArcsUsed ) :-
-	Node has_class Class,
+        Node has_class NewClass,
+	(NewClass = iteration -> Class = alarm;
+	 Class = NewClass),
 	any_setof( Child,
 		   (Node has_part Child, go_with(Child, SelOnly)),
 		   Children ),
@@ -347,6 +349,9 @@ ame_merge(Origin, Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 6.1, !;
 	  reassure_user(updating_v, ['5.x']),
 	  adjust_to_10_1(Parent)),
+	(SimileV >= 7.5, !;
+	  reassure_user(updating_v, ['7.5']),
+	  adjust_to_11_5(Parent)),
 	internalize(Origin, Parent),
 	state><numeric_version_is(MyV),
 	(MyV > SimileV+0.001, % throw away code so no need to test load
@@ -655,6 +660,20 @@ adjust_to_10_1(Parent) :-
 	    fail;
 	true.
 
+adjust_to_11_5(Top) :-
+    % An association submodel that was vm in earlier versions needs a dummy condition
+    % to remain so
+    contains(Top, Submodel),
+    Submodel has_class submodel,
+    connects(Relation, _Base, Submodel),
+    Relation has_type relation,
+    \+ variable_size(Submodel),
+    event><insert_variable(Submodel, 0, 0, condition, Thing),
+    implicit_function(Thing, ThingFn),
+    ThingFn has_new_class_refinement value of '"true"',
+    ThingFn has_changed_class_refinement complete of true, !,
+    adjust_to_11_5(Top); true.
+    
 internalize(LoadPath, Model) :-
     contains(Model, Sub),
       Sub has_class_refinement external_code of XC,

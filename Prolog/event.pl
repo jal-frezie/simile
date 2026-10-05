@@ -1044,7 +1044,8 @@ role_ref_to_msg(Role-Ref, Message) :-
 	integer(Ref),
 	 (Ref < 0 ->
 	    source_locn_name(Ref, Message);
-	  caption_for(Role, Capt),
+	  member(Role, [source_path_edit(RelnName, _,_,_), RelnName]),
+	    caption_for(RelnName, Capt),
 	 Message = [with_role, Capt]).
 
 role_ref_to_stat(_-Ref, Suppd, Enabd, Status) :-
@@ -1090,18 +1091,16 @@ spread_dims(Node) :-
 	     applies_in(Obj, eqn_units, DoingUnits),
 	    (Err = [],
 	     (default_units(Node, DefBase, _DefDims) ->
-		  (DoingUnits = 'No' ->
-		    DefCheckLevel = 1;
-		  DefCheckLevel = 2),
-		  check_unit(Type, DefBase, DefCheckLevel, []),
-		  OnwardType = DefBase; OnwardType = Type),
+		  DefCheckLevel = 1, % was 2 when units on but we want to
+		  % propagate to compartment even if transports mismatch
+		  check_unit(Type, DefBase, DefCheckLevel, []); true),
 		(get_actual_sizes(Node, FoundArray, bare, _, Array, _),
 		    get_actual_sizes(Node, GivenArray, bare, _, Array, _) ->
 		    UseArray = GivenArray;
 		  UseArray = FoundArray,
 		    SpecChanged = dims),
-		(OnwardType = real -> Base = 1;
-		 inters><promote_unit(OnwardType, Base),
+		(Type = real -> Base = 1;
+		 inters><promote_unit(Type, Base),
 		   \+ member(Base, [const_int, const_ratio])),
 		((DoingUnits = 'No';
 		  IList = [], inters><promote_unit(Base,1)),

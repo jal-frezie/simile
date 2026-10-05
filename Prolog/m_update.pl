@@ -9,7 +9,7 @@ itself is only addressed from within the database module.
 
 sicstus_module(m_update,
 	       [list_evt_captions/2, get_av_pair/4, add_parameter/4,
-		list_index_meanings/2, list_local_index_meanings/2,
+		list_index_meanings/2, list_local_index_meanings/3,
 		get_input_info/2,get_link_source_data/7, find_node_with_data/3,
 		valid_input/3, check_unit/4,
 		need_same_dims/2,
@@ -210,20 +210,21 @@ rel_path_name(RemoteNode, DestBox, Relation, SourceLocn, RemoteName, Tail) :-
 
 v5.7 version: merely generate the strings and allow their arrangement elsewhere
 according to norms of whichever language is being used */
-rel_path_name(RemoteNode, DestBox, Relation, Dir,
+rel_path_name(RemoteNode, DestBox, Method, Dir,
 	      role_texts(AbsName, BaseBoxCaption, Dir, RelCaption)) :-
 	abs_path_name(RemoteNode, DestBox, AbsName),
-	(Relation = none, !,
+	(Method = none, !,
 	    RelCaption = '/none/',
 	    BaseBoxCaption = '/none/';
-	 Relation = _-_-_, !,
+	 Dir = by_shared_sizes, !,
 	    RelCaption = '/paired/',
 	    BaseBoxCaption = '/paired/';
-	Relation has_type relation, !,
+	 member(Dir, [in_base, in_assoc]), !,
+	    (Method = source_path_edit(Relation, _,_,_) -> true; Relation = Method),
 	    caption_for(Relation, RelCaption),
 	    initiates(Relation, BaseBox),
 	    caption_for(BaseBox, BaseBoxCaption);
-	append_atoms(['/', Relation, '/'], RelCaption)).
+	 append_atoms(['/', Method, '/'], RelCaption)).
 	
 list_downs([], '').
 
@@ -239,6 +240,8 @@ list_ups([_ | Rest], All) :-
 	append_atoms('../', End, All).
 
 get_spec_units(Node, Unit) :-
+        Node has_class_refinement complete of false, Unit = any, !;
+            % units of red node may be out-of-date
 	Node has_class_refinement units of Unit, !;
 	Node has_attribute units of Unit, !;
 	Unit = any.
@@ -248,7 +251,7 @@ get_spec_units(Node, Unit) :-
 list_index_meanings(root, []).
 
 list_index_meanings(Submodel, Meanings) :-
-	list_local_index_meanings(Submodel, Group1),
+	list_local_index_meanings(Submodel, _Dims, Group1),
 	find_all_comps(Contain, Submodel),
 	(instance><counts_as_outside(Submodel), !,
 	    find_all_comps(Parent, Contain);
@@ -256,7 +259,7 @@ list_index_meanings(Submodel, Meanings) :-
 	list_index_meanings(Parent, Group2),
 	append(Group1, Group2, Meanings).
 
-list_local_index_meanings(Submodel, Meanings) :-
+list_local_index_meanings(Submodel, Dims, Meanings) :-
 	caption_for(Submodel, BareCaption),
 	append_atoms(['"', BareCaption, '"'], Caption),
 	(is_population(Submodel), !,
@@ -270,7 +273,8 @@ list_local_index_meanings(Submodel, Meanings) :-
 			LocalDims, Group1),
 	list_links(Submodel, Links),
 	all(m_update, get_link_exits, [build(Links), build(Starts)]),
-	list_link_index_meanings(Caption, Starts, Group2),
+	list_link_index_meanings(Caption, Starts, LinkDims, Group2),
+	append(LinkDims, LocalDims, Dims),
 	append(Group1, Group2, Meanings).
 
 get_link_exits(Link, exits(Link, MPliers)) :-
@@ -288,20 +292,21 @@ list_exits_smallest_first(Link, Exits) :-
 	 There = []),
 	append(There, Here, Exits).
 */
-list_link_index_meanings(_, [], []).
+list_link_index_meanings(_, [], [], []).
 
-list_link_index_meanings(DestCapt, [exits(_, []) | Rest], Meanings) :-
-	list_link_index_meanings(DestCapt, Rest, Meanings).
+list_link_index_meanings(DestCapt, [exits(_, []) | Rest], Dims, Meanings) :-
+	list_link_index_meanings(DestCapt, Rest, Dims, Meanings).
 
 list_link_index_meanings(DestCapt, [exits(Link, [Start | SRest]) | LRest],
-			 Meanings) :-
-	list_local_index_meanings(Start, BaseMeanings),
+			 Dims, Meanings) :-
+	list_local_index_meanings(Start, StartDims, BaseMeanings),
 	caption_for(Link, LinkCapt),
 	sicstus_format_to_chars(" in role \"~a\" for ~a", [LinkCapt, DestCapt], RoleCaptStr),
 	all(m_update, append_base_role,
 	    [build(BaseMeanings), unify([Link, RoleCaptStr]), build(First)]),
 	list_link_index_meanings(DestCapt, [exits(Link, SRest) | LRest],
-				 Last),
+				 OtherDims, Last),
+	append(OtherDims, StartDims, Dims),
 	append(First, Last, Meanings).
 
 append_base_role(ind_spec(BaseMeaning, Posn, N, _OldLink), [Link, RoleCaptStr],
@@ -341,18 +346,29 @@ uses_as_event(VisSource, RealVar) :-
 	    (RealVar is_of_sort discrete; find_type(RealVar, state));
 	VisSource is_of_sort discrete. % event values to be used
 
-size_cross_reffed(Base, Share, BaseCapt, In-Post) :-
-    get_av_pair(Share, 0, multiplication_spec, MultSpec),
-    member(count=Dims, MultSpec),
+size_cross_reffed(Base, Share, IdxRel, In-Post) :-
     caption_for(Base, BaseCapt),
-    suffix([size(BaseCapt) | Tail], Dims),
+    (connects(Rel, InnerBase, Share),
+     contains(Base, InnerBase, Chain),
+     all(ame_gen, get_all_dims, [build(Chain), append(Lengthened, IndSpecs)]),
+     % added members make sure TDims is right
+     Rel is_connector from Base to _, % only use index section
+     find_type(Rel, relation),
+     list_local_index_meanings(Share, _SDims, IndSpecs),
+     (IdxRel = Rel; sequence(IdxRel, Rel)), % l_l_i_m lists first section in link
+     append(TDims, [ind_spec(_,_,_, IdxRel) | _], Lengthened),
+     \+ member(ind_spec(_,_,_, IdxRel), TDims);
+    get_av_pair(Share, 0, multiplication_spec, MultSpec),
+     member(count=Dims, MultSpec),
+     suffix([size(BaseCapt) | Tail], Dims),
+     IdxRel = by_shared_sizes,
+     get_actual_sizes(Share, Tail, bare, _, TDims, _)),
     get_node_size(Base, BDims),
     length(BDims, In),
-    get_actual_sizes(Share, Tail, bare, _, TDims, _),
     length(TDims, Post).
 
 path_bit_for(Sm, Bit) :-
-    get_node_size(Sm, Dims),
+    get_all_dims(Sm, Dims),
     instance><path_section_for(Sm, _, Dims, Bit, _Hi, _Lo).
 
 split_indices(All, Range, Pre, In, Post) :-
@@ -373,32 +389,41 @@ trim_loops(All, Range, Loops) :-
       append(SLoops, MLoops, All),
       append(ILoops, TLoops, MLoops),
       append(SLoops, TLoops, Loops).
-				 
-purge_size_cross_refs([], Entered, [], DestTemplate, [], []) :-
-    all(m_update, path_bit_for, [build(Entered), build(DestTemplate)]).
+
+purge_size_cross_refs([], _, [], _,_, [], []).
+
+purge_size_cross_refs([X1 | Exited], Entered, NewSrcLoops, SrcLocn,
+	  DestTpt, [OldL | OldSrc], [NewL | NewSrc]) :-
+    purge_size_cross_refs(Exited, Entered, AddSrcLoops, SrcLocn, DestTpt, OldSrc, NewSrc),
+    purge_level_size_cross_refs(X1, Entered, SrcLocn, DestTpt, OldL, NewL),
+	inters><get_dims_from_loops(NewL, _Num, NewXLoops, _Inds),
+	append(AddSrcLoops, NewXLoops, NewSrcLoops).
 
 
-purge_size_cross_refs([Innermost | Exited], Entered, NewSrcLoops,
-		     DestTemplate, [SrcBit | MoreSrcTplt], NewSrcPath) :-
-    purge_size_cross_refs(Exited, Entered, MoreSrcLoops,
-			  DestTemplate, MoreSrcTplt, MoreNewSrc),
-    (nth(Posn, Entered, Sharer),
-     permutation([Innermost-SRange, Sharer-DRange],
-		 [Base-all, Share-ShareRange]),
-	size_cross_reffed(Base, Share, _ShareCapt, ShareRange), !,
-	nth(Posn, DestTemplate, [sm(_,_,_, fm_loop(DI, _,_,_)) | _DLoops]),
-	path_bit_for(Innermost, SrcBit),
-	SrcBit = [sm(S1, S2, S3, fm_loop(SI, S4, S5, S6)) | SLoops],
+purge_level_size_cross_refs(Exits, [], _, [], SrcBit, SrcBit) :-
+    path_bit_for(Exits, SrcBit).
+
+purge_level_size_cross_refs(Exits, [Sharer | Entered], SourceLocn,
+			    [DestL | DestTpt], OldSrc, NewSrc) :-
+    purge_level_size_cross_refs(Exits, Entered, SourceLocn,
+				DestTpt, OldSrc, MidSrc),
+    path_bit_for(Sharer, DestL),
+    (assertz(no_xrefs_available),
+     permutation([Exits-SRange-UseLoc, Sharer-DRange-_],
+		 [Base-all-in_base, Share-ShareRange-in_assoc]),
+     size_cross_reffed(Base, Share, ShareCapt, ShareRange),
+        retractall(no_xrefs_available), % role always used if any present
+	(ShareCapt = by_shared_sizes -> SourceLocn = ShareCapt;
+	 SourceLocn =.. [UseLoc, ShareCapt]),
+	DestL = [sm(_,_,_, fm_loop(DI, _,_,_)) | _DLoops],
+	MidSrc = [sm(S1, S2, S3, fm_loop(SI, S4, S5, S6)) | SLoops],
 	split_indices(DI, DRange, _DPre, DIn, _DPost),
 	split_indices(SI, SRange, SPre, _SIn, SPost),
 	append([SPre, DIn, SPost], I),
 	trim_loops(SLoops, SRange, Loops),
-	NewSrcBit = [sm(S1, S2, S3, fm_loop(I, S4, S5, S6)) | Loops],
-	inters><get_dims_from_loops(Loops, AddSrcLoops, _Inds);
-     get_all_dims(Innermost, AddSrcLoops),
-        NewSrcBit = SrcBit),
-    append(MoreSrcLoops, AddSrcLoops, NewSrcLoops),
-    NewSrcPath = [NewSrcBit | MoreNewSrc].
+	NewSrc = [sm(S1, S2, S3, fm_loop(I, S4, S5, S6)) | Loops];
+     retract(no_xrefs_available),
+        NewSrc = MidSrc).
 
 /* This generates the extra array nestings due to submodels that are exited between a
 link's source and its destination. Note that if the destination is a creation or
@@ -428,14 +453,7 @@ get_unit_conversion(Remote, Local,
 	get_chain(RemoteModel, LocalModel, TopModel, Exited, Entered),
 	reverse(Exited, BiggestFirst),
 	all(ame_gen, get_all_dims, [build(BiggestFirst), append(DefSubs, [])]),
-	(/* Do not display parameter for input without role reference if there
-	is a reference...as of v5.7, do -- but use in_base or in_assoc as
-	appropriate (keep link id of none). */
-	Index = none,
-	    Subs = DefSubs,
-	    relation_of_source(Exited, Entered, SourceLocation),
-	    Relation = DefRel;
-	 % this disjunct should give us a role that gets values from
+	(% this disjunct should give us a role that gets values from
 	 % all instances of the current submodel
 	% RemoteModel = LocalModel,
 	 % (allow cross-border if within right type of submodel?
@@ -464,12 +482,20 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = up_hierarchy,
 	        Index = -1),
 	    Relation = none;
-	     purge_size_cross_refs(Exited, Entered, Subs,
+	     purge_size_cross_refs(Exited, Entered, Subs, SourceCombo,
 				   DestTplt, SrcTplt, NewSrc),
 	         \+ Subs = DefSubs,
-	         SourceLocation = by_shared_sizes,
-	         Index = -5, % -1 to -4 disabled by default
-		 Relation = DestTplt-SrcTplt-NewSrc;
+	        (nonvar(SourceCombo); SourceCombo = none),   
+	         (SourceCombo =.. [SourceLocation, RelnName] ->
+		      (SourceLocation = in_assoc -> RefReln = RelnName;
+		       connects(RelnName, _, LandingModel),
+		       (RefReln = RelnName; sequence(RelnName, RefReln)),
+		       RefReln is_connector from _ to LandingModel),
+		      find_reference(LocalModel, Index, RefReln);
+		  SourceCombo = SourceLocation,
+		      RelnName = size_share,
+		      Index = -5),
+		 Relation = source_path_edit(RelnName, DestTplt, SrcTplt, NewSrc);
 	    
 	(suffix([Base | ReallyExited], BiggestFirst);
 	  contains(Base, RemoteModel, ReallyExited),
@@ -480,6 +506,7 @@ get_unit_conversion(Remote, Local,
 	    member(Assoc, Entered),
 	    connects(Relation, Base, Assoc),
 	    Relation has_type relation,
+	    variable_size(Assoc),
 	    Relation is_connector from Base to _,
 	    IndexRelation is_connector from _ to Assoc,
 	    IndexRelation has_type relation,
@@ -495,6 +522,7 @@ get_unit_conversion(Remote, Local,
 	        Entered = []),
 	    connects(Relation, Base, Assoc),
 	    Relation has_type relation,
+	    variable_size(Assoc),
 	    Relation is_connector from Base to _,
 	    find_reference(LocalModel, Index, Relation),
 	    (is_exclusive_role(Relation),
@@ -503,7 +531,15 @@ get_unit_conversion(Remote, Local,
 	    \+ is_exclusive_role(Relation),
 		all(ame_gen, get_all_dims,
 		    [build([Assoc | ReallyExited]), append(Subs, [])])),
-	    SourceLocation = in_assoc).
+	    SourceLocation = in_assoc;
+	 /* Do not display parameter for input without role reference if there
+	is a reference...as of v5.7, do -- but use in_base or in_assoc as
+	appropriate (keep link id of none).
+	This disjunct moved to last to make debugging the others easier */
+	Index = none,
+	    Subs = DefSubs,
+	    relation_of_source(Exited, Entered, SourceLocation),
+	    Relation = DefRel).
 
 ready_type(Rect, Type) :-
 	m_update><get_av_pair(Rect, 0, multiplication_spec, M),
@@ -515,13 +551,11 @@ source_locn_name(Idx, Name) :-
 		  by_shared_sizes], Name).
 
 relation_of_source(Exited, Entered, SourceLocation) :-
-	member(Far, Exited), member(Near, Entered),
-	    (connects(Relation, Far, Near),
-		SourceLocation = in_base;
-	      connects(Relation, Near, Far),
-		SourceLocation = in_assoc),
-	    Relation has_type relation, !;
-	  SourceLocation = in_hierarchy.
+    member(Far, Exited), member(Near, Entered),
+    permutation([Far-in_base, Near-in_assoc], [Source-SourceLocation, Dest-_]),
+    connects(Relation, Source, Dest),
+    Relation has_type relation, !;
+    SourceLocation = in_hierarchy.
 
 is_exclusive_role(Role) :-
 	find_name_host(Role, RoleWithAttrs),
@@ -717,7 +751,8 @@ name_from_role_texts(role_texts(Path, RelId, Dir, RelnCapt), Used, Name) :-
 	    append_atoms(every_, Tail, Remote_name);
 	  Dir = in_base,
 	    append_atoms([RelnCapt, '_', Tail], Remote_name);
-	  append_atoms([Tail, '_', RelnCapt], Remote_name)), !,
+	  Dir = in_assoc,
+	    append_atoms([Tail, '_', RelnCapt], Remote_name)), !,
 	generate_name(prolog, Remote_name, Name, Used).
 	
 /* This one updates the info on the links after the dialogue box has been filled in.
@@ -1105,11 +1140,11 @@ can_connect(Arc, Node1, Node2) :-
 	  [[[compartment, cloud], [compartment, cloud]]]],
 	 [influence,
 	  [[[compartment, state, variable, flow,
-	     alarm, creation, immigration, reproduction, loss],
+	     iteration, creation, immigration, reproduction, loss],
 	    [variable, flow, compartment, state, event, squirt,
-	     alarm, condition, creation, immigration, reproduction, loss]],
+	     iteration, condition, creation, immigration, reproduction, loss]],
 	   [[event, squirt],
-	    [event, squirt, state, alarm, condition,
+	    [event, squirt, state, iteration, condition,
 	     immigration, reproduction, loss]]]],
 	 [relation, [[[submodel], [submodel]]]]];
 	    
@@ -1122,7 +1157,7 @@ can_connect(Arc, Node1, Node2) :-
 	  [[compartment, [function]], 
 	   [function,
 	    [variable, flow, compartment,
-	     alarm, condition, creation, immigration, reproduction, loss]], 
+	     iteration, condition, creation, immigration, reproduction, loss]], 
 	   [variable, [function]],
 	   [flow, [function]]]],
 	 [relation, [[submodel, [submodel]]]]]),
