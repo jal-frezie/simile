@@ -671,7 +671,9 @@ adjust_to_11_5(Top) :-
     event><insert_variable(Submodel, 0, 0, condition, Thing),
     implicit_function(Thing, ThingFn),
     ThingFn has_new_class_refinement value of '"true"',
-    ThingFn has_changed_class_refinement complete of true, !,
+    ThingFn has_changed_class_refinement complete of true,
+    Thing has_new_class_refinement comment of 'Removing this component will cause values from the submodel to appear outside it as an array rather than a list.',
+    Thing has_new_class_refinement description of 'Added automatically to preserve variable-membership status of submodel in Simile v7.5 or later', !,
     adjust_to_11_5(Top); true.
     
 internalize(LoadPath, Model) :-
