@@ -693,7 +693,6 @@ scramble([H | T], Hash) :-
 warp_factor_for(Link, WarpFactor) :-
     find_type(Link, Type),
     (Type = influence -> WarpFactor = 0;
-	Link is_connector from A to B,
 	caption_for(Link, Capt),
 	name(Capt, CaptStr),
 	scramble(CaptStr, Hash),

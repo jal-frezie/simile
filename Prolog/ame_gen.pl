@@ -907,8 +907,17 @@ variable_size(Source) :-
 /* list_links returns the starting arcs of relations terminating on a
 node. They are sorted so those with the highest indices (most recently
 added) are put first and hence to the outer loops. Sort is done
-Geraint stylie! But no-one will make 46 assocs to a node...*/
+Geraint stylie! But no-one will make 46 assocs to a node...sorry just couldn't
+stand the sight of it so improved...*/
 
+ordered_by_index([], []).
+ordered_by_index([ToDo | No], Yes) :-
+    ordered_by_index(No, Mostly),
+    append(Front, Back, Mostly),
+    append(Front, [ToDo | Back], Yes),
+    \+ (suffix([_-WeeI, _-BigI | _Rest], Yes),
+	WeeI < BigI), !.
+    
 list_links(Node, Links) :-
 	setof(Link-Index,
 	      (find_reference(Node, Index, Link),
@@ -916,10 +925,10 @@ list_links(Node, Links) :-
 		  but do not use them */
 		  terminates(Link, Node)),
 	      RefPairs),
-	permutation(RefPairs, InIndexOrder),
-	\+ (append(_, [_-WeeI | Rest], InIndexOrder),
-	       member(_-BigI, Rest),
-	       WeeI < BigI), !,
+%	permutation(RefPairs, InIndexOrder),
+%	\+ (suffix([_-WeeI, _-BigI | _Rest], InIndexOrder),
+%	       WeeI < BigI), !,
+	ordered_by_index(RefPairs, InIndexOrder),
 	get_base_sections(InIndexOrder, Links);
 	Links = [].
 
