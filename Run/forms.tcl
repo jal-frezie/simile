@@ -1589,44 +1589,14 @@ proc PopReopen {win} {
 proc ContextSensitiveHelp {context page} {
     global SIMILE_PATH
 
-    global tcl_platform helphtml env
-    set helpPage [file join $SIMILE_PATH help $page]
-    switch [tk windowingsystem] {
-        win32 {
-	    # if running from msys2 console
-	    exec cmd /c start "" "[file nativename $helpPage]"
-        } aqua {
-# try Snow Leopard location first
-#	    if {[catch {exec open -a "HelpViewer.app" $helpPage}]} {
-#		exec open -a "Help Viewer.app" $helpPage
-#	    }
-# Help Viewer needs some exotic metadata that no 3rd party developer has been
-# able to work out, so just use default browser
-	    exec open $helpPage
-        } x11 {
-            set url file://[file join [file dirname [file dirname $SIMILE_PATH]] \
- share doc [file tail $SIMILE_PATH] $page]
-            if {![info exists env(BROWSER)]} {
-                foreach possBrowser {chromium firefox mozilla netscape konqueror lynx} {
-                    set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
-                    if {[llength $env(BROWSER)]} {
-                        break
-                    }
-                }
-            }
-        # lynx can also output formatted text to a variable
-        # with the -dump option, as a last resort:
-        # set formatted_text [ exec lynx -dump $url ] - PSE
-            if {[catch {exec $env(BROWSER) -remote $url &}]} {
-                # perhaps browser doesn't understand -remote flag
-                if {[catch {exec $env(BROWSER) $url &} emsg]} {
-                    error "Error displaying $url in browser\n$emsg"
-                # Another possibility is to just pop a window up
-                # with the URL to visit in it. - DKF
-                }
-            }
-        }
+    global tcl_platform
+    if {$tcl_platform(os) eq "Linux"} {
+	set helpPage [file join [file dirname [file dirname $SIMILE_PATH]] \
+			  share doc [file tail $SIMILE_PATH] $page]
+    } else {
+	set helpPage [file join $SIMILE_PATH help $page]
     }
+    VisitUrl $helpPage
 }
 
 # Provide multipart/form-data for http
@@ -1815,7 +1785,8 @@ proc VisitUrl {x} {
     switch [tk windowingsystem] {
         win32 {
             # set x [regsub -all -nocase {htm} $x {ht%6D}]
-            exec rundll32 url.dll,FileProtocolHandler $x & 
+	    exec cmd /c start "" "[file nativename $x]"
+            # alternatively: exec rundll32 url.dll,FileProtocolHandler $x & 
         } aqua {
             exec open $x 
         } x11 {
@@ -2298,52 +2269,6 @@ proc add_text {text font across down colour} {
 }
 
 ############################################## End equation listing
-
-# general error handling -- note that only user errors will be raised from
-# execution interps, so the reporting stuff can be kept in the editor interp
-
-proc NotifyOverLimit {win edn limit} {
-    wm title [PutItThere .notify $win] "Over Limit For Edition"
-    global tcl_platform
-    switch [tk windowingsystem] {
-    win32 {wm attributes .notify -toolwindow true}
-    }
-    
-    set labf1 [frame .notify.labf1]
-    pack [label $labf1.img -image $::iconImages(warning)] -side left
-    pack [label $labf1.lab1 -text "Warning:" \
-            -font {-weight bold -family helvetica -size 10}] -side left
-    pack [label $labf1.lab2 -text "The $edn edition is limited to $limit functions. \n\
-            You can continue to build and run this model, but\n\
-            you will not be able to save it. " \
-            -font {-family helvetica -size 10} -justify left] -side left
-    pack $labf1 -padx 8 -pady 2
-    
-    set labf2 [frame .notify.labf2]
-    pack [label $labf2.lab1 -text "Please visit" -font {-family helvetica -size 10}] -side left
-    pack [set www [label $labf2.lab2 -text "www.simulistics.com" \
-            -fg blue -cursor hand2 -font {-underline true -family helvetica -size 10}]] -side left
-    bind $www <Button-1> {VisitUrl "http://www.simulistics.com/"}
-    pack [label $labf2.lab5 -text "to upgrade." -font {-family helvetica -size 10}] -side left
-    pack $labf2 -padx 8 -pady 2
-    
-    set buttons [frame .notify.buttons]
-    pack [button $buttons.ok -text [tr. OK] -width 10 \
-            -command {set ack 1}] \
-            -side left -padx 4 -pady 4
-    pack [button $buttons.help -text [tr. Help] -width 10 \
-            -command {ContextSensitiveHelp .notify files/limit.htm}] \
-            -side left -padx 4 -pady 8
-    pack $buttons
-    
-    set height [winfo reqheight .notify]
-    set width [winfo reqwidth .notify]
-    set sheight [winfo screenheight .notify]
-    set swidth [winfo screenwidth .notify]
-    wm geometry .notify +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-    LetItShow .notify ack
-    PackItUp .notify
-}
 
 proc TtkLikeDialogue {dlg args} {
     upvar #0 $dlg D
