@@ -758,7 +758,7 @@ enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 	    Value = Ref,
 	    Units = const_int;
 	member(Ref, [var, pop, records]), 
-	    Value = undef,
+	    Value = 0,
 	    Units = int;
 	number(Ref),
 	    Value = Ref,
@@ -825,10 +825,10 @@ get_node_size(Source, SizeN, Size, Units) :-
             CompFn has_class_refinement units of Unit,
 	    m_update><analyze_array(Unit, _Base, QDim),
 	    library><dequote_ET_units(QDim, Dim)), !,
-	get_actual_sizes(Source, Dim, bare, SizeN, Size, Units),
-	(\+ member(var, Size), !;
-	caption_for(Source, Capt),
-	    raise_exception(submodel_size_variable(Capt)));
+	get_actual_sizes(Source, Dim, bare, SizeN, Size, Units);
+%	(\+ member(var, Size), !;
+%	caption_for(Source, Capt),
+%	    raise_exception(submodel_size_variable(Capt)));
 	SizeN = [],
 	  Size = [].
 
@@ -916,7 +916,7 @@ ordered_by_index([ToDo | No], Yes) :-
     append(Front, Back, Mostly),
     append(Front, [ToDo | Back], Yes),
     \+ (suffix([_-WeeI, _-BigI | _Rest], Yes),
-	WeeI < BigI), !.
+	WeeI < BigI).
     
 list_links(Node, Links) :-
 	setof(Link-Index,
@@ -928,7 +928,7 @@ list_links(Node, Links) :-
 %	permutation(RefPairs, InIndexOrder),
 %	\+ (suffix([_-WeeI, _-BigI | _Rest], InIndexOrder),
 %	       WeeI < BigI), !,
-	ordered_by_index(RefPairs, InIndexOrder),
+	ordered_by_index(RefPairs, InIndexOrder), !,
 	get_base_sections(InIndexOrder, Links);
 	Links = [].
 
