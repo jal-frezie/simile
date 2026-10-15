@@ -1333,7 +1333,7 @@ make_connection(Model, HdrType, Dir, ExternalSection,
 		    find_all_comps(Model, OutputSection)),
 		   check_output(Type, Dir, Model, DestCapt, Properties,
 				OutputSection),
-		   (discrete_valued(InputSection) ->
+		   (discrete_valued(OutputSection) ->
 			HdrType = discrete_influence;
 		   \+ HdrType = discrete_influence)), Outputs),
 	      all(m_update, link_ends,
@@ -1347,15 +1347,23 @@ make_connection(Model, HdrType, Dir, ExternalSection,
 	 expand_message(HdrType, TypeDescStr), name(TypeDesc, TypeDescStr),
 	 Hassle = spare_interface_spec(TypeDesc, Dir, source, SourceCapt)).
 
+might_have_become(Old, New) :-
+    New = Old;
+    append_atoms(Old, AddedSuffix, New),
+    append_atoms('_', Differentiator, AddedSuffix),
+    integer(Differentiator).
+    % append_atoms uses name so if it can be number it will be
+
 check_input(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
      BorderSection has_type Type,
 	BorderSection is_connector from _ to Dest,
 	(Type is_class_of_sort transfer,
 	Properties = control(_, ControlDir),
 	ControlDir = Dir, !,
-	    caption_for(BorderSection, SourceCapt);
+	    caption_for(BorderSection, TgtCapt);
 	initiates(BorderSection, Source),
-	    caption_for(Source, SourceCapt)),
+	    caption_for(Source, TgtCapt)),
+	might_have_become(SourceCapt, TgtCapt),
 	(Type is_class_of_sort transfer,
 	    Dest is_of_sort cloud,
 	    appears(Dest); % submodel cut out if outward
@@ -1373,11 +1381,12 @@ check_output(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	(Type is_class_of_sort transfer,
 	Properties = control(_, ControlDir),
 	\+ ControlDir = Dir, !,
-	    caption_for(BorderSection, SourceCapt);
+	    caption_for(BorderSection, TgtCapt);
 	Type = influence, !,
-	    caption_for(Dest, SourceCapt);
+	    caption_for(Dest, TgtCapt);
 	terminates(BorderSection, Source),
-	    caption_for(Source, SourceCapt)),
+	    caption_for(Source, TgtCapt)),
+	might_have_become(SourceCapt, TgtCapt),
 	(Type is_class_of_sort transfer,
 	    Dest is_of_sort cloud,
 	    appears(Dest); % submodel cut out if inward
@@ -1730,12 +1739,7 @@ sever_links(Kill_obj, End) :-
 	initiates(Kill_obj, Start),
 	(continues_in(Kill_obj, End), NewEnd = start;
 	    continues_from(Kill_obj, End), NewEnd = finish),
-	((Kill_obj = LastSect; sequence(Kill_obj, LastSect)),
-	    LastSect has_attribute role of DestData,
-	    member(use(_R, _S, HidCapt, _U), DestData),
-	    (HidCapt = usr(VisCapt); VisCapt = HidCapt),
-	    add_brackets(NewCapt, _, VisCapt) -> true;
-	 caption_for(Start, NewCapt)),
+	 caption_for(Start, NewCapt),
 	% min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
 	get_link_source_data(Kill_obj, End, _, SUnit, none, _,_),
 	(make_new_end_node(End, Kill_obj, NewEnd,
