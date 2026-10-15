@@ -1391,12 +1391,13 @@ check_output(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	    Dest is_of_sort cloud,
 	    appears(Dest); % submodel cut out if inward
 	  Type = influence,
-	    (Dest has_class variable,
-		is_parameter(Dest, 1);
+	  Dest has_class DestClass,
+	  (DestClass = influence,
+	      is_parameter(Dest, 1);
 % should be handled as 'Found' case
 %		AlreadyDone is_connector from Dest to _,
 %		sequence(InputSection, AlreadyDone);
-	      true);
+	    \+ DestClass = function);
 	  Type = relation,
 	    Dir = out,
 	    Dest = Model, !,
