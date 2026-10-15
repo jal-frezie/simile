@@ -1587,9 +1587,7 @@ proc PopReopen {win} {
 }
 
 proc ContextSensitiveHelp {context page} {
-    global SIMILE_PATH
-
-    global tcl_platform
+    global SIMILE_PATH tcl_platform
     if {$tcl_platform(os) eq "Linux"} {
 	set helpPage [file join [file dirname [file dirname $SIMILE_PATH]] \
 			  share doc [file tail $SIMILE_PATH] $page]
