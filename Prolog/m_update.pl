@@ -1397,7 +1397,7 @@ check_output(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 % should be handled as 'Found' case
 %		AlreadyDone is_connector from Dest to _,
 %		sequence(InputSection, AlreadyDone);
-	    member(DestClass, [cloud, submodel]));
+	    DestClass = event);
 	  Type = relation,
 	    Dir = out,
 	    Dest = Model, !,
@@ -1832,8 +1832,7 @@ remove_floater(Node) :-
 	    Node has_class C,
 	    \+ member(C, [variable, event, cloud, border, function]);
 	  Node has_class_refinement min_val of _;
-	  Node has_class C,
-	    member(C, [variable, event]),
+	  Node has_class variable,
             is_parameter(Node, 2)), !;
 	draw><off(Node),
 	oblitterfry(Node).
