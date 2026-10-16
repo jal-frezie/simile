@@ -1770,7 +1770,8 @@ make_new_end_node(Submodel, DeadLink, Dir, NewInputName, NewUnit) :-
       Dir = start,
       (initiates(DeadLink, Comp), Comp is_of_sort discrete -> NodeType = event;
        NodeType = variable);
-     NodeType = cloud),
+     member(LinkType, [flow, squirt]),
+       NodeType = cloud),
 	Submodel has_link_equivalences Equivs,
 	(Dir = start,
 	    OuterFirst = Equivs,
