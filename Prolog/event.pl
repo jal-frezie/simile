@@ -1680,6 +1680,11 @@ recursive_highlight(Target, Way, Where, E2E) :-
 	    (Also = Target;
 	    E2E = 1, adjust_link_backwards(Target, Way, Also, Where);
 	    E2E = 1, adjust_link_forwards(Target, Way, Also, Where);
+	    % special case for re-entrant relation's invisible section
+	    E2E = 0, find_type(Target, relation),
+	    m_class><Target follows Also,
+	    m_class><Also is_connector from Self to Self,
+	    change_delete_status(Also, Way, Where), fail;
 	    bring_dependents_into_line([Start, Finish], Where), fail)),
 	find_all_links(Also, Linked),
 	% new bit to stop redoing what has already been done
@@ -2417,7 +2422,7 @@ deletable(Top, FollowArcs, Tgt) :-
     (Proxy2 = Tgt2;
      FollowArcs = 1, m_class><equivalent_arcs(Tgt2, Proxy2),
      \+ Proxy2 = Tgt2, doomed(Proxy2))),
-    contains(Top, Proxy2).
+    (contains(Top, Proxy2); m_class><Proxy2 is_connector from Top to Top).
     
     
 kill_primitive(Target, FollowArcs) :-
