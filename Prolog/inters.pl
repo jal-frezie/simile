@@ -2514,7 +2514,9 @@ get_dims_from_loops([], [], [], []).
 get_dims_from_loops(Loops, Dims, Types, Inds) :-
 	append(InnerLoops, [Loop], Loops),
 	(Loop = set(Ind, loop(Dim, Bound)),
-	    (nonvar(Bound), Bound = n(Type); Type = Dim), !,
+	 (nonvar(Bound), Bound = n(Type);
+	  Dim = pra_bound(_, _), Type = records;
+	  Type = Dim), !,
 	    Dims = [Dim | RDims],
 	    Types = [Type | RTypes],
 	    Inds = [Ind | RInds];

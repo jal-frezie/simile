@@ -1050,7 +1050,7 @@ namespace eval grid005 {
 		set idx [lindex [FindIndices $useNodes($winId,tgtDims) $cell] 1]
 	    }
 	    PokeValue $useNodes($winId,color) $idx $newVal
-	    #	DrawGrid6 $winId $useNodes($winId,color)
+#	DrawGrid6 $winId $useNodes($winId,color)
 
 	    if {$useNodes($winId,hex)} {
 		set off [expr $row%2]
