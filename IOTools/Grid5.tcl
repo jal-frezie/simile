@@ -1050,9 +1050,21 @@ namespace eval grid005 {
 		set idx [lindex [FindIndices $useNodes($winId,tgtDims) $cell] 1]
 	    }
 	    PokeValue $useNodes($winId,color) $idx $newVal
-#	DrawGrid6 $winId $useNodes($winId,color)
-	    $useNodes($winId,hiddenMap) put $useNodes($winId,paintColour) \
-		-to [expr $col-1] [expr $nrow-$row]
+	    #	DrawGrid6 $winId $useNodes($winId,color)
+
+	    if {$useNodes($winId,hex)} {
+		set off [expr $row%2]
+		set cols [list [expr 2*$col+$off-2] [expr 2*$col+$off-1]]
+		if {$col==1 && $off==1} {
+		    lappend cols 0
+		}
+	    } else {
+		set cols [expr $col-1]
+	    }
+	    foreach tcol $cols {
+		$useNodes($winId,hiddenMap) put $useNodes($winId,paintColour) \
+		    -to $tcol [expr $row-1]
+	    }
 	    FillCanvas $winId
 #puts "row,col $row,$col cell $cell idx $idx"
 	}
