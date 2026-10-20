@@ -5,12 +5,12 @@
 
 Name:		simile
 Version:	7.5
-Release:	0%{?dist}
+Release:	1%{?dist}
 Summary:	Multi-paradigm graphical modelling environment
 
 License:	Proprietary
 URL:		http://simulistics.com
-source:		simile_7.5.0.tar.gz
+source:		simile_7.5.1.tar.gz
 
 BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, redhat-lsb, tcl-devel >= 9.0, tk-devel >= 9.0, libXcursor-devel >= 1.0, portaudio-devel >= 19
 # tk needed for building tktable, tcllib for dtplite
@@ -77,6 +77,9 @@ cd -
 
 
 %changelog
+* Tue Oct 20 2026 Simulistics Ltd <info@simulistics.com> - 7.5-1
+- Patch release
+
 * Sat Oct 03 2026 Simulistics Ltd <info@simulistics.com> - 7.5-0
 - Minor release
 
