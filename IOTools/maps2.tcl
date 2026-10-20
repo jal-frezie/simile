@@ -279,6 +279,7 @@ namespace eval ::maptools2 {
             #  bind mouse click to get the value to assign from the colour clicked upon
 	    $cnv bind swatch <ButtonPress> \
 		[namespace code "CnvGetNewVal $ParentSpc $winId %x %y"]
+	    c_setparamarray $::myNode $useNodes($winId,color) {} 1
 #            for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
 #                bind $winId.legend.pop$swatch <ButtonPress> \
 #                        [namespace code "GetNewVal $winId $swatch"]
