@@ -948,6 +948,7 @@ VarParamData::VarParamData(ExecutingModel* instToUse, HCOMP newNodeNum,
   timePoints = NULL;
   finalTimePoint = NULL;
   curTimePoint = NULL;
+  inheritSeries = FALSE; // was left unset: a reset then dropped slider values
   fillMethod = USE_LAST;
   seriesIdxUnits = 1.0;
   int forClass = myModelExec->modelSpec->nodedata[nodeId].compclass;

@@ -61,7 +61,8 @@ class CPPEXTDEC FileParamData
   FileParamData(ExecutingModel*, HCOMP, int*);
 
   //! Destructor: simple
-  ~FileParamData();
+  virtual ~FileParamData(); // was not virtual: deleting a VarParamData through
+                            // forget_param_array left it in varParamArrayBase
 
  public:
   int extract_elt(void*, int*);
