@@ -415,7 +415,7 @@ mentions_graphics(Action, Comp) :-
 	    get_host(Fn, Comp);
 	  Term = connection(_Start, _Finish, Comp); % arc end pts changed
 	  Term = arc_info(Comp, Shows, _Val4),
-	    member(Shows, [complete, enabled_roles, use_sofar])).
+	    member(Shows, [name, complete, enabled_roles, use_sofar])).
 % things that make submodel conditional still not handled
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-
