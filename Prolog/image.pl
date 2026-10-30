@@ -688,13 +688,12 @@ get_end_pt(Link, End, Type, Pt, Box) :-
 scramble([], 0).
 scramble([H | T], Hash) :-
     scramble(T, Upstream),
-    Hash is float_fractional_part((Upstream + H)*1.384756).
+    Hash is float_fractional_part((Upstream + H)*1.394756).
     
 warp_factor_for(Link, WarpFactor) :-
     find_type(Link, Type),
     (Type = influence -> WarpFactor = 0;
-	caption_for(Link, Capt),
-	name(Capt, CaptStr),
+	name(Link, CaptStr),
 	scramble(CaptStr, Hash),
 	WarpFactor is 1-2*Hash).
 
