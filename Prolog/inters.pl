@@ -596,7 +596,8 @@ make_intermediates(
 	    indices (because they may differ between references) or var names
 	    (so they get instantiated and declared in each procedure) */
 	((TermSwap = with_dest_path(OrigMatch),
-	  append(OrigMatch, _, DestPath);
+	  append(OrigMatch, _, DestPath),
+	  BackSwap = values_from_base(_); % jam context swap
 	  TermSwap = BackSwap;
 	  TermSwap = values_from_base(Tx), BackSwap = values_from_base(Bx),
 	  longest_path([Tx, Bx], _One)), !,
