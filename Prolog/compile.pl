@@ -2145,7 +2145,7 @@ order_deeper_assignments(Phase, Path, EndPts, Subs, Items, All, OrderedAssign) :
 	    /* If this line uncommented, do not do anything that would use the
 	    check-member feature */
 	    % \+ (number(TestPhase), TestPhase < Phase),
-	    /* Do not go into an iterationed submodel unless I can get the whole
+	    /* Do not go into an iteration submodel unless I can get the whole
 	    thing done in this pass
 	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm)),
 		   nonvar(Alarm),

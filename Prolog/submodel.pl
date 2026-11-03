@@ -146,16 +146,12 @@ single internal link is equivalent to a different external one at each end */
 make_link_spec(_, [], []).
 
 make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
-
-	(select(Start-Mid, Equivs, Inter_equivs), 
-	select(Mid-Link, Inter_equivs, Others),
-		Dead = [Start, Mid]; % only with straight-through links
 	select(Start-Link, Equivs, Others),
-		Dead = [Start]), !,
+		Dead = [Start], !,
 
 	% change for v6: rather than deleting and re-creating, make the
 	% following section start from the origin...
-	(Start is_connector from Origin to _,
+	(Start is_connector from Origin to StdPt,
 	    Link is_connector from MidPt to Destination, !,
 	    Link has_changed_termination start from MidPt to Origin,
 	    % Link is_new_connector from Origin to Destination,
@@ -170,7 +166,15 @@ make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
 	
 	(member(OldLink, Gone),
 	/* Don't kill link if it has other equivalences */
-	    \+ member(OldLink-_, Others),
+	 \+ member(OldLink-_, Others),
+	 (all(ame_gen, find_type, [build([OldLink, Origin, StdPt]),
+				   build([relation, submodel, submodel])]),
+	  % Link to go is top relation section, move attrs to new top section
+	  OldLink has_attribute Attr of Val,
+	  (Link has_attribute Attr of _OVal ->
+	       Link has_changed_attribute Attr to Val;
+	   Link has_new_attribute Attr of Val),
+	  fail; true),
 	    (Attached is_part_of OldLink,
 		Attached is_no_longer_part_of OldLink,
 		Attached is_also_part_of Link,
