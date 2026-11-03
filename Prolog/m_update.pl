@@ -361,7 +361,7 @@ size_cross_reffed(Base, Share, IdxRel, In-Post) :-
      suffix([size(BaseCapt) | Tail], Dims),
      IdxRel = by_shared_sizes,
      get_actual_sizes(Share, Tail, bare, _, TDims, _)),
-    get_node_size(Base, BDims),
+    get_all_dims(Base, BDims),
     length(BDims, In),
     length(TDims, Post).
 
