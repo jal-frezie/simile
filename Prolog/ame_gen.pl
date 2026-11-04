@@ -787,9 +787,9 @@ enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 	BareRef = 'NULL',
 	    Value = 0,
 	    Units = any;
+	resolve_enum_type(BareRef, Model, Value, Units, ETSpec);
 	units><defined_as_unit(BareRef, _),
-	    Units = BareRef, Value = 1;
-	resolve_enum_type(BareRef, Model, Value, Units, ETSpec)), !.
+	    Units = BareRef, Value = 1), !.
 
 dequote(Ref, BareRef) :-
        atom(Ref),
