@@ -183,9 +183,11 @@ get_info(Comp, units, Unit) :-
 	units_for(Comp, UnitStr),
 	name(Unit, UnitStr), !.
 
-get_info(Name, is_unit, Def) :-
-	(units><defined_as_unit(Name, Def), !;
-	Def = none).
+% was only used to check if enum types were duplicates of units,
+% which is now allowed
+%get_info(Name, is_unit, Def) :-
+%	(units><defined_as_unit(Name, Def), !;
+%	Def = none).
 
 get_info(Comp, Field, Pop) :-
 	% catch-all clause to get any attribute value

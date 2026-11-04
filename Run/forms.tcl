@@ -885,10 +885,11 @@ proc CheckForETDuplicates {new} {
     } elseif {[lsearch {boolean false true} $enumTypeMPEntry]>-1} {
 	set query [list reserved_et_member $new $enumTypeMPEntry]
     } else {
-	set def [GetFromProlog tk_get_info([string map [list \\ \\\\] '$enumTypeMPEntry'],is_unit)]
-	if {![string equal none $def]} {
-	    set query [list member_is_unit $new $enumTypeMPEntry $def]
-	} else {
+	# Allow enum type names and members to be same as physical units
+	#set def [GetFromProlog tk_get_info([string map [list \\ \\\\] '$enumTypeMPEntry'],is_unit)]
+	#if {![string equal none $def]} {
+	#    set query [list member_is_unit $new $enumTypeMPEntry $def]
+	#} else {
 	    foreach {type members} [array get disaggregate enumtype,*] {
 		set oldType [string range $type 9 end]
 		if {[string equal $enumTypeMPEntry $oldType]} {
@@ -899,7 +900,7 @@ proc CheckForETDuplicates {new} {
 					 $enumTypeMPEntry]
 		}
 	    }
-	}
+	#}
     }
     if {[info exists query]} {
 	Query $query warning enumtype {} ok
