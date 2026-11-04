@@ -1080,11 +1080,13 @@ make_intermediates(
 		 length(Source, DimVal),
 		 (DimVal > 1, !; throw(singlet_array(Source, DimVal))),
 	         Dun = const_int,
-	         Selector=LocalInd;
-	      Source = {AnIndex:_,_},
+	         Selector=LocalInd,
+	         BonusArg = 0;
+	     Source = {AnIndex:_,_},
 	      enum_type_ref(AnIndex, SubId, quoted, _, DimType, _),
 	      (DimType = boolean -> DimName = DimType, RealSelector = LocalInd;
 	       a(DimName) = DimType, RealSelector=LocalInd+1),
+	       BonusArg = AnIndex-SubId-DimType,
 	      (Step = dummy ->
 		   DimVal = DimName,
 		   Dun = n(DimVal),
@@ -1093,7 +1095,7 @@ make_intermediates(
 	           Selector = RealSelector)),
 	       %decode_number(DimType, SubId, Step, DimVal, Dun)),
 %		DimSetups = [],
-	        make_choose_form(Source, keep(Selector), 0, Element),
+	        make_choose_form(Source, keep(Selector), BonusArg, Element),
 	        NowBuilding = BuildingArrays,
 		LocalLoops = [set(LocalInd, loop(DimVal, Dun))])),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
@@ -2152,9 +2154,12 @@ make_choose_form([Elt | Elts], Ind, N, choose(Ind==N,Elt,Later)) :-
 	make_choose_form(Elts, Ind, M, Later).
 
 make_choose_form({_Default:LastElt}, _,_, LastElt).
-make_choose_form({Att:Val, Elts}, Ind, N, choose(Ind==Att,Val,Later)) :-
-	M is N+1,
-	make_choose_form({Elts}, Ind, M, Later).
+make_choose_form({Att:Val, Elts}, Ind, B, choose(Ind==NumAtt,Val,Later)) :-
+        B = AnIndex-SubId-DimType,
+	enum_type_ref(Att, SubId, quoted, NumAtt, IndDimType, _),
+	(IndDimType = DimType, !;
+	 throw(mismatched_units(attributes, {AnIndex:'...', Att:Val, Elts}, (DimType, IndDimType), (a('ET'), a('ET'))))),
+	make_choose_form({Elts}, Ind, B, Later).
 
 
 /* If the source is in submodels that the dest is not, this copies their loops
