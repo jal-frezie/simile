@@ -2173,7 +2173,7 @@ proc PrepForExport {winId way} {
 proc PrintNow {winId} {
     global simtmpdir env tcl_platform
     
-    if {[package vsatisfies 9.0 [info tclversion]]} {
+    if {[package vsatisfies [info tclversion] 9.0]} {
 	tk print $winId
     } elseif {[string match windows $tcl_platform(platform)]} {
 	Query windowsPrintFail warning top $winId {ok}
