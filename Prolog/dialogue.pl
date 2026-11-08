@@ -80,7 +80,11 @@ handle_eqn_interaction(Part, Input_list, GraphSpec, TableSpec, Rules) :-
 	  (Result_list = [EqnSt, _,_,_,_,_,_] ->
 	       sicstus_atom_chars(UncheckedEqn, EqnSt),
 	       add_parameter(Part, 0, spec, UncheckedEqn),
-	       add_parameter(Part, 0, value, '');
+	       (Part is_of_sort has_bowtie ->
+		    % expand next add_parameter so '' is actually added
+		    m_update><clear_av_pair(Part, 0, value),
+		    m_update><add_av_pair(Part, 0, value, '');
+		add_parameter(Part, 0, value, ''));
 	   true),
 	  catch(update_equation(Part, Input_list, Result_list, Effect),
 		UpThrow, Effect = user_advice_generated(bad_syntax('Equation', UpThrow))),
